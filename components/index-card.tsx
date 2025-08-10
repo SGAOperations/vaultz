@@ -1,3 +1,5 @@
+import { Card } from "@/components/ui/card";
+
 interface IndexCardProps {
     index: {
         id: string;
@@ -13,9 +15,11 @@ interface IndexCardProps {
         accountId: string;
         description: string;
         amount: number;
-    }
+    }[]
 }
 
 export function IndexCard({ index, purchases }: IndexCardProps) {
-    
+    return <Card>
+
+    </Card>
 }
