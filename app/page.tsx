@@ -4,6 +4,7 @@ const data = {
   index: {
     id: '0',
     code: '800401',
+    name: 'Cash Index'
   },
   purchases: [
     {
