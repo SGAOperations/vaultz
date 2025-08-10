@@ -2,9 +2,10 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { ThemeProvider } from '@/components/theme-provider';
+import { cn } from '@/lib/utils';
 
 const inter = Inter({
-  variable: '--font-inter',
+  variable: '--font-sans',
   subsets: ['latin'],
 });
 
@@ -21,7 +22,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${inter.variable} antialiased w-full 2xl:w-4/5 mx-auto`}
+        className={cn(
+          'antialiased w-full 2xl:w-4/5 font-sans mx-auto',
+          inter.variable
+        )}
       >
         <ThemeProvider
           attribute="class"
