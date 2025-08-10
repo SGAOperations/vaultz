@@ -36,6 +36,16 @@ export function IndexCard({ index, purchases }: IndexCardProps) {
           {purchases.length} purchases
         </CardDescription>
       </CardHeader>
+
+      <div className="px-6 flex flex-col gap-3">
+        {purchases.map((v) => (
+          <Card key={v.id} className="flex-row justify-between p-3">
+            <p>${v.amount}</p>
+            <p>{v.user.first} {v.user.last}</p>
+            <p>{v.description}</p>
+          </Card>
+        ))}
+      </div>
     </Card>
   );
 }
