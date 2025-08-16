@@ -7,3 +7,41 @@ datasource db {
     provider = "postgresql"
     url      = env("DATABASE_URL")
 }
+
+model User {
+    id       String     @id @default(uuid())
+    first    String
+    last     String
+
+    purchases Purchase[]
+}
+
+model Index {
+    id   String @id @default(uuid())
+    code String
+    name String
+
+    accounts Account[]
+}
+
+model Account {
+    id     String  @id @default(uuid())
+    code   String
+    amount Decimal
+
+    indexId String
+    index   Index  @relation(fields: [indexId], references: [id])
+
+    purchases Purchase[]
+}
+
+model Purchase {
+    id          String  @id @default(uuid())
+    amount      Decimal
+    description String
+
+    accountId String
+    account   Account @relation(fields: [accountId], references: [id])
+    userId    String
+    user      User    @relation(fields: [userId], references: [id])
+}
