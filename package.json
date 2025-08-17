@@ -6,7 +6,11 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "prettier:check": "prettier . --check",
+    "prettier:fix": "prettier . --write",
+    "eslint:check": "eslint .",
+    "eslint:fix": "eslint . --fix",
+    "tsc:check": "tsc --noEmit"
   },
   "dependencies": {
     "@prisma/client": "^6.14.0",
