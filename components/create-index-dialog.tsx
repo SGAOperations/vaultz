@@ -23,6 +23,8 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { createIndex } from '@/prisma/services';
+import { useState } from 'react';
 
 const schema = z.object({
   name: z
@@ -33,17 +35,19 @@ const schema = z.object({
 });
 
 export function CreateIndexDialog() {
+  const [open, setOpen] = useState<boolean>(false);
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: { name: '', code: '' },
   });
 
   function onSubmit(data: z.infer<typeof schema>) {
-    console.log(data);
+    createIndex(data);
+    setOpen(false);
   }
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button>
           <Plus />
