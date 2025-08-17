@@ -1,5 +1,7 @@
 import { IndexCard } from '@/components/index-card';
+import { Button } from '@/components/ui/button';
 import { getAllIndexes } from '@/prisma/services/account';
+import { Plus } from 'lucide-react';
 
 export default async function Home() {
   const indexes = await getAllIndexes();
@@ -15,6 +17,10 @@ export default async function Home() {
           purchases={v.purchases}
         />
       ))}
+      <Button>
+        <Plus />
+        Create Index
+      </Button>
     </div>
   );
 }
