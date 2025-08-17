@@ -9,5 +9,5 @@ export type PurchaseWithUser = Purchase & {
 };
 
 export type IndexWithPurchases = Index & {
-  purchases: Purchase[];
+  purchases: PurchaseWithUser[];
 };
