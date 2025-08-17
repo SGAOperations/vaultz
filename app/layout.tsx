@@ -16,23 +16,20 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body
-        className={cn(
-          'antialiased w-full 2xl:w-4/5 font-sans mx-auto',
-          inter.variable,
-        )}
-      >
+      <body className={cn('antialiased w-full font-sans', inter.variable)}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
         >
-          <div className="p-2 mb-2 flex justify-between">
-            <h1 className="text-2xl">SGA Finance Master</h1>
-            <ModeToggle />
-          </div>
-          {children}
+          <main className="mx-auto flex w-full flex-col items-center 2xl:w-4/5">
+            <div className="p-2 mb-2 flex justify-between w-full">
+              <h1 className="text-2xl">SGA Finance Master</h1>
+              <ModeToggle />
+            </div>
+            {children}
+          </main>
         </ThemeProvider>
       </body>
     </html>
