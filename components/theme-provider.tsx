@@ -1,18 +1,18 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { ThemeProvider as NextThemesProvider } from 'next-themes';
-import { Check, Moon, Sun } from 'lucide-react';
-import { useTheme } from 'next-themes';
+import * as React from "react";
+import { ThemeProvider as NextThemesProvider } from "next-themes";
+import { Check, Moon, Sun } from "lucide-react";
+import { useTheme } from "next-themes";
 
-import { Button } from '@/components/ui/button';
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { cn } from '@/lib/utils';
+} from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 
 export function ThemeProvider({
   children,
@@ -34,16 +34,16 @@ export function ModeToggle() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => setTheme('light')}>
-          <Check className={cn(theme === 'light' ? '' : 'hidden')} />
+        <DropdownMenuItem onClick={() => setTheme("light")}>
+          <Check className={cn(theme === "light" ? "" : "hidden")} />
           Light
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme('dark')}>
-          <Check className={cn(theme === 'dark' ? '' : 'hidden')} />
+        <DropdownMenuItem onClick={() => setTheme("dark")}>
+          <Check className={cn(theme === "dark" ? "" : "hidden")} />
           Dark
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme('system')}>
-          <Check className={cn(theme === 'system' ? '' : 'hidden')} />
+        <DropdownMenuItem onClick={() => setTheme("system")}>
+          <Check className={cn(theme === "system" ? "" : "hidden")} />
           System
         </DropdownMenuItem>
       </DropdownMenuContent>

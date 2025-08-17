@@ -1,6 +1,6 @@
-import { Index, Purchase as PrismaPurchase, User } from '@/prisma/client';
+import { Index, Purchase as PrismaPurchase, User } from "@/prisma/client";
 
-export type Purchase = Omit<PrismaPurchase, 'amount'> & {
+export type Purchase = Omit<PrismaPurchase, "amount"> & {
   amount: number;
 };
 

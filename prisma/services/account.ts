@@ -1,7 +1,7 @@
-'use server';
+"use server";
 
-import prisma from '@/lib/prisma';
-import { IndexWithPurchases } from '@/lib/types';
+import prisma from "@/lib/prisma";
+import { IndexWithPurchases } from "@/lib/types";
 
 export async function getAllIndexes(): Promise<IndexWithPurchases[]> {
   return (
@@ -16,7 +16,7 @@ export async function getAllIndexes(): Promise<IndexWithPurchases[]> {
       account.purchases.map(({ amount, ...v }) => ({
         ...v,
         amount: amount.toNumber(),
-      }))
+      })),
     ),
   }));
 }
