@@ -2,6 +2,7 @@
 
 import prisma from '@/lib/prisma';
 import { IndexWithPurchases } from '@/lib/types';
+import { Index } from '@/prisma/client';
 
 export async function getAllIndexes(): Promise<IndexWithPurchases[]> {
   return (
@@ -19,4 +20,14 @@ export async function getAllIndexes(): Promise<IndexWithPurchases[]> {
       })),
     ),
   }));
+}
+
+export async function createIndex({
+  code,
+  name,
+}: {
+  code: string;
+  name: string;
+}): Promise<Index> {
+  return await prisma.index.create({ data: { code, name } });
 }
