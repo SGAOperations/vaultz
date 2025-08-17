@@ -9,6 +9,11 @@ export async function getAllIndexes() {
     })
   ).map(({ accounts, ...v }) => ({
     ...v,
-    purchases: accounts.flatMap((account) => account.purchases),
+    purchases: accounts.flatMap((account) =>
+      account.purchases.map(({ amount, ...v }) => ({
+        ...v,
+        amount: amount.toNumber(),
+      }))
+    ),
   }));
 }
