@@ -1,0 +1,16 @@
+name: Prettier Check
+on:
+  pull_request:
+jobs:
+  run-prettier-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+      - name: Install modules
+        run: npm install
+      - name: Run prettier check
+        run: npm run prettier:check

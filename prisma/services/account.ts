@@ -16,7 +16,7 @@ export async function getAllIndexes(): Promise<IndexWithPurchases[]> {
       account.purchases.map(({ amount, ...v }) => ({
         ...v,
         amount: amount.toNumber(),
-      }))
+      })),
     ),
   }));
 }
