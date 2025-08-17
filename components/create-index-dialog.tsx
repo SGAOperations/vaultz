@@ -25,8 +25,11 @@ import {
 import { Input } from '@/components/ui/input';
 
 const schema = z.object({
-  name: z.string().min(2).max(50),
-  code: z.string().length(6),
+  name: z
+    .string()
+    .min(2, 'Must be at least 2 characters')
+    .max(50, 'Cannot be longer than 50 characters'),
+  code: z.string().length(6, 'Must be exactly 6 characters long'),
 });
 
 export function CreateIndexDialog() {
