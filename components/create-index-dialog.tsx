@@ -43,6 +43,7 @@ export function CreateIndexDialog() {
 
   function onSubmit(data: z.infer<typeof schema>) {
     createIndex(data);
+    form.reset();
     setOpen(false);
   }
 
