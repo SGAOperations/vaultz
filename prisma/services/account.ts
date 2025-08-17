@@ -1,8 +1,9 @@
 'use server';
 
 import prisma from '@/lib/prisma';
+import { IndexWithPurchases } from '@/lib/types';
 
-export async function getAllIndexes() {
+export async function getAllIndexes(): Promise<IndexWithPurchases[]> {
   return (
     await prisma.index.findMany({
       include: { accounts: { select: { purchases: true } } },
