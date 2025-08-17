@@ -1,5 +1,5 @@
-import { IndexCard } from "@/components/index-card";
-import { getAllIndexes } from "@/prisma/services/account";
+import { IndexCard } from '@/components/index-card';
+import { getAllIndexes } from '@/prisma/services/account';
 
 export default async function Home() {
   const indexes = await getAllIndexes();

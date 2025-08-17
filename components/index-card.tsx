@@ -3,8 +3,8 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { IndexWithPurchases } from "@/lib/types";
+} from '@/components/ui/card';
+import { IndexWithPurchases } from '@/lib/types';
 
 export function IndexCard({ name, code, purchases }: IndexWithPurchases) {
   return (
@@ -14,7 +14,7 @@ export function IndexCard({ name, code, purchases }: IndexWithPurchases) {
           {name} ({code})
         </CardTitle>
         <CardDescription>
-          Total: ${purchases.map((v) => v.amount).reduce((p, c) => p + c)} for{" "}
+          Total: ${purchases.map((v) => v.amount).reduce((p, c) => p + c)} for{' '}
           {purchases.length} purchases
         </CardDescription>
       </CardHeader>
