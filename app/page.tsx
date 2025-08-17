@@ -1,6 +1,6 @@
 import { IndexCard } from '@/components/index-card';
 import { Button } from '@/components/ui/button';
-import { getAllIndexes } from '@/prisma/services/account';
+import { getAllIndexes } from '@/prisma/services';
 import { Plus } from 'lucide-react';
 
 export default async function Home() {
