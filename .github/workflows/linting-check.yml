@@ -13,4 +13,4 @@ jobs:
       - name: Install modules
         run: npm install
       - name: Run linting check
-        run: npm run lint:check --max-warnings=0
+        run: npm run eslint:check
