@@ -6,7 +6,9 @@ import { IndexWithPurchases } from '@/lib/types';
 export async function getAllIndexes(): Promise<IndexWithPurchases[]> {
   return (
     await prisma.index.findMany({
-      include: { accounts: { select: { purchases: true } } },
+      include: {
+        accounts: { select: { purchases: { include: { user: true } } } },
+      },
     })
   ).map(({ accounts, ...v }) => ({
     ...v,
