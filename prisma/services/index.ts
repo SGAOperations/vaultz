@@ -26,7 +26,7 @@ export async function getIndex({
   id,
 }: {
   id: string;
-}): Promise<IndexWithPurchases> {
+}): Promise<IndexWithPurchases | null> {
   const index = await prisma.index.findUnique({
     where: { id },
     include: {
@@ -34,7 +34,7 @@ export async function getIndex({
     },
   });
 
-  if (!index) throw Error('Index does not exist');
+  if (!index) return null;
 
   return {
     ...index,
