@@ -14,8 +14,11 @@ export function IndexCard({ name, code, purchases }: IndexWithPurchases) {
           {name} ({code})
         </CardTitle>
         <CardDescription>
-          Total: ${purchases.map((v) => v.amount).reduce((p, c) => p + c)} for{' '}
-          {purchases.length} purchases
+          Total: $
+          {purchases.length == 0
+            ? 0
+            : purchases.map((v) => v.amount).reduce((p, c) => p + c)}{' '}
+          for {purchases.length} purchases
         </CardDescription>
       </CardHeader>
 
