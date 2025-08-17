@@ -22,6 +22,31 @@ export async function getAllIndexes(): Promise<IndexWithPurchases[]> {
   }));
 }
 
+export async function getIndex({
+  id,
+}: {
+  id: string;
+}): Promise<IndexWithPurchases> {
+  const index = await prisma.index.findUnique({
+    where: { id },
+    include: {
+      accounts: { select: { purchases: { include: { user: true } } } },
+    },
+  });
+
+  if (!index) throw Error('Index does not exist');
+
+  return {
+    ...index,
+    purchases: index.accounts.flatMap((account) =>
+      account.purchases.map(({ amount, ...v }) => ({
+        ...v,
+        amount: amount.toNumber(),
+      })),
+    ),
+  };
+}
+
 export async function createIndex({
   code,
   name,
