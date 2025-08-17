@@ -4,32 +4,14 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { IndexWithPurchases } from '@/lib/types';
 
-interface IndexCardProps {
-  index: {
-    id: string;
-    code: string;
-    name: string;
-  };
-  purchases: {
-    id: string;
-    user: {
-      id: string;
-      first: string;
-      last: string;
-    };
-    accountId: string;
-    description: string;
-    amount: number;
-  }[];
-}
-
-export function IndexCard({ index, purchases }: IndexCardProps) {
+export function IndexCard({ name, code, purchases }: IndexWithPurchases) {
   return (
     <Card>
       <CardHeader>
         <CardTitle>
-          {index.name} ({index.code})
+          {name} ({code})
         </CardTitle>
         <CardDescription>
           Total: ${purchases.map((v) => v.amount).reduce((p, c) => p + c)} for{' '}
@@ -41,7 +23,9 @@ export function IndexCard({ index, purchases }: IndexCardProps) {
         {purchases.map((v) => (
           <Card key={v.id} className="flex-row justify-between p-3">
             <p>${v.amount}</p>
-            <p>{v.user.first} {v.user.last}</p>
+            <p>
+              {v.user.first} {v.user.last}
+            </p>
             <p>{v.description}</p>
           </Card>
         ))}
