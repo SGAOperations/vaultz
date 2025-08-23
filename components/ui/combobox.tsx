@@ -49,7 +49,7 @@ export function Combobox({
       </PopoverTrigger>
       <PopoverContent className="w-full p-0">
         <Command>
-          <CommandInput placeholder="Search framework..." />
+          <CommandInput placeholder={`Search ${name}s...`} />
           <CommandList>
             <CommandEmpty>No {name} found.</CommandEmpty>
             <CommandGroup>
