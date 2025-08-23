@@ -34,7 +34,7 @@ const schema = z.object({
   amount: z.coerce
     .number<number>()
     .min(0.01, 'Must be at least $0.01')
-    .transform((v) => Math.round(v * 100) / 100),
+    .multipleOf(0.01, 'Must contain at most 2 decimal places'),
 });
 
 export function CreatePurchaseDialog({
