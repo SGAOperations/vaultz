@@ -3,6 +3,7 @@
 import prisma from '@/lib/prisma';
 import { Purchase } from '@/lib/types';
 import { Decimal } from '@/prisma/client/runtime/library';
+import { revalidatePath } from 'next/cache';
 
 export async function createPurchase({
   userId,
@@ -23,6 +24,8 @@ export async function createPurchase({
       amount: new Decimal(amount),
     },
   });
+
+  revalidatePath('/index')
 
   return { ...purchase, amount: purchase.amount.toNumber() };
 }
