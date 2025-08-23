@@ -6,7 +6,11 @@ import {
 } from '@/components/ui/card';
 import { IndexWithPurchases } from '@/lib/types';
 
-export function IndexCard({ name, code, purchases }: IndexWithPurchases) {
+export function IndexCard({
+  index: { name, code, purchases },
+}: {
+  index: IndexWithPurchases;
+}) {
   return (
     <Card>
       <CardHeader>
