@@ -1,7 +1,8 @@
-import { Button } from '@/components/ui/button';
+import { CreatePurchaseDialog } from '@/components/create-purchase-dialog';
 import { Card } from '@/components/ui/card';
 import { getIndex } from '@/prisma/services';
-import { Plus } from 'lucide-react';
+import { getAccountsByIndex } from '@/prisma/services/account';
+import { getUsers } from '@/prisma/services/user';
 import { notFound } from 'next/navigation';
 
 export default async function Index({
@@ -13,6 +14,9 @@ export default async function Index({
 
   const index = await getIndex({ id: indexId });
   if (index === null) notFound();
+
+  const accounts = await getAccountsByIndex({ indexId });
+  const users = await getUsers();
 
   const spent = index.purchases.reduce(
     (acc, purchase) => acc + purchase.amount,
@@ -34,10 +38,7 @@ export default async function Index({
           <p className="text-6xl">${index.amount - spent}</p>
           <p className="text-muted-foreground text-sm">Remaining</p>
         </Card>
-        <Button className='md:col-span-3'>
-          <Plus />
-          Add Purchase
-        </Button>
+        <CreatePurchaseDialog users={users} accounts={accounts} />
       </div>
     </div>
   );
