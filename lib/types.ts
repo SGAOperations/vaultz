@@ -4,4 +4,4 @@ export type Purchase = Omit<PrismaPurchase, 'amount'> & { amount: number };
 
 export type PurchaseWithUser = Purchase & { user: User };
 
-export type IndexWithPurchases = Index & { purchases: PurchaseWithUser[] };
+export type IndexWithPurchases = Index & { purchases: PurchaseWithUser[]; amount: number };

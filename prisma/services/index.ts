@@ -8,11 +8,17 @@ export async function getAllIndexes(): Promise<IndexWithPurchases[]> {
   return (
     await prisma.index.findMany({
       include: {
-        accounts: { select: { purchases: { include: { user: true } } } },
+        accounts: {
+          select: { purchases: { include: { user: true } }, amount: true },
+        },
       },
     })
   ).map(({ accounts, ...v }) => ({
     ...v,
+    amount: accounts.reduce(
+      (acc, account) => acc + account.amount.toNumber(),
+      0,
+    ),
     purchases: accounts.flatMap((account) =>
       account.purchases.map(({ amount, ...v }) => ({
         ...v,
@@ -30,7 +36,9 @@ export async function getIndex({
   const index = await prisma.index.findUnique({
     where: { id },
     include: {
-      accounts: { select: { purchases: { include: { user: true } } } },
+      accounts: {
+        select: { purchases: { include: { user: true } }, amount: true },
+      },
     },
   });
 
@@ -38,6 +46,10 @@ export async function getIndex({
 
   return {
     ...index,
+    amount: index.accounts.reduce(
+      (acc, account) => acc + account.amount.toNumber(),
+      0,
+    ),
     purchases: index.accounts.flatMap((account) =>
       account.purchases.map(({ amount, ...v }) => ({
         ...v,
