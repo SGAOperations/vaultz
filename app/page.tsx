@@ -14,6 +14,7 @@ export default async function Home() {
           name={v.name}
           code={v.code}
           purchases={v.purchases}
+          amount={v.amount}
         />
       ))}
 
