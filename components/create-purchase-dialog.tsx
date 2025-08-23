@@ -24,8 +24,9 @@ import {
 import { Input } from '@/components/ui/input';
 import { createPurchase } from '@/prisma/services/purchase';
 import { useState } from 'react';
-import { Account, User } from '@/prisma/client';
+import { User } from '@/prisma/client';
 import { Combobox } from '@/components/ui/combobox';
+import { Account } from '@/lib/types';
 
 const schema = z.object({
   userId: z.string().min(1, 'Please select a user'),
