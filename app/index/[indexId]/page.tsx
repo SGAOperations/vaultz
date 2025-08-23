@@ -1,3 +1,4 @@
+import { Card } from '@/components/ui/card';
 import { getIndex } from '@/prisma/services';
 import { notFound } from 'next/navigation';
 
@@ -11,5 +12,24 @@ export default async function Index({
   const index = await getIndex({ id: indexId });
   if (index === null) notFound();
 
-  return <>{index.code}</>;
+  const spent = index.purchases.reduce((acc, purchase) => acc + purchase.amount, 0);
+
+  return (
+    <div className="w-full">
+      <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="flex-row items-baseline">
+          <p className='text-6xl'>${index.amount}</p>
+          <p className="text-muted-foreground text-sm">Total</p>
+        </Card>
+        <Card className="flex-row items-baseline">
+          <p className='text-6xl'>${spent}</p>
+          <p className="text-muted-foreground text-sm">Spent</p>
+        </Card>
+        <Card className="flex-row items-baseline">
+          <p className='text-6xl'>${index.amount - spent}</p>
+          <p className="text-muted-foreground text-sm">Remaining</p>
+        </Card>
+      </div>
+    </div>
+  );
 }
