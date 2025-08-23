@@ -41,6 +41,19 @@ export default async function Index({
         </Card>
         <CreatePurchaseDialog users={users} accounts={accounts} />
       </div>
+
+      <h2 className="mt-10 mb-4 text-xl">Purchases</h2>
+      <div className="flex flex-col gap-3">
+        {index.purchases.map((purchase) => (
+          <Card key={purchase.id} className="grid grid-cols-3 py-3">
+            <p>${formatNumber(purchase.amount)}</p>
+            <p>
+              {purchase.user.first} {purchase.user.last}
+            </p>
+            <p>{purchase.description}</p>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }
