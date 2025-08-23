@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build && prisma generate",
+    "build": "prisma generate --no-engine && next build",
     "start": "next start",
     "prettier:check": "prettier . --check",
     "prettier:fix": "prettier . --write",
