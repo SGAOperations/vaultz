@@ -28,10 +28,13 @@ import { Account, User } from '@/prisma/client';
 import { Combobox } from '@/components/ui/combobox';
 
 const schema = z.object({
-  userId: z.string(),
-  accountId: z.string(),
+  userId: z.string().min(1, 'Please select a user'),
+  accountId: z.string().min(1, 'Please select an account'),
   description: z.string().optional(),
-  amount: z.number().min(0.01, 'Must be at least $0.01'),
+  amount: z.coerce
+    .number<number>()
+    .min(0.01, 'Must be at least $0.01')
+    .transform((v) => Math.round(v * 100) / 100),
 });
 
 export function CreatePurchaseDialog({
@@ -121,6 +124,26 @@ export function CreatePurchaseDialog({
                   <FormLabel>Description</FormLabel>
                   <FormControl>
                     <Input placeholder="Optional" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="amount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Amount</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="$21.45"
+                      {...field}
+                      value={field.value ? '$' + field.value : ''}
+                      onChange={(e) =>
+                        field.onChange(e.target.value.replace('$', ''))
+                      }
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
