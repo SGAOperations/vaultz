@@ -23,10 +23,12 @@ export function Combobox({
   data,
   value,
   onChange,
+  name,
 }: {
   data: { label: string; value: string }[];
   value: string;
   onChange: (value: string) => void;
+  name: string;
 }) {
   const [open, setOpen] = React.useState(false);
 
@@ -37,19 +39,19 @@ export function Combobox({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-[200px] justify-between"
+          className="w-full justify-between"
         >
           {value
             ? data.find((v) => v.value === value)?.label
-            : 'Select framework...'}
+            : `Select ${name}...`}
           <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[200px] p-0">
+      <PopoverContent className="w-full p-0">
         <Command>
           <CommandInput placeholder="Search framework..." />
           <CommandList>
-            <CommandEmpty>No framework found.</CommandEmpty>
+            <CommandEmpty>No {name} found.</CommandEmpty>
             <CommandGroup>
               {data.map((v) => (
                 <CommandItem
