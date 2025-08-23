@@ -3,6 +3,7 @@
 import prisma from '@/lib/prisma';
 import { Account } from '@/lib/types';
 import { Decimal } from '@/prisma/client/runtime/library';
+import { revalidatePath } from 'next/cache';
 
 export async function createAccount({
   indexId,
@@ -16,6 +17,9 @@ export async function createAccount({
   const account = await prisma.account.create({
     data: { indexId, code, amount: new Decimal(amount) },
   });
+
+  revalidatePath('/index');
+
   return { ...account, amount: account.amount.toNumber() };
 }
 
