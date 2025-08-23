@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { ModeToggle, ThemeProvider } from '@/components/theme-provider';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 const inter = Inter({ variable: '--font-sans', subsets: ['latin'] });
 
@@ -25,7 +26,9 @@ export default function RootLayout({
         >
           <main className="mx-auto flex w-full flex-col items-center 2xl:w-4/5">
             <div className="p-2 mb-2 flex justify-between w-full">
-              <h1 className="text-2xl">SGA Finance Master</h1>
+              <Link href={'/'}>
+                <h1 className="text-2xl">SGA Finance Master</h1>
+              </Link>
               <ModeToggle />
             </div>
             {children}
