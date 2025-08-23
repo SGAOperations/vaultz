@@ -1,3 +1,4 @@
+import { CreateAccountDialog } from '@/components/create-account-dialog';
 import { CreatePurchaseDialog } from '@/components/create-purchase-dialog';
 import { Card } from '@/components/ui/card';
 import { formatNumber } from '@/lib/utils';
@@ -25,7 +26,7 @@ export default async function Index({
   );
 
   return (
-    <div className="w-full">
+    <div className="w-full flex flex-col gap-3">
       <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="flex-row items-baseline">
           <p className="text-6xl">${formatNumber(index.amount)}</p>
@@ -39,10 +40,14 @@ export default async function Index({
           <p className="text-6xl">${formatNumber(index.amount - spent)}</p>
           <p className="text-muted-foreground text-sm">Remaining</p>
         </Card>
-        <CreatePurchaseDialog users={users} accounts={accounts} />
       </div>
 
-      <h2 className="mt-10 mb-4 text-xl">Accounts</h2>
+      <div className="w-full flex flex-row gap-3">
+        <CreatePurchaseDialog users={users} accounts={accounts} />
+        <CreateAccountDialog indexId={indexId} />
+      </div>
+
+      <h2 className="mt-4 text-xl">Accounts</h2>
       <div className="grid grid-cols-4 gap-3">
         {accounts.map((account) => (
           <Card key={account.id} className="flex flex-row justify-between py-3">
@@ -60,7 +65,7 @@ export default async function Index({
         ))}
       </div>
 
-      <h2 className="mt-10 mb-4 text-xl">Purchases</h2>
+      <h2 className="mt-4 text-xl">Purchases</h2>
       <div className="flex flex-col gap-3">
         {index.purchases.map((purchase) => (
           <Card key={purchase.id} className="grid grid-cols-3 py-3">

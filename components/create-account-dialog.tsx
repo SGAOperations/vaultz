@@ -28,7 +28,7 @@ import { createAccount } from '@/prisma/services/account';
 
 const schema = z.object({
   indexId: z.string().min(1, 'Please select an index'),
-  code: z.string().length(6, 'Must be exactly 6 characters long'),
+  code: z.string().length(4, 'Must be exactly 4 characters long'),
   amount: z.coerce
     .number<number>()
     .min(0.01, 'Must be at least $0.01')
@@ -51,7 +51,7 @@ export function CreateAccountDialog({ indexId }: { indexId: string }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>
+        <Button className="flex-1">
           <Plus />
           Create Account
         </Button>
@@ -72,10 +72,11 @@ export function CreateAccountDialog({ indexId }: { indexId: string }) {
                 <FormItem>
                   <FormLabel>Code</FormLabel>
                   <FormControl>
-                    <Input placeholder="80XXXX" {...field} />
+                    <Input placeholder="7XXX" {...field} />
                   </FormControl>
                   <FormDescription>
-                    The index number to be associated with this index.
+                    The spend category number to be associated with this
+                    account.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

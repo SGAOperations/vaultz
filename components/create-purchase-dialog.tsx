@@ -60,7 +60,7 @@ export function CreatePurchaseDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="md:col-span-3">
+        <Button className="flex-1">
           <Plus />
           Create Purchase
         </Button>
