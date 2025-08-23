@@ -25,7 +25,7 @@ export async function createPurchase({
     },
   });
 
-  revalidatePath('/index');
+  revalidatePath('/');
 
   return { ...purchase, amount: purchase.amount.toNumber() };
 }
