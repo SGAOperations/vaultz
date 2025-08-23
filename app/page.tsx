@@ -8,13 +8,7 @@ export default async function Home() {
   return (
     <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-3">
       {indexes.map((v, i) => (
-        <IndexCard
-          key={i}
-          id={v.id}
-          name={v.name}
-          code={v.code}
-          purchases={v.purchases}
-        />
+        <IndexCard key={i} index={v} />
       ))}
 
       <CreateIndexDialog />
