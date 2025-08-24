@@ -3,6 +3,7 @@
 import prisma from '@/lib/prisma';
 import { IndexWithPurchases } from '@/lib/types';
 import { Index } from '@/prisma/client';
+import { revalidatePath } from 'next/cache';
 
 export async function getAllIndexes(): Promise<IndexWithPurchases[]> {
   return (
@@ -66,5 +67,9 @@ export async function createIndex({
   code: string;
   name: string;
 }): Promise<Index> {
-  return await prisma.index.create({ data: { code, name } });
+  const index = await prisma.index.create({ data: { code, name } });
+
+  revalidatePath('/');
+
+  return index;
 }
