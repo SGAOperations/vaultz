@@ -4,6 +4,7 @@ import './globals.css';
 import { ModeToggle, ThemeProvider } from '@/components/theme-provider';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import Image from 'next/image';
 
 const inter = Inter({ variable: '--font-sans', subsets: ['latin'] });
 
@@ -26,7 +27,8 @@ export default function RootLayout({
         >
           <main className="mx-auto flex w-full flex-col items-center 2xl:w-4/5">
             <div className="p-2 mb-2 flex justify-between w-full">
-              <Link href={'/'}>
+              <Link href={'/'} className="flex gap-3">
+                <Image src={'logo.svg'} alt={''} width="40" height="40" />
                 <h1 className="text-3xl font-bold">VaultZ</h1>
               </Link>
               <ModeToggle />
