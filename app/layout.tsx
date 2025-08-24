@@ -27,7 +27,7 @@ export default function RootLayout({
           <main className="mx-auto flex w-full flex-col items-center 2xl:w-4/5">
             <div className="p-2 mb-2 flex justify-between w-full">
               <Link href={'/'}>
-                <h1 className="text-2xl">VaultZ</h1>
+                <h1 className="text-3xl font-bold">VaultZ</h1>
               </Link>
               <ModeToggle />
             </div>
