@@ -26,7 +26,7 @@ export default function RootLayout({
         >
           <main className="mx-auto flex w-full flex-col items-center 2xl:w-4/5">
             <div className="p-2 mb-2 flex justify-between w-full">
-              <Link href={'/'} className="flex gap-3">
+              <Link href={'/'} className="flex gap-3 items-center">
                 <svg
                   className="size-10 text-primary dark:text-white"
                   viewBox="0 0 348 287"
@@ -40,6 +40,9 @@ export default function RootLayout({
                 </svg>
 
                 <h1 className="text-3xl font-bold">VaultZ</h1>
+                <p className="text-sm text-muted-foreground mt-auto">
+                  v{process.env.npm_package_version}
+                </p>
               </Link>
               <ModeToggle />
             </div>
