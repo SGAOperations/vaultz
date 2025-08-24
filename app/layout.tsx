@@ -8,7 +8,7 @@ import Link from 'next/link';
 const inter = Inter({ variable: '--font-sans', subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'SGA Finance Master',
+  title: { default: 'VaultZ', template: 'VaultZ - %s' },
   description: 'A financial administration tool.',
 };
 

@@ -5,7 +5,10 @@ import { formatNumber } from '@/lib/utils';
 import { getIndex } from '@/prisma/services';
 import { getAccountsByIndex } from '@/prisma/services/account';
 import { getUsers } from '@/prisma/services/user';
+import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+
+export const metadata: Metadata = { title: 'Index' };
 
 export default async function Index({
   params,
