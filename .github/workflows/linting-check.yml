@@ -1,0 +1,16 @@
+name: Linting Check
+on:
+  pull_request:
+jobs:
+  run-linting-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+      - name: Install modules
+        run: npm install
+      - name: Run linting check
+        run: npm run eslint:check
