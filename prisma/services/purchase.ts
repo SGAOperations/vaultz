@@ -1,9 +1,11 @@
 'use server';
 
+import { revalidatePath } from 'next/cache';
+
+import { Decimal } from '@/prisma/client/runtime/library';
+
 import prisma from '@/lib/prisma';
 import { Purchase } from '@/lib/types';
-import { Decimal } from '@/prisma/client/runtime/library';
-import { revalidatePath } from 'next/cache';
 
 export async function createPurchase({
   userId,
