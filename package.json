@@ -10,7 +10,8 @@
     "prettier:fix": "prettier . --write",
     "eslint:check": "eslint . --max-warnings=0",
     "eslint:fix": "eslint . --fix",
-    "tsc:check": "tsc --noEmit"
+    "tsc:check": "tsc --noEmit",
+    "prisma:migrate": "prisma migrate dev"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",
