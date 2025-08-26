@@ -30,12 +30,15 @@ export function IndexCard({
 
         <div className="px-6 flex flex-col gap-3">
           {purchases.slice(0, 3).map((v) => (
-            <Card key={v.id} className="flex-row justify-between p-3 group-hover:bg-accent group-hover:border-muted">
+            <Card
+              key={v.id}
+              className="grid grid-cols-6 p-3 items-center group-hover:bg-accent group-hover:border-muted overflow-hidden"
+            >
               <p>${v.amount}</p>
-              <p>
+              <p className="text-sm col-span-2">
                 {v.user.first} {v.user.last}
               </p>
-              <p>{v.description}</p>
+              <p className="truncate text-sm col-span-3">{v.description}</p>
             </Card>
           ))}
           {purchases.length === 0 && (
