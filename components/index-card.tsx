@@ -29,7 +29,7 @@ export function IndexCard({
         </CardHeader>
 
         <div className="px-6 flex flex-col gap-3">
-          {purchases.map((v) => (
+          {purchases.slice(0, 3).map((v) => (
             <Card key={v.id} className="flex-row justify-between p-3">
               <p>${v.amount}</p>
               <p>
