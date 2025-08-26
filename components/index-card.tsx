@@ -14,7 +14,7 @@ export function IndexCard({
 }) {
   return (
     <Link href={`/index/${id}`}>
-      <Card>
+      <Card className="h-full">
         <CardHeader>
           <CardTitle>
             {name} ({code})
