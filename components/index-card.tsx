@@ -38,6 +38,11 @@ export function IndexCard({
               <p>{v.description}</p>
             </Card>
           ))}
+          {purchases.length === 0 && (
+            <p className="text-center text-sm text-muted-foreground">
+              No purchases in this index yet...
+            </p>
+          )}
         </div>
       </Card>
     </Link>
