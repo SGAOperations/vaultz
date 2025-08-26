@@ -1,11 +1,13 @@
+import Link from 'next/link';
+
+import { IndexWithPurchases } from '@/lib/types';
+
 import {
   Card,
   CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { IndexWithPurchases } from '@/lib/types';
-import Link from 'next/link';
 
 export function IndexCard({
   index: { id, name, code, purchases },
@@ -14,7 +16,7 @@ export function IndexCard({
 }) {
   return (
     <Link href={`/index/${id}`}>
-      <Card className="h-full group hover:bg-accent">
+      <Card className="group hover:bg-accent h-full">
         <CardHeader>
           <CardTitle>
             {name} ({code})
@@ -28,21 +30,21 @@ export function IndexCard({
           </CardDescription>
         </CardHeader>
 
-        <div className="px-6 flex flex-col gap-3">
+        <div className="flex flex-col gap-3 px-6">
           {purchases.slice(0, 3).map((v) => (
             <Card
               key={v.id}
-              className="grid grid-cols-6 p-3 items-center group-hover:bg-accent group-hover:border-muted overflow-hidden"
+              className="group-hover:bg-accent group-hover:border-muted grid grid-cols-6 items-center overflow-hidden p-3"
             >
               <p>${v.amount}</p>
-              <p className="text-sm col-span-2">
+              <p className="col-span-2 text-sm">
                 {v.user.first} {v.user.last}
               </p>
-              <p className="truncate text-sm col-span-3">{v.description}</p>
+              <p className="col-span-3 truncate text-sm">{v.description}</p>
             </Card>
           ))}
           {purchases.length === 0 && (
-            <p className="text-center text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-center text-sm">
               No purchases in this index yet...
             </p>
           )}

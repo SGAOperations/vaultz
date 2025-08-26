@@ -1,9 +1,13 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
+
 import './globals.css';
-import { ModeToggle, ThemeProvider } from '@/components/theme-provider';
-import { cn } from '@/lib/utils';
+
 import Link from 'next/link';
+
+import { cn } from '@/lib/utils';
+
+import { ModeToggle, ThemeProvider } from '@/components/theme-provider';
 
 const inter = Inter({ variable: '--font-sans', subsets: ['latin'] });
 
@@ -17,7 +21,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body className={cn('antialiased w-full font-sans', inter.variable)}>
+      <body className={cn('w-full font-sans antialiased', inter.variable)}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -25,10 +29,10 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <main className="mx-auto flex w-full flex-col items-center 2xl:w-4/5">
-            <div className="p-2 mb-2 flex justify-between w-full">
-              <Link href={'/'} className="flex gap-3 items-center">
+            <div className="mb-2 flex w-full justify-between p-2">
+              <Link href={'/'} className="flex items-center gap-3">
                 <svg
-                  className="size-10 text-primary dark:text-white"
+                  className="text-primary size-10 dark:text-white"
                   viewBox="0 0 348 287"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
@@ -40,7 +44,7 @@ export default function RootLayout({
                 </svg>
 
                 <h1 className="text-3xl font-bold">VaultZ</h1>
-                <p className="text-sm text-muted-foreground mt-auto">
+                <p className="text-muted-foreground mt-auto text-sm">
                   v{process.env.npm_package_version}
                 </p>
               </Link>

@@ -1,9 +1,24 @@
 {
+  "plugins": [
+    "@trivago/prettier-plugin-sort-imports",
+    "prettier-plugin-tailwindcss"
+  ],
   "semi": true,
   "singleQuote": true,
   "tabWidth": 2,
   "useTabs": false,
   "trailingComma": "all",
   "bracketSpacing": true,
-  "objectWrap": "collapse"
+  "objectWrap": "collapse",
+  "importOrder": [
+    "^(react)|(next(.*)?)$",
+    "<THIRD_PARTY_MODULES>",
+    "^@/prisma/(.*)$",
+    "^@/lib/(.*)$",
+    "^@/components/(.*)$",
+    "^[./]"
+  ],
+  "importOrderSortSpecifiers": true,
+  "importOrderSeparation": true,
+  "importOrderSideEffects": false
 }

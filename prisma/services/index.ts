@@ -1,9 +1,11 @@
 'use server';
 
+import { revalidatePath } from 'next/cache';
+
+import { Index } from '@/prisma/client';
+
 import prisma from '@/lib/prisma';
 import { IndexWithPurchases } from '@/lib/types';
-import { Index } from '@/prisma/client';
-import { revalidatePath } from 'next/cache';
 
 export async function getAllIndexes(): Promise<IndexWithPurchases[]> {
   return (

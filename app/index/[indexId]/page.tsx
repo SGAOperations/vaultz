@@ -1,12 +1,15 @@
-import { CreateAccountDialog } from '@/components/create-account-dialog';
-import { CreatePurchaseDialog } from '@/components/create-purchase-dialog';
-import { Card } from '@/components/ui/card';
-import { formatNumber } from '@/lib/utils';
+import { Metadata } from 'next';
+import { notFound } from 'next/navigation';
+
 import { getIndex } from '@/prisma/services';
 import { getAccountsByIndex } from '@/prisma/services/account';
 import { getUsers } from '@/prisma/services/user';
-import { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+
+import { formatNumber } from '@/lib/utils';
+
+import { CreateAccountDialog } from '@/components/create-account-dialog';
+import { CreatePurchaseDialog } from '@/components/create-purchase-dialog';
+import { Card } from '@/components/ui/card';
 
 export const metadata: Metadata = { title: 'Index' };
 
@@ -29,8 +32,8 @@ export default async function Index({
   );
 
   return (
-    <div className="w-full flex flex-col gap-3">
-      <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="flex w-full flex-col gap-3">
+      <div className="grid w-full grid-cols-1 gap-4 md:grid-cols-3">
         <Card className="flex-row items-baseline">
           <p className="text-6xl">${formatNumber(index.amount)}</p>
           <p className="text-muted-foreground text-sm">Total</p>
@@ -45,7 +48,7 @@ export default async function Index({
         </Card>
       </div>
 
-      <div className="w-full flex flex-row gap-3">
+      <div className="flex w-full flex-row gap-3">
         <CreatePurchaseDialog users={users} accounts={accounts} />
         <CreateAccountDialog indexId={indexId} />
       </div>

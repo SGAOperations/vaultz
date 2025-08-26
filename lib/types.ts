@@ -1,7 +1,7 @@
 import {
   Index,
-  Purchase as PrismaPurchase,
   Account as PrismaAccount,
+  Purchase as PrismaPurchase,
   User,
 } from '@/prisma/client';
 
