@@ -14,7 +14,7 @@ export function IndexCard({
 }) {
   return (
     <Link href={`/index/${id}`}>
-      <Card className="h-full">
+      <Card className="h-full group hover:bg-accent">
         <CardHeader>
           <CardTitle>
             {name} ({code})
@@ -30,7 +30,7 @@ export function IndexCard({
 
         <div className="px-6 flex flex-col gap-3">
           {purchases.slice(0, 3).map((v) => (
-            <Card key={v.id} className="flex-row justify-between p-3">
+            <Card key={v.id} className="flex-row justify-between p-3 group-hover:bg-accent group-hover:border-muted">
               <p>${v.amount}</p>
               <p>
                 {v.user.first} {v.user.last}
