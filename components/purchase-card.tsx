@@ -1,9 +1,11 @@
+'use client';
+
 import { PurchaseWithUser } from '@/lib/types';
 
 import { Card } from '@/components/ui/card';
 
 export function PurchaseCard({
-  purchase: { id, amount, user, description },
+  purchase: { id, amount, user, description, timestamp },
 }: {
   purchase: PurchaseWithUser;
 }) {
@@ -16,7 +18,8 @@ export function PurchaseCard({
       <p className="col-span-2 text-sm">
         {user.first} {user.last}
       </p>
-      <p className="col-span-3 truncate text-sm">{description}</p>
+      <p className="col-span-2 truncate text-sm">{description}</p>
+      <p className="col-span-1 text-sm">{timestamp.toLocaleString()}</p>
     </Card>
   );
 }
