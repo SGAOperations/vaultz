@@ -2,6 +2,7 @@ import Link from 'next/link';
 
 import { IndexWithPurchases } from '@/lib/types';
 
+import { PurchaseCard } from '@/components/purchase-card';
 import {
   Card,
   CardDescription,
@@ -32,16 +33,7 @@ export function IndexCard({
 
         <div className="flex flex-col gap-3 px-6">
           {purchases.slice(0, 3).map((v) => (
-            <Card
-              key={v.id}
-              className="group-hover:bg-accent group-hover:border-muted grid grid-cols-6 items-center overflow-hidden p-3"
-            >
-              <p>${v.amount}</p>
-              <p className="col-span-2 text-sm">
-                {v.user.first} {v.user.last}
-              </p>
-              <p className="col-span-3 truncate text-sm">{v.description}</p>
-            </Card>
+            <PurchaseCard key={v.id} purchase={v} />
           ))}
           {purchases.length === 0 && (
             <p className="text-muted-foreground text-center text-sm">
