@@ -9,9 +9,9 @@ datasource db {
 }
 
 model User {
-    id       String     @id @default(uuid())
-    first    String
-    last     String
+    id    String @id @default(uuid())
+    first String
+    last  String
 
     purchases Purchase[]
 }
@@ -36,9 +36,10 @@ model Account {
 }
 
 model Purchase {
-    id          String  @id @default(uuid())
+    id          String   @id @default(uuid())
     amount      Decimal
     description String
+    timestamp   DateTime @default(now())
 
     accountId String
     account   Account @relation(fields: [accountId], references: [id])
