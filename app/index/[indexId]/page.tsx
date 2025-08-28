@@ -9,6 +9,7 @@ import { formatNumber } from '@/lib/utils';
 
 import { CreateAccountDialog } from '@/components/create-account-dialog';
 import { CreatePurchaseDialog } from '@/components/create-purchase-dialog';
+import { PurchaseCard } from '@/components/purchase-card';
 import { Card } from '@/components/ui/card';
 
 export const metadata: Metadata = { title: 'Index' };
@@ -74,13 +75,7 @@ export default async function Index({
       <h2 className="mt-4 text-xl">Purchases</h2>
       <div className="flex flex-col gap-3">
         {index.purchases.map((purchase) => (
-          <Card key={purchase.id} className="grid grid-cols-3 py-3">
-            <p>${formatNumber(purchase.amount)}</p>
-            <p>
-              {purchase.user.first} {purchase.user.last}
-            </p>
-            <p>{purchase.description}</p>
-          </Card>
+          <PurchaseCard key={purchase.id} purchase={purchase} />
         ))}
       </div>
     </div>

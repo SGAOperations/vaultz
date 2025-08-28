@@ -40,7 +40,13 @@ export async function getIndex({
     where: { id },
     include: {
       accounts: {
-        select: { purchases: { include: { user: true } }, amount: true },
+        select: {
+          purchases: {
+            orderBy: { timestamp: 'desc' },
+            include: { user: true },
+          },
+          amount: true,
+        },
       },
     },
   });
@@ -53,12 +59,14 @@ export async function getIndex({
       (acc, account) => acc + account.amount.toNumber(),
       0,
     ),
-    purchases: index.accounts.flatMap((account) =>
-      account.purchases.map(({ amount, ...v }) => ({
-        ...v,
-        amount: amount.toNumber(),
-      })),
-    ),
+    purchases: index.accounts
+      .flatMap((account) =>
+        account.purchases.map(({ amount, ...v }) => ({
+          ...v,
+          amount: amount.toNumber(),
+        })),
+      )
+      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()),
   };
 }
 
