@@ -10,14 +10,16 @@ import { Account } from '@/lib/types';
 export async function createAccount({
   indexId,
   code,
+  name,
   amount,
 }: {
   indexId: string;
   code: string;
+  name: string;
   amount: number;
 }): Promise<Account> {
   const account = await prisma.account.create({
-    data: { indexId, code, amount: new Decimal(amount) },
+    data: { indexId, code, name, amount: new Decimal(amount) },
   });
 
   revalidatePath('/index');
