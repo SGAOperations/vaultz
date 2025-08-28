@@ -12,11 +12,11 @@ jobs:
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
-    - name: Set up Node.js
-      uses: actions/setup-node@v3
-    - name: Install modules
-      run: npm install
-    - name: Run migration
-      run: npx prisma migrate deploy
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+      - name: Install modules
+        run: npm install
+      - name: Run migration
+        run: npx prisma migrate deploy
