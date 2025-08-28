@@ -27,6 +27,7 @@ model Index {
 model Account {
     id     String  @id @default(uuid())
     code   String
+    name   String
     amount Decimal
 
     indexId String
