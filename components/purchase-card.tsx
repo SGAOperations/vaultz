@@ -4,6 +4,8 @@ import { PurchaseWithUser } from '@/lib/types';
 
 import { Card } from '@/components/ui/card';
 
+import { DateTime } from './date-time';
+
 export function PurchaseCard({
   purchase: { id, amount, user, description, timestamp },
 }: {
@@ -19,7 +21,9 @@ export function PurchaseCard({
         {user.first} {user.last}
       </p>
       <p className="col-span-2 truncate text-sm">{description}</p>
-      <p className="col-span-1 text-sm">{timestamp.toLocaleString()}</p>
+      <p className="col-span-1 text-sm">
+        <DateTime date={timestamp} />
+      </p>
     </Card>
   );
 }
