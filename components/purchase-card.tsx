@@ -2,9 +2,8 @@
 
 import { PurchaseWithUser } from '@/lib/types';
 
+import { DateTime } from '@/components/date-time';
 import { Card } from '@/components/ui/card';
-
-import { DateTime } from './date-time';
 
 export function PurchaseCard({
   purchase: { id, amount, user, description, timestamp },
