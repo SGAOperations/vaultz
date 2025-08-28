@@ -55,10 +55,12 @@ export default async function Index({
       </div>
 
       <h2 className="mt-4 text-xl">Accounts</h2>
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-3 gap-3">
         {accounts.map((account) => (
           <Card key={account.id} className="flex flex-row justify-between py-3">
-            <p>{account.code}</p>
+            <p>
+              {account.name} ({account.code})
+            </p>
             <p>
               $
               {formatNumber(

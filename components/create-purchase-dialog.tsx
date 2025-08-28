@@ -111,7 +111,7 @@ export function CreatePurchaseDialog({
                     <Combobox
                       data={accounts.map((v) => ({
                         value: v.id,
-                        label: v.code,
+                        label: `${v.name} (${v.code})`,
                       }))}
                       {...field}
                       name="account"
