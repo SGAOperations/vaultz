@@ -39,7 +39,7 @@ const schema = z.object({
     .max(50, 'Cannot be longer than 50 characters'),
 });
 
-export function CreateIndexDialog() {
+export function CreateUserDialog() {
   const [open, setOpen] = useState<boolean>(false);
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
