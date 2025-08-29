@@ -1,5 +1,15 @@
 'use client';
 
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Plus } from 'lucide-react';
+import { z } from 'zod/v4';
+
+import { createAccount } from '@/prisma/services/account';
+
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -8,11 +18,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { z } from 'zod/v4';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
 import {
   Form,
   FormControl,
@@ -23,12 +28,11 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { useState } from 'react';
-import { createAccount } from '@/prisma/services/account';
 
 const schema = z.object({
   indexId: z.string().min(1, 'Please select an index'),
   code: z.string().length(4, 'Must be exactly 4 characters long'),
+  name: z.string().min(1, 'Please enter an account name'),
   amount: z.coerce
     .number<number>()
     .min(0.01, 'Must be at least $0.01')
@@ -65,6 +69,19 @@ export function CreateAccountDialog({ indexId }: { indexId: string }) {
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Food" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="code"

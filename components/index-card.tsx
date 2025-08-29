@@ -1,11 +1,14 @@
+import Link from 'next/link';
+
+import { IndexWithPurchases } from '@/lib/types';
+
+import { PurchaseCard } from '@/components/purchase-card';
 import {
   Card,
   CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { IndexWithPurchases } from '@/lib/types';
-import Link from 'next/link';
 
 export function IndexCard({
   index: { id, name, code, purchases },
@@ -14,7 +17,7 @@ export function IndexCard({
 }) {
   return (
     <Link href={`/index/${id}`}>
-      <Card>
+      <Card className="group hover:bg-accent h-full">
         <CardHeader>
           <CardTitle>
             {name} ({code})
@@ -28,16 +31,15 @@ export function IndexCard({
           </CardDescription>
         </CardHeader>
 
-        <div className="px-6 flex flex-col gap-3">
-          {purchases.map((v) => (
-            <Card key={v.id} className="flex-row justify-between p-3">
-              <p>${v.amount}</p>
-              <p>
-                {v.user.first} {v.user.last}
-              </p>
-              <p>{v.description}</p>
-            </Card>
+        <div className="flex flex-col gap-3 px-6">
+          {purchases.slice(0, 3).map((v) => (
+            <PurchaseCard key={v.id} purchase={v} />
           ))}
+          {purchases.length === 0 && (
+            <p className="text-muted-foreground text-center text-sm">
+              No purchases in this index yet...
+            </p>
+          )}
         </div>
       </Card>
     </Link>
