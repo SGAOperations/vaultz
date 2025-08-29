@@ -65,7 +65,8 @@ export function CreateUserDialog() {
         <DialogHeader>
           <DialogTitle>Create User</DialogTitle>
           <DialogDescription>
-            A user is associated with purchases. It can represent an individual or an organization.
+            A user is associated with purchases. It can represent an individual
+            or an organization.
           </DialogDescription>
         </DialogHeader>
 
