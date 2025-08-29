@@ -46,7 +46,7 @@ export default function RootLayout({
 
                 <h1 className="text-3xl font-bold">VaultZ</h1>
                 <p className="text-muted-foreground mt-auto text-sm">
-                  v{process.env.npm_package_version}
+                  v{process.env.version}
                 </p>
               </Link>
 
