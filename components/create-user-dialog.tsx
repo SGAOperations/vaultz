@@ -57,15 +57,15 @@ export function CreateIndexDialog() {
       <DialogTrigger asChild>
         <Button>
           <Plus />
-          Create Index
+          Create User
         </Button>
       </DialogTrigger>
 
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Create Index</DialogTitle>
+          <DialogTitle>Create User</DialogTitle>
           <DialogDescription>
-            An index contains multiple accounts that track purchases.
+            A user is associated with purchases. It can represent an individual or an organization.
           </DialogDescription>
         </DialogHeader>
 
