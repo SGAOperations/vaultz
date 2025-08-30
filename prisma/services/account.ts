@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { Decimal } from '@/prisma/client/runtime/library';
 
 import prisma from '@/lib/prisma';
-import { Account } from '@/lib/types';
+import { Account, AccountWithPurchases } from '@/lib/types';
 
 export async function createAccount({
   indexId,
@@ -25,6 +25,27 @@ export async function createAccount({
   revalidatePath('/index');
 
   return { ...account, amount: account.amount.toNumber() };
+}
+
+export async function getAccountById({
+  id,
+}: {
+  id: string;
+}): Promise<AccountWithPurchases | null> {
+  const account = await prisma.account.findUnique({
+    where: { id },
+    include: { purchases: { include: { user: true } } },
+  });
+  if (!account) return null;
+
+  return {
+    ...account,
+    amount: account.amount.toNumber(),
+    purchases: account.purchases.map((purchase) => ({
+      ...purchase,
+      amount: purchase.amount.toNumber(),
+    })),
+  };
 }
 
 export async function getAccountsByIndex({
