@@ -14,7 +14,11 @@ export async function createUser({
   first: string;
   last: string;
 }): Promise<User> {
-  return await prisma.user.create({ data: { first, last } });
+  const data = await prisma.user.create({ data: { first, last } });
+
+  revalidatePath(`/users`);
+
+  return data;
 }
 
 export async function getUsers(): Promise<User[]> {
