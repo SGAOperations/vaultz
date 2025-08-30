@@ -1,18 +1,10 @@
 import { Metadata } from 'next';
 
-import { EllipsisVertical, Pencil, Trash2 } from 'lucide-react';
-
 import { getUsersWithPurchases } from '@/prisma/services/user';
 
-import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+
+import { UserDropdown } from './client';
 
 export const metadata: Metadata = { title: 'User Overview' };
 
@@ -42,24 +34,7 @@ export default async function UserOverview() {
                 0,
               )}
             </p>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 p-0">
-                  <EllipsisVertical />
-                  <span className="sr-only">Open menu</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem>
-                  <Pencil /> Edit User
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-destructive">
-                  <Trash2 className="text-inherit" />
-                  Delete User
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <UserDropdown user={user} />
           </Card>
         ))}
       </div>
