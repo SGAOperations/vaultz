@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Plus } from 'lucide-react';
 import { z } from 'zod/v4';
 
 import { createIndex } from '@/prisma/services';
@@ -37,7 +36,7 @@ const schema = z.object({
   code: z.string().length(6, 'Must be exactly 6 characters long'),
 });
 
-export function CreateIndexDialog() {
+export function CreateIndexDialog({ trigger }: { trigger: React.ReactNode }) {
   const [open, setOpen] = useState<boolean>(false);
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
@@ -52,12 +51,7 @@ export function CreateIndexDialog() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus />
-          Create Index
-        </Button>
-      </DialogTrigger>
+      <DialogTrigger asChild>{trigger}</DialogTrigger>
 
       <DialogContent>
         <DialogHeader>
