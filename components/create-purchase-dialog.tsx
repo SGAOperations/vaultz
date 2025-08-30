@@ -52,7 +52,12 @@ export function CreatePurchaseDialog({
   const [open, setOpen] = useState<boolean>(false);
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
-    defaultValues: { userId: '', accountId: '', description: '', amount: 0 },
+    defaultValues: {
+      userId: '',
+      accountId: accounts.length == 1 ? accounts[0].id : '',
+      description: '',
+      amount: 0,
+    },
   });
 
   function onSubmit(data: z.infer<typeof schema>) {
@@ -115,6 +120,7 @@ export function CreatePurchaseDialog({
                       }))}
                       {...field}
                       name="account"
+                      disabled={accounts.length === 1}
                     />
                   </FormControl>
                   <FormMessage />

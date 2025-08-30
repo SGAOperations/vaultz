@@ -26,11 +26,13 @@ export function Combobox({
   value,
   onChange,
   name,
+  disabled = false,
 }: {
   data: { label: string; value: string }[];
   value: string;
   onChange: (value: string) => void;
   name: string;
+  disabled?: boolean;
 }) {
   const [open, setOpen] = React.useState(false);
 
@@ -42,6 +44,7 @@ export function Combobox({
           role="combobox"
           aria-expanded={open}
           className="w-full justify-between"
+          disabled={disabled}
         >
           {value
             ? data.find((v) => v.value === value)?.label
