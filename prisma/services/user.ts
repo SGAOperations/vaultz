@@ -33,3 +33,18 @@ export async function getUsersWithPurchases(): Promise<UserWithPurchases[]> {
     })),
   }));
 }
+
+export async function updateUser({
+  first,
+  last,
+  id,
+}: {
+  first: string;
+  last: string;
+  id: string;
+}) {
+  return await prisma.user.update({
+    where: { id, deletedAt: null },
+    data: { first, last },
+  });
+}
