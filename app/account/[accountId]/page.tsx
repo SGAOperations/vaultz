@@ -46,7 +46,7 @@ export default async function Index({
         </Card>
       </div>
 
-      <CreatePurchaseDialog users={users} accounts={accounts} />
+      <CreatePurchaseDialog users={users} accounts={[account]} />
 
       <h2 className="mt-4 text-xl">Purchases</h2>
       <div className="flex flex-col gap-3">
