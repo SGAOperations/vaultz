@@ -1,6 +1,8 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
+import { Plus } from 'lucide-react';
+
 import { getIndex } from '@/prisma/services';
 import { getAccountsByIndex } from '@/prisma/services/account';
 import { getUsers } from '@/prisma/services/user';
@@ -10,6 +12,7 @@ import { formatNumber } from '@/lib/utils';
 import { CreateAccountDialog } from '@/components/create-account-dialog';
 import { CreatePurchaseDialog } from '@/components/create-purchase-dialog';
 import { PurchaseCard } from '@/components/purchase-card';
+import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 
 export const metadata: Metadata = { title: 'Index' };
@@ -51,7 +54,15 @@ export default async function Index({
 
       <div className="flex w-full flex-row gap-3">
         <CreatePurchaseDialog users={users} accounts={accounts} />
-        <CreateAccountDialog indexId={indexId} />
+        <CreateAccountDialog
+          indexId={indexId}
+          trigger={
+            <Button className="flex-1">
+              <Plus />
+              Create Account
+            </Button>
+          }
+        />
       </div>
 
       <h2 className="mt-4 text-xl">Accounts</h2>
