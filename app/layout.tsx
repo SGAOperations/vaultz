@@ -7,8 +7,8 @@ import Link from 'next/link';
 
 import { cn } from '@/lib/utils';
 
-import { CreateUserDialog } from '@/components/user-dialog';
 import { ModeToggle, ThemeProvider } from '@/components/theme-provider';
+import { UserDialog } from '@/components/user-dialog';
 
 const inter = Inter({ variable: '--font-sans', subsets: ['latin'] });
 
@@ -51,7 +51,7 @@ export default function RootLayout({
               </Link>
 
               <div className="flex gap-3">
-                <CreateUserDialog />
+                <UserDialog />
                 <ModeToggle />
               </div>
             </div>
