@@ -1,5 +1,7 @@
 'use server';
 
+import { revalidatePath } from 'next/cache';
+
 import { User } from '@/prisma/client';
 
 import prisma from '@/lib/prisma';
@@ -43,15 +45,23 @@ export async function updateUser({
   last: string;
   id: string;
 }) {
-  return await prisma.user.update({
+  const data = await prisma.user.update({
     where: { id, deletedAt: null },
     data: { first, last },
   });
+
+  revalidatePath(`/users`);
+
+  return data;
 }
 
 export async function deleteUser({ id }: { id: string }) {
-  return await prisma.user.update({
+  const data = await prisma.user.update({
     where: { id, deletedAt: null },
     data: { deletedAt: new Date() },
   });
+
+  revalidatePath(`/users`);
+
+  return data;
 }
