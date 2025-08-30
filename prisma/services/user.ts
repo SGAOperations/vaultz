@@ -48,3 +48,10 @@ export async function updateUser({
     data: { first, last },
   });
 }
+
+export async function deleteUser({ id }: { id: string }) {
+  return await prisma.user.update({
+    where: { id, deletedAt: null },
+    data: { deletedAt: new Date() },
+  });
+}
