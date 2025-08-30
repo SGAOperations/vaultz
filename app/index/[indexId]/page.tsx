@@ -54,7 +54,16 @@ export default async function Index({
       </div>
 
       <div className="flex w-full flex-row gap-3">
-        <CreatePurchaseDialog users={users} accounts={accounts} />
+        <CreatePurchaseDialog
+          users={users}
+          accounts={accounts}
+          trigger={
+            <Button className="flex-1">
+              <Plus />
+              Create Purchase
+            </Button>
+          }
+        />
         <CreateAccountDialog
           indexId={indexId}
           trigger={
