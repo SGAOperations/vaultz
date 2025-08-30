@@ -56,6 +56,9 @@ export default async function Index({
       </div>
 
       <h2 className="mt-4 text-xl">Accounts</h2>
+      {accounts.length === 0 && (
+        <p className="text-muted-foreground">No accounts found.</p>
+      )}
       <div className="grid grid-cols-3 gap-3">
         {accounts.map((account) => (
           <Link href={`/account/${account.id}`} key={account.id}>
@@ -78,6 +81,9 @@ export default async function Index({
       </div>
 
       <h2 className="mt-4 text-xl">Purchases</h2>
+      {index.purchases.length === 0 && (
+        <p className="text-muted-foreground">No purchases found.</p>
+      )}
       <div className="flex flex-col gap-3">
         {index.purchases.map((purchase) => (
           <PurchaseCard key={purchase.id} purchase={purchase} />

@@ -49,6 +49,9 @@ export default async function Index({
       <CreatePurchaseDialog users={users} accounts={[account]} />
 
       <h2 className="mt-4 text-xl">Purchases</h2>
+      {account.purchases.length === 0 && (
+        <p className="text-muted-foreground">No purchases found.</p>
+      )}
       <div className="flex flex-col gap-3">
         {account.purchases.map((purchase) => (
           <PurchaseCard key={purchase.id} purchase={purchase} />
