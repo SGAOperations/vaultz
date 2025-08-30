@@ -1,7 +1,10 @@
+import { Plus } from 'lucide-react';
+
 import { getAllIndexes } from '@/prisma/services';
 
 import { CreateIndexDialog } from '@/components/create-index-dialog';
 import { IndexCard } from '@/components/index-card';
+import { Button } from '@/components/ui/button';
 
 export default async function Home() {
   const indexes = await getAllIndexes();
@@ -12,7 +15,14 @@ export default async function Home() {
         <IndexCard key={i} index={v} />
       ))}
 
-      <CreateIndexDialog />
+      <CreateIndexDialog
+        trigger={
+          <Button>
+            <Plus />
+            Create Index
+          </Button>
+        }
+      />
     </div>
   );
 }

@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Plus } from 'lucide-react';
 import { z } from 'zod/v4';
 
 import { User } from '@/prisma/client';
@@ -45,9 +44,11 @@ const schema = z.object({
 export function CreatePurchaseDialog({
   users,
   accounts,
+  trigger,
 }: {
   users: User[];
   accounts: Account[];
+  trigger: React.ReactNode;
 }) {
   const [open, setOpen] = useState<boolean>(false);
   const form = useForm<z.infer<typeof schema>>({
@@ -68,12 +69,7 @@ export function CreatePurchaseDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="flex-1">
-          <Plus />
-          Create Purchase
-        </Button>
-      </DialogTrigger>
+      <DialogTrigger asChild>{trigger}</DialogTrigger>
 
       <DialogContent>
         <DialogHeader>
