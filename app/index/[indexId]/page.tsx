@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { getIndex } from '@/prisma/services';
@@ -57,20 +58,22 @@ export default async function Index({
       <h2 className="mt-4 text-xl">Accounts</h2>
       <div className="grid grid-cols-3 gap-3">
         {accounts.map((account) => (
-          <Card key={account.id} className="flex flex-row justify-between py-3">
-            <p>
-              {account.name} ({account.code})
-            </p>
-            <p>
-              $
-              {formatNumber(
-                account.amount -
-                  index.purchases
-                    .filter((v) => v.accountId == account.id)
-                    .reduce((acc, purchase) => acc + purchase.amount, 0),
-              )}
-            </p>
-          </Card>
+          <Link href={`/account/${account.id}`} key={account.id}>
+            <Card className="hover:bg-accent flex flex-row justify-between py-3">
+              <p>
+                {account.name} ({account.code})
+              </p>
+              <p>
+                $
+                {formatNumber(
+                  account.amount -
+                    index.purchases
+                      .filter((v) => v.accountId == account.id)
+                      .reduce((acc, purchase) => acc + purchase.amount, 0),
+                )}
+              </p>
+            </Card>
+          </Link>
         ))}
       </div>
 
