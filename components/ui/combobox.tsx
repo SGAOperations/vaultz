@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 
+import { fuzzy } from 'fast-fuzzy';
 import { CheckIcon, ChevronsUpDownIcon } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -53,7 +54,11 @@ export function Combobox({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-full p-0">
-        <Command>
+        <Command
+          filter={(_, search, keywords) =>
+            keywords ? fuzzy(keywords[0], search) - 0.1 : 0
+          }
+        >
           <CommandInput placeholder={`Search ${name}s...`} />
           <CommandList>
             <CommandEmpty>No {name} found.</CommandEmpty>
@@ -66,6 +71,7 @@ export function Combobox({
                     onChange(currentValue === value ? '' : currentValue);
                     setOpen(false);
                   }}
+                  keywords={[v.label]}
                 >
                   <CheckIcon
                     className={cn(
