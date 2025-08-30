@@ -7,7 +7,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Plus } from 'lucide-react';
 import { z } from 'zod/v4';
 
-import { createUser } from '@/prisma/services/user';
+import { User } from '@/prisma/client';
+import { createUser, updateUser } from '@/prisma/services/user';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -39,15 +40,21 @@ const schema = z.object({
     .max(50, 'Cannot be longer than 50 characters'),
 });
 
-export function UserDialog() {
+export function UserDialog({ user }: { user?: User }) {
   const [open, setOpen] = useState<boolean>(false);
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
-    defaultValues: { first: '', last: '' },
+    defaultValues: { first: user?.first || '', last: user?.last || '' },
   });
 
   function onSubmit(data: z.infer<typeof schema>) {
-    createUser(data);
+    if (user)
+      // Update existing user
+      updateUser({ ...data, id: user.id });
+    else
+      // Create new user
+      createUser(data);
+
     form.reset();
     setOpen(false);
   }
@@ -63,7 +70,7 @@ export function UserDialog() {
 
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Create User</DialogTitle>
+          <DialogTitle>{user ? 'Edit User' : 'Create User'}</DialogTitle>
           <DialogDescription>
             A user is associated with purchases. It can represent an individual
             or an organization.
