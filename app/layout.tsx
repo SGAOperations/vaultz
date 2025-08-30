@@ -7,7 +7,7 @@ import Link from 'next/link';
 
 import { cn } from '@/lib/utils';
 
-import { CreateUserDialog } from '@/components/create-user-dialog';
+import { CreateUserDialog } from '@/components/user-dialog';
 import { ModeToggle, ThemeProvider } from '@/components/theme-provider';
 
 const inter = Inter({ variable: '--font-sans', subsets: ['latin'] });
