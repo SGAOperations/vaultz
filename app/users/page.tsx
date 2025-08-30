@@ -1,13 +1,13 @@
 import { Metadata } from 'next';
 
-import { getUsers } from '@/prisma/services/user';
+import { getUsersWithPurchases } from '@/prisma/services/user';
 
 import { Card } from '@/components/ui/card';
 
 export const metadata: Metadata = { title: 'User Overview' };
 
 export default async function UserOverview() {
-  const users = await getUsers();
+  const users = await getUsersWithPurchases();
 
   return (
     <div className="flex w-full flex-col gap-3">
@@ -16,13 +16,19 @@ export default async function UserOverview() {
         <p className="text-muted-foreground">No users found.</p>
       )}
 
-      <div className="flex flex-col gap-3">
+      <div className="grid grid-cols-2 gap-3">
         {users.map((user) => (
           <Card key={user.id} className="flex flex-row justify-between py-3">
             <p>
               {user.first} {user.last}
             </p>
-            <p>$1</p>
+            <p>
+              $
+              {user.purchases.reduce(
+                (acc, purchase) => acc + purchase.amount,
+                0,
+              )}
+            </p>
           </Card>
         ))}
       </div>
