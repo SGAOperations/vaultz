@@ -16,17 +16,20 @@ export async function createUser({
 }
 
 export async function getUsers(): Promise<User[]> {
-  return prisma.user.findMany();
+  return prisma.user.findMany({ where: { deletedAt: null } });
 }
 
 export async function getUsersWithPurchases(): Promise<UserWithPurchases[]> {
-  return (await prisma.user.findMany({ include: { purchases: true } })).map(
-    (user) => ({
-      ...user,
-      purchases: user.purchases.map((purchase) => ({
-        ...purchase,
-        amount: purchase.amount.toNumber(),
-      })),
-    }),
-  );
+  return (
+    await prisma.user.findMany({
+      where: { deletedAt: null },
+      include: { purchases: true },
+    })
+  ).map((user) => ({
+    ...user,
+    purchases: user.purchases.map((purchase) => ({
+      ...purchase,
+      amount: purchase.amount.toNumber(),
+    })),
+  }));
 }
