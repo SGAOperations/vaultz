@@ -1,7 +1,12 @@
+import { NextSSRPlugin } from '@uploadthing/react/next-ssr-plugin';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 
+import { extractRouterConfig } from 'uploadthing/server';
+
 import './globals.css';
+
+import { receiptFileRouter } from '@/app/api/uploadthing/core';
 
 import { cn } from '@/lib/utils';
 
@@ -21,6 +26,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={cn('w-full font-sans antialiased', inter.variable)}>
+        <NextSSRPlugin routerConfig={extractRouterConfig(receiptFileRouter)} />
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
