@@ -29,11 +29,11 @@ export function Header() {
         </p>
       </Link>
 
-      <nav>
-        <Button variant="outline" onClick={() => redirect('/')}>
+      <nav className="flex gap-2">
+        <Button variant="link" onClick={() => redirect('/')}>
           Home
         </Button>
-        <Button variant="outline" onClick={() => redirect('/users')}>
+        <Button variant="link" onClick={() => redirect('/users')}>
           Users
         </Button>
       </nav>
