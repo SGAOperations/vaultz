@@ -14,6 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { UserDialog } from '@/components/user-dialog';
 
 export function UserDropdown({ user }: { user: UserWithPurchases }) {
   return (
@@ -25,9 +26,13 @@ export function UserDropdown({ user }: { user: UserWithPurchases }) {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent>
-        <DropdownMenuItem>
-          <Pencil /> Edit User
-        </DropdownMenuItem>
+        <UserDialog user={user}>
+          <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+            <Pencil />
+            Edit User
+          </DropdownMenuItem>
+        </UserDialog>
+
         <DropdownMenuSeparator />
         <DropdownMenuItem
           className="text-destructive"
