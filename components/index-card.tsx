@@ -1,6 +1,7 @@
 import Link from 'next/link';
 
 import { IndexWithPurchases } from '@/lib/types';
+import { formatNumber } from '@/lib/utils';
 
 import { PurchaseCard } from '@/components/purchase-card';
 import {
@@ -26,7 +27,9 @@ export function IndexCard({
             Total: $
             {purchases.length == 0
               ? 0
-              : purchases.map((v) => v.amount).reduce((p, c) => p + c)}{' '}
+              : formatNumber(
+                  purchases.map((v) => v.amount).reduce((p, c) => p + c),
+                )}{' '}
             for {purchases.length} purchases
           </CardDescription>
         </CardHeader>

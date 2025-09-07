@@ -1,6 +1,7 @@
 'use client';
 
 import { PurchaseWithUser } from '@/lib/types';
+import { formatNumber } from '@/lib/utils';
 
 import { DateTime } from '@/components/date-time';
 import { Card } from '@/components/ui/card';
@@ -15,7 +16,7 @@ export function PurchaseCard({
       key={id}
       className="group-hover:bg-accent group-hover:border-muted grid grid-cols-6 items-center overflow-hidden p-3"
     >
-      <p>${amount}</p>
+      <p>${formatNumber(amount)}</p>
       <p className="col-span-2 text-sm">
         {user.first} {user.last}
       </p>
