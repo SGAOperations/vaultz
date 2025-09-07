@@ -11,7 +11,7 @@ import { UserDialog } from '@/components/user-dialog';
 
 export function Header() {
   return (
-    <div className="mb-2 flex w-full justify-between p-2">
+    <div className="mb-3 flex w-full justify-between">
       <Link href={'/'} className="flex items-center gap-3">
         <svg
           className="text-primary size-10 dark:text-white"
