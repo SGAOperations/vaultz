@@ -27,7 +27,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <main className="mx-auto flex w-full flex-col items-center 2xl:w-4/5">
+          <main className="mx-auto flex w-full flex-col items-center p-3 2xl:w-4/5">
             <Header />
             {children}
           </main>
