@@ -29,7 +29,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <main className="mx-auto flex w-full flex-col items-center 2xl:w-4/5">
+          <main className="p-3 flex w-full flex-col items-center mx-auto 2xl:w-4/5">
             <div className="mb-2 flex w-full justify-between p-2">
               <Link href={'/'} className="flex items-center gap-3">
                 <svg
