@@ -56,11 +56,11 @@ export function UserDialog({
     if (user)
       // Update existing user
       updateUser({ ...data, id: user.id });
-    else
+    else {
       // Create new user
       createUser(data);
-
-    form.reset();
+      form.reset();
+    }
     setOpen(false);
   }
 
