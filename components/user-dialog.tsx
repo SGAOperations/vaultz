@@ -41,10 +41,10 @@ const schema = z.object({
 
 export function UserDialog({
   user,
-  trigger,
+  children,
 }: {
   user?: User;
-  trigger: React.ReactNode;
+  children: React.ReactNode;
 }) {
   const [open, setOpen] = useState<boolean>(false);
   const form = useForm<z.infer<typeof schema>>({
@@ -66,7 +66,7 @@ export function UserDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      <DialogTrigger asChild>{children}</DialogTrigger>
 
       <DialogContent>
         <DialogHeader>

@@ -41,14 +41,12 @@ export function Header() {
       </nav>
 
       <div className="flex gap-3">
-        <UserDialog
-          trigger={
-            <Button variant="ghost">
-              <Plus />
-              Create User
-            </Button>
-          }
-        />
+        <UserDialog user={undefined}>
+          <Button variant="ghost">
+            <Plus />
+            Create User
+          </Button>
+        </UserDialog>
         <ModeToggle />
       </div>
     </div>
