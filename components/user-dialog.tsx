@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Plus } from 'lucide-react';
 import { z } from 'zod/v4';
 
 import { User } from '@/prisma/client';
@@ -40,7 +39,13 @@ const schema = z.object({
     .max(50, 'Cannot be longer than 50 characters'),
 });
 
-export function UserDialog({ user }: { user?: User }) {
+export function UserDialog({
+  user,
+  trigger,
+}: {
+  user?: User;
+  trigger: React.ReactNode;
+}) {
   const [open, setOpen] = useState<boolean>(false);
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
@@ -61,12 +66,7 @@ export function UserDialog({ user }: { user?: User }) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus />
-          Create User
-        </Button>
-      </DialogTrigger>
+      <DialogTrigger asChild>{trigger}</DialogTrigger>
 
       <DialogContent>
         <DialogHeader>

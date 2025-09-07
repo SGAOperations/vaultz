@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
+import { Plus } from 'lucide-react';
+
 import { ModeToggle } from '@/components/theme-provider';
 import { Button } from '@/components/ui/button';
 import { UserDialog } from '@/components/user-dialog';
@@ -39,7 +41,14 @@ export function Header() {
       </nav>
 
       <div className="flex gap-3">
-        <UserDialog />
+        <UserDialog
+          trigger={
+            <Button variant="ghost">
+              <Plus />
+              Create User
+            </Button>
+          }
+        />
         <ModeToggle />
       </div>
     </div>
