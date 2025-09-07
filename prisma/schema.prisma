@@ -43,6 +43,7 @@ model Purchase {
     amount      Decimal
     description String
     timestamp   DateTime @default(now())
+    receipts    String[]
 
     accountId String
     account   Account @relation(fields: [accountId], references: [id])
