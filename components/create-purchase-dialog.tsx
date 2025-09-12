@@ -172,6 +172,7 @@ export function CreatePurchaseDialog({
                     <UploadDropzone
                       endpoint="receipts"
                       config={{ mode: 'auto', cn: twMerge }}
+                      className="m-0 border-1 p-4 border-accent"
                       onClientUploadComplete={(data) => {
                         if (data.length === 0) return;
 
