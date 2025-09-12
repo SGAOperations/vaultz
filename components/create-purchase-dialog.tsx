@@ -41,6 +41,7 @@ const schema = z.object({
     .number<number>()
     .min(0.01, 'Must be at least $0.01')
     .multipleOf(0.01, 'Must contain at most 2 decimal places'),
+  receipts: z.array(z.string()).optional(),
 });
 
 export function CreatePurchaseDialog({
@@ -62,6 +63,7 @@ export function CreatePurchaseDialog({
       accountId: accounts.length == 1 ? accounts[0].id : '',
       description: '',
       amount: 0,
+      receipts: [],
     },
   });
 
@@ -162,10 +164,10 @@ export function CreatePurchaseDialog({
             />
             <FormField
               control={form.control}
-              name="amount"
+              name="receipts"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Amount</FormLabel>
+                  <FormLabel>Receipts</FormLabel>
                   <FormControl>
                     <UploadDropzone
                       endpoint="receipts"
