@@ -4,12 +4,14 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { twMerge } from 'tailwind-merge';
 import { z } from 'zod/v4';
 
 import { User } from '@/prisma/client';
 import { createPurchase } from '@/prisma/services/purchase';
 
 import { Account } from '@/lib/types';
+import { UploadDropzone } from '@/lib/uploadthing';
 
 import { Button } from '@/components/ui/button';
 import { Combobox } from '@/components/ui/combobox';
@@ -51,6 +53,8 @@ export function CreatePurchaseDialog({
   trigger: React.ReactNode;
 }) {
   const [open, setOpen] = useState<boolean>(false);
+  const [fileUploaded, setFileUploaded] = useState<string>('');
+
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -156,6 +160,34 @@ export function CreatePurchaseDialog({
                 </FormItem>
               )}
             />
+            <FormField
+              control={form.control}
+              name="amount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Amount</FormLabel>
+                  <FormControl>
+                    <UploadDropzone
+                      endpoint="receipts"
+                      config={{ mode: 'auto', cn: twMerge }}
+                      onClientUploadComplete={(data) => {
+                        field.onChange(data[0].key);
+                        setFileUploaded(data[0].name);
+                      }}
+                      onUploadError={(error) => {
+                        console.error('Error uploading files', error.message);
+                        alert(
+                          'There was an error while uploading your files. Please try again later.',
+                        );
+                      }}
+                    />
+                  </FormControl>
+                  {fileUploaded && <p>Uploaded: {fileUploaded}</p>}
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <Button type="submit">Submit</Button>
           </form>
         </Form>
