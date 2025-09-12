@@ -172,7 +172,7 @@ export function CreatePurchaseDialog({
                     <UploadDropzone
                       endpoint="receipts"
                       config={{ mode: 'auto', cn: twMerge }}
-                      className="m-0 border-1 p-4 border-accent"
+                      className="border-accent m-0 border-1 p-4"
                       onClientUploadComplete={(data) => {
                         if (data.length === 0) return;
 
@@ -190,9 +190,18 @@ export function CreatePurchaseDialog({
                       }}
                     />
                   </FormControl>
-                  {filesUploaded.length > 0 && (
-                    <p>Uploaded: {filesUploaded.join(', ')}</p>
-                  )}
+                  <div>
+                    {filesUploaded.slice(0, 5).map((f, i) => (
+                      <p className="text-muted-foreground text-sm" key={i}>
+                        {f}
+                      </p>
+                    ))}
+                    {filesUploaded.length > 5 && (
+                      <p className="text-muted-foreground text-sm">
+                        and {filesUploaded.length - 5} more...
+                      </p>
+                    )}
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
