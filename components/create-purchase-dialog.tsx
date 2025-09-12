@@ -54,7 +54,7 @@ export function CreatePurchaseDialog({
   trigger: React.ReactNode;
 }) {
   const [open, setOpen] = useState<boolean>(false);
-  const [fileUploaded, setFileUploaded] = useState<string>('');
+  const [filesUploaded, setFilesUploaded] = useState<string[]>([]);
 
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
@@ -173,8 +173,13 @@ export function CreatePurchaseDialog({
                       endpoint="receipts"
                       config={{ mode: 'auto', cn: twMerge }}
                       onClientUploadComplete={(data) => {
-                        field.onChange(data[0].key);
-                        setFileUploaded(data[0].name);
+                        if (data.length === 0) return;
+
+                        field.onChange(data.map((d) => d.key));
+                        setFilesUploaded((prev) => [
+                          ...prev,
+                          ...data.map((d) => d.name),
+                        ]);
                       }}
                       onUploadError={(error) => {
                         console.error('Error uploading files', error.message);
@@ -184,7 +189,9 @@ export function CreatePurchaseDialog({
                       }}
                     />
                   </FormControl>
-                  {fileUploaded && <p>Uploaded: {fileUploaded}</p>}
+                  {filesUploaded.length > 0 && (
+                    <p>Uploaded: {filesUploaded.join(', ')}</p>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}
