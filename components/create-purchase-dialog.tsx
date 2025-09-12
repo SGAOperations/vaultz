@@ -4,12 +4,14 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { twMerge } from 'tailwind-merge';
 import { z } from 'zod/v4';
 
 import { User } from '@/prisma/client';
 import { createPurchase } from '@/prisma/services/purchase';
 
 import { Account } from '@/lib/types';
+import { UploadDropzone } from '@/lib/uploadthing';
 
 import { Button } from '@/components/ui/button';
 import { Combobox } from '@/components/ui/combobox';
@@ -39,6 +41,7 @@ const schema = z.object({
     .number<number>()
     .min(0.01, 'Must be at least $0.01')
     .multipleOf(0.01, 'Must contain at most 2 decimal places'),
+  receipts: z.array(z.string()).optional(),
 });
 
 export function CreatePurchaseDialog({
@@ -51,6 +54,8 @@ export function CreatePurchaseDialog({
   trigger: React.ReactNode;
 }) {
   const [open, setOpen] = useState<boolean>(false);
+  const [filesUploaded, setFilesUploaded] = useState<string[]>([]);
+
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -58,6 +63,7 @@ export function CreatePurchaseDialog({
       accountId: accounts.length == 1 ? accounts[0].id : '',
       description: '',
       amount: 0,
+      receipts: [],
     },
   });
 
@@ -156,6 +162,51 @@ export function CreatePurchaseDialog({
                 </FormItem>
               )}
             />
+            <FormField
+              control={form.control}
+              name="receipts"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Receipts</FormLabel>
+                  <FormControl>
+                    <UploadDropzone
+                      endpoint="receipts"
+                      config={{ mode: 'auto', cn: twMerge }}
+                      className="border-accent m-0 border-1 p-4"
+                      onClientUploadComplete={(data) => {
+                        if (data.length === 0) return;
+
+                        field.onChange(data.map((d) => d.key));
+                        setFilesUploaded((prev) => [
+                          ...prev,
+                          ...data.map((d) => d.name),
+                        ]);
+                      }}
+                      onUploadError={(error) => {
+                        console.error('Error uploading files', error.message);
+                        alert(
+                          'There was an error while uploading your files. Please try again later.',
+                        );
+                      }}
+                    />
+                  </FormControl>
+                  <div>
+                    {filesUploaded.slice(0, 5).map((f, i) => (
+                      <p className="text-muted-foreground text-sm" key={i}>
+                        {f}
+                      </p>
+                    ))}
+                    {filesUploaded.length > 5 && (
+                      <p className="text-muted-foreground text-sm">
+                        and {filesUploaded.length - 5} more...
+                      </p>
+                    )}
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <Button type="submit">Submit</Button>
           </form>
         </Form>
