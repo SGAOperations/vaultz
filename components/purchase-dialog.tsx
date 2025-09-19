@@ -52,7 +52,12 @@ export function PurchaseDialog({
           <p>Receipts</p>
           <p className="text-muted-foreground flex gap-3">
             {receiptUrls.map((url, i) => (
-              <a key={url} href={url} target="_blank" className="hover:underline">
+              <a
+                key={url}
+                href={url}
+                target="_blank"
+                className="hover:underline"
+              >
                 File {i}
               </a>
             ))}
