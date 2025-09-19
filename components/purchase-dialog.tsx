@@ -56,6 +56,7 @@ export function PurchaseDialog({
                 File {i}
               </a>
             ))}
+            {receiptUrls.length === 0 && 'N/A'}
           </p>
         </div>
       </DialogContent>
