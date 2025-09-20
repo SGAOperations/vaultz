@@ -9,3 +9,7 @@ export function formatNumber(value: number) {
   value = Math.round(value * 100) / 100;
   return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
+
+export function getFileUrl(key: string) {
+  return `https://${process.env.NEXT_PUBLIC_UPLOADTHING_APP_ID}.ufs.sh/f/${key}`;
+}
