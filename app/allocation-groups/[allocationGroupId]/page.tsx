@@ -5,7 +5,7 @@ import { notFound } from 'next/navigation';
 import { Plus } from 'lucide-react';
 
 import { getAllAccounts } from '@/prisma/services/account';
-import { getAllAllocationGroups, getAllocationGroup } from '@/prisma/services/allocation-groups';
+import { getAllocationGroup } from '@/prisma/services/allocation-groups';
 import { getUsers } from '@/prisma/services/user';
 
 import { formatNumber } from '@/lib/utils';
@@ -28,7 +28,6 @@ export default async function AllocationGroup({
   const allocationGroup = await getAllocationGroup({ id: allocationGroupId });
   if (allocationGroup === null) notFound();
 
-  const allocationGroups = await getAllAllocationGroups();
   const accounts = await getAllAccounts();
   const users = await getUsers();
 
@@ -64,7 +63,7 @@ export default async function AllocationGroup({
         <CreatePurchaseDialog
           users={users}
           accounts={accounts}
-          allocationGroups={allocationGroups}
+          allocationGroups={[allocationGroup]}
           trigger={
             <Button className="flex-1">
               <Plus />
