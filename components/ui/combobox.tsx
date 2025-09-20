@@ -29,7 +29,7 @@ export function Combobox({
   name,
   disabled = false,
 }: {
-  data: { label: string; value: string }[];
+  data: { heading?: string; items: { label: string; value: string }[] }[];
   value: string;
   onChange: (value: string) => void;
   name: string;
@@ -48,7 +48,7 @@ export function Combobox({
           disabled={disabled}
         >
           {value
-            ? data.find((v) => v.value === value)?.label
+            ? data.flatMap((v) => v.items).find((v) => v.value === value)?.label
             : `Select ${name}...`}
           <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
@@ -62,27 +62,29 @@ export function Combobox({
           <CommandInput placeholder={`Search ${name}s...`} />
           <CommandList>
             <CommandEmpty>No {name} found.</CommandEmpty>
-            <CommandGroup>
-              {data.map((v) => (
-                <CommandItem
-                  key={v.value}
-                  value={v.value}
-                  onSelect={(currentValue) => {
-                    onChange(currentValue === value ? '' : currentValue);
-                    setOpen(false);
-                  }}
-                  keywords={[v.label]}
-                >
-                  <CheckIcon
-                    className={cn(
-                      'mr-2 h-4 w-4',
-                      value === v.value ? 'opacity-100' : 'opacity-0',
-                    )}
-                  />
-                  {v.label}
-                </CommandItem>
-              ))}
-            </CommandGroup>
+            {data.map((v) => (
+              <CommandGroup key={v.heading} heading={v.heading}>
+                {v.items.map((item) => (
+                  <CommandItem
+                    key={item.value}
+                    value={item.value}
+                    onSelect={(currentValue) => {
+                      onChange(currentValue === value ? '' : currentValue);
+                      setOpen(false);
+                    }}
+                    keywords={[item.label]}
+                  >
+                    <CheckIcon
+                      className={cn(
+                        'mr-2 h-4 w-4',
+                        value === item.value ? 'opacity-100' : 'opacity-0',
+                      )}
+                    />
+                    {item.label}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            ))}
           </CommandList>
         </Command>
       </PopoverContent>

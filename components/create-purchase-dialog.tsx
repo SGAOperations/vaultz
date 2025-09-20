@@ -96,10 +96,14 @@ export function CreatePurchaseDialog({
                   <FormLabel>Name</FormLabel>
                   <FormControl>
                     <Combobox
-                      data={users.map((v) => ({
-                        value: v.id,
-                        label: `${v.first} ${v.last}`,
-                      }))}
+                      data={[
+                        {
+                          items: users.map((v) => ({
+                            value: v.id,
+                            label: `${v.first} ${v.last}`,
+                          })),
+                        },
+                      ]}
                       {...field}
                       name="user"
                     />
@@ -116,10 +120,14 @@ export function CreatePurchaseDialog({
                   <FormLabel>Account</FormLabel>
                   <FormControl>
                     <Combobox
-                      data={accounts.map((v) => ({
-                        value: v.id,
-                        label: `${v.name} (${v.code})`,
-                      }))}
+                      data={[
+                        {
+                          items: accounts.map((v) => ({
+                            value: v.id,
+                            label: `${v.name} (${v.code})`,
+                          })),
+                        },
+                      ]}
                       {...field}
                       name="account"
                       disabled={accounts.length === 1}
