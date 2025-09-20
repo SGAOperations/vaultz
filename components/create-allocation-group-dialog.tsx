@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod/v4';
 
-import { createIndex } from '@/prisma/services';
+import { createAllocationGroup } from '@/prisma/services/allocation-groups';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -20,7 +20,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -33,18 +32,21 @@ const schema = z.object({
     .string()
     .min(2, 'Must be at least 2 characters')
     .max(50, 'Cannot be longer than 50 characters'),
-  code: z.string().length(6, 'Must be exactly 6 characters long'),
 });
 
-export function CreateIndexDialog({ trigger }: { trigger: React.ReactNode }) {
+export function CreateAllocationGroupDialog({
+  trigger,
+}: {
+  trigger: React.ReactNode;
+}) {
   const [open, setOpen] = useState<boolean>(false);
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
-    defaultValues: { name: '', code: '' },
+    defaultValues: { name: '' },
   });
 
   function onSubmit(data: z.infer<typeof schema>) {
-    createIndex(data);
+    createAllocationGroup(data);
     form.reset();
     setOpen(false);
   }
@@ -55,9 +57,10 @@ export function CreateIndexDialog({ trigger }: { trigger: React.ReactNode }) {
 
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Create Index</DialogTitle>
+          <DialogTitle>Create Allocation Group</DialogTitle>
           <DialogDescription>
-            An index contains multiple accounts that track purchases.
+            An allocation group contains multiple allocations that track
+            expenses.
           </DialogDescription>
         </DialogHeader>
 
@@ -70,24 +73,8 @@ export function CreateIndexDialog({ trigger }: { trigger: React.ReactNode }) {
                 <FormItem>
                   <FormLabel>Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="Budget Index" {...field} />
+                    <Input placeholder="Office of the President" {...field} />
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="code"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Code</FormLabel>
-                  <FormControl>
-                    <Input placeholder="80XXXX" {...field} />
-                  </FormControl>
-                  <FormDescription>
-                    The index number to be associated with this index.
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Plus } from 'lucide-react';
 import { z } from 'zod/v4';
 
 import { createAccount } from '@/prisma/services/account';
@@ -39,7 +38,13 @@ const schema = z.object({
     .multipleOf(0.01, 'Must contain at most 2 decimal places'),
 });
 
-export function CreateAccountDialog({ indexId }: { indexId: string }) {
+export function CreateAccountDialog({
+  indexId,
+  trigger,
+}: {
+  indexId: string;
+  trigger: React.ReactNode;
+}) {
   const [open, setOpen] = useState<boolean>(false);
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
@@ -54,12 +59,7 @@ export function CreateAccountDialog({ indexId }: { indexId: string }) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="flex-1">
-          <Plus />
-          Create Account
-        </Button>
-      </DialogTrigger>
+      <DialogTrigger asChild>{trigger}</DialogTrigger>
 
       <DialogContent>
         <DialogHeader>

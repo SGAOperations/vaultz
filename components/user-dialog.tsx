@@ -4,10 +4,10 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Plus } from 'lucide-react';
 import { z } from 'zod/v4';
 
-import { createUser } from '@/prisma/services/user';
+import { User } from '@/prisma/client';
+import { createUser, updateUser } from '@/prisma/services/user';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -39,31 +39,38 @@ const schema = z.object({
     .max(50, 'Cannot be longer than 50 characters'),
 });
 
-export function CreateUserDialog() {
+export function UserDialog({
+  user,
+  children,
+}: {
+  user?: User;
+  children: React.ReactNode;
+}) {
   const [open, setOpen] = useState<boolean>(false);
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
-    defaultValues: { first: '', last: '' },
+    defaultValues: { first: user?.first || '', last: user?.last || '' },
   });
 
   function onSubmit(data: z.infer<typeof schema>) {
-    createUser(data);
-    form.reset();
+    if (user)
+      // Update existing user
+      updateUser({ ...data, id: user.id });
+    else {
+      // Create new user
+      createUser(data);
+      form.reset();
+    }
     setOpen(false);
   }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus />
-          Create User
-        </Button>
-      </DialogTrigger>
+      <DialogTrigger asChild>{children}</DialogTrigger>
 
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Create User</DialogTitle>
+          <DialogTitle>{user ? 'Edit User' : 'Create User'}</DialogTitle>
           <DialogDescription>
             A user is associated with purchases. It can represent an individual
             or an organization.

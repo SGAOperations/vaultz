@@ -9,9 +9,11 @@ datasource db {
 }
 
 model User {
-    id    String @id @default(uuid())
-    first String
-    last  String
+    id        String    @id @default(uuid())
+    first     String
+    last      String
+    createdAt DateTime  @default(now())
+    deletedAt DateTime?
 
     purchases Purchase[]
 }
@@ -41,9 +43,30 @@ model Purchase {
     amount      Decimal
     description String
     timestamp   DateTime @default(now())
+    receipts    String[]
 
-    accountId String
-    account   Account @relation(fields: [accountId], references: [id])
-    userId    String
-    user      User    @relation(fields: [userId], references: [id])
+    accountId    String
+    account      Account     @relation(fields: [accountId], references: [id])
+    allocationId String?
+    allocation   Allocation? @relation(fields: [allocationId], references: [id])
+    userId       String
+    user         User        @relation(fields: [userId], references: [id])
+}
+
+model AllocationGroup {
+    id   String @id @default(uuid())
+    name String
+
+    allocations Allocation[]
+}
+
+model Allocation {
+    id     String  @id @default(uuid())
+    name   String
+    amount Decimal
+
+    allocationGroupId String?
+    allocationGroup   AllocationGroup? @relation(fields: [allocationGroupId], references: [id])
+
+    purchases Purchase[]
 }

@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 
+import { fuzzy } from 'fast-fuzzy';
 import { CheckIcon, ChevronsUpDownIcon } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -26,11 +27,13 @@ export function Combobox({
   value,
   onChange,
   name,
+  disabled = false,
 }: {
-  data: { label: string; value: string }[];
+  data: { heading?: string; items: { label: string; value: string }[] }[];
   value: string;
   onChange: (value: string) => void;
   name: string;
+  disabled?: boolean;
 }) {
   const [open, setOpen] = React.useState(false);
 
@@ -42,38 +45,46 @@ export function Combobox({
           role="combobox"
           aria-expanded={open}
           className="w-full justify-between"
+          disabled={disabled}
         >
           {value
-            ? data.find((v) => v.value === value)?.label
+            ? data.flatMap((v) => v.items).find((v) => v.value === value)?.label
             : `Select ${name}...`}
           <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-full p-0">
-        <Command>
+        <Command
+          filter={(_, search, keywords) => {
+            return search && keywords ? fuzzy(keywords[0], search) - 0.1 : 0;
+          }}
+        >
           <CommandInput placeholder={`Search ${name}s...`} />
           <CommandList>
             <CommandEmpty>No {name} found.</CommandEmpty>
-            <CommandGroup>
-              {data.map((v) => (
-                <CommandItem
-                  key={v.value}
-                  value={v.value}
-                  onSelect={(currentValue) => {
-                    onChange(currentValue === value ? '' : currentValue);
-                    setOpen(false);
-                  }}
-                >
-                  <CheckIcon
-                    className={cn(
-                      'mr-2 h-4 w-4',
-                      value === v.value ? 'opacity-100' : 'opacity-0',
-                    )}
-                  />
-                  {v.label}
-                </CommandItem>
-              ))}
-            </CommandGroup>
+            {data.map((v, i) => (
+              <CommandGroup key={i} heading={v.heading}>
+                {v.items.map((item) => (
+                  <CommandItem
+                    key={item.value}
+                    value={item.value}
+                    onSelect={(currentValue) => {
+                      onChange(currentValue === value ? '' : currentValue);
+                      setOpen(false);
+                    }}
+                    keywords={[item.label]}
+                  >
+                    <CheckIcon
+                      className={cn(
+                        'mr-2 h-4 w-4',
+                        value === item.value ? 'opacity-100' : 'opacity-0',
+                      )}
+                    />
+                    {item.label}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            ))}
           </CommandList>
         </Command>
       </PopoverContent>

@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod/v4';
 
-import { createIndex } from '@/prisma/services';
+import { createAllocation } from '@/prisma/services/allocation';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -20,7 +20,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -33,18 +32,27 @@ const schema = z.object({
     .string()
     .min(2, 'Must be at least 2 characters')
     .max(50, 'Cannot be longer than 50 characters'),
-  code: z.string().length(6, 'Must be exactly 6 characters long'),
+  amount: z.coerce
+    .number<number>()
+    .min(0.01, 'Must be at least $0.01')
+    .multipleOf(0.01, 'Must contain at most 2 decimal places'),
 });
 
-export function CreateIndexDialog({ trigger }: { trigger: React.ReactNode }) {
+export function CreateAllocationDialog({
+  trigger,
+  allocationGroupId,
+}: {
+  trigger: React.ReactNode;
+  allocationGroupId?: string;
+}) {
   const [open, setOpen] = useState<boolean>(false);
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
-    defaultValues: { name: '', code: '' },
+    defaultValues: { name: '', amount: 0 },
   });
 
   function onSubmit(data: z.infer<typeof schema>) {
-    createIndex(data);
+    createAllocation({ ...data, allocationGroupId });
     form.reset();
     setOpen(false);
   }
@@ -55,9 +63,9 @@ export function CreateIndexDialog({ trigger }: { trigger: React.ReactNode }) {
 
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Create Index</DialogTitle>
+          <DialogTitle>Create Allocation</DialogTitle>
           <DialogDescription>
-            An index contains multiple accounts that track purchases.
+            An allocation is a budgeted amount of money for a specific purpose.
           </DialogDescription>
         </DialogHeader>
 
@@ -70,7 +78,7 @@ export function CreateIndexDialog({ trigger }: { trigger: React.ReactNode }) {
                 <FormItem>
                   <FormLabel>Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="Budget Index" {...field} />
+                    <Input placeholder="Sustainability Tabling" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -78,16 +86,20 @@ export function CreateIndexDialog({ trigger }: { trigger: React.ReactNode }) {
             />
             <FormField
               control={form.control}
-              name="code"
+              name="amount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Code</FormLabel>
+                  <FormLabel>Amount</FormLabel>
                   <FormControl>
-                    <Input placeholder="80XXXX" {...field} />
+                    <Input
+                      placeholder="$21.45"
+                      {...field}
+                      value={field.value ? '$' + field.value : ''}
+                      onChange={(e) =>
+                        field.onChange(e.target.value.replace('$', ''))
+                      }
+                    />
                   </FormControl>
-                  <FormDescription>
-                    The index number to be associated with this index.
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
