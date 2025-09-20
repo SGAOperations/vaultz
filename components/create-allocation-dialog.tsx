@@ -76,7 +76,7 @@ export function CreateAllocationDialog({
                 <FormItem>
                   <FormLabel>Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="Office of the President" {...field} />
+                    <Input placeholder="Sustainability Tabling" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
