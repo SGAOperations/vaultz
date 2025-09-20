@@ -15,5 +15,5 @@ export async function createAllocation({
 
   revalidatePath('/allocation-groups');
 
-  return allocation;
+  return { allocation, amount: allocation.amount.toNumber() };
 }
