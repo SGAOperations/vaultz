@@ -77,6 +77,7 @@ export default async function AllocationGroup({
               Create Allocation
             </Button>
           }
+          allocationGroupId={allocationGroup.id}
         />
       </div>
 

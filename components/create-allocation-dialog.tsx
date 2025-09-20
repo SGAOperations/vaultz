@@ -40,8 +40,10 @@ const schema = z.object({
 
 export function CreateAllocationDialog({
   trigger,
+  allocationGroupId,
 }: {
   trigger: React.ReactNode;
+  allocationGroupId?: string;
 }) {
   const [open, setOpen] = useState<boolean>(false);
   const form = useForm<z.infer<typeof schema>>({
@@ -50,7 +52,7 @@ export function CreateAllocationDialog({
   });
 
   function onSubmit(data: z.infer<typeof schema>) {
-    createAllocation(data);
+    createAllocation({ ...data, allocationGroupId });
     form.reset();
     setOpen(false);
   }
