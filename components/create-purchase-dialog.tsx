@@ -26,6 +26,7 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -159,7 +160,12 @@ export function CreatePurchaseDialog({
               name="allocationId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Allocation</FormLabel>
+                  <div className="flex gap-2">
+                    <FormLabel>Allocation</FormLabel>
+                    <FormDescription className="text-xs">
+                      Optional
+                    </FormDescription>
+                  </div>
                   <FormControl>
                     <Combobox
                       data={allocationGroups.map((group) => ({
@@ -184,7 +190,12 @@ export function CreatePurchaseDialog({
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
+                  <div className="flex gap-2">
+                    <FormLabel>Description</FormLabel>
+                    <FormDescription className="text-xs">
+                      Optional
+                    </FormDescription>
+                  </div>
                   <FormControl>
                     <Input placeholder="Optional" {...field} />
                   </FormControl>
@@ -217,7 +228,12 @@ export function CreatePurchaseDialog({
               name="receipts"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Receipts</FormLabel>
+                  <div className="flex gap-2">
+                    <FormLabel>Receipts</FormLabel>
+                    <FormDescription className="text-xs">
+                      Optional
+                    </FormDescription>
+                  </div>
                   <FormControl>
                     <UploadDropzone
                       endpoint="receipts"
