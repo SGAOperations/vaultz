@@ -38,6 +38,9 @@ export function Header() {
         <Button variant="link" onClick={() => redirect('/users')}>
           Users
         </Button>
+        <Button variant="link" onClick={() => redirect('/allocation-groups')}>
+          Allocations
+        </Button>
       </nav>
 
       <div className="flex gap-3">
