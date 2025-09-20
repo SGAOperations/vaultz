@@ -10,7 +10,7 @@ import { z } from 'zod/v4';
 import { User } from '@/prisma/client';
 import { createPurchase } from '@/prisma/services/purchase';
 
-import { Account } from '@/lib/types';
+import { AccountWithIndex, AllocationGroupWithAllocations } from '@/lib/types';
 import { UploadDropzone } from '@/lib/uploadthing';
 
 import { Button } from '@/components/ui/button';
@@ -26,6 +26,7 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -36,6 +37,7 @@ import { Input } from '@/components/ui/input';
 const schema = z.object({
   userId: z.string().min(1, 'Please select a user'),
   accountId: z.string().min(1, 'Please select an account'),
+  allocationId: z.string().optional(),
   description: z.string().optional(),
   amount: z.coerce
     .number<number>()
@@ -47,10 +49,12 @@ const schema = z.object({
 export function CreatePurchaseDialog({
   users,
   accounts,
+  allocationGroups,
   trigger,
 }: {
   users: User[];
-  accounts: Account[];
+  accounts: AccountWithIndex[];
+  allocationGroups: AllocationGroupWithAllocations[];
   trigger: React.ReactNode;
 }) {
   const [open, setOpen] = useState<boolean>(false);
@@ -96,10 +100,14 @@ export function CreatePurchaseDialog({
                   <FormLabel>Name</FormLabel>
                   <FormControl>
                     <Combobox
-                      data={users.map((v) => ({
-                        value: v.id,
-                        label: `${v.first} ${v.last}`,
-                      }))}
+                      data={[
+                        {
+                          items: users.map((v) => ({
+                            value: v.id,
+                            label: `${v.first} ${v.last}`,
+                          })),
+                        },
+                      ]}
                       {...field}
                       name="user"
                     />
@@ -116,9 +124,27 @@ export function CreatePurchaseDialog({
                   <FormLabel>Account</FormLabel>
                   <FormControl>
                     <Combobox
-                      data={accounts.map((v) => ({
-                        value: v.id,
-                        label: `${v.name} (${v.code})`,
+                      data={Object.entries(
+                        accounts.reduce(
+                          (acc, account) => {
+                            const group = account.indexId;
+                            acc[group] = acc[group] || { items: [] };
+                            acc[group].items.push({
+                              value: account.id,
+                              label: `${account.name} (${account.code})`,
+                            });
+                            return acc;
+                          },
+                          {} as Record<
+                            string,
+                            { items: { value: string; label: string }[] }
+                          >,
+                        ),
+                      ).map(([indexId, group]) => ({
+                        heading:
+                          accounts.find((a) => a.indexId === indexId)?.index
+                            .name || indexId,
+                        ...group,
                       }))}
                       {...field}
                       name="account"
@@ -131,10 +157,45 @@ export function CreatePurchaseDialog({
             />
             <FormField
               control={form.control}
+              name="allocationId"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex gap-2">
+                    <FormLabel>Allocation</FormLabel>
+                    <FormDescription className="text-xs">
+                      Optional
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Combobox
+                      data={allocationGroups.map((group) => ({
+                        heading: group.name,
+                        items: group.allocations.map((allocation) => ({
+                          value: allocation.id,
+                          label: allocation.name,
+                        })),
+                      }))}
+                      {...field}
+                      value={field.value || ''}
+                      name="allocation"
+                      disabled={accounts.length === 1}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
+                  <div className="flex gap-2">
+                    <FormLabel>Description</FormLabel>
+                    <FormDescription className="text-xs">
+                      Optional
+                    </FormDescription>
+                  </div>
                   <FormControl>
                     <Input placeholder="Optional" {...field} />
                   </FormControl>
@@ -167,7 +228,12 @@ export function CreatePurchaseDialog({
               name="receipts"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Receipts</FormLabel>
+                  <div className="flex gap-2">
+                    <FormLabel>Receipts</FormLabel>
+                    <FormDescription className="text-xs">
+                      Optional
+                    </FormDescription>
+                  </div>
                   <FormControl>
                     <UploadDropzone
                       endpoint="receipts"
