@@ -62,8 +62,8 @@ export function Combobox({
           <CommandInput placeholder={`Search ${name}s...`} />
           <CommandList>
             <CommandEmpty>No {name} found.</CommandEmpty>
-            {data.map((v) => (
-              <CommandGroup key={v.heading} heading={v.heading}>
+            {data.map((v, i) => (
+              <CommandGroup key={i} heading={v.heading}>
                 {v.items.map((item) => (
                   <CommandItem
                     key={item.value}
