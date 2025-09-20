@@ -88,7 +88,7 @@ export default async function AllocationGroup({
       )}
       <div className="grid grid-cols-3 gap-3">
         {allocationGroup.allocations.map((allocation) => (
-          <Link href={`/allocation/${allocation.id}`} key={allocation.id}>
+          <Link href={`/allocations/${allocation.id}`} key={allocation.id}>
             <Card className="hover:bg-accent flex flex-row justify-between py-3">
               <p>{allocation.name}</p>
               <p>
