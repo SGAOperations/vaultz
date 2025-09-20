@@ -15,19 +15,30 @@ export function AllocationGroupCard({
 }: {
   allocationGroup: AllocationGroupWithAllocations;
 }) {
+  const purchases = allocations.flatMap((v) => v.purchases);
+
   return (
     <Link href={`/index/${id}`}>
       <Card className="group hover:bg-accent h-full">
         <CardHeader>
           <CardTitle>{name}</CardTitle>
           <CardDescription>
-            Total: $
+            Allocated: $
             {allocations.length == 0
               ? 0
               : formatNumber(
                   allocations.map((v) => v.amount).reduce((p, c) => p + c),
                 )}{' '}
-            for {allocations.length} allocations
+            in {allocations.length} allocations
+          </CardDescription>
+          <CardDescription>
+            Spent: $
+            {purchases.length == 0
+              ? 0
+              : formatNumber(
+                  allocations.map((v) => v.amount).reduce((p, c) => p + c),
+                )}{' '}
+            for {purchases.length} purchases
           </CardDescription>
         </CardHeader>
       </Card>

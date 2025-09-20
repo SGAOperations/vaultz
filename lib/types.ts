@@ -22,10 +22,12 @@ export type IndexWithPurchases = Index & {
   amount: number;
 };
 
-export type Allocation = Omit<PrismaAllocation, 'amount'> & {
-  amount: number;
+export type Allocation = Omit<PrismaAllocation, 'amount'> & { amount: number };
+
+export type AllocationWithPurchases = Allocation & {
+  purchases: PurchaseWithUser[];
 };
 
 export type AllocationGroupWithAllocations = AllocationGroup & {
-  allocations: Allocation[];
+  allocations: AllocationWithPurchases[];
 };

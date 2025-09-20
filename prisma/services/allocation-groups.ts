@@ -9,12 +9,20 @@ export async function getAllAllocationGroups(): Promise<
   AllocationGroupWithAllocations[]
 > {
   return (
-    await prisma.allocationGroup.findMany({ include: { allocations: true } })
+    await prisma.allocationGroup.findMany({
+      include: {
+        allocations: { include: { purchases: { include: { user: true } } } },
+      },
+    })
   ).map(({ allocations, ...v }) => ({
     ...v,
-    allocations: allocations.map(({ amount, ...a }) => ({
+    allocations: allocations.map(({ amount, purchases, ...a }) => ({
       ...a,
       amount: amount.toNumber(),
+      purchases: purchases.map(({ amount, ...p }) => ({
+        ...p,
+        amount: amount.toNumber(),
+      })),
     })),
   }));
 }
