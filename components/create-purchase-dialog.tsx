@@ -136,7 +136,12 @@ export function CreatePurchaseDialog({
                             { items: { value: string; label: string }[] }
                           >,
                         ),
-                      ).map(([heading, group]) => ({ heading, ...group }))}
+                      ).map(([indexId, group]) => ({
+                        heading:
+                          accounts.find((a) => a.indexId === indexId)?.index
+                            .name || indexId,
+                        ...group,
+                      }))}
                       {...field}
                       name="account"
                       disabled={accounts.length === 1}
