@@ -3,7 +3,7 @@ import { Plus } from 'lucide-react';
 import { getAllAllocationGroups } from '@/prisma/services/allocation-groups';
 
 import { AllocationGroupCard } from '@/components/allocation-group-card';
-import { CreateIndexDialog } from '@/components/create-index-dialog';
+import { CreateAllocationGroupDialog } from '@/components/create-allocation-group-dialog';
 import { Button } from '@/components/ui/button';
 
 export default async function AllocationGroups() {
@@ -15,11 +15,11 @@ export default async function AllocationGroups() {
         <AllocationGroupCard key={i} allocationGroup={v} />
       ))}
 
-      <CreateIndexDialog
+      <CreateAllocationGroupDialog
         trigger={
           <Button>
             <Plus />
-            Create Index
+            Create Allocation Group
           </Button>
         }
       />
