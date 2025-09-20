@@ -72,7 +72,7 @@ export function CreatePurchaseDialog({
     form.reset();
     setOpen(false);
   }
-
+  
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
@@ -120,14 +120,23 @@ export function CreatePurchaseDialog({
                   <FormLabel>Account</FormLabel>
                   <FormControl>
                     <Combobox
-                      data={[
-                        {
-                          items: accounts.map((v) => ({
-                            value: v.id,
-                            label: `${v.name} (${v.code})`,
-                          })),
-                        },
-                      ]}
+                      data={Object.entries(
+                        accounts.reduce(
+                          (acc, account) => {
+                            const group = account.indexId;
+                            acc[group] = acc[group] || { items: [] };
+                            acc[group].items.push({
+                              value: account.id,
+                              label: `${account.name} (${account.code})`,
+                            });
+                            return acc;
+                          },
+                          {} as Record<
+                            string,
+                            { items: { value: string; label: string }[] }
+                          >,
+                        ),
+                      ).map(([heading, group]) => ({ heading, ...group }))}
                       {...field}
                       name="account"
                       disabled={accounts.length === 1}

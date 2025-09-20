@@ -55,9 +55,9 @@ export function Combobox({
       </PopoverTrigger>
       <PopoverContent className="w-full p-0">
         <Command
-          filter={(_, search, keywords) =>
-            keywords ? fuzzy(keywords[0], search) - 0.1 : 0
-          }
+          filter={(_, search, keywords) => {
+            return search && keywords ? fuzzy(keywords[0], search) - 0.1 : 0;
+          }}
         >
           <CommandInput placeholder={`Search ${name}s...`} />
           <CommandList>
