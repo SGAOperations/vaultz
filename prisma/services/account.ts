@@ -60,3 +60,11 @@ export async function getAccountsByIndex({
     amount: account.amount.toNumber(),
   }));
 }
+
+export async function getAllAccounts(): Promise<Account[]> {
+  const accounts = await prisma.account.findMany();
+  return accounts.map((account) => ({
+    ...account,
+    amount: account.amount.toNumber(),
+  }));
+}
