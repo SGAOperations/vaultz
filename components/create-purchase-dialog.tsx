@@ -10,7 +10,7 @@ import { z } from 'zod/v4';
 import { User } from '@/prisma/client';
 import { createPurchase } from '@/prisma/services/purchase';
 
-import { Account } from '@/lib/types';
+import { AccountWithIndex } from '@/lib/types';
 import { UploadDropzone } from '@/lib/uploadthing';
 
 import { Button } from '@/components/ui/button';
@@ -50,7 +50,7 @@ export function CreatePurchaseDialog({
   trigger,
 }: {
   users: User[];
-  accounts: Account[];
+  accounts: AccountWithIndex[];
   trigger: React.ReactNode;
 }) {
   const [open, setOpen] = useState<boolean>(false);
@@ -72,7 +72,7 @@ export function CreatePurchaseDialog({
     form.reset();
     setOpen(false);
   }
-  
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
