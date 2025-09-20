@@ -27,6 +27,35 @@ export async function getAllAllocationGroups(): Promise<
   }));
 }
 
+export async function getAllocationGroup({
+  id,
+}: {
+  id: string;
+}): Promise<AllocationGroupWithAllocations | null> {
+  const allocationGroup = await prisma.allocationGroup.findUnique({
+    where: { id: id },
+    include: {
+      allocations: { include: { purchases: { include: { user: true } } } },
+    },
+  });
+
+  if (!allocationGroup) return null;
+
+  return {
+    ...allocationGroup,
+    allocations: allocationGroup.allocations.map(
+      ({ amount, purchases, ...a }) => ({
+        ...a,
+        amount: amount.toNumber(),
+        purchases: purchases.map(({ amount, ...p }) => ({
+          ...p,
+          amount: amount.toNumber(),
+        })),
+      }),
+    ),
+  };
+}
+
 export async function createAllocationGroup(data: { name: string }) {
   const allocationGroup = await prisma.allocationGroup.create({
     data: { name: data.name },
