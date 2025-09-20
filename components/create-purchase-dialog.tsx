@@ -10,7 +10,7 @@ import { z } from 'zod/v4';
 import { User } from '@/prisma/client';
 import { createPurchase } from '@/prisma/services/purchase';
 
-import { AccountWithIndex } from '@/lib/types';
+import { AccountWithIndex, AllocationGroupWithAllocations } from '@/lib/types';
 import { UploadDropzone } from '@/lib/uploadthing';
 
 import { Button } from '@/components/ui/button';
@@ -36,6 +36,7 @@ import { Input } from '@/components/ui/input';
 const schema = z.object({
   userId: z.string().min(1, 'Please select a user'),
   accountId: z.string().min(1, 'Please select an account'),
+  allocationId: z.string().optional(),
   description: z.string().optional(),
   amount: z.coerce
     .number<number>()
@@ -47,10 +48,12 @@ const schema = z.object({
 export function CreatePurchaseDialog({
   users,
   accounts,
+  allocationGroups,
   trigger,
 }: {
   users: User[];
   accounts: AccountWithIndex[];
+  allocationGroups: AllocationGroupWithAllocations[];
   trigger: React.ReactNode;
 }) {
   const [open, setOpen] = useState<boolean>(false);
@@ -144,6 +147,31 @@ export function CreatePurchaseDialog({
                       }))}
                       {...field}
                       name="account"
+                      disabled={accounts.length === 1}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="allocationId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Allocation</FormLabel>
+                  <FormControl>
+                    <Combobox
+                      data={allocationGroups.map((group) => ({
+                        heading: group.name,
+                        items: group.allocations.map((allocation) => ({
+                          value: allocation.id,
+                          label: allocation.name,
+                        })),
+                      }))}
+                      {...field}
+                      value={field.value || ''}
+                      name="allocation"
                       disabled={accounts.length === 1}
                     />
                   </FormControl>

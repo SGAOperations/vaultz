@@ -12,6 +12,7 @@ import { CreatePurchaseDialog } from '@/components/create-purchase-dialog';
 import { PurchaseCard } from '@/components/purchase-card';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { getAllAllocationGroups } from '@/prisma/services/allocation-groups';
 
 export const metadata: Metadata = { title: 'Account' };
 
@@ -26,6 +27,8 @@ export default async function Index({
   if (account === null) notFound();
 
   const users = await getUsers();
+
+  const allocationGroups = await getAllAllocationGroups();
 
   const spent = account.purchases.reduce(
     (acc, purchase) => acc + purchase.amount,
@@ -52,6 +55,7 @@ export default async function Index({
       <CreatePurchaseDialog
         users={users}
         accounts={[account]}
+        allocationGroups={allocationGroups}
         trigger={
           <Button className="flex-1">
             <Plus />
