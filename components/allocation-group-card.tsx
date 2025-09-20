@@ -18,7 +18,7 @@ export function AllocationGroupCard({
   const purchases = allocations.flatMap((v) => v.purchases);
 
   return (
-    <Link href={`/index/${id}`}>
+    <Link href={`/allocation-groups/${id}`}>
       <Card className="group hover:bg-accent h-full">
         <CardHeader>
           <CardTitle>{name}</CardTitle>
