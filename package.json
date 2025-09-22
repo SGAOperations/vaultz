@@ -38,7 +38,7 @@
     "react-hook-form": "^7.62.0",
     "tailwind-merge": "^3.3.1",
     "uploadthing": "^7.7.4",
-    "zod": "^4.1.9"
+    "zod": "^4.1.11"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
