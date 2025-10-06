@@ -1,10 +1,13 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
+import { getAllAccounts } from '@/prisma/services/account';
 import { getAllocationById } from '@/prisma/services/allocation';
+import { getUsers } from '@/prisma/services/user';
 
 import { formatNumber } from '@/lib/utils';
 
+import { CreatePurchaseDialog } from '@/components/create-purchase-dialog';
 import { PurchaseCard } from '@/components/purchase-card';
 import { Card } from '@/components/ui/card';
 
@@ -19,6 +22,9 @@ export default async function Allocation({
 
   const allocation = await getAllocationById({ id: allocationId });
   if (allocation === null) notFound();
+
+  const accounts = await getAllAccounts();
+  const users = await getUsers();
 
   const spent = allocation.purchases.reduce(
     (acc, purchase) => acc + purchase.amount,
@@ -40,6 +46,14 @@ export default async function Allocation({
           <p className="text-6xl">${formatNumber(allocation.amount - spent)}</p>
           <p className="text-muted-foreground text-sm">Remaining</p>
         </Card>
+      </div>
+
+      <div className="flex w-full flex-row gap-3">
+        <CreatePurchaseDialog
+          users={users}
+          accounts={accounts}
+          miscAllocations={[allocation]}
+        />
       </div>
 
       <h2 className="mt-4 text-xl">Purchases</h2>
