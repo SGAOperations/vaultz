@@ -178,13 +178,22 @@ export function CreatePurchaseDialog({
                   </div>
                   <FormControl>
                     <Combobox
-                      data={allocationGroups.map((group) => ({
-                        heading: group.name,
-                        items: group.allocations.map((allocation) => ({
-                          value: allocation.id,
-                          label: allocation.name,
+                      data={[
+                        ...allocationGroups.map((group) => ({
+                          heading: group.name,
+                          items: group.allocations.map((allocation) => ({
+                            value: allocation.id,
+                            label: allocation.name,
+                          })),
                         })),
-                      }))}
+                        {
+                          heading: 'Miscellaneous',
+                          items: miscAllocations.map((allocation) => ({
+                            value: allocation.id,
+                            label: allocation.name,
+                          })),
+                        },
+                      ]}
                       {...field}
                       value={field.value || ''}
                       name="allocation"
