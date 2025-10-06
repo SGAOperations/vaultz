@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Plus } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
 import { z } from 'zod/v4';
 
@@ -50,12 +51,10 @@ export function CreatePurchaseDialog({
   users,
   accounts,
   allocationGroups,
-  trigger,
 }: {
   users: User[];
   accounts: AccountWithIndex[];
   allocationGroups: AllocationGroupWithAllocations[];
-  trigger: React.ReactNode;
 }) {
   const [open, setOpen] = useState<boolean>(false);
   const [filesUploaded, setFilesUploaded] = useState<string[]>([]);
@@ -79,7 +78,12 @@ export function CreatePurchaseDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      <DialogTrigger asChild>
+        <Button className="flex-1">
+          <Plus />
+          Create Purchase
+        </Button>
+      </DialogTrigger>
 
       <DialogContent>
         <DialogHeader>
