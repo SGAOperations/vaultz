@@ -6,6 +6,7 @@ import { Plus } from 'lucide-react';
 
 import { getIndex } from '@/prisma/services';
 import { getAccountsByIndex } from '@/prisma/services/account';
+import { getMiscAllocations } from '@/prisma/services/allocation';
 import { getAllAllocationGroups } from '@/prisma/services/allocation-groups';
 import { getUsers } from '@/prisma/services/user';
 
@@ -30,6 +31,7 @@ export default async function Index({
   if (index === null) notFound();
 
   const allocationGroups = await getAllAllocationGroups();
+  const miscAllocations = await getMiscAllocations();
   const accounts = await getAccountsByIndex({ indexId });
   const users = await getUsers();
 
@@ -60,6 +62,7 @@ export default async function Index({
           users={users}
           accounts={accounts}
           allocationGroups={allocationGroups}
+          miscAllocations={miscAllocations}
         />
         <CreateAccountDialog
           indexId={indexId}

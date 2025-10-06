@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
 import { getAccountById } from '@/prisma/services/account';
+import { getMiscAllocations } from '@/prisma/services/allocation';
 import { getAllAllocationGroups } from '@/prisma/services/allocation-groups';
 import { getUsers } from '@/prisma/services/user';
 
@@ -26,6 +27,7 @@ export default async function Index({
   const users = await getUsers();
 
   const allocationGroups = await getAllAllocationGroups();
+  const miscAllocations = await getMiscAllocations();
 
   const spent = account.purchases.reduce(
     (acc, purchase) => acc + purchase.amount,
@@ -53,6 +55,7 @@ export default async function Index({
         users={users}
         accounts={[account]}
         allocationGroups={allocationGroups}
+        miscAllocations={miscAllocations}
       />
 
       <h2 className="mt-4 text-xl">Purchases</h2>

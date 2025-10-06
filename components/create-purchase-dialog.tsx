@@ -11,7 +11,11 @@ import { z } from 'zod/v4';
 import { User } from '@/prisma/client';
 import { createPurchase } from '@/prisma/services/purchase';
 
-import { AccountWithIndex, AllocationGroupWithAllocations } from '@/lib/types';
+import {
+  AccountWithIndex,
+  Allocation,
+  AllocationGroupWithAllocations,
+} from '@/lib/types';
 import { UploadDropzone } from '@/lib/uploadthing';
 
 import { Button } from '@/components/ui/button';
@@ -50,11 +54,13 @@ const schema = z.object({
 export function CreatePurchaseDialog({
   users,
   accounts,
-  allocationGroups,
+  allocationGroups = [],
+  miscAllocations = [],
 }: {
   users: User[];
   accounts: AccountWithIndex[];
-  allocationGroups: AllocationGroupWithAllocations[];
+  allocationGroups?: AllocationGroupWithAllocations[];
+  miscAllocations?: Allocation[];
 }) {
   const [open, setOpen] = useState<boolean>(false);
   const [filesUploaded, setFilesUploaded] = useState<string[]>([]);
@@ -172,13 +178,22 @@ export function CreatePurchaseDialog({
                   </div>
                   <FormControl>
                     <Combobox
-                      data={allocationGroups.map((group) => ({
-                        heading: group.name,
-                        items: group.allocations.map((allocation) => ({
-                          value: allocation.id,
-                          label: allocation.name,
+                      data={[
+                        ...allocationGroups.map((group) => ({
+                          heading: group.name,
+                          items: group.allocations.map((allocation) => ({
+                            value: allocation.id,
+                            label: allocation.name,
+                          })),
                         })),
-                      }))}
+                        {
+                          heading: 'Miscellaneous',
+                          items: miscAllocations.map((allocation) => ({
+                            value: allocation.id,
+                            label: allocation.name,
+                          })),
+                        },
+                      ]}
                       {...field}
                       value={field.value || ''}
                       name="allocation"
