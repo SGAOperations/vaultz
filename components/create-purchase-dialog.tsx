@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Plus } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
 import { z } from 'zod/v4';
 
@@ -33,7 +34,6 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Plus } from 'lucide-react';
 
 const schema = z.object({
   userId: z.string().min(1, 'Please select a user'),
