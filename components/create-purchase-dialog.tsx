@@ -4,13 +4,18 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Plus } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
 import { z } from 'zod/v4';
 
 import { User } from '@/prisma/client';
 import { createPurchase } from '@/prisma/services/purchase';
 
-import { AccountWithIndex, AllocationGroupWithAllocations } from '@/lib/types';
+import {
+  AccountWithIndex,
+  Allocation,
+  AllocationGroupWithAllocations,
+} from '@/lib/types';
 import { UploadDropzone } from '@/lib/uploadthing';
 
 import { Button } from '@/components/ui/button';
@@ -49,13 +54,13 @@ const schema = z.object({
 export function CreatePurchaseDialog({
   users,
   accounts,
-  allocationGroups,
-  trigger,
+  allocationGroups = [],
+  miscAllocations = [],
 }: {
   users: User[];
   accounts: AccountWithIndex[];
-  allocationGroups: AllocationGroupWithAllocations[];
-  trigger: React.ReactNode;
+  allocationGroups?: AllocationGroupWithAllocations[];
+  miscAllocations?: Allocation[];
 }) {
   const [open, setOpen] = useState<boolean>(false);
   const [filesUploaded, setFilesUploaded] = useState<string[]>([]);
@@ -79,7 +84,12 @@ export function CreatePurchaseDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      <DialogTrigger asChild>
+        <Button className="flex-1">
+          <Plus />
+          Create Purchase
+        </Button>
+      </DialogTrigger>
 
       <DialogContent>
         <DialogHeader>
@@ -168,13 +178,22 @@ export function CreatePurchaseDialog({
                   </div>
                   <FormControl>
                     <Combobox
-                      data={allocationGroups.map((group) => ({
-                        heading: group.name,
-                        items: group.allocations.map((allocation) => ({
-                          value: allocation.id,
-                          label: allocation.name,
+                      data={[
+                        ...allocationGroups.map((group) => ({
+                          heading: group.name,
+                          items: group.allocations.map((allocation) => ({
+                            value: allocation.id,
+                            label: allocation.name,
+                          })),
                         })),
-                      }))}
+                        {
+                          heading: 'Miscellaneous',
+                          items: miscAllocations.map((allocation) => ({
+                            value: allocation.id,
+                            label: allocation.name,
+                          })),
+                        },
+                      ]}
                       {...field}
                       value={field.value || ''}
                       name="allocation"
