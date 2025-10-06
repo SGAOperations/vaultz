@@ -58,7 +58,7 @@ export function PurchaseDialog({
                 target="_blank"
                 className="hover:underline"
               >
-                File {i}
+                File {i + 1}
               </a>
             ))}
             {receiptUrls.length === 0 && 'N/A'}
