@@ -64,12 +64,6 @@ export default async function AllocationGroup({
           users={users}
           accounts={accounts}
           allocationGroups={[allocationGroup]}
-          trigger={
-            <Button className="flex-1">
-              <Plus />
-              Create Purchase
-            </Button>
-          }
         />
         <CreateAllocationDialog
           trigger={

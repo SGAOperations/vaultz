@@ -60,12 +60,6 @@ export default async function Index({
           users={users}
           accounts={accounts}
           allocationGroups={allocationGroups}
-          trigger={
-            <Button className="flex-1">
-              <Plus />
-              Create Purchase
-            </Button>
-          }
         />
         <CreateAccountDialog
           indexId={indexId}

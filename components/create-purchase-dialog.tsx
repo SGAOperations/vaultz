@@ -33,6 +33,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Plus } from 'lucide-react';
 
 const schema = z.object({
   userId: z.string().min(1, 'Please select a user'),
@@ -50,12 +51,10 @@ export function CreatePurchaseDialog({
   users,
   accounts,
   allocationGroups,
-  trigger,
 }: {
   users: User[];
   accounts: AccountWithIndex[];
   allocationGroups: AllocationGroupWithAllocations[];
-  trigger: React.ReactNode;
 }) {
   const [open, setOpen] = useState<boolean>(false);
   const [filesUploaded, setFilesUploaded] = useState<string[]>([]);
@@ -79,7 +78,12 @@ export function CreatePurchaseDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      <DialogTrigger asChild>
+        <Button className="flex-1">
+          <Plus />
+          Create Purchase
+        </Button>
+      </DialogTrigger>
 
       <DialogContent>
         <DialogHeader>

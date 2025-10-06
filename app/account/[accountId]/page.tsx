@@ -56,12 +56,6 @@ export default async function Index({
         users={users}
         accounts={[account]}
         allocationGroups={allocationGroups}
-        trigger={
-          <Button className="flex-1">
-            <Plus />
-            Create Purchase
-          </Button>
-        }
       />
 
       <h2 className="mt-4 text-xl">Purchases</h2>
