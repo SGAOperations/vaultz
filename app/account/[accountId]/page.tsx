@@ -1,8 +1,6 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
-import { Plus } from 'lucide-react';
-
 import { getAccountById } from '@/prisma/services/account';
 import { getAllAllocationGroups } from '@/prisma/services/allocation-groups';
 import { getUsers } from '@/prisma/services/user';
@@ -11,7 +9,6 @@ import { formatNumber } from '@/lib/utils';
 
 import { CreatePurchaseDialog } from '@/components/create-purchase-dialog';
 import { PurchaseCard } from '@/components/purchase-card';
-import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 
 export const metadata: Metadata = { title: 'Account' };
