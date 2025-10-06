@@ -44,3 +44,20 @@ export async function getAllocationById({
     })),
   };
 }
+
+export async function getMiscAllocations(): Promise<AllocationWithPurchases[]> {
+  const allocations = await prisma.allocation.findMany({
+    where: { allocationGroupId: null },
+    include: { purchases: { include: { user: true } } },
+    orderBy: { name: 'asc' },
+  });
+
+  return allocations.map((allocation) => ({
+    ...allocation,
+    amount: allocation.amount.toNumber(),
+    purchases: allocation.purchases.map((purchase) => ({
+      ...purchase,
+      amount: purchase.amount.toNumber(),
+    })),
+  }));
+}
