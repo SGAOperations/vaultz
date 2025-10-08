@@ -272,7 +272,7 @@ export function CreatePurchaseDialog({
                           error.message === 'Invalid config: FileSizeMismatch'
                         ) {
                           alert(
-                            'File upload failed. Please ensure your file is either an Image smaller than 1MB or a PDF smaller than 512KB.',
+                            'File upload failed. Please ensure your file is either an image smaller than 1MB or a PDF smaller than 512KB.',
                           );
                           return;
                         }
