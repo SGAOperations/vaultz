@@ -45,6 +45,8 @@ export function PurchaseDialog({
           <p className="text-muted-foreground">
             {purchase.user.first} {purchase.user.last}
           </p>
+          <p>Description</p>
+          <p className="text-muted-foreground">{purchase.description}</p>
           <p>Amount</p>
           <p className="text-muted-foreground">
             ${formatNumber(purchase.amount)}
