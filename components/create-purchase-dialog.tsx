@@ -268,9 +268,16 @@ export function CreatePurchaseDialog({
                         ]);
                       }}
                       onUploadError={(error) => {
-                        console.error('Error uploading files', error.message);
+                        if (
+                          error.message === 'Invalid config: FileSizeMismatch'
+                        ) {
+                          alert(
+                            'File upload failed. Please ensure your file is either an image smaller than 1MB or a PDF smaller than 512KB.',
+                          );
+                          return;
+                        }
                         alert(
-                          'There was an error while uploading your files. Please try again later.',
+                          'There was an error uploading your file. Please contact an administrator for assistance.',
                         );
                       }}
                     />

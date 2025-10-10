@@ -36,7 +36,7 @@ export function AllocationGroupCard({
             {purchases.length == 0
               ? 0
               : formatNumber(
-                  allocations.map((v) => v.amount).reduce((p, c) => p + c),
+                  purchases.map((v) => v.amount).reduce((p, c) => p + c),
                 )}{' '}
             for {purchases.length} purchases
           </CardDescription>
