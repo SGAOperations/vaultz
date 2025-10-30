@@ -34,7 +34,10 @@ export async function getAccountById({
 }): Promise<AccountWithPurchases | null> {
   const account = await prisma.account.findUnique({
     where: { id },
-    include: { purchases: { include: { user: true } }, index: true },
+    include: {
+      purchases: { orderBy: { timestamp: 'desc' }, include: { user: true } },
+      index: true,
+    },
   });
   if (!account) return null;
 

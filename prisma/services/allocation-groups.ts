@@ -11,7 +11,14 @@ export async function getAllAllocationGroups(): Promise<
   return (
     await prisma.allocationGroup.findMany({
       include: {
-        allocations: { include: { purchases: { include: { user: true } } } },
+        allocations: {
+          include: {
+            purchases: {
+              orderBy: { timestamp: 'desc' },
+              include: { user: true },
+            },
+          },
+        },
       },
     })
   ).map(({ allocations, ...v }) => ({
@@ -35,7 +42,14 @@ export async function getAllocationGroup({
   const allocationGroup = await prisma.allocationGroup.findUnique({
     where: { id: id },
     include: {
-      allocations: { include: { purchases: { include: { user: true } } } },
+      allocations: {
+        include: {
+          purchases: {
+            orderBy: { timestamp: 'desc' },
+            include: { user: true },
+          },
+        },
+      },
     },
   });
 
