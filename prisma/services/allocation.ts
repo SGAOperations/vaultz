@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 
+import { Result } from '@/lib/error-handler';
 import prisma from '@/lib/prisma';
 import { Allocation, AllocationWithPurchases } from '@/lib/types';
 
@@ -13,26 +14,14 @@ export async function createAllocation({
   name: string;
   amount: number;
   allocationGroupId?: string;
-}): Promise<{
-  success: boolean;
-  data?: Allocation;
-  error?: string;
-}> {
-  try {
-    const allocation = await prisma.allocation.create({
-      data: { name, amount, allocationGroupId },
-    });
+}): Promise<Result<Allocation>> {
+  const allocation = await prisma.allocation.create({
+    data: { name, amount, allocationGroupId },
+  });
 
-    revalidatePath('/allocation-groups');
+  revalidatePath('/allocation-groups');
 
-    return {
-      success: true,
-      data: { ...allocation, amount: allocation.amount.toNumber() },
-    };
-  } catch (error) {
-    console.error('Error creating allocation:', error);
-    return { success: false, error: 'Failed to create allocation' };
-  }
+  return { ...allocation, amount: allocation.amount.toNumber() };
 }
 
 export async function getAllocationById({

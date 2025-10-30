@@ -9,6 +9,8 @@ import { z } from 'zod/v4';
 
 import { createAllocation } from '@/prisma/services/allocation';
 
+import { isError } from '@/lib/error-handler';
+
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -53,19 +55,18 @@ export function CreateAllocationDialog({
   });
 
   async function onSubmit(data: z.infer<typeof schema>) {
-    const toastId = toast.loading('Creating allocation...');
-
-    const result = await createAllocation({ ...data, allocationGroupId });
-
-    if (result.success) {
-      toast.success('Allocation created successfully', { id: toastId });
-      form.reset();
-      setOpen(false);
-    } else {
-      toast.error(result.error || 'Failed to create allocation', {
-        id: toastId,
-      });
-    }
+    await toast.promise(createAllocation({ ...data, allocationGroupId }), {
+      loading: 'Creating allocation...',
+      success: (result) => {
+        if (isError(result)) {
+          throw new Error('Failed to create allocation');
+        }
+        form.reset();
+        setOpen(false);
+        return 'Allocation created successfully';
+      },
+      error: 'Failed to create allocation',
+    });
   }
 
   return (

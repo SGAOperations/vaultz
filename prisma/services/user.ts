@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 
 import { User } from '@/prisma/client';
 
+import { Result } from '@/lib/error-handler';
 import prisma from '@/lib/prisma';
 import { UserWithPurchases } from '@/lib/types';
 
@@ -13,17 +14,12 @@ export async function createUser({
 }: {
   first: string;
   last: string;
-}): Promise<{ success: boolean; data?: User; error?: string }> {
-  try {
-    const data = await prisma.user.create({ data: { first, last } });
+}): Promise<Result<User>> {
+  const data = await prisma.user.create({ data: { first, last } });
 
-    revalidatePath(`/users`);
+  revalidatePath(`/users`);
 
-    return { success: true, data };
-  } catch (error) {
-    console.error('Error creating user:', error);
-    return { success: false, error: 'Failed to create user' };
-  }
+  return data;
 }
 
 export async function getUsers(): Promise<User[]> {
@@ -53,20 +49,15 @@ export async function updateUser({
   first: string;
   last: string;
   id: string;
-}): Promise<{ success: boolean; data?: User; error?: string }> {
-  try {
-    const data = await prisma.user.update({
-      where: { id, deletedAt: null },
-      data: { first, last },
-    });
+}): Promise<Result<User>> {
+  const data = await prisma.user.update({
+    where: { id, deletedAt: null },
+    data: { first, last },
+  });
 
-    revalidatePath(`/users`);
+  revalidatePath(`/users`);
 
-    return { success: true, data };
-  } catch (error) {
-    console.error('Error updating user:', error);
-    return { success: false, error: 'Failed to update user' };
-  }
+  return data;
 }
 
 export async function deleteUser({ id }: { id: string }) {

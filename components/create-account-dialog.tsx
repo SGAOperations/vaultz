@@ -9,6 +9,8 @@ import { z } from 'zod/v4';
 
 import { createAccount } from '@/prisma/services/account';
 
+import { isError } from '@/lib/error-handler';
+
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -53,17 +55,18 @@ export function CreateAccountDialog({
   });
 
   async function onSubmit(data: z.infer<typeof schema>) {
-    const toastId = toast.loading('Creating account...');
-
-    const result = await createAccount(data);
-
-    if (result.success) {
-      toast.success('Account created successfully', { id: toastId });
-      form.reset();
-      setOpen(false);
-    } else {
-      toast.error(result.error || 'Failed to create account', { id: toastId });
-    }
+    await toast.promise(createAccount(data), {
+      loading: 'Creating account...',
+      success: (result) => {
+        if (isError(result)) {
+          throw new Error('Failed to create account');
+        }
+        form.reset();
+        setOpen(false);
+        return 'Account created successfully';
+      },
+      error: 'Failed to create account',
+    });
   }
 
   return (

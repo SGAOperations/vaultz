@@ -2,11 +2,9 @@
 
 import { revalidatePath } from 'next/cache';
 
+import { Result } from '@/lib/error-handler';
 import prisma from '@/lib/prisma';
-import {
-  AllocationGroup,
-  AllocationGroupWithAllocations,
-} from '@/lib/types';
+import { AllocationGroup, AllocationGroupWithAllocations } from '@/lib/types';
 
 export async function getAllAllocationGroups(): Promise<
   AllocationGroupWithAllocations[]
@@ -61,21 +59,12 @@ export async function getAllocationGroup({
 
 export async function createAllocationGroup(data: {
   name: string;
-}): Promise<{
-  success: boolean;
-  data?: AllocationGroup;
-  error?: string;
-}> {
-  try {
-    const allocationGroup = await prisma.allocationGroup.create({
-      data: { name: data.name },
-    });
+}): Promise<Result<AllocationGroup>> {
+  const allocationGroup = await prisma.allocationGroup.create({
+    data: { name: data.name },
+  });
 
-    revalidatePath('/allocation-groups');
+  revalidatePath('/allocation-groups');
 
-    return { success: true, data: allocationGroup };
-  } catch (error) {
-    console.error('Error creating allocation group:', error);
-    return { success: false, error: 'Failed to create allocation group' };
-  }
+  return allocationGroup;
 }

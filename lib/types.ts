@@ -35,3 +35,6 @@ export type AllocationWithPurchases = Allocation & {
 export type AllocationGroupWithAllocations = AllocationGroup & {
   allocations: AllocationWithPurchases[];
 };
+
+// Re-export Prisma types that are used directly
+export type { AllocationGroup, Index, User };

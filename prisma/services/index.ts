@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 
 import { Index } from '@/prisma/client';
 
+import { Result } from '@/lib/error-handler';
 import prisma from '@/lib/prisma';
 import { IndexWithPurchases } from '@/lib/types';
 
@@ -76,15 +77,10 @@ export async function createIndex({
 }: {
   code: string;
   name: string;
-}): Promise<{ success: boolean; data?: Index; error?: string }> {
-  try {
-    const index = await prisma.index.create({ data: { code, name } });
+}): Promise<Result<Index>> {
+  const index = await prisma.index.create({ data: { code, name } });
 
-    revalidatePath('/');
+  revalidatePath('/');
 
-    return { success: true, data: index };
-  } catch (error) {
-    console.error('Error creating index:', error);
-    return { success: false, error: 'Failed to create index' };
-  }
+  return index;
 }

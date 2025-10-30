@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 
 import { Decimal } from '@/prisma/client/runtime/library';
 
+import { Result } from '@/lib/error-handler';
 import prisma from '@/lib/prisma';
 import { Account, AccountWithIndex, AccountWithPurchases } from '@/lib/types';
 
@@ -17,22 +18,14 @@ export async function createAccount({
   code: string;
   name: string;
   amount: number;
-}): Promise<{ success: boolean; data?: Account; error?: string }> {
-  try {
-    const account = await prisma.account.create({
-      data: { indexId, code, name, amount: new Decimal(amount) },
-    });
+}): Promise<Result<Account>> {
+  const account = await prisma.account.create({
+    data: { indexId, code, name, amount: new Decimal(amount) },
+  });
 
-    revalidatePath('/index');
+  revalidatePath('/index');
 
-    return {
-      success: true,
-      data: { ...account, amount: account.amount.toNumber() },
-    };
-  } catch (error) {
-    console.error('Error creating account:', error);
-    return { success: false, error: 'Failed to create account' };
-  }
+  return { ...account, amount: account.amount.toNumber() };
 }
 
 export async function getAccountById({

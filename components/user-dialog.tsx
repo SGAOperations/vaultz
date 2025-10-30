@@ -10,6 +10,8 @@ import { z } from 'zod/v4';
 import { User } from '@/prisma/client';
 import { createUser, updateUser } from '@/prisma/services/user';
 
+import { isError } from '@/lib/error-handler';
+
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -56,27 +58,31 @@ export function UserDialog({
   async function onSubmit(data: z.infer<typeof schema>) {
     if (user) {
       // Update existing user
-      const toastId = toast.loading('Updating user...');
-      const result = await updateUser({ ...data, id: user.id });
-
-      if (result.success) {
-        toast.success('User updated successfully', { id: toastId });
-        setOpen(false);
-      } else {
-        toast.error(result.error || 'Failed to update user', { id: toastId });
-      }
+      await toast.promise(updateUser({ ...data, id: user.id }), {
+        loading: 'Updating user...',
+        success: (result) => {
+          if (isError(result)) {
+            throw new Error('Failed to update user');
+          }
+          setOpen(false);
+          return 'User updated successfully';
+        },
+        error: 'Failed to update user',
+      });
     } else {
       // Create new user
-      const toastId = toast.loading('Creating user...');
-      const result = await createUser(data);
-
-      if (result.success) {
-        toast.success('User created successfully', { id: toastId });
-        form.reset();
-        setOpen(false);
-      } else {
-        toast.error(result.error || 'Failed to create user', { id: toastId });
-      }
+      await toast.promise(createUser(data), {
+        loading: 'Creating user...',
+        success: (result) => {
+          if (isError(result)) {
+            throw new Error('Failed to create user');
+          }
+          form.reset();
+          setOpen(false);
+          return 'User created successfully';
+        },
+        error: 'Failed to create user',
+      });
     }
   }
 

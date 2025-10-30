@@ -9,6 +9,8 @@ import { z } from 'zod/v4';
 
 import { createIndex } from '@/prisma/services';
 
+import { isError } from '@/lib/error-handler';
+
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -45,17 +47,18 @@ export function CreateIndexDialog({ trigger }: { trigger: React.ReactNode }) {
   });
 
   async function onSubmit(data: z.infer<typeof schema>) {
-    const toastId = toast.loading('Creating index...');
-
-    const result = await createIndex(data);
-
-    if (result.success) {
-      toast.success('Index created successfully', { id: toastId });
-      form.reset();
-      setOpen(false);
-    } else {
-      toast.error(result.error || 'Failed to create index', { id: toastId });
-    }
+    await toast.promise(createIndex(data), {
+      loading: 'Creating index...',
+      success: (result) => {
+        if (isError(result)) {
+          throw new Error('Failed to create index');
+        }
+        form.reset();
+        setOpen(false);
+        return 'Index created successfully';
+      },
+      error: 'Failed to create index',
+    });
   }
 
   return (

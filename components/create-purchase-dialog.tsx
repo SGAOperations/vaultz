@@ -12,6 +12,7 @@ import { z } from 'zod/v4';
 import { User } from '@/prisma/client';
 import { createPurchase } from '@/prisma/services/purchase';
 
+import { isError } from '@/lib/error-handler';
 import {
   AccountWithIndex,
   Allocation,
@@ -78,17 +79,18 @@ export function CreatePurchaseDialog({
   });
 
   async function onSubmit(data: z.infer<typeof schema>) {
-    const toastId = toast.loading('Creating purchase...');
-
-    const result = await createPurchase(data);
-
-    if (result.success) {
-      toast.success('Purchase created successfully', { id: toastId });
-      form.reset();
-      setOpen(false);
-    } else {
-      toast.error(result.error || 'Failed to create purchase', { id: toastId });
-    }
+    await toast.promise(createPurchase(data), {
+      loading: 'Creating purchase...',
+      success: (result) => {
+        if (isError(result)) {
+          throw new Error('Failed to create purchase');
+        }
+        form.reset();
+        setOpen(false);
+        return 'Purchase created successfully';
+      },
+      error: 'Failed to create purchase',
+    });
   }
 
   return (
