@@ -54,15 +54,17 @@ export function CreateAllocationDialog({
 
   async function onSubmit(data: z.infer<typeof schema>) {
     const toastId = toast.loading('Creating allocation...');
-    
+
     const result = await createAllocation({ ...data, allocationGroupId });
-    
+
     if (result.success) {
       toast.success('Allocation created successfully', { id: toastId });
       form.reset();
       setOpen(false);
     } else {
-      toast.error(result.error || 'Failed to create allocation', { id: toastId });
+      toast.error(result.error || 'Failed to create allocation', {
+        id: toastId,
+      });
     }
   }
 

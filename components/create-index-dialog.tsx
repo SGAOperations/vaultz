@@ -46,9 +46,9 @@ export function CreateIndexDialog({ trigger }: { trigger: React.ReactNode }) {
 
   async function onSubmit(data: z.infer<typeof schema>) {
     const toastId = toast.loading('Creating index...');
-    
+
     const result = await createIndex(data);
-    
+
     if (result.success) {
       toast.success('Index created successfully', { id: toastId });
       form.reset();

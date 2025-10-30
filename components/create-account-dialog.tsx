@@ -54,9 +54,9 @@ export function CreateAccountDialog({
 
   async function onSubmit(data: z.infer<typeof schema>) {
     const toastId = toast.loading('Creating account...');
-    
+
     const result = await createAccount(data);
-    
+
     if (result.success) {
       toast.success('Account created successfully', { id: toastId });
       form.reset();

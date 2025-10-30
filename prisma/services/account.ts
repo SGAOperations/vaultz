@@ -25,7 +25,10 @@ export async function createAccount({
 
     revalidatePath('/index');
 
-    return { success: true, data: { ...account, amount: account.amount.toNumber() } };
+    return {
+      success: true,
+      data: { ...account, amount: account.amount.toNumber() },
+    };
   } catch (error) {
     console.error('Error creating account:', error);
     return { success: false, error: 'Failed to create account' };

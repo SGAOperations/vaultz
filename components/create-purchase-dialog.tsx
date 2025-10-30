@@ -79,9 +79,9 @@ export function CreatePurchaseDialog({
 
   async function onSubmit(data: z.infer<typeof schema>) {
     const toastId = toast.loading('Creating purchase...');
-    
+
     const result = await createPurchase(data);
-    
+
     if (result.success) {
       toast.success('Purchase created successfully', { id: toastId });
       form.reset();

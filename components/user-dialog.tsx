@@ -58,7 +58,7 @@ export function UserDialog({
       // Update existing user
       const toastId = toast.loading('Updating user...');
       const result = await updateUser({ ...data, id: user.id });
-      
+
       if (result.success) {
         toast.success('User updated successfully', { id: toastId });
         setOpen(false);
@@ -69,7 +69,7 @@ export function UserDialog({
       // Create new user
       const toastId = toast.loading('Creating user...');
       const result = await createUser(data);
-      
+
       if (result.success) {
         toast.success('User created successfully', { id: toastId });
         form.reset();

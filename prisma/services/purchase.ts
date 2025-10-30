@@ -36,7 +36,10 @@ export async function createPurchase({
 
     revalidatePath('/');
 
-    return { success: true, data: { ...purchase, amount: purchase.amount.toNumber() } };
+    return {
+      success: true,
+      data: { ...purchase, amount: purchase.amount.toNumber() },
+    };
   } catch (error) {
     console.error('Error creating purchase:', error);
     return { success: false, error: 'Failed to create purchase' };

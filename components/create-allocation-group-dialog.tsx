@@ -48,15 +48,17 @@ export function CreateAllocationGroupDialog({
 
   async function onSubmit(data: z.infer<typeof schema>) {
     const toastId = toast.loading('Creating allocation group...');
-    
+
     const result = await createAllocationGroup(data);
-    
+
     if (result.success) {
       toast.success('Allocation group created successfully', { id: toastId });
       form.reset();
       setOpen(false);
     } else {
-      toast.error(result.error || 'Failed to create allocation group', { id: toastId });
+      toast.error(result.error || 'Failed to create allocation group', {
+        id: toastId,
+      });
     }
   }
 

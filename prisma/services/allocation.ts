@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 
 import prisma from '@/lib/prisma';
-import { AllocationWithPurchases } from '@/lib/types';
+import { Allocation, AllocationWithPurchases } from '@/lib/types';
 
 export async function createAllocation({
   name,
@@ -13,7 +13,11 @@ export async function createAllocation({
   name: string;
   amount: number;
   allocationGroupId?: string;
-}): Promise<{ success: boolean; data?: any; error?: string }> {
+}): Promise<{
+  success: boolean;
+  data?: Allocation;
+  error?: string;
+}> {
   try {
     const allocation = await prisma.allocation.create({
       data: { name, amount, allocationGroupId },
@@ -21,7 +25,10 @@ export async function createAllocation({
 
     revalidatePath('/allocation-groups');
 
-    return { success: true, data: { ...allocation, amount: allocation.amount.toNumber() } };
+    return {
+      success: true,
+      data: { ...allocation, amount: allocation.amount.toNumber() },
+    };
   } catch (error) {
     console.error('Error creating allocation:', error);
     return { success: false, error: 'Failed to create allocation' };
