@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { toast } from 'sonner';
 import { z } from 'zod/v4';
 
 import { User } from '@/prisma/client';
@@ -52,16 +53,31 @@ export function UserDialog({
     defaultValues: { first: user?.first || '', last: user?.last || '' },
   });
 
-  function onSubmit(data: z.infer<typeof schema>) {
-    if (user)
+  async function onSubmit(data: z.infer<typeof schema>) {
+    if (user) {
       // Update existing user
-      updateUser({ ...data, id: user.id });
-    else {
+      const toastId = toast.loading('Updating user...');
+      const result = await updateUser({ ...data, id: user.id });
+      
+      if (result.success) {
+        toast.success('User updated successfully', { id: toastId });
+        setOpen(false);
+      } else {
+        toast.error(result.error || 'Failed to update user', { id: toastId });
+      }
+    } else {
       // Create new user
-      createUser(data);
-      form.reset();
+      const toastId = toast.loading('Creating user...');
+      const result = await createUser(data);
+      
+      if (result.success) {
+        toast.success('User created successfully', { id: toastId });
+        form.reset();
+        setOpen(false);
+      } else {
+        toast.error(result.error || 'Failed to create user', { id: toastId });
+      }
     }
-    setOpen(false);
   }
 
   return (

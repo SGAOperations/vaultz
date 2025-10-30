@@ -21,19 +21,24 @@ export async function createPurchase({
   amount: number;
   allocationId?: string;
   receipts?: string[];
-}): Promise<Purchase> {
-  const purchase = await prisma.purchase.create({
-    data: {
-      userId,
-      accountId,
-      description: description || '',
-      amount: new Decimal(amount),
-      allocationId,
-      receipts,
-    },
-  });
+}): Promise<{ success: boolean; data?: Purchase; error?: string }> {
+  try {
+    const purchase = await prisma.purchase.create({
+      data: {
+        userId,
+        accountId,
+        description: description || '',
+        amount: new Decimal(amount),
+        allocationId,
+        receipts,
+      },
+    });
 
-  revalidatePath('/');
+    revalidatePath('/');
 
-  return { ...purchase, amount: purchase.amount.toNumber() };
+    return { success: true, data: { ...purchase, amount: purchase.amount.toNumber() } };
+  } catch (error) {
+    console.error('Error creating purchase:', error);
+    return { success: false, error: 'Failed to create purchase' };
+  }
 }

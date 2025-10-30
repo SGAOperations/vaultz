@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Plus } from 'lucide-react';
+import { toast } from 'sonner';
 import { twMerge } from 'tailwind-merge';
 import { z } from 'zod/v4';
 
@@ -76,10 +77,18 @@ export function CreatePurchaseDialog({
     },
   });
 
-  function onSubmit(data: z.infer<typeof schema>) {
-    createPurchase(data);
-    form.reset();
-    setOpen(false);
+  async function onSubmit(data: z.infer<typeof schema>) {
+    const toastId = toast.loading('Creating purchase...');
+    
+    const result = await createPurchase(data);
+    
+    if (result.success) {
+      toast.success('Purchase created successfully', { id: toastId });
+      form.reset();
+      setOpen(false);
+    } else {
+      toast.error(result.error || 'Failed to create purchase', { id: toastId });
+    }
   }
 
   return (
@@ -271,12 +280,12 @@ export function CreatePurchaseDialog({
                         if (
                           error.message === 'Invalid config: FileSizeMismatch'
                         ) {
-                          alert(
+                          toast.error(
                             'File upload failed. Please ensure your file is either an image smaller than 1MB or a PDF smaller than 512KB.',
                           );
                           return;
                         }
-                        alert(
+                        toast.error(
                           'There was an error uploading your file. Please contact an administrator for assistance.',
                         );
                       }}

@@ -13,14 +13,19 @@ export async function createAllocation({
   name: string;
   amount: number;
   allocationGroupId?: string;
-}) {
-  const allocation = await prisma.allocation.create({
-    data: { name, amount, allocationGroupId },
-  });
+}): Promise<{ success: boolean; data?: any; error?: string }> {
+  try {
+    const allocation = await prisma.allocation.create({
+      data: { name, amount, allocationGroupId },
+    });
 
-  revalidatePath('/allocation-groups');
+    revalidatePath('/allocation-groups');
 
-  return { ...allocation, amount: allocation.amount.toNumber() };
+    return { success: true, data: { ...allocation, amount: allocation.amount.toNumber() } };
+  } catch (error) {
+    console.error('Error creating allocation:', error);
+    return { success: false, error: 'Failed to create allocation' };
+  }
 }
 
 export async function getAllocationById({

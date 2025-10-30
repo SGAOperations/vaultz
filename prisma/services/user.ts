@@ -13,12 +13,17 @@ export async function createUser({
 }: {
   first: string;
   last: string;
-}): Promise<User> {
-  const data = await prisma.user.create({ data: { first, last } });
+}): Promise<{ success: boolean; data?: User; error?: string }> {
+  try {
+    const data = await prisma.user.create({ data: { first, last } });
 
-  revalidatePath(`/users`);
+    revalidatePath(`/users`);
 
-  return data;
+    return { success: true, data };
+  } catch (error) {
+    console.error('Error creating user:', error);
+    return { success: false, error: 'Failed to create user' };
+  }
 }
 
 export async function getUsers(): Promise<User[]> {
@@ -48,15 +53,20 @@ export async function updateUser({
   first: string;
   last: string;
   id: string;
-}) {
-  const data = await prisma.user.update({
-    where: { id, deletedAt: null },
-    data: { first, last },
-  });
+}): Promise<{ success: boolean; data?: User; error?: string }> {
+  try {
+    const data = await prisma.user.update({
+      where: { id, deletedAt: null },
+      data: { first, last },
+    });
 
-  revalidatePath(`/users`);
+    revalidatePath(`/users`);
 
-  return data;
+    return { success: true, data };
+  } catch (error) {
+    console.error('Error updating user:', error);
+    return { success: false, error: 'Failed to update user' };
+  }
 }
 
 export async function deleteUser({ id }: { id: string }) {

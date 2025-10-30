@@ -56,12 +56,17 @@ export async function getAllocationGroup({
   };
 }
 
-export async function createAllocationGroup(data: { name: string }) {
-  const allocationGroup = await prisma.allocationGroup.create({
-    data: { name: data.name },
-  });
+export async function createAllocationGroup(data: { name: string }): Promise<{ success: boolean; data?: any; error?: string }> {
+  try {
+    const allocationGroup = await prisma.allocationGroup.create({
+      data: { name: data.name },
+    });
 
-  revalidatePath('/allocation-groups');
+    revalidatePath('/allocation-groups');
 
-  return allocationGroup;
+    return { success: true, data: allocationGroup };
+  } catch (error) {
+    console.error('Error creating allocation group:', error);
+    return { success: false, error: 'Failed to create allocation group' };
+  }
 }

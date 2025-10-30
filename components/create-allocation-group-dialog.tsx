@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { toast } from 'sonner';
 import { z } from 'zod/v4';
 
 import { createAllocationGroup } from '@/prisma/services/allocation-groups';
@@ -45,10 +46,18 @@ export function CreateAllocationGroupDialog({
     defaultValues: { name: '' },
   });
 
-  function onSubmit(data: z.infer<typeof schema>) {
-    createAllocationGroup(data);
-    form.reset();
-    setOpen(false);
+  async function onSubmit(data: z.infer<typeof schema>) {
+    const toastId = toast.loading('Creating allocation group...');
+    
+    const result = await createAllocationGroup(data);
+    
+    if (result.success) {
+      toast.success('Allocation group created successfully', { id: toastId });
+      form.reset();
+      setOpen(false);
+    } else {
+      toast.error(result.error || 'Failed to create allocation group', { id: toastId });
+    }
   }
 
   return (

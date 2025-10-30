@@ -76,10 +76,15 @@ export async function createIndex({
 }: {
   code: string;
   name: string;
-}): Promise<Index> {
-  const index = await prisma.index.create({ data: { code, name } });
+}): Promise<{ success: boolean; data?: Index; error?: string }> {
+  try {
+    const index = await prisma.index.create({ data: { code, name } });
 
-  revalidatePath('/');
+    revalidatePath('/');
 
-  return index;
+    return { success: true, data: index };
+  } catch (error) {
+    console.error('Error creating index:', error);
+    return { success: false, error: 'Failed to create index' };
+  }
 }

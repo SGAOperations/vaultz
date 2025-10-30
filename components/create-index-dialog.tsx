@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { toast } from 'sonner';
 import { z } from 'zod/v4';
 
 import { createIndex } from '@/prisma/services';
@@ -43,10 +44,18 @@ export function CreateIndexDialog({ trigger }: { trigger: React.ReactNode }) {
     defaultValues: { name: '', code: '' },
   });
 
-  function onSubmit(data: z.infer<typeof schema>) {
-    createIndex(data);
-    form.reset();
-    setOpen(false);
+  async function onSubmit(data: z.infer<typeof schema>) {
+    const toastId = toast.loading('Creating index...');
+    
+    const result = await createIndex(data);
+    
+    if (result.success) {
+      toast.success('Index created successfully', { id: toastId });
+      form.reset();
+      setOpen(false);
+    } else {
+      toast.error(result.error || 'Failed to create index', { id: toastId });
+    }
   }
 
   return (

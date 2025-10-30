@@ -17,14 +17,19 @@ export async function createAccount({
   code: string;
   name: string;
   amount: number;
-}): Promise<Account> {
-  const account = await prisma.account.create({
-    data: { indexId, code, name, amount: new Decimal(amount) },
-  });
+}): Promise<{ success: boolean; data?: Account; error?: string }> {
+  try {
+    const account = await prisma.account.create({
+      data: { indexId, code, name, amount: new Decimal(amount) },
+    });
 
-  revalidatePath('/index');
+    revalidatePath('/index');
 
-  return { ...account, amount: account.amount.toNumber() };
+    return { success: true, data: { ...account, amount: account.amount.toNumber() } };
+  } catch (error) {
+    console.error('Error creating account:', error);
+    return { success: false, error: 'Failed to create account' };
+  }
 }
 
 export async function getAccountById({
