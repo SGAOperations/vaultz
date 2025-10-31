@@ -1,7 +1,10 @@
 import {
+  AllocationGroup,
+  Index,
   Account as PrismaAccount,
   Allocation as PrismaAllocation,
   Purchase as PrismaPurchase,
+  User,
 } from '@/prisma/client';
 
 export type Purchase = Omit<PrismaPurchase, 'amount'> & { amount: number };
