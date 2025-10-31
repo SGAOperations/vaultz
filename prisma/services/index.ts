@@ -6,6 +6,7 @@ import { Index } from '@/prisma/client';
 
 import prisma from '@/lib/prisma';
 import { IndexWithPurchases } from '@/lib/types';
+import { ResponseType } from '@/lib/utils';
 
 export async function getAllIndexes(): Promise<IndexWithPurchases[]> {
   return (
@@ -84,7 +85,7 @@ export async function createIndex({
 }: {
   code: string;
   name: string;
-}): Promise<Index> {
+}): Promise<ResponseType<Index>> {
   const index = await prisma.index.create({ data: { code, name } });
 
   revalidatePath('/');
