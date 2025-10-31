@@ -57,31 +57,29 @@ export function UserDialog({
   async function onSubmit(data: z.infer<typeof schema>) {
     if (user) {
       // Update existing user
-      await handleToast(
-        updateUser({ ...data, id: user.id }),
-        {
+      await handleToast(updateUser({ ...data, id: user.id }), {
+        toasts: {
           loading: 'Updating user...',
           success: 'User updated successfully',
           error: 'Failed to update user',
         },
-        () => {
+        onSuccess: () => {
           setOpen(false);
         },
-      );
+      });
     } else {
       // Create new user
-      await handleToast(
-        createUser(data),
-        {
+      await handleToast(createUser(data), {
+        toasts: {
           loading: 'Creating user...',
           success: 'User created successfully',
           error: 'Failed to create user',
         },
-        () => {
+        onSuccess: () => {
           form.reset();
           setOpen(false);
         },
-      );
+      });
     }
   }
 

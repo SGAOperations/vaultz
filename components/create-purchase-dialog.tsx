@@ -79,18 +79,17 @@ export function CreatePurchaseDialog({
   });
 
   async function onSubmit(data: z.infer<typeof schema>) {
-    await handleToast(
-      createPurchase(data),
-      {
+    await handleToast(createPurchase(data), {
+      toasts: {
         loading: 'Creating purchase...',
         success: 'Purchase created successfully',
         error: 'Failed to create purchase',
       },
-      () => {
+      onSuccess: () => {
         form.reset();
         setOpen(false);
       },
-    );
+    });
   }
 
   return (

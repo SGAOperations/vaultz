@@ -54,18 +54,17 @@ export function CreateAccountDialog({
   });
 
   async function onSubmit(data: z.infer<typeof schema>) {
-    await handleToast(
-      createAccount(data),
-      {
+    await handleToast(createAccount(data), {
+      toasts: {
         loading: 'Creating account...',
         success: 'Account created successfully',
         error: 'Failed to create account',
       },
-      () => {
+      onSuccess: () => {
         form.reset();
         setOpen(false);
       },
-    );
+    });
   }
 
   return (

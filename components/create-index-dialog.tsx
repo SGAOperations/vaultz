@@ -46,18 +46,17 @@ export function CreateIndexDialog({ trigger }: { trigger: React.ReactNode }) {
   });
 
   async function onSubmit(data: z.infer<typeof schema>) {
-    await handleToast(
-      createIndex(data),
-      {
+    await handleToast(createIndex(data), {
+      toasts: {
         loading: 'Creating index...',
         success: 'Index created successfully',
         error: 'Failed to create index',
       },
-      () => {
+      onSuccess: () => {
         form.reset();
         setOpen(false);
       },
-    );
+    });
   }
 
   return (
