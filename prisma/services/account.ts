@@ -6,7 +6,7 @@ import { Decimal } from '@/prisma/client/runtime/library';
 
 import prisma from '@/lib/prisma';
 import { Account, AccountWithIndex, AccountWithPurchases } from '@/lib/types';
-import { ResponseType } from '@/lib/utils/toast';
+import { ResponseType } from '@/lib/utils';
 
 export async function createAccount({
   indexId,

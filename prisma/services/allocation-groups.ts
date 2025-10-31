@@ -6,7 +6,7 @@ import { AllocationGroup } from '@/prisma/client';
 
 import prisma from '@/lib/prisma';
 import { AllocationGroupWithAllocations } from '@/lib/types';
-import { ResponseType } from '@/lib/utils/toast';
+import { ResponseType } from '@/lib/utils';
 
 export async function getAllAllocationGroups(): Promise<
   AllocationGroupWithAllocations[]

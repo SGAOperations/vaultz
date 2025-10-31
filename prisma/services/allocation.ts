@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 
 import prisma from '@/lib/prisma';
 import { Allocation, AllocationWithPurchases } from '@/lib/types';
-import { ResponseType } from '@/lib/utils/toast';
+import { ResponseType } from '@/lib/utils';
 
 export async function createAllocation({
   name,

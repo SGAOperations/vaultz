@@ -4,12 +4,11 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { toast } from 'sonner';
 import { z } from 'zod/v4';
 
 import { createAccount } from '@/prisma/services/account';
 
-import { isError } from '@/lib/utils/toast';
+import { handleToast } from '@/lib/utils';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -55,18 +54,18 @@ export function CreateAccountDialog({
   });
 
   async function onSubmit(data: z.infer<typeof schema>) {
-    await toast.promise(createAccount(data), {
-      loading: 'Creating account...',
-      success: (result) => {
-        if (isError(result)) {
-          throw new Error('Failed to create account');
-        }
+    await handleToast(
+      createAccount(data),
+      {
+        loading: 'Creating account...',
+        success: 'Account created successfully',
+        error: 'Failed to create account',
+      },
+      () => {
         form.reset();
         setOpen(false);
-        return 'Account created successfully';
       },
-      error: 'Failed to create account',
-    });
+    );
   }
 
   return (

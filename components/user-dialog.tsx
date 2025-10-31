@@ -4,13 +4,12 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { toast } from 'sonner';
 import { z } from 'zod/v4';
 
 import { User } from '@/prisma/client';
 import { createUser, updateUser } from '@/prisma/services/user';
 
-import { isError } from '@/lib/utils/toast';
+import { handleToast } from '@/lib/utils';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -58,31 +57,31 @@ export function UserDialog({
   async function onSubmit(data: z.infer<typeof schema>) {
     if (user) {
       // Update existing user
-      await toast.promise(updateUser({ ...data, id: user.id }), {
-        loading: 'Updating user...',
-        success: (result) => {
-          if (isError(result)) {
-            throw new Error('Failed to update user');
-          }
-          setOpen(false);
-          return 'User updated successfully';
+      await handleToast(
+        updateUser({ ...data, id: user.id }),
+        {
+          loading: 'Updating user...',
+          success: 'User updated successfully',
+          error: 'Failed to update user',
         },
-        error: 'Failed to update user',
-      });
+        () => {
+          setOpen(false);
+        },
+      );
     } else {
       // Create new user
-      await toast.promise(createUser(data), {
-        loading: 'Creating user...',
-        success: (result) => {
-          if (isError(result)) {
-            throw new Error('Failed to create user');
-          }
+      await handleToast(
+        createUser(data),
+        {
+          loading: 'Creating user...',
+          success: 'User created successfully',
+          error: 'Failed to create user',
+        },
+        () => {
           form.reset();
           setOpen(false);
-          return 'User created successfully';
         },
-        error: 'Failed to create user',
-      });
+      );
     }
   }
 

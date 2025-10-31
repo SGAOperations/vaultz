@@ -4,12 +4,11 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { toast } from 'sonner';
 import { z } from 'zod/v4';
 
 import { createAllocation } from '@/prisma/services/allocation';
 
-import { isError } from '@/lib/utils/toast';
+import { handleToast } from '@/lib/utils';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -55,18 +54,18 @@ export function CreateAllocationDialog({
   });
 
   async function onSubmit(data: z.infer<typeof schema>) {
-    await toast.promise(createAllocation({ ...data, allocationGroupId }), {
-      loading: 'Creating allocation...',
-      success: (result) => {
-        if (isError(result)) {
-          throw new Error('Failed to create allocation');
-        }
+    await handleToast(
+      createAllocation({ ...data, allocationGroupId }),
+      {
+        loading: 'Creating allocation...',
+        success: 'Allocation created successfully',
+        error: 'Failed to create allocation',
+      },
+      () => {
         form.reset();
         setOpen(false);
-        return 'Allocation created successfully';
       },
-      error: 'Failed to create allocation',
-    });
+    );
   }
 
   return (

@@ -18,7 +18,7 @@ import {
   AllocationGroupWithAllocations,
 } from '@/lib/types';
 import { UploadDropzone } from '@/lib/uploadthing';
-import { isError } from '@/lib/utils/toast';
+import { handleToast } from '@/lib/utils';
 
 import { Button } from '@/components/ui/button';
 import { Combobox } from '@/components/ui/combobox';
@@ -79,18 +79,18 @@ export function CreatePurchaseDialog({
   });
 
   async function onSubmit(data: z.infer<typeof schema>) {
-    await toast.promise(createPurchase(data), {
-      loading: 'Creating purchase...',
-      success: (result) => {
-        if (isError(result)) {
-          throw new Error('Failed to create purchase');
-        }
+    await handleToast(
+      createPurchase(data),
+      {
+        loading: 'Creating purchase...',
+        success: 'Purchase created successfully',
+        error: 'Failed to create purchase',
+      },
+      () => {
         form.reset();
         setOpen(false);
-        return 'Purchase created successfully';
       },
-      error: 'Failed to create purchase',
-    });
+    );
   }
 
   return (

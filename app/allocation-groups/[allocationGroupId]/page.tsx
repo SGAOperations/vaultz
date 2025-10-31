@@ -34,7 +34,7 @@ export default async function AllocationGroup({
   const users = await getUsers();
 
   const amount = allocationGroup.allocations.reduce(
-    (acc, allocation) => acc + allocation.amount,
+    (acc: number, allocation) => acc + allocation.amount,
     0,
   );
 
@@ -42,7 +42,10 @@ export default async function AllocationGroup({
     (allocation) => allocation.purchases,
   );
 
-  const spent = purchases.reduce((acc, purchase) => acc + purchase.amount, 0);
+  const spent = purchases.reduce(
+    (acc: number, purchase) => acc + purchase.amount,
+    0,
+  );
 
   return (
     <div className="flex w-full flex-col gap-3">
