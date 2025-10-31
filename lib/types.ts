@@ -35,6 +35,3 @@ export type AllocationWithPurchases = Allocation & {
 export type AllocationGroupWithAllocations = AllocationGroup & {
   allocations: AllocationWithPurchases[];
 };
-
-// Import types directly from Prisma
-export type { AllocationGroup, Index, User } from '@/prisma/client';
