@@ -9,6 +9,7 @@ import { getMiscAllocations } from '@/prisma/services/allocation';
 import { getAllocationGroup } from '@/prisma/services/allocation-groups';
 import { getUsers } from '@/prisma/services/user';
 
+import { PurchaseWithUser } from '@/lib/types';
 import { formatNumber } from '@/lib/utils';
 
 import { CreateAllocationDialog } from '@/components/create-allocation-dialog';
@@ -34,16 +35,16 @@ export default async function AllocationGroup({
   const users = await getUsers();
 
   const amount = allocationGroup.allocations.reduce(
-    (acc: number, allocation) => acc + allocation.amount,
+    (acc: number, allocation: { amount: number }) => acc + allocation.amount,
     0,
   );
 
   const purchases = allocationGroup.allocations.flatMap(
-    (allocation) => allocation.purchases,
+    (allocation: { purchases: PurchaseWithUser[] }) => allocation.purchases,
   );
 
   const spent = purchases.reduce(
-    (acc: number, purchase) => acc + purchase.amount,
+    (acc: number, purchase: { amount: number }) => acc + purchase.amount,
     0,
   );
 
