@@ -35,7 +35,7 @@ export default async function AllocationGroup({
   const users = await getUsers();
 
   const amount = allocationGroup.allocations.reduce(
-    (acc: number, allocation: { amount: number }) => acc + allocation.amount,
+    (acc, allocation) => acc + allocation.amount,
     0,
   );
 
@@ -44,7 +44,7 @@ export default async function AllocationGroup({
   );
 
   const spent = purchases.reduce(
-    (acc: number, purchase: { amount: number }) => acc + purchase.amount,
+    (acc, purchase) => acc + purchase.amount,
     0,
   );
 
