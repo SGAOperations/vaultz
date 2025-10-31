@@ -8,7 +8,7 @@ import { z } from 'zod/v4';
 
 import { createAllocation } from '@/prisma/services/allocation';
 
-import { handleToast } from '@/lib/utils';
+import { handleError } from '@/lib/utils';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -54,8 +54,8 @@ export function CreateAllocationDialog({
   });
 
   async function onSubmit(data: z.infer<typeof schema>) {
-    await handleToast(createAllocation({ ...data, allocationGroupId }), {
-      toasts: {
+    await handleError(createAllocation({ ...data, allocationGroupId }), {
+      toast: {
         loading: 'Creating allocation...',
         success: 'Allocation created successfully',
         error: 'Failed to create allocation',

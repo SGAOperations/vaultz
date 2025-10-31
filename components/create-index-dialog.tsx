@@ -8,7 +8,7 @@ import { z } from 'zod/v4';
 
 import { createIndex } from '@/prisma/services';
 
-import { handleToast } from '@/lib/utils';
+import { handleError } from '@/lib/utils';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -46,8 +46,8 @@ export function CreateIndexDialog({ trigger }: { trigger: React.ReactNode }) {
   });
 
   async function onSubmit(data: z.infer<typeof schema>) {
-    await handleToast(createIndex(data), {
-      toasts: {
+    await handleError(createIndex(data), {
+      toast: {
         loading: 'Creating index...',
         success: 'Index created successfully',
         error: 'Failed to create index',

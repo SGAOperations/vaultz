@@ -8,7 +8,7 @@ import { z } from 'zod/v4';
 
 import { createAccount } from '@/prisma/services/account';
 
-import { handleToast } from '@/lib/utils';
+import { handleError } from '@/lib/utils';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -54,8 +54,8 @@ export function CreateAccountDialog({
   });
 
   async function onSubmit(data: z.infer<typeof schema>) {
-    await handleToast(createAccount(data), {
-      toasts: {
+    await handleError(createAccount(data), {
+      toast: {
         loading: 'Creating account...',
         success: 'Account created successfully',
         error: 'Failed to create account',

@@ -9,7 +9,7 @@ import { z } from 'zod/v4';
 import { User } from '@/prisma/client';
 import { createUser, updateUser } from '@/prisma/services/user';
 
-import { handleToast } from '@/lib/utils';
+import { handleError } from '@/lib/utils';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -57,8 +57,8 @@ export function UserDialog({
   async function onSubmit(data: z.infer<typeof schema>) {
     if (user) {
       // Update existing user
-      await handleToast(updateUser({ ...data, id: user.id }), {
-        toasts: {
+      await handleError(updateUser({ ...data, id: user.id }), {
+        toast: {
           loading: 'Updating user...',
           success: 'User updated successfully',
           error: 'Failed to update user',
@@ -69,8 +69,8 @@ export function UserDialog({
       });
     } else {
       // Create new user
-      await handleToast(createUser(data), {
-        toasts: {
+      await handleError(createUser(data), {
+        toast: {
           loading: 'Creating user...',
           success: 'User created successfully',
           error: 'Failed to create user',
