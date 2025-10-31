@@ -40,7 +40,7 @@ export default async function AllocationGroup({
   );
 
   const purchases = allocationGroup.allocations.flatMap(
-    (allocation: { purchases: PurchaseWithUser[] }) => allocation.purchases,
+    (allocation) => allocation.purchases,
   );
 
   const spent = purchases.reduce(
