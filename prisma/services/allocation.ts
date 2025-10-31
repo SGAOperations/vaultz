@@ -2,9 +2,9 @@
 
 import { revalidatePath } from 'next/cache';
 
-import { Result } from '@/lib/error-handler';
 import prisma from '@/lib/prisma';
 import { Allocation, AllocationWithPurchases } from '@/lib/types';
+import { ResponseType } from '@/lib/utils/toast';
 
 export async function createAllocation({
   name,
@@ -14,7 +14,7 @@ export async function createAllocation({
   name: string;
   amount: number;
   allocationGroupId?: string;
-}): Promise<Result<Allocation>> {
+}): Promise<ResponseType<Allocation>> {
   const allocation = await prisma.allocation.create({
     data: { name, amount, allocationGroupId },
   });

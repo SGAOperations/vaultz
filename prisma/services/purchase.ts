@@ -4,9 +4,9 @@ import { revalidatePath } from 'next/cache';
 
 import { Decimal } from '@/prisma/client/runtime/library';
 
-import { Result } from '@/lib/error-handler';
 import prisma from '@/lib/prisma';
 import { Purchase } from '@/lib/types';
+import { ResponseType } from '@/lib/utils/toast';
 
 export async function createPurchase({
   userId,
@@ -22,7 +22,7 @@ export async function createPurchase({
   amount: number;
   allocationId?: string;
   receipts?: string[];
-}): Promise<Result<Purchase>> {
+}): Promise<ResponseType<Purchase>> {
   const purchase = await prisma.purchase.create({
     data: {
       userId,

@@ -9,7 +9,7 @@ import { z } from 'zod/v4';
 
 import { createAllocationGroup } from '@/prisma/services/allocation-groups';
 
-import { isError } from '@/lib/error-handler';
+import { isError } from '@/lib/utils/toast';
 
 import { Button } from '@/components/ui/button';
 import {

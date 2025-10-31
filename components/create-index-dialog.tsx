@@ -9,7 +9,7 @@ import { z } from 'zod/v4';
 
 import { createIndex } from '@/prisma/services';
 
-import { isError } from '@/lib/error-handler';
+import { isError } from '@/lib/utils/toast';
 
 import { Button } from '@/components/ui/button';
 import {

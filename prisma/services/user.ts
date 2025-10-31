@@ -4,9 +4,9 @@ import { revalidatePath } from 'next/cache';
 
 import { User } from '@/prisma/client';
 
-import { Result } from '@/lib/error-handler';
 import prisma from '@/lib/prisma';
 import { UserWithPurchases } from '@/lib/types';
+import { ResponseType } from '@/lib/utils/toast';
 
 export async function createUser({
   first,
@@ -14,7 +14,7 @@ export async function createUser({
 }: {
   first: string;
   last: string;
-}): Promise<Result<User>> {
+}): Promise<ResponseType<User>> {
   const data = await prisma.user.create({ data: { first, last } });
 
   revalidatePath(`/users`);
@@ -49,7 +49,7 @@ export async function updateUser({
   first: string;
   last: string;
   id: string;
-}): Promise<Result<User>> {
+}): Promise<ResponseType<User>> {
   const data = await prisma.user.update({
     where: { id, deletedAt: null },
     data: { first, last },

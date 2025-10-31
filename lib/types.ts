@@ -1,10 +1,7 @@
 import {
-  AllocationGroup,
-  Index,
   Account as PrismaAccount,
   Allocation as PrismaAllocation,
   Purchase as PrismaPurchase,
-  User,
 } from '@/prisma/client';
 
 export type Purchase = Omit<PrismaPurchase, 'amount'> & { amount: number };
@@ -36,5 +33,5 @@ export type AllocationGroupWithAllocations = AllocationGroup & {
   allocations: AllocationWithPurchases[];
 };
 
-// Re-export Prisma types that are used directly
-export type { AllocationGroup, Index, User };
+// Import types directly from Prisma
+export type { AllocationGroup, Index, User } from '@/prisma/client';

@@ -10,7 +10,7 @@ import { z } from 'zod/v4';
 import { User } from '@/prisma/client';
 import { createUser, updateUser } from '@/prisma/services/user';
 
-import { isError } from '@/lib/error-handler';
+import { isError } from '@/lib/utils/toast';
 
 import { Button } from '@/components/ui/button';
 import {

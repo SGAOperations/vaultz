@@ -12,13 +12,13 @@ import { z } from 'zod/v4';
 import { User } from '@/prisma/client';
 import { createPurchase } from '@/prisma/services/purchase';
 
-import { isError } from '@/lib/error-handler';
 import {
   AccountWithIndex,
   Allocation,
   AllocationGroupWithAllocations,
 } from '@/lib/types';
 import { UploadDropzone } from '@/lib/uploadthing';
+import { isError } from '@/lib/utils/toast';
 
 import { Button } from '@/components/ui/button';
 import { Combobox } from '@/components/ui/combobox';
