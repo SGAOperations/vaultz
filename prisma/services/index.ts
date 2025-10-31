@@ -13,7 +13,13 @@ export async function getAllIndexes(): Promise<IndexWithPurchases[]> {
     await prisma.index.findMany({
       include: {
         accounts: {
-          select: { purchases: { include: { user: true } }, amount: true },
+          select: {
+            purchases: {
+              orderBy: { timestamp: 'desc' },
+              include: { user: true },
+            },
+            amount: true,
+          },
         },
       },
     })
@@ -23,12 +29,14 @@ export async function getAllIndexes(): Promise<IndexWithPurchases[]> {
       (acc, account) => acc + account.amount.toNumber(),
       0,
     ),
-    purchases: accounts.flatMap((account) =>
-      account.purchases.map(({ amount, ...v }) => ({
-        ...v,
-        amount: amount.toNumber(),
-      })),
-    ),
+    purchases: accounts
+      .flatMap((account) =>
+        account.purchases.map(({ amount, ...v }) => ({
+          ...v,
+          amount: amount.toNumber(),
+        })),
+      )
+      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()),
   }));
 }
 
