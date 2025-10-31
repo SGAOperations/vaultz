@@ -38,7 +38,10 @@ export default function RootLayout({
             <Header />
             {children}
           </main>
-          <Toaster />
+          <Toaster
+            richColors
+            toastOptions={{ classNames: { description: 'line-clamp-2' } }}
+          />
         </ThemeProvider>
       </body>
     </html>
