@@ -43,6 +43,7 @@ model Purchase {
     amount      Decimal
     description String
     timestamp   DateTime @default(now())
+    purchasedAt DateTime @default(now()) @db.Date
     receipts    String[]
 
     accountId    String

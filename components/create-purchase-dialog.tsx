@@ -50,6 +50,7 @@ const schema = z.object({
     .number<number>()
     .min(0.01, 'Must be at least $0.01')
     .multipleOf(0.01, 'Must contain at most 2 decimal places'),
+  purchasedAt: z.string().min(1, 'Please select a date'),
   receipts: z.array(z.string()).optional(),
 });
 
@@ -74,6 +75,7 @@ export function CreatePurchaseDialog({
       accountId: accounts.length == 1 ? accounts[0].id : '',
       description: '',
       amount: 0,
+      purchasedAt: new Date().toISOString().split('T')[0],
       receipts: [],
     },
   });
@@ -227,6 +229,19 @@ export function CreatePurchaseDialog({
                   </div>
                   <FormControl>
                     <Input placeholder="Optional" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="purchasedAt"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Purchase Date</FormLabel>
+                  <FormControl>
+                    <Input type="date" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
