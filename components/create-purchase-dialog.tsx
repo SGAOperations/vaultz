@@ -142,6 +142,24 @@ export function CreatePurchaseDialog({
               />
               <FormField
                 control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="flex gap-2">
+                      <FormLabel>Description</FormLabel>
+                      <FormDescription className="text-xs">
+                        Optional
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Input placeholder="Optional" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
                 name="accountId"
                 render={({ field }) => (
                   <FormItem>
@@ -218,24 +236,7 @@ export function CreatePurchaseDialog({
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="flex gap-2">
-                      <FormLabel>Description</FormLabel>
-                      <FormDescription className="text-xs">
-                        Optional
-                      </FormDescription>
-                    </div>
-                    <FormControl>
-                      <Input placeholder="Optional" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+
               <FormField
                 control={form.control}
                 name="purchasedAt"
