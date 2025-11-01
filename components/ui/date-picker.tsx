@@ -5,6 +5,7 @@ import { Calendar as CalendarIcon } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
+import { DateTime } from '@/components/date-time';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import {
@@ -33,15 +34,14 @@ export function DatePicker({
           )}
         >
           <CalendarIcon className="mr h-4 w-4" />
-          {date ? format(date, 'PPP') : <span>Pick a date</span>}
+          {date ? <DateTime date={date} dateOnly /> : <span>Pick a date</span>}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
         <Calendar
           mode="single"
           selected={date}
-          onSelect={(newDate) => newDate && onChange(newDate)
-          }
+          onSelect={(newDate) => newDate && onChange(newDate)}
         />
       </PopoverContent>
     </Popover>
