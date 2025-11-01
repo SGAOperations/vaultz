@@ -1,6 +1,13 @@
 import Link from 'next/link';
 
-import { IndexWithPurchases } from '@/lib/types';
+import { User } from '@/prisma/client';
+
+import {
+  AccountWithIndex,
+  Allocation,
+  AllocationGroupWithAllocations,
+  IndexWithPurchases,
+} from '@/lib/types';
 import { formatNumber } from '@/lib/utils';
 
 import { PurchaseCard } from '@/components/purchase-card';
@@ -13,8 +20,16 @@ import {
 
 export function IndexCard({
   index: { id, name, code, purchases },
+  users,
+  accounts,
+  allocationGroups,
+  miscAllocations,
 }: {
   index: IndexWithPurchases;
+  users: User[];
+  accounts: AccountWithIndex[];
+  allocationGroups: AllocationGroupWithAllocations[];
+  miscAllocations: Allocation[];
 }) {
   return (
     <Link href={`/index/${id}`}>
@@ -36,7 +51,14 @@ export function IndexCard({
 
         <div className="flex flex-col gap-3 px-6">
           {purchases.slice(0, 3).map((v) => (
-            <PurchaseCard key={v.id} purchase={v} />
+            <PurchaseCard
+              key={v.id}
+              purchase={v}
+              users={users}
+              accounts={accounts}
+              allocationGroups={allocationGroups}
+              miscAllocations={miscAllocations}
+            />
           ))}
           {purchases.length === 0 && (
             <p className="text-muted-foreground text-center text-sm">

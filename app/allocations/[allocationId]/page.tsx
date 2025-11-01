@@ -62,7 +62,14 @@ export default async function Allocation({
       )}
       <div className="flex flex-col gap-3">
         {allocation.purchases.map((purchase) => (
-          <PurchaseCard key={purchase.id} purchase={purchase} />
+          <PurchaseCard
+            key={purchase.id}
+            purchase={purchase}
+            users={users}
+            accounts={accounts}
+            allocationGroups={[]}
+            miscAllocations={[allocation]}
+          />
         ))}
       </div>
     </div>

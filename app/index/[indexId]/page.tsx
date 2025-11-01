@@ -106,7 +106,14 @@ export default async function Index({
       )}
       <div className="flex flex-col gap-3">
         {index.purchases.map((purchase) => (
-          <PurchaseCard key={purchase.id} purchase={purchase} />
+          <PurchaseCard
+            key={purchase.id}
+            purchase={purchase}
+            users={users}
+            accounts={accounts}
+            allocationGroups={allocationGroups}
+            miscAllocations={miscAllocations}
+          />
         ))}
       </div>
     </div>

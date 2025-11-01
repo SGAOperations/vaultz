@@ -1,6 +1,13 @@
 'use client';
 
-import { PurchaseWithUser } from '@/lib/types';
+import { User } from '@/prisma/client';
+
+import {
+  AccountWithIndex,
+  Allocation,
+  AllocationGroupWithAllocations,
+  PurchaseWithUser,
+} from '@/lib/types';
 import { formatNumber } from '@/lib/utils';
 
 import { DateTime } from '@/components/date-time';
@@ -8,7 +15,19 @@ import { Card } from '@/components/ui/card';
 
 import { PurchaseDialog } from './purchase-dialog';
 
-export function PurchaseCard({ purchase }: { purchase: PurchaseWithUser }) {
+export function PurchaseCard({
+  purchase,
+  users,
+  accounts,
+  allocationGroups,
+  miscAllocations,
+}: {
+  purchase: PurchaseWithUser;
+  users: User[];
+  accounts: AccountWithIndex[];
+  allocationGroups: AllocationGroupWithAllocations[];
+  miscAllocations: Allocation[];
+}) {
   return (
     <PurchaseDialog
       trigger={
@@ -27,6 +46,10 @@ export function PurchaseCard({ purchase }: { purchase: PurchaseWithUser }) {
         </Card>
       }
       purchase={purchase}
+      users={users}
+      accounts={accounts}
+      allocationGroups={allocationGroups}
+      miscAllocations={miscAllocations}
     />
   );
 }
