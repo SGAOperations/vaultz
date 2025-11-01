@@ -34,7 +34,10 @@ export function IndexCard({
           </CardDescription>
         </CardHeader>
 
-        <div className="flex flex-col gap-3 px-6">
+        <div
+          className="flex flex-col gap-3 px-6"
+          onClick={(e) => e.stopPropagation()}
+        >
           {purchases.slice(0, 3).map((v) => (
             <PurchaseCard key={v.id} purchase={v} />
           ))}

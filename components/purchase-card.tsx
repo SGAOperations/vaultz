@@ -15,7 +15,6 @@ export function PurchaseCard({ purchase }: { purchase: PurchaseWithUser }) {
         <Card
           key={purchase.id}
           className="group-hover:bg-accent group-hover:border-muted hover:bg-accent grid cursor-pointer grid-cols-6 items-center overflow-hidden p-3"
-          onClick={(e) => e.stopPropagation()}
         >
           <p>${formatNumber(purchase.amount)}</p>
           <p className="col-span-2 text-sm">
