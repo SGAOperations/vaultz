@@ -18,7 +18,7 @@ export function DatePicker({
   onChange,
 }: {
   value?: string;
-  onChange: (value: string) => void;
+  onChange: (value: Date) => void;
 }) {
   const date = value ? new Date(value) : undefined;
 
@@ -40,7 +40,7 @@ export function DatePicker({
         <Calendar
           mode="single"
           selected={date}
-          onSelect={(newDate) => newDate && onChange(format(newDate, 'yyyy-MM-dd'))
+          onSelect={(newDate) => newDate && onChange(newDate)
           }
         />
       </PopoverContent>

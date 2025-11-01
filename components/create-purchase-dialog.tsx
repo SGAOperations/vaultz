@@ -245,7 +245,7 @@ export function CreatePurchaseDialog({
                     <FormControl>
                       <DatePicker
                         value={field.value}
-                        onChange={field.onChange}
+                        onChange={(val: Date) => field.onChange(val)}
                       />
                     </FormControl>
                     <FormMessage />
