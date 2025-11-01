@@ -9,6 +9,8 @@ import { z } from 'zod/v4';
 import { User } from '@/prisma/client';
 import { createUser, updateUser } from '@/prisma/services/user';
 
+import { handleError } from '@/lib/utils';
+
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -52,16 +54,33 @@ export function UserDialog({
     defaultValues: { first: user?.first || '', last: user?.last || '' },
   });
 
-  function onSubmit(data: z.infer<typeof schema>) {
-    if (user)
+  async function onSubmit(data: z.infer<typeof schema>) {
+    if (user) {
       // Update existing user
-      updateUser({ ...data, id: user.id });
-    else {
+      await handleError(updateUser({ ...data, id: user.id }), {
+        toast: {
+          loading: 'Updating user...',
+          success: 'User updated successfully',
+          error: 'Failed to update user',
+        },
+        onSuccess: () => {
+          setOpen(false);
+        },
+      });
+    } else {
       // Create new user
-      createUser(data);
-      form.reset();
+      await handleError(createUser(data), {
+        toast: {
+          loading: 'Creating user...',
+          success: 'User created successfully',
+          error: 'Failed to create user',
+        },
+        onSuccess: () => {
+          form.reset();
+          setOpen(false);
+        },
+      });
     }
-    setOpen(false);
   }
 
   return (

@@ -2,8 +2,11 @@
 
 import { revalidatePath } from 'next/cache';
 
+import { AllocationGroup } from '@/prisma/client';
+
 import prisma from '@/lib/prisma';
 import { AllocationGroupWithAllocations } from '@/lib/types';
+import { ResponseType } from '@/lib/utils';
 
 export async function getAllAllocationGroups(): Promise<
   AllocationGroupWithAllocations[]
@@ -70,7 +73,9 @@ export async function getAllocationGroup({
   };
 }
 
-export async function createAllocationGroup(data: { name: string }) {
+export async function createAllocationGroup(data: {
+  name: string;
+}): Promise<ResponseType<AllocationGroup>> {
   const allocationGroup = await prisma.allocationGroup.create({
     data: { name: data.name },
   });

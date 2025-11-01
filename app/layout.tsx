@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 
 import { Header } from '@/components/header';
 import { ThemeProvider } from '@/components/theme-provider';
+import { Toaster } from '@/components/ui/sonner';
 
 const inter = Inter({ variable: '--font-sans', subsets: ['latin'] });
 
@@ -37,6 +38,10 @@ export default function RootLayout({
             <Header />
             {children}
           </main>
+          <Toaster
+            richColors
+            toastOptions={{ classNames: { description: 'line-clamp-2' } }}
+          />
         </ThemeProvider>
       </body>
     </html>
