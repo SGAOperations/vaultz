@@ -8,6 +8,8 @@ import { z } from 'zod/v4';
 
 import { createAllocation } from '@/prisma/services/allocation';
 
+import { handleError } from '@/lib/utils';
+
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -51,10 +53,18 @@ export function CreateAllocationDialog({
     defaultValues: { name: '', amount: 0 },
   });
 
-  function onSubmit(data: z.infer<typeof schema>) {
-    createAllocation({ ...data, allocationGroupId });
-    form.reset();
-    setOpen(false);
+  async function onSubmit(data: z.infer<typeof schema>) {
+    await handleError(createAllocation({ ...data, allocationGroupId }), {
+      toast: {
+        loading: 'Creating allocation...',
+        success: 'Allocation created successfully',
+        error: 'Failed to create allocation',
+      },
+      onSuccess: () => {
+        form.reset();
+        setOpen(false);
+      },
+    });
   }
 
   return (

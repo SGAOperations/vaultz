@@ -8,6 +8,8 @@ import { z } from 'zod/v4';
 
 import { createAccount } from '@/prisma/services/account';
 
+import { handleError } from '@/lib/utils';
+
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -51,10 +53,18 @@ export function CreateAccountDialog({
     defaultValues: { indexId, code: '', amount: 0 },
   });
 
-  function onSubmit(data: z.infer<typeof schema>) {
-    createAccount(data);
-    form.reset();
-    setOpen(false);
+  async function onSubmit(data: z.infer<typeof schema>) {
+    await handleError(createAccount(data), {
+      toast: {
+        loading: 'Creating account...',
+        success: 'Account created successfully',
+        error: 'Failed to create account',
+      },
+      onSuccess: () => {
+        form.reset();
+        setOpen(false);
+      },
+    });
   }
 
   return (

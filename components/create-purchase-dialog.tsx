@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Plus } from 'lucide-react';
+import { toast } from 'sonner';
 import { twMerge } from 'tailwind-merge';
 import { z } from 'zod/v4';
 
@@ -17,6 +18,7 @@ import {
   AllocationGroupWithAllocations,
 } from '@/lib/types';
 import { UploadDropzone } from '@/lib/uploadthing';
+import { handleError } from '@/lib/utils';
 
 import { Button } from '@/components/ui/button';
 import { Combobox } from '@/components/ui/combobox';
@@ -76,10 +78,18 @@ export function CreatePurchaseDialog({
     },
   });
 
-  function onSubmit(data: z.infer<typeof schema>) {
-    createPurchase(data);
-    form.reset();
-    setOpen(false);
+  async function onSubmit(data: z.infer<typeof schema>) {
+    await handleError(createPurchase(data), {
+      toast: {
+        loading: 'Creating purchase...',
+        success: 'Purchase created successfully',
+        error: 'Failed to create purchase',
+      },
+      onSuccess: () => {
+        form.reset();
+        setOpen(false);
+      },
+    });
   }
 
   return (
@@ -271,12 +281,12 @@ export function CreatePurchaseDialog({
                         if (
                           error.message === 'Invalid config: FileSizeMismatch'
                         ) {
-                          alert(
+                          toast.error(
                             'File upload failed. Please ensure your file is either an image smaller than 1MB or a PDF smaller than 512KB.',
                           );
                           return;
                         }
-                        alert(
+                        toast.error(
                           'There was an error uploading your file. Please contact an administrator for assistance.',
                         );
                       }}
