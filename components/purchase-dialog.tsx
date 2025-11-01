@@ -43,7 +43,7 @@ export function PurchaseDialog({
           </p>
           <p>Purchase Date</p>
           <p className="text-muted-foreground">
-            {new Date(purchase.purchasedAt).toLocaleDateString()}
+            <DateTime date={purchase.purchasedAt} dateOnly />
           </p>
           <p>Name</p>
           <p className="text-muted-foreground">

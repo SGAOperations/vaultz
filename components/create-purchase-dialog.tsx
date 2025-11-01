@@ -22,6 +22,7 @@ import { handleError } from '@/lib/utils';
 
 import { Button } from '@/components/ui/button';
 import { Combobox } from '@/components/ui/combobox';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
   Dialog,
   DialogContent,
@@ -241,7 +242,7 @@ export function CreatePurchaseDialog({
                 <FormItem>
                   <FormLabel>Purchase Date</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} />
+                    <DatePicker value={field.value} onChange={field.onChange} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

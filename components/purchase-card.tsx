@@ -3,6 +3,7 @@
 import { PurchaseWithUser } from '@/lib/types';
 import { formatNumber } from '@/lib/utils';
 
+import { DateTime } from '@/components/date-time';
 import { Card } from '@/components/ui/card';
 
 import { PurchaseDialog } from './purchase-dialog';
@@ -21,7 +22,7 @@ export function PurchaseCard({ purchase }: { purchase: PurchaseWithUser }) {
           </p>
           <p className="col-span-2 truncate text-sm">{purchase.description}</p>
           <p className="col-span-1 text-sm">
-            {new Date(purchase.purchasedAt).toLocaleDateString()}
+            <DateTime date={purchase.purchasedAt} dateOnly />
           </p>
         </Card>
       }
