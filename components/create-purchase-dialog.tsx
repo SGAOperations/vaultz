@@ -50,7 +50,7 @@ const schema = z.object({
     .number<number>()
     .min(0.01, 'Must be at least $0.01')
     .multipleOf(0.01, 'Must contain at most 2 decimal places'),
-  purchasedAt: z.string().min(1, 'Please select a date'),
+  purchasedAt: z.string().date('Please select a valid date'),
   receipts: z.array(z.string()).optional(),
 });
 

@@ -8,6 +8,10 @@ import prisma from '@/lib/prisma';
 import { Purchase } from '@/lib/types';
 import { ResponseType } from '@/lib/utils';
 
+/**
+ * Creates a new purchase record
+ * @param purchasedAt - Date string in ISO format (YYYY-MM-DD) representing the purchase date
+ */
 export async function createPurchase({
   userId,
   accountId,
