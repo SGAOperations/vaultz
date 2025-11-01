@@ -104,7 +104,7 @@ export function CreatePurchaseDialog({
         </Button>
       </DialogTrigger>
 
-      <DialogContent>
+      <DialogContent className="w-2/3 sm:max-w-full">
         <DialogHeader>
           <DialogTitle>Create Purchase</DialogTitle>
           <DialogDescription>
