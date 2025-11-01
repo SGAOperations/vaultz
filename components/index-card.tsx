@@ -1,5 +1,3 @@
-'use client';
-
 import Link from 'next/link';
 
 import { IndexWithPurchases } from '@/lib/types';
@@ -36,12 +34,9 @@ export function IndexCard({
           </CardDescription>
         </CardHeader>
 
-        <div
-          className="flex flex-col gap-3 px-6"
-          onClick={(e) => e.stopPropagation()}
-        >
+        <div className="flex flex-col gap-3 px-6">
           {purchases.slice(0, 3).map((v) => (
-            <PurchaseCard key={v.id} purchase={v} />
+            <PurchaseCard key={v.id} purchase={v} stopPropagation />
           ))}
           {purchases.length === 0 && (
             <p className="text-muted-foreground text-center text-sm">
