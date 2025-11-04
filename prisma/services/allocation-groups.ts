@@ -2,8 +2,11 @@
 
 import { revalidatePath } from 'next/cache';
 
+import { AllocationGroup } from '@/prisma/client';
+
 import prisma from '@/lib/prisma';
 import { AllocationGroupWithAllocations } from '@/lib/types';
+import { ResponseType } from '@/lib/utils';
 
 export async function getAllAllocationGroups(): Promise<
   AllocationGroupWithAllocations[]
@@ -11,7 +14,14 @@ export async function getAllAllocationGroups(): Promise<
   return (
     await prisma.allocationGroup.findMany({
       include: {
-        allocations: { include: { purchases: { include: { user: true } } } },
+        allocations: {
+          include: {
+            purchases: {
+              orderBy: { timestamp: 'desc' },
+              include: { user: true },
+            },
+          },
+        },
       },
     })
   ).map(({ allocations, ...v }) => ({
@@ -35,7 +45,14 @@ export async function getAllocationGroup({
   const allocationGroup = await prisma.allocationGroup.findUnique({
     where: { id: id },
     include: {
-      allocations: { include: { purchases: { include: { user: true } } } },
+      allocations: {
+        include: {
+          purchases: {
+            orderBy: { timestamp: 'desc' },
+            include: { user: true },
+          },
+        },
+      },
     },
   });
 
@@ -56,7 +73,9 @@ export async function getAllocationGroup({
   };
 }
 
-export async function createAllocationGroup(data: { name: string }) {
+export async function createAllocationGroup(data: {
+  name: string;
+}): Promise<ResponseType<AllocationGroup>> {
   const allocationGroup = await prisma.allocationGroup.create({
     data: { name: data.name },
   });

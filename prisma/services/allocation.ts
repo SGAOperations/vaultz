@@ -3,7 +3,8 @@
 import { revalidatePath } from 'next/cache';
 
 import prisma from '@/lib/prisma';
-import { AllocationWithPurchases } from '@/lib/types';
+import { Allocation, AllocationWithPurchases } from '@/lib/types';
+import { ResponseType } from '@/lib/utils';
 
 export async function createAllocation({
   name,
@@ -13,7 +14,7 @@ export async function createAllocation({
   name: string;
   amount: number;
   allocationGroupId?: string;
-}) {
+}): Promise<ResponseType<Allocation>> {
   const allocation = await prisma.allocation.create({
     data: { name, amount, allocationGroupId },
   });
@@ -30,7 +31,9 @@ export async function getAllocationById({
 }): Promise<AllocationWithPurchases | null> {
   const allocation = await prisma.allocation.findUnique({
     where: { id },
-    include: { purchases: { include: { user: true } } },
+    include: {
+      purchases: { orderBy: { timestamp: 'desc' }, include: { user: true } },
+    },
   });
 
   if (allocation === null) return null;
@@ -48,7 +51,9 @@ export async function getAllocationById({
 export async function getMiscAllocations(): Promise<AllocationWithPurchases[]> {
   const allocations = await prisma.allocation.findMany({
     where: { allocationGroupId: null },
-    include: { purchases: { include: { user: true } } },
+    include: {
+      purchases: { orderBy: { timestamp: 'desc' }, include: { user: true } },
+    },
     orderBy: { name: 'asc' },
   });
 

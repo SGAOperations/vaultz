@@ -6,6 +6,7 @@ import { Decimal } from '@/prisma/client/runtime/library';
 
 import prisma from '@/lib/prisma';
 import { Account, AccountWithIndex, AccountWithPurchases } from '@/lib/types';
+import { ResponseType } from '@/lib/utils';
 
 export async function createAccount({
   indexId,
@@ -17,7 +18,7 @@ export async function createAccount({
   code: string;
   name: string;
   amount: number;
-}): Promise<Account> {
+}): Promise<ResponseType<Account>> {
   const account = await prisma.account.create({
     data: { indexId, code, name, amount: new Decimal(amount) },
   });
@@ -34,7 +35,10 @@ export async function getAccountById({
 }): Promise<AccountWithPurchases | null> {
   const account = await prisma.account.findUnique({
     where: { id },
-    include: { purchases: { include: { user: true } }, index: true },
+    include: {
+      purchases: { orderBy: { timestamp: 'desc' }, include: { user: true } },
+      index: true,
+    },
   });
   if (!account) return null;
 

@@ -6,13 +6,20 @@ import { Index } from '@/prisma/client';
 
 import prisma from '@/lib/prisma';
 import { IndexWithPurchases } from '@/lib/types';
+import { ResponseType } from '@/lib/utils';
 
 export async function getAllIndexes(): Promise<IndexWithPurchases[]> {
   return (
     await prisma.index.findMany({
       include: {
         accounts: {
-          select: { purchases: { include: { user: true } }, amount: true },
+          select: {
+            purchases: {
+              orderBy: { timestamp: 'desc' },
+              include: { user: true },
+            },
+            amount: true,
+          },
         },
       },
     })
@@ -22,12 +29,14 @@ export async function getAllIndexes(): Promise<IndexWithPurchases[]> {
       (acc, account) => acc + account.amount.toNumber(),
       0,
     ),
-    purchases: accounts.flatMap((account) =>
-      account.purchases.map(({ amount, ...v }) => ({
-        ...v,
-        amount: amount.toNumber(),
-      })),
-    ),
+    purchases: accounts
+      .flatMap((account) =>
+        account.purchases.map(({ amount, ...v }) => ({
+          ...v,
+          amount: amount.toNumber(),
+        })),
+      )
+      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()),
   }));
 }
 
@@ -76,7 +85,7 @@ export async function createIndex({
 }: {
   code: string;
   name: string;
-}): Promise<Index> {
+}): Promise<ResponseType<Index>> {
   const index = await prisma.index.create({ data: { code, name } });
 
   revalidatePath('/');

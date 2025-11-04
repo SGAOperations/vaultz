@@ -8,6 +8,8 @@ import { z } from 'zod/v4';
 
 import { createIndex } from '@/prisma/services';
 
+import { handleError } from '@/lib/utils';
+
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -43,10 +45,18 @@ export function CreateIndexDialog({ trigger }: { trigger: React.ReactNode }) {
     defaultValues: { name: '', code: '' },
   });
 
-  function onSubmit(data: z.infer<typeof schema>) {
-    createIndex(data);
-    form.reset();
-    setOpen(false);
+  async function onSubmit(data: z.infer<typeof schema>) {
+    await handleError(createIndex(data), {
+      toast: {
+        loading: 'Creating index...',
+        success: 'Index created successfully',
+        error: 'Failed to create index',
+      },
+      onSuccess: () => {
+        form.reset();
+        setOpen(false);
+      },
+    });
   }
 
   return (
