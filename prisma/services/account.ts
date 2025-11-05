@@ -36,7 +36,7 @@ export async function getAccountById({
   const account = await prisma.account.findUnique({
     where: { id },
     include: {
-      purchases: { orderBy: { timestamp: 'desc' }, include: { user: true } },
+      purchases: { orderBy: { createdAt: 'desc' }, include: { user: true } },
       index: true,
     },
   });

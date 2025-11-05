@@ -39,7 +39,7 @@ export function PurchaseDialog({
           <p className="text-muted-foreground">{purchase.id}</p>
           <p>Created</p>
           <p className="text-muted-foreground">
-            <DateTime date={purchase.timestamp} />
+            <DateTime date={purchase.createdAt} />
           </p>
           <p>Purchase Date</p>
           <p className="text-muted-foreground">

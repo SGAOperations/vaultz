@@ -40,7 +40,7 @@ export default async function AllocationGroup({
 
   const purchases = allocationGroup.allocations
     .flatMap((allocation) => allocation.purchases)
-    .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
   const spent = purchases.reduce((acc, purchase) => acc + purchase.amount, 0);
 

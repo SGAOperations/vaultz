@@ -15,7 +15,7 @@ export async function getAllIndexes(): Promise<IndexWithPurchases[]> {
         accounts: {
           select: {
             purchases: {
-              orderBy: { timestamp: 'desc' },
+              orderBy: { createdAt: 'desc' },
               include: { user: true },
             },
             amount: true,
@@ -36,7 +36,7 @@ export async function getAllIndexes(): Promise<IndexWithPurchases[]> {
           amount: amount.toNumber(),
         })),
       )
-      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()),
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
   }));
 }
 
@@ -51,7 +51,7 @@ export async function getIndex({
       accounts: {
         select: {
           purchases: {
-            orderBy: { timestamp: 'desc' },
+            orderBy: { createdAt: 'desc' },
             include: { user: true },
           },
           amount: true,
@@ -75,7 +75,7 @@ export async function getIndex({
           amount: amount.toNumber(),
         })),
       )
-      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()),
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
   };
 }
 

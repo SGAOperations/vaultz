@@ -42,8 +42,8 @@ model Purchase {
     id          String   @id @default(uuid())
     amount      Decimal
     description String
-    timestamp   DateTime @default(now())
-    purchasedAt DateTime @default(now()) @db.Date
+    createdAt   DateTime @default(now())
+    purchasedAt DateTime @db.Date
     receipts    String[]
 
     accountId    String
