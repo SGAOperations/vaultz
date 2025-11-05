@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -80,6 +80,13 @@ export function CreatePurchaseDialog({
       receipts: [],
     },
   });
+
+  // Update purchasedAt to today's date when dialog opens
+  useEffect(() => {
+    if (open) {
+      form.setValue('purchasedAt', new Date().toISOString().split('T')[0]);
+    }
+  }, [open, form]);
 
   async function onSubmit(data: z.infer<typeof schema>) {
     await handleError(createPurchase(data), {
