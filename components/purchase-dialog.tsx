@@ -52,7 +52,19 @@ export function PurchaseDialog({
         <DialogTrigger asChild>{trigger}</DialogTrigger>
         <DialogContent className="sm:max-w-1/3">
           <DialogHeader>
-            <DialogTitle>Purchase Information</DialogTitle>
+            <div className="flex items-center justify-between">
+              <DialogTitle>Purchase Information</DialogTitle>
+              <Button
+                onClick={() => {
+                  setViewOpen(false);
+                  setEditOpen(true);
+                }}
+                variant="ghost"
+                size="icon"
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+            </div>
             <DialogDescription>
               See all of the details relevant to this purchase.
             </DialogDescription>
@@ -90,18 +102,6 @@ export function PurchaseDialog({
               {receiptUrls.length === 0 && 'N/A'}
             </p>
           </div>
-
-          <Button
-            onClick={() => {
-              setViewOpen(false);
-              setEditOpen(true);
-            }}
-            className="absolute top-4 right-4"
-            variant="ghost"
-            size="icon"
-          >
-            <Pencil className="h-4 w-4" />
-          </Button>
         </DialogContent>
       </Dialog>
 
