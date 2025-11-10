@@ -54,6 +54,7 @@ export function IndexCard({
             <PurchaseCard
               key={v.id}
               purchase={v}
+              stopPropagation
               users={users}
               accounts={accounts}
               allocationGroups={allocationGroups}
