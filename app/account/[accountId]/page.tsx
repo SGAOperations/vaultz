@@ -36,6 +36,9 @@ export default async function Index({
 
   return (
     <div className="flex w-full flex-col gap-3">
+      <h1 className="text-3xl font-bold">
+        {account.name} ({account.code})
+      </h1>
       <div className="grid w-full grid-cols-1 gap-4 md:grid-cols-3">
         <Card className="flex-row items-baseline">
           <p className="text-6xl">${formatNumber(account.amount)}</p>
