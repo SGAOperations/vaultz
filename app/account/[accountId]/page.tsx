@@ -36,7 +36,7 @@ export default async function Index({
 
   return (
     <div className="flex w-full flex-col gap-3">
-      <h1 className="text-3xl font-bold">
+      <h1 className="mt-4 text-3xl font-bold">
         {account.name} ({account.code})
       </h1>
       <div className="grid w-full grid-cols-1 gap-4 md:grid-cols-3">
