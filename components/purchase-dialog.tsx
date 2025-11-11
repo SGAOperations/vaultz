@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-import { Pencil } from 'lucide-react';
+import { Pencil, Trash2 } from 'lucide-react';
 
 import { User } from '@/prisma/client';
 
@@ -45,6 +45,7 @@ export function PurchaseDialog({
   const receiptUrls = purchase.receipts.map((r) => getFileUrl(r));
   const [viewOpen, setViewOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   return (
     <>
@@ -52,19 +53,7 @@ export function PurchaseDialog({
         <DialogTrigger asChild>{trigger}</DialogTrigger>
         <DialogContent className="sm:max-w-1/3">
           <DialogHeader>
-            <div className="flex items-center justify-between">
-              <DialogTitle>Purchase Information</DialogTitle>
-              <Button
-                onClick={() => {
-                  setViewOpen(false);
-                  setEditOpen(true);
-                }}
-                variant="ghost"
-                size="icon"
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
-            </div>
+            <DialogTitle>Purchase Information</DialogTitle>
             <DialogDescription>
               See all of the details relevant to this purchase.
             </DialogDescription>
@@ -102,6 +91,31 @@ export function PurchaseDialog({
               {receiptUrls.length === 0 && 'N/A'}
             </p>
           </div>
+
+          <div className="flex gap-2">
+            <Button
+              onClick={() => {
+                setViewOpen(false);
+                setEditOpen(true);
+              }}
+              className="flex-1"
+            >
+              <Pencil className="mr-2 h-4 w-4" />
+              Edit
+            </Button>
+            <Button
+              onClick={() => {
+                setViewOpen(false);
+                setEditOpen(true);
+                setConfirmDelete(true);
+              }}
+              variant="destructive"
+              className="flex-1"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -113,6 +127,13 @@ export function PurchaseDialog({
         accounts={accounts}
         allocationGroups={allocationGroups}
         miscAllocations={miscAllocations}
+        confirmDelete={confirmDelete}
+        setConfirmDelete={setConfirmDelete}
+        onCancel={() => {
+          setEditOpen(false);
+          setViewOpen(true);
+          setConfirmDelete(false);
+        }}
       />
     </>
   );

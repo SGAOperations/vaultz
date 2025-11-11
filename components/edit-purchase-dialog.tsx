@@ -61,6 +61,9 @@ export function EditPurchaseDialog({
   accounts,
   allocationGroups = [],
   miscAllocations = [],
+  confirmDelete: externalConfirmDelete = false,
+  setConfirmDelete: externalSetConfirmDelete,
+  onCancel,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -69,12 +72,19 @@ export function EditPurchaseDialog({
   accounts: AccountWithIndex[];
   allocationGroups?: AllocationGroupWithAllocations[];
   miscAllocations?: Allocation[];
+  confirmDelete?: boolean;
+  setConfirmDelete?: (value: boolean) => void;
+  onCancel?: () => void;
 }) {
   const [filesUploaded, setFilesUploaded] = useState<string[]>([]);
   const [receiptsToDisplay, setReceiptsToDisplay] = useState<string[]>(
     purchase.receipts,
   );
-  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [internalConfirmDelete, setInternalConfirmDelete] = useState(false);
+
+  // Use external confirmDelete state if provided, otherwise use internal
+  const confirmDelete = externalConfirmDelete || internalConfirmDelete;
+  const setConfirmDelete = externalSetConfirmDelete || setInternalConfirmDelete;
 
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
@@ -371,6 +381,16 @@ export function EditPurchaseDialog({
             />
 
             <div className="flex gap-2">
+              {onCancel && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onCancel}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+              )}
               <Button type="submit" className="flex-1">
                 Save Changes
               </Button>
@@ -378,12 +398,14 @@ export function EditPurchaseDialog({
                 type="button"
                 variant={confirmDelete ? 'destructive' : 'outline'}
                 onClick={handleDelete}
+                className="flex-1"
               >
                 {confirmDelete ? (
                   'Confirm Delete'
                 ) : (
                   <>
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete
                   </>
                 )}
               </Button>
