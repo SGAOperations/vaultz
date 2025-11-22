@@ -81,8 +81,9 @@ export function CreatePurchaseDialog({
   useEffect(() => {
     if (!open) {
       setFilesUploaded([]);
+      form.reset();
     }
-  }, [open]);
+  }, [open, form]);
 
   async function onSubmit(data: z.infer<typeof schema>) {
     await handleError(createPurchase(data), {
