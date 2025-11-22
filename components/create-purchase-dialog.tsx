@@ -83,7 +83,8 @@ export function CreatePurchaseDialog({
       setFilesUploaded([]);
       form.reset();
     }
-  }, [open, form]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   async function onSubmit(data: z.infer<typeof schema>) {
     await handleError(createPurchase(data), {
