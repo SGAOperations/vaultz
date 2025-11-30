@@ -1,15 +1,23 @@
-import { DollarSign, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
+import {
+  DollarSign,
+  Hash,
+  Receipt,
+  TrendingDown,
+  TrendingUp,
+  Wallet,
+} from 'lucide-react';
 
 import { formatNumber } from '@/lib/utils';
 
 import { Card } from '@/components/ui/card';
 
-type StatVariant = 'total' | 'spent' | 'remaining';
+type StatVariant = 'total' | 'spent' | 'remaining' | 'count' | 'average';
 
 interface StatCardProps {
   value: number;
   label: string;
   variant?: StatVariant;
+  format?: 'currency' | 'number';
 }
 
 const variantStyles: Record<
@@ -31,9 +39,20 @@ const variantStyles: Record<
     icon: TrendingUp,
     iconColor: 'text-stat-remaining',
   },
+  count: {
+    bg: 'bg-primary/10 dark:bg-primary/20',
+    icon: Receipt,
+    iconColor: 'text-primary',
+  },
+  average: { bg: 'bg-muted', icon: Hash, iconColor: 'text-muted-foreground' },
 };
 
-export function StatCard({ value, label, variant = 'total' }: StatCardProps) {
+export function StatCard({
+  value,
+  label,
+  variant = 'total',
+  format = 'currency',
+}: StatCardProps) {
   const styles = variantStyles[variant];
   const Icon = styles.icon;
 
@@ -48,7 +67,9 @@ export function StatCard({ value, label, variant = 'total' }: StatCardProps) {
       <div className="flex flex-col gap-0.5">
         <p className="text-muted-foreground text-xs font-medium">{label}</p>
         <div className="flex items-baseline gap-0.5">
-          <DollarSign className="text-muted-foreground size-4" />
+          {format === 'currency' && (
+            <DollarSign className="text-muted-foreground size-4" />
+          )}
           <p className="text-3xl font-bold tracking-tight">
             {formatNumber(value)}
           </p>
