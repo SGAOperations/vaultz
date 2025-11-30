@@ -5,13 +5,14 @@ import { getAllAccounts } from '@/prisma/services/account';
 import { getAllocationById } from '@/prisma/services/allocation';
 import { getUsers } from '@/prisma/services/user';
 
-import { formatNumber } from '@/lib/utils';
-
 import { CreatePurchaseDialog } from '@/components/create-purchase-dialog';
+import { EmptyState } from '@/components/empty-state';
+import { PageHeader } from '@/components/page-header';
 import { PurchaseCard } from '@/components/purchase-card';
-import { Card } from '@/components/ui/card';
+import { SectionHeader } from '@/components/section-header';
+import { StatCards } from '@/components/stat-card';
 
-export const metadata: Metadata = { title: 'Account' };
+export const metadata: Metadata = { title: 'Allocation' };
 
 export default async function Allocation({
   params,
@@ -32,40 +33,34 @@ export default async function Allocation({
   );
 
   return (
-    <div className="flex w-full flex-col gap-3">
-      <h1 className="mt-4 text-3xl font-bold">{allocation.name}</h1>
-      <div className="grid w-full grid-cols-1 gap-4 md:grid-cols-3">
-        <Card className="flex-row items-baseline">
-          <p className="text-6xl">${formatNumber(allocation.amount)}</p>
-          <p className="text-muted-foreground text-sm">Total</p>
-        </Card>
-        <Card className="flex-row items-baseline">
-          <p className="text-6xl">${formatNumber(spent)}</p>
-          <p className="text-muted-foreground text-sm">Spent</p>
-        </Card>
-        <Card className="flex-row items-baseline">
-          <p className="text-6xl">${formatNumber(allocation.amount - spent)}</p>
-          <p className="text-muted-foreground text-sm">Remaining</p>
-        </Card>
-      </div>
+    <div className="flex w-full flex-col">
+      <PageHeader
+        title={allocation.name}
+        actions={
+          <CreatePurchaseDialog
+            users={users}
+            accounts={accounts}
+            miscAllocations={[allocation]}
+          />
+        }
+      />
 
-      <div className="flex w-full flex-row gap-3">
-        <CreatePurchaseDialog
-          users={users}
-          accounts={accounts}
-          miscAllocations={[allocation]}
+      <StatCards total={allocation.amount} spent={spent} />
+
+      <SectionHeader title="Purchases" />
+
+      {allocation.purchases.length === 0 ? (
+        <EmptyState
+          message="No purchases yet"
+          description="Record purchases to track spending in this allocation"
         />
-      </div>
-
-      <h2 className="mt-4 text-xl">Purchases</h2>
-      {allocation.purchases.length === 0 && (
-        <p className="text-muted-foreground">No purchases found.</p>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {allocation.purchases.map((purchase) => (
+            <PurchaseCard key={purchase.id} purchase={purchase} />
+          ))}
+        </div>
       )}
-      <div className="flex flex-col gap-3">
-        {allocation.purchases.map((purchase) => (
-          <PurchaseCard key={purchase.id} purchase={purchase} />
-        ))}
-      </div>
     </div>
   );
 }

@@ -1,12 +1,17 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
+import { Pencil } from 'lucide-react';
+
 import { getUserById } from '@/prisma/services/user';
 
-import { formatNumber } from '@/lib/utils';
-
+import { EmptyState } from '@/components/empty-state';
+import { PageHeader } from '@/components/page-header';
 import { PurchaseCard } from '@/components/purchase-card';
-import { Card } from '@/components/ui/card';
+import { SectionHeader } from '@/components/section-header';
+import { StatCard } from '@/components/stat-card';
+import { Button } from '@/components/ui/button';
+import { UserDialog } from '@/components/user-dialog';
 
 export const metadata: Metadata = { title: 'User' };
 
@@ -29,34 +34,49 @@ export default async function UserPage({
   const averagePurchase = purchaseCount > 0 ? totalSpent / purchaseCount : 0;
 
   return (
-    <div className="flex w-full flex-col gap-3">
-      <h1 className="mt-4 text-3xl font-bold">
-        {user.first} {user.last}
-      </h1>
-      <div className="grid w-full grid-cols-1 gap-4 md:grid-cols-3">
-        <Card className="flex-row items-baseline">
-          <p className="text-6xl">${formatNumber(totalSpent)}</p>
-          <p className="text-muted-foreground text-sm">Total Spent</p>
-        </Card>
-        <Card className="flex-row items-baseline">
-          <p className="text-6xl">{purchaseCount}</p>
-          <p className="text-muted-foreground text-sm">Purchases</p>
-        </Card>
-        <Card className="flex-row items-baseline">
-          <p className="text-6xl">${formatNumber(averagePurchase)}</p>
-          <p className="text-muted-foreground text-sm">Avg. Purchase</p>
-        </Card>
+    <div className="flex w-full flex-col">
+      <PageHeader
+        title={`${user.first} ${user.last}`}
+        description="User profile and purchase history"
+        actions={
+          <UserDialog user={user}>
+            <Button variant="outline" className="gap-2">
+              <Pencil className="size-4" />
+              Edit User
+            </Button>
+          </UserDialog>
+        }
+      />
+
+      <div className="grid w-full grid-cols-1 gap-3 md:grid-cols-3">
+        <StatCard value={totalSpent} label="Total Spent" variant="spent" />
+        <StatCard
+          value={purchaseCount}
+          label="Purchases"
+          variant="count"
+          format="number"
+        />
+        <StatCard
+          value={averagePurchase}
+          label="Avg. Purchase"
+          variant="average"
+        />
       </div>
 
-      <h2 className="mt-4 text-xl">Purchases</h2>
-      {user.purchases.length === 0 && (
-        <p className="text-muted-foreground">No purchases found.</p>
+      <SectionHeader title="Purchases" />
+
+      {user.purchases.length === 0 ? (
+        <EmptyState
+          message="No purchases yet"
+          description="This user hasn't made any purchases"
+        />
+      ) : (
+        <div className="flex flex-col gap-2">
+          {user.purchases.map((purchase) => (
+            <PurchaseCard key={purchase.id} purchase={purchase} />
+          ))}
+        </div>
       )}
-      <div className="flex flex-col gap-3">
-        {user.purchases.map((purchase) => (
-          <PurchaseCard key={purchase.id} purchase={purchase} />
-        ))}
-      </div>
     </div>
   );
 }
