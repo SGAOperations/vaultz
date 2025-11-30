@@ -62,9 +62,13 @@ export function PurchaseDialog({
           <div className="grid grid-cols-2 gap-4">
             <p>Purchase ID</p>
             <p className="text-muted-foreground">{purchase.id}</p>
-            <p>Date</p>
+            <p>Created</p>
+          <p className="text-muted-foreground">
+            <DateTime date={purchase.createdAt} />
+          </p>
+          <p>Purchase Date</p>
             <p className="text-muted-foreground">
-              <DateTime date={purchase.timestamp} />
+              <DateTime date={purchase.purchasedAt} dateOnly />
             </p>
             <p>Name</p>
             <p className="text-muted-foreground">

@@ -44,7 +44,7 @@ export function PurchaseCard({
           </p>
           <p className="col-span-2 truncate text-sm">{purchase.description}</p>
           <p className="col-span-1 text-sm">
-            <DateTime date={purchase.timestamp} />
+            <DateTime date={purchase.purchasedAt} dateOnly />
           </p>
         </Card>
       }
