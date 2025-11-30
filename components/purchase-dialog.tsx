@@ -1,7 +1,7 @@
 'use client';
 
 import { PurchaseWithUser } from '@/lib/types';
-import { formatNumber, getFileUrl } from '@/lib/utils';
+import { formatCurrency, getFileUrl } from '@/lib/utils';
 
 import {
   Dialog,
@@ -53,7 +53,7 @@ export function PurchaseDialog({
           <p className="text-muted-foreground">{purchase.description}</p>
           <p>Amount</p>
           <p className="text-muted-foreground">
-            ${formatNumber(purchase.amount)}
+            {formatCurrency(purchase.amount)}
           </p>
           <p>Receipts</p>
           <p className="text-muted-foreground flex gap-3">

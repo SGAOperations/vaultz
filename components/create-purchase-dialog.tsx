@@ -49,8 +49,15 @@ const schema = z.object({
   description: z.string().optional(),
   amount: z.coerce
     .number<number>()
-    .min(0.01, 'Must be at least $0.01')
-    .multipleOf(0.01, 'Must contain at most 2 decimal places'),
+    .refine((val) => val !== 0, 'Amount cannot be $0.00')
+    .refine(
+      (val) => Math.abs(val) >= 0.01,
+      'Absolute value must be at least $0.01',
+    )
+    .refine(
+      (val) => Math.abs(Math.round(val * 100) - val * 100) < 0.001,
+      'Must contain at most 2 decimal places',
+    ),
   purchasedAt: z.date('Please select a valid date'),
   receipts: z.array(z.string()).optional(),
 });

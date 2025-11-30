@@ -1,7 +1,7 @@
 'use client';
 
 import { PurchaseWithUser } from '@/lib/types';
-import { formatNumber } from '@/lib/utils';
+import { formatCurrency } from '@/lib/utils';
 
 import { DateTime } from '@/components/date-time';
 import { Card } from '@/components/ui/card';
@@ -23,7 +23,7 @@ export function PurchaseCard({
           className="group-hover:bg-accent group-hover:border-muted hover:bg-accent grid cursor-pointer grid-cols-6 items-center overflow-hidden p-3"
           onClick={stopPropagation ? (e) => e.stopPropagation() : undefined}
         >
-          <p>${formatNumber(purchase.amount)}</p>
+          <p>{formatCurrency(purchase.amount)}</p>
           <p className="col-span-2 text-sm">
             {purchase.user.first} {purchase.user.last}
           </p>
