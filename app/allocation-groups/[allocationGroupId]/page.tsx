@@ -12,8 +12,8 @@ import { getUsers } from '@/prisma/services/user';
 import { formatNumber } from '@/lib/utils';
 
 import { CreateAllocationDialog } from '@/components/create-allocation-dialog';
-import { CreatePurchaseDialog } from '@/components/create-purchase-dialog';
 import { PurchaseCard } from '@/components/purchase-card';
+import { CreatePurchaseDialog } from '@/components/purchase-dialog';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 

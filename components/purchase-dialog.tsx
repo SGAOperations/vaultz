@@ -4,13 +4,17 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Pencil, Trash2, X } from 'lucide-react';
+import { Pencil, Plus, Trash2, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { twMerge } from 'tailwind-merge';
 import { z } from 'zod/v4';
 
 import { User } from '@/prisma/client';
-import { deletePurchase, updatePurchase } from '@/prisma/services/purchase';
+import {
+  createPurchase,
+  deletePurchase,
+  updatePurchase,
+} from '@/prisma/services/purchase';
 
 import {
   AccountWithIndex,
@@ -58,58 +62,97 @@ const schema = z.object({
   receipts: z.array(z.string()).optional(),
 });
 
-export function PurchaseDialog({
-  trigger,
-  purchase,
-  users,
-  accounts,
-  allocationGroups,
-  miscAllocations,
-}: {
+// Props for creating a new purchase (no existing purchase)
+type CreatePurchaseProps = {
+  mode: 'create';
+  trigger?: React.ReactNode;
+  purchase?: never;
+  users: User[];
+  accounts: AccountWithIndex[];
+  allocationGroups?: AllocationGroupWithAllocations[];
+  miscAllocations?: Allocation[];
+};
+
+// Props for viewing/editing an existing purchase
+type ViewEditPurchaseProps = {
+  mode?: 'view';
   trigger: React.ReactNode;
   purchase: PurchaseWithUser;
   users: User[];
   accounts: AccountWithIndex[];
   allocationGroups: AllocationGroupWithAllocations[];
   miscAllocations: Allocation[];
-}) {
-  const receiptUrls = purchase.receipts.map((r) => getFileUrl(r));
+};
+
+type PurchaseDialogProps = CreatePurchaseProps | ViewEditPurchaseProps;
+
+export function PurchaseDialog(props: PurchaseDialogProps) {
+  const {
+    users,
+    accounts,
+    allocationGroups = [],
+    miscAllocations = [],
+  } = props;
+
+  const isCreateMode = props.mode === 'create';
+  const purchase = isCreateMode ? null : props.purchase;
+
   const [open, setOpen] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(isCreateMode);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [filesUploaded, setFilesUploaded] = useState<string[]>([]);
   const [receiptsToDisplay, setReceiptsToDisplay] = useState<string[]>(
-    purchase.receipts,
+    purchase?.receipts || [],
   );
+
+  const receiptUrls = purchase?.receipts.map((r) => getFileUrl(r)) || [];
 
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {
-      userId: purchase.userId,
-      accountId: purchase.accountId,
-      allocationId: purchase.allocationId || '',
-      description: purchase.description,
-      amount: purchase.amount,
-      purchasedAt: new Date(purchase.purchasedAt),
-      receipts: purchase.receipts,
+      userId: purchase?.userId || '',
+      accountId:
+        purchase?.accountId || (accounts.length === 1 ? accounts[0].id : ''),
+      allocationId: purchase?.allocationId || '',
+      description: purchase?.description || '',
+      amount: purchase?.amount || 0,
+      purchasedAt: purchase ? new Date(purchase.purchasedAt) : new Date(),
+      receipts: purchase?.receipts || [],
     },
   });
 
   async function onSubmit(data: z.infer<typeof schema>) {
-    await handleError(updatePurchase({ id: purchase.id, ...data }), {
-      toast: {
-        loading: 'Updating purchase...',
-        success: 'Purchase updated successfully',
-        error: 'Failed to update purchase',
-      },
-      onSuccess: () => {
-        setIsEditing(false);
-        setOpen(false);
-      },
-    });
+    if (isCreateMode) {
+      await handleError(createPurchase(data), {
+        toast: {
+          loading: 'Creating purchase...',
+          success: 'Purchase created successfully',
+          error: 'Failed to create purchase',
+        },
+        onSuccess: () => {
+          form.reset();
+          setFilesUploaded([]);
+          setOpen(false);
+        },
+      });
+    } else {
+      await handleError(updatePurchase({ id: purchase!.id, ...data }), {
+        toast: {
+          loading: 'Updating purchase...',
+          success: 'Purchase updated successfully',
+          error: 'Failed to update purchase',
+        },
+        onSuccess: () => {
+          setIsEditing(false);
+          setOpen(false);
+        },
+      });
+    }
   }
 
   async function handleDelete() {
+    if (!purchase) return;
+
     if (!confirmDelete) {
       setConfirmDelete(true);
       return;
@@ -137,19 +180,26 @@ export function PurchaseDialog({
   }
 
   function handleCancel() {
+    if (isCreateMode) {
+      setOpen(false);
+      form.reset();
+      setFilesUploaded([]);
+      return;
+    }
+
     setIsEditing(false);
     setConfirmDelete(false);
     // Reset form to original values
     form.reset({
-      userId: purchase.userId,
-      accountId: purchase.accountId,
-      allocationId: purchase.allocationId || '',
-      description: purchase.description,
-      amount: purchase.amount,
-      purchasedAt: new Date(purchase.purchasedAt),
-      receipts: purchase.receipts,
+      userId: purchase!.userId,
+      accountId: purchase!.accountId,
+      allocationId: purchase!.allocationId || '',
+      description: purchase!.description,
+      amount: purchase!.amount,
+      purchasedAt: new Date(purchase!.purchasedAt),
+      receipts: purchase!.receipts,
     });
-    setReceiptsToDisplay(purchase.receipts);
+    setReceiptsToDisplay(purchase!.receipts);
     setFilesUploaded([]);
   }
 
@@ -157,27 +207,42 @@ export function PurchaseDialog({
     setOpen(newOpen);
     if (!newOpen) {
       // Reset state when closing
-      setIsEditing(false);
+      setIsEditing(isCreateMode);
       setConfirmDelete(false);
       form.reset();
-      setReceiptsToDisplay(purchase.receipts);
+      setReceiptsToDisplay(purchase?.receipts || []);
       setFilesUploaded([]);
     }
   }
+
+  const trigger = isCreateMode
+    ? props.trigger || (
+        <Button className="flex-1">
+          <Plus />
+          Create Purchase
+        </Button>
+      )
+    : props.trigger;
+
+  const dialogTitle = isCreateMode
+    ? 'Create Purchase'
+    : isEditing
+      ? 'Edit Purchase'
+      : 'Purchase Information';
+
+  const dialogDescription = isCreateMode
+    ? 'All purchases by the same individual should be attached to the same name.'
+    : isEditing
+      ? 'Update the details of this purchase or delete it entirely.'
+      : 'See all of the details relevant to this purchase.';
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="w-2/3 sm:max-w-full">
         <DialogHeader>
-          <DialogTitle>
-            {isEditing ? 'Edit Purchase' : 'Purchase Information'}
-          </DialogTitle>
-          <DialogDescription>
-            {isEditing
-              ? 'Update the details of this purchase or delete it entirely.'
-              : 'See all of the details relevant to this purchase.'}
-          </DialogDescription>
+          <DialogTitle>{dialogTitle}</DialogTitle>
+          <DialogDescription>{dialogDescription}</DialogDescription>
         </DialogHeader>
 
         {isEditing ? (
@@ -436,32 +501,40 @@ export function PurchaseDialog({
               />
 
               <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleCancel}
-                  className="flex-1"
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" className="flex-1">
-                  Save Changes
-                </Button>
-                <Button
-                  type="button"
-                  variant={confirmDelete ? 'destructive' : 'outline'}
-                  onClick={handleDelete}
-                  className="flex-1"
-                >
-                  {confirmDelete ? (
-                    'Confirm Delete'
-                  ) : (
-                    <>
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Delete
-                    </>
-                  )}
-                </Button>
+                {isCreateMode ? (
+                  <Button type="submit" className="flex-1">
+                    Submit
+                  </Button>
+                ) : (
+                  <>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleCancel}
+                      className="flex-1"
+                    >
+                      Cancel
+                    </Button>
+                    <Button type="submit" className="flex-1">
+                      Save Changes
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={confirmDelete ? 'destructive' : 'outline'}
+                      onClick={handleDelete}
+                      className="flex-1"
+                    >
+                      {confirmDelete ? (
+                        'Confirm Delete'
+                      ) : (
+                        <>
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete
+                        </>
+                      )}
+                    </Button>
+                  </>
+                )}
               </div>
             </form>
           </Form>
@@ -469,24 +542,24 @@ export function PurchaseDialog({
           <>
             <div className="grid grid-cols-2 gap-4">
               <p>Purchase ID</p>
-              <p className="text-muted-foreground">{purchase.id}</p>
+              <p className="text-muted-foreground">{purchase!.id}</p>
               <p>Created</p>
               <p className="text-muted-foreground">
-                <DateTime date={purchase.createdAt} />
+                <DateTime date={purchase!.createdAt} />
               </p>
               <p>Purchase Date</p>
               <p className="text-muted-foreground">
-                <DateTime date={purchase.purchasedAt} dateOnly />
+                <DateTime date={purchase!.purchasedAt} dateOnly />
               </p>
               <p>Name</p>
               <p className="text-muted-foreground">
-                {purchase.user.first} {purchase.user.last}
+                {purchase!.user.first} {purchase!.user.last}
               </p>
               <p>Description</p>
-              <p className="text-muted-foreground">{purchase.description}</p>
+              <p className="text-muted-foreground">{purchase!.description}</p>
               <p>Amount</p>
               <p className="text-muted-foreground">
-                ${formatNumber(purchase.amount)}
+                ${formatNumber(purchase!.amount)}
               </p>
               <p>Receipts</p>
               <p className="text-muted-foreground flex gap-3">
@@ -515,4 +588,14 @@ export function PurchaseDialog({
       </DialogContent>
     </Dialog>
   );
+}
+
+// Backward compatibility export for CreatePurchaseDialog
+export function CreatePurchaseDialog(props: {
+  users: User[];
+  accounts: AccountWithIndex[];
+  allocationGroups?: AllocationGroupWithAllocations[];
+  miscAllocations?: Allocation[];
+}) {
+  return <PurchaseDialog mode="create" {...props} />;
 }

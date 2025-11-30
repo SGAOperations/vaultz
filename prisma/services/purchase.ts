@@ -68,7 +68,7 @@ export async function updatePurchase({
       accountId,
       description: description || '',
       amount: new Decimal(amount),
-      allocationId,
+      allocationId: allocationId || null,
       purchasedAt,
       receipts,
     },

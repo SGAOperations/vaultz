@@ -7,8 +7,8 @@ import { getUsers } from '@/prisma/services/user';
 
 import { formatNumber } from '@/lib/utils';
 
-import { CreatePurchaseDialog } from '@/components/create-purchase-dialog';
 import { PurchaseCard } from '@/components/purchase-card';
+import { CreatePurchaseDialog } from '@/components/purchase-dialog';
 import { Card } from '@/components/ui/card';
 
 export const metadata: Metadata = { title: 'Account' };
