@@ -3,12 +3,20 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-import { FolderKanban, Home, Plus, Users } from 'lucide-react';
+import { FolderKanban, Home, Plus, User, Users } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
 import { ModeToggle } from '@/components/theme-provider';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { UserDialog } from '@/components/user-dialog';
 
 const navItems = [
@@ -69,12 +77,29 @@ export function Header() {
       </nav>
 
       <div className="flex items-center gap-2">
-        <UserDialog user={undefined}>
-          <Button variant="outline" size="sm" className="gap-2">
-            <Plus className="size-4" />
-            Add User
-          </Button>
-        </UserDialog>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="icon">
+              <User className="size-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>User Management</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <UserDialog user={undefined}>
+              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                <Plus className="mr-2 size-4" />
+                Add User
+              </DropdownMenuItem>
+            </UserDialog>
+            <Link href="/users">
+              <DropdownMenuItem>
+                <Users className="mr-2 size-4" />
+                View All Users
+              </DropdownMenuItem>
+            </Link>
+          </DropdownMenuContent>
+        </DropdownMenu>
         <ModeToggle />
       </div>
     </header>

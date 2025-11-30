@@ -34,17 +34,18 @@ export default async function Allocation({
 
   return (
     <div className="flex w-full flex-col">
-      <PageHeader title={allocation.name} />
+      <PageHeader
+        title={allocation.name}
+        actions={
+          <CreatePurchaseDialog
+            users={users}
+            accounts={accounts}
+            miscAllocations={[allocation]}
+          />
+        }
+      />
 
       <StatCards total={allocation.amount} spent={spent} />
-
-      <div className="mt-6 flex w-full flex-row gap-3">
-        <CreatePurchaseDialog
-          users={users}
-          accounts={accounts}
-          miscAllocations={[allocation]}
-        />
-      </div>
 
       <SectionHeader title="Purchases" />
 

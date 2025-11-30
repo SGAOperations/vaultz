@@ -40,18 +40,17 @@ export default async function Index({
       <PageHeader
         title={account.name}
         description={`Account code: ${account.code}`}
+        actions={
+          <CreatePurchaseDialog
+            users={users}
+            accounts={[account]}
+            allocationGroups={allocationGroups}
+            miscAllocations={miscAllocations}
+          />
+        }
       />
 
       <StatCards total={account.amount} spent={spent} />
-
-      <div className="mt-6">
-        <CreatePurchaseDialog
-          users={users}
-          accounts={[account]}
-          allocationGroups={allocationGroups}
-          miscAllocations={miscAllocations}
-        />
-      </div>
 
       <SectionHeader title="Purchases" />
 

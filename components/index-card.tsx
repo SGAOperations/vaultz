@@ -1,11 +1,10 @@
 import Link from 'next/link';
 
-import { ChevronRight, CreditCard, Receipt } from 'lucide-react';
+import { ChevronRight, CreditCard, DollarSign, TrendingUp } from 'lucide-react';
 
 import { IndexWithPurchases } from '@/lib/types';
 import { formatNumber } from '@/lib/utils';
 
-import { PurchaseCard } from '@/components/purchase-card';
 import {
   Card,
   CardContent,
@@ -15,14 +14,15 @@ import {
 } from '@/components/ui/card';
 
 export function IndexCard({
-  index: { id, name, code, purchases },
+  index: { id, name, code, purchases, amount },
 }: {
   index: IndexWithPurchases;
 }) {
-  const total =
+  const spent =
     purchases.length === 0
       ? 0
       : purchases.map((v) => v.amount).reduce((p, c) => p + c);
+  const remaining = amount - spent;
 
   return (
     <Link href={`/index/${id}`} className="group">
@@ -45,31 +45,32 @@ export function IndexCard({
             <ChevronRight className="text-muted-foreground size-5 transition-transform group-hover:translate-x-0.5" />
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center gap-4 text-sm">
-            <div className="bg-muted flex items-center gap-1.5 rounded-full px-3 py-1">
-              <span className="text-muted-foreground">Total:</span>
-              <span className="font-semibold">${formatNumber(total)}</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <Receipt className="text-muted-foreground size-4" />
-              <span className="text-muted-foreground">
-                {purchases.length} purchase{purchases.length !== 1 ? 's' : ''}
+        <CardContent>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="bg-stat-total/10 flex flex-col items-center rounded-lg p-3">
+              <DollarSign className="text-stat-total mb-1 size-4" />
+              <span className="text-lg font-semibold">
+                ${formatNumber(amount)}
               </span>
+              <span className="text-muted-foreground text-xs">Total</span>
+            </div>
+            <div className="bg-stat-spent/10 flex flex-col items-center rounded-lg p-3">
+              <TrendingUp className="text-stat-spent mb-1 size-4" />
+              <span className="text-lg font-semibold">
+                ${formatNumber(spent)}
+              </span>
+              <span className="text-muted-foreground text-xs">Spent</span>
+            </div>
+            <div className="bg-stat-remaining/10 flex flex-col items-center rounded-lg p-3">
+              <DollarSign className="text-stat-remaining mb-1 size-4" />
+              <span className="text-lg font-semibold">
+                ${formatNumber(remaining)}
+              </span>
+              <span className="text-muted-foreground text-xs">Remaining</span>
             </div>
           </div>
-
-          <div className="space-y-2">
-            {purchases.slice(0, 3).map((v) => (
-              <PurchaseCard key={v.id} purchase={v} stopPropagation />
-            ))}
-            {purchases.length === 0 && (
-              <div className="bg-muted/30 flex items-center justify-center rounded-lg border border-dashed px-4 py-6">
-                <p className="text-muted-foreground text-center text-sm">
-                  No purchases yet
-                </p>
-              </div>
-            )}
+          <div className="text-muted-foreground mt-3 text-center text-sm">
+            {purchases.length} purchase{purchases.length !== 1 ? 's' : ''}
           </div>
         </CardContent>
       </Card>
