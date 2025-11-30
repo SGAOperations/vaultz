@@ -44,7 +44,7 @@ function FormInput<TFieldValues extends FieldValues>({
                 {...field}
                 value={field.value ? '$' + field.value : ''}
                 onChange={(e) =>
-                  field.onChange(e.target.value.replace('$', ''))
+                  field.onChange(e.target.value.replace(/^\$/, ''))
                 }
               />
             ) : (
