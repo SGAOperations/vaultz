@@ -32,7 +32,7 @@ export function IndexCard({
 
   return (
     <Link href={`/index/${id}`} className="group">
-      <Card className="hover:border-primary/30 h-full transition-all duration-200 hover:shadow-md">
+      <Card className="hover:border-primary/30 h-full gap-2 transition-all duration-200 hover:shadow-md">
         <CardHeader className="pb-2">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">

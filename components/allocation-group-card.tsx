@@ -30,7 +30,7 @@ export function AllocationGroupCard({
 
   return (
     <Link href={`/allocation-groups/${id}`} className="group">
-      <Card className="hover:border-primary/30 h-full transition-all duration-200 hover:shadow-md">
+      <Card className="hover:border-primary/30 h-full transition-all duration-200 hover:shadow-md gap-2">
         <CardHeader className="pb-2">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
