@@ -2,7 +2,14 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import { Plus } from 'lucide-react';
+import {
+  ChevronRight,
+  Layers,
+  Plus,
+  TrendingDown,
+  TrendingUp,
+  Wallet,
+} from 'lucide-react';
 
 import { getAllAccounts } from '@/prisma/services/account';
 import { getMiscAllocations } from '@/prisma/services/allocation';
@@ -13,7 +20,11 @@ import { formatNumber } from '@/lib/utils';
 
 import { CreateAllocationDialog } from '@/components/create-allocation-dialog';
 import { CreatePurchaseDialog } from '@/components/create-purchase-dialog';
+import { EmptyState } from '@/components/empty-state';
+import { PageHeader } from '@/components/page-header';
 import { PurchaseCard } from '@/components/purchase-card';
+import { SectionHeader } from '@/components/section-header';
+import { StatCards } from '@/components/stat-card';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 
@@ -45,74 +56,122 @@ export default async function AllocationGroup({
   const spent = purchases.reduce((acc, purchase) => acc + purchase.amount, 0);
 
   return (
-    <div className="flex w-full flex-col gap-3">
-      <h1 className="mt-4 text-3xl font-bold">{allocationGroup.name}</h1>
-      <div className="grid w-full grid-cols-1 gap-4 md:grid-cols-3">
-        <Card className="flex-row items-baseline">
-          <p className="text-6xl">${formatNumber(amount)}</p>
-          <p className="text-muted-foreground text-sm">Total</p>
-        </Card>
-        <Card className="flex-row items-baseline">
-          <p className="text-6xl">${formatNumber(spent)}</p>
-          <p className="text-muted-foreground text-sm">Spent</p>
-        </Card>
-        <Card className="flex-row items-baseline">
-          <p className="text-6xl">${formatNumber(amount - spent)}</p>
-          <p className="text-muted-foreground text-sm">Remaining</p>
-        </Card>
-      </div>
+    <div className="flex w-full flex-col">
+      <PageHeader
+        title={allocationGroup.name}
+        actions={
+          <div className="flex gap-2">
+            <CreatePurchaseDialog
+              users={users}
+              accounts={accounts}
+              allocationGroups={[allocationGroup]}
+              miscAllocations={miscAllocations}
+            />
+            <CreateAllocationDialog
+              trigger={
+                <Button variant="outline" className="gap-2">
+                  <Plus className="size-4" />
+                  Create Allocation
+                </Button>
+              }
+              allocationGroupId={allocationGroup.id}
+            />
+          </div>
+        }
+      />
 
-      <div className="flex w-full flex-row gap-3">
-        <CreatePurchaseDialog
-          users={users}
-          accounts={accounts}
-          allocationGroups={[allocationGroup]}
-          miscAllocations={miscAllocations}
+      <StatCards total={amount} spent={spent} />
+
+      <SectionHeader title="Allocations" />
+
+      {allocationGroup.allocations.length === 0 ? (
+        <EmptyState
+          message="No allocations yet"
+          description="Create allocations to organize this group's budget"
         />
-        <CreateAllocationDialog
-          trigger={
-            <Button className="flex-1">
-              <Plus />
-              Create Allocation
-            </Button>
-          }
-          allocationGroupId={allocationGroup.id}
+      ) : (
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          {allocationGroup.allocations.map((allocation) => {
+            const allocationSpent = allocation.purchases.reduce(
+              (acc, purchase) => acc + purchase.amount,
+              0,
+            );
+            const remaining = allocation.amount - allocationSpent;
+
+            return (
+              <Link
+                href={`/allocations/${allocation.id}`}
+                key={allocation.id}
+                className="group"
+              >
+                <Card className="hover:border-primary/30 p-4 transition-all duration-200 hover:shadow-md">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-primary/10 flex size-10 shrink-0 items-center justify-center rounded-lg">
+                        <Layers className="text-primary size-5" />
+                      </div>
+                      <div>
+                        <h3 className="group-hover:text-primary font-semibold transition-colors">
+                          {allocation.name}
+                        </h3>
+                        <p className="text-muted-foreground text-sm">
+                          {allocation.purchases.length} purchase
+                          {allocation.purchases.length !== 1 ? 's' : ''}
+                        </p>
+                      </div>
+                    </div>
+                    <ChevronRight className="text-muted-foreground size-5 shrink-0 transition-transform group-hover:translate-x-0.5" />
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <div className="bg-muted flex items-center gap-2 rounded-full px-3 py-1.5">
+                      <Wallet className="text-stat-total size-4" />
+                      <span className="text-sm">
+                        <span className="text-muted-foreground">Budget:</span>{' '}
+                        <span className="font-semibold">
+                          ${formatNumber(allocation.amount)}
+                        </span>
+                      </span>
+                    </div>
+                    <div className="bg-muted flex items-center gap-2 rounded-full px-3 py-1.5">
+                      <TrendingDown className="text-stat-spent size-4" />
+                      <span className="text-sm">
+                        <span className="text-muted-foreground">Spent:</span>{' '}
+                        <span className="font-semibold">
+                          ${formatNumber(allocationSpent)}
+                        </span>
+                      </span>
+                    </div>
+                    <div className="bg-muted flex items-center gap-2 rounded-full px-3 py-1.5">
+                      <TrendingUp className="text-stat-remaining size-4" />
+                      <span className="text-sm">
+                        <span className="text-muted-foreground">Left:</span>{' '}
+                        <span className="font-semibold">
+                          ${formatNumber(remaining)}
+                        </span>
+                      </span>
+                    </div>
+                  </div>
+                </Card>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+
+      <SectionHeader title="Purchases" />
+
+      {purchases.length === 0 ? (
+        <EmptyState
+          message="No purchases yet"
+          description="Record purchases to track spending in this group"
         />
-      </div>
-
-      <h2 className="mt-4 text-xl">Allocations</h2>
-      {allocationGroup.allocations.length === 0 && (
-        <p className="text-muted-foreground">No allocations found.</p>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {purchases.map((purchase) => (
+            <PurchaseCard key={purchase.id} purchase={purchase} />
+          ))}
+        </div>
       )}
-      <div className="grid grid-cols-3 gap-3">
-        {allocationGroup.allocations.map((allocation) => (
-          <Link href={`/allocations/${allocation.id}`} key={allocation.id}>
-            <Card className="hover:bg-accent flex flex-row justify-between py-3">
-              <p>{allocation.name}</p>
-              <p>
-                $
-                {formatNumber(
-                  allocation.amount -
-                    allocation.purchases.reduce(
-                      (acc, purchase) => acc + purchase.amount,
-                      0,
-                    ),
-                )}
-              </p>
-            </Card>
-          </Link>
-        ))}
-      </div>
-
-      <h2 className="mt-4 text-xl">Purchases</h2>
-      {purchases.length === 0 && (
-        <p className="text-muted-foreground">No purchases found.</p>
-      )}
-      <div className="flex flex-col gap-3">
-        {purchases.map((purchase) => (
-          <PurchaseCard key={purchase.id} purchase={purchase} />
-        ))}
-      </div>
     </div>
   );
 }

@@ -6,11 +6,12 @@ import { getMiscAllocations } from '@/prisma/services/allocation';
 import { getAllAllocationGroups } from '@/prisma/services/allocation-groups';
 import { getUsers } from '@/prisma/services/user';
 
-import { formatNumber } from '@/lib/utils';
-
 import { CreatePurchaseDialog } from '@/components/create-purchase-dialog';
+import { EmptyState } from '@/components/empty-state';
+import { PageHeader } from '@/components/page-header';
 import { PurchaseCard } from '@/components/purchase-card';
-import { Card } from '@/components/ui/card';
+import { SectionHeader } from '@/components/section-header';
+import { StatCards } from '@/components/stat-card';
 
 export const metadata: Metadata = { title: 'Account' };
 
@@ -35,41 +36,36 @@ export default async function Index({
   );
 
   return (
-    <div className="flex w-full flex-col gap-3">
-      <h1 className="mt-4 text-3xl font-bold">
-        {account.name} ({account.code})
-      </h1>
-      <div className="grid w-full grid-cols-1 gap-4 md:grid-cols-3">
-        <Card className="flex-row items-baseline">
-          <p className="text-6xl">${formatNumber(account.amount)}</p>
-          <p className="text-muted-foreground text-sm">Total</p>
-        </Card>
-        <Card className="flex-row items-baseline">
-          <p className="text-6xl">${formatNumber(spent)}</p>
-          <p className="text-muted-foreground text-sm">Spent</p>
-        </Card>
-        <Card className="flex-row items-baseline">
-          <p className="text-6xl">${formatNumber(account.amount - spent)}</p>
-          <p className="text-muted-foreground text-sm">Remaining</p>
-        </Card>
-      </div>
-
-      <CreatePurchaseDialog
-        users={users}
-        accounts={[account]}
-        allocationGroups={allocationGroups}
-        miscAllocations={miscAllocations}
+    <div className="flex w-full flex-col">
+      <PageHeader
+        title={account.name}
+        description={`Account code: ${account.code}`}
+        actions={
+          <CreatePurchaseDialog
+            users={users}
+            accounts={[account]}
+            allocationGroups={allocationGroups}
+            miscAllocations={miscAllocations}
+          />
+        }
       />
 
-      <h2 className="mt-4 text-xl">Purchases</h2>
-      {account.purchases.length === 0 && (
-        <p className="text-muted-foreground">No purchases found.</p>
+      <StatCards total={account.amount} spent={spent} />
+
+      <SectionHeader title="Purchases" />
+
+      {account.purchases.length === 0 ? (
+        <EmptyState
+          message="No purchases yet"
+          description="Record purchases to track spending in this account"
+        />
+      ) : (
+        <div className="flex flex-col gap-2">
+          {account.purchases.map((purchase) => (
+            <PurchaseCard key={purchase.id} purchase={purchase} />
+          ))}
+        </div>
       )}
-      <div className="flex flex-col gap-3">
-        {account.purchases.map((purchase) => (
-          <PurchaseCard key={purchase.id} purchase={purchase} />
-        ))}
-      </div>
     </div>
   );
 }
