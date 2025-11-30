@@ -6,4 +6,6 @@ UPDATE "public"."Purchase" SET "purchasedAt" = "timestamp"::date WHERE "purchase
 
 -- Make column NOT NULL with default
 ALTER TABLE "public"."Purchase" ALTER COLUMN "purchasedAt" SET NOT NULL;
-ALTER TABLE "public"."Purchase" ALTER COLUMN "purchasedAt" SET DEFAULT CURRENT_TIMESTAMP;
+
+-- AlterTable: Rename timestamp to createdAt
+ALTER TABLE "public"."Purchase" RENAME COLUMN "timestamp" TO "createdAt";
