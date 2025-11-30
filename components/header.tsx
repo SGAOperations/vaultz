@@ -82,12 +82,6 @@ export function Header() {
               <Wallet />
               Allocations
             </DropdownMenuItem>
-            <UserDialog user={undefined}>
-              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                <Plus />
-                Create User
-              </DropdownMenuItem>
-            </UserDialog>
           </DropdownMenuContent>
         </DropdownMenu>
 
