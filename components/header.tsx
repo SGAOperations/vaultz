@@ -3,10 +3,16 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
-import { Plus } from 'lucide-react';
+import { Home, Menu, Plus, Users, Wallet } from 'lucide-react';
 
 import { ModeToggle } from '@/components/theme-provider';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { UserDialog } from '@/components/user-dialog';
 
 export function Header() {
@@ -31,7 +37,7 @@ export function Header() {
         </p>
       </Link>
 
-      <nav className="flex gap-2">
+      <nav className="hidden gap-2 md:flex">
         <Button variant="link" onClick={() => redirect('/')}>
           Home
         </Button>
@@ -45,11 +51,41 @@ export function Header() {
 
       <div className="flex gap-3">
         <UserDialog user={undefined}>
-          <Button variant="ghost">
+          <Button variant="ghost" className="hidden md:flex">
             <Plus />
             Create User
           </Button>
         </UserDialog>
+
+        <DropdownMenu modal={false}>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="icon" className="md:hidden">
+              <Menu className="h-[1.2rem] w-[1.2rem]" />
+              <span className="sr-only">Open menu</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => redirect('/')}>
+              <Home />
+              Home
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => redirect('/users')}>
+              <Users />
+              Users
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => redirect('/allocation-groups')}>
+              <Wallet />
+              Allocations
+            </DropdownMenuItem>
+            <UserDialog user={undefined}>
+              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                <Plus />
+                Create User
+              </DropdownMenuItem>
+            </UserDialog>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
         <ModeToggle />
       </div>
     </div>
