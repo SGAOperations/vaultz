@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 import { Home, Menu, Plus, Users, Wallet } from 'lucide-react';
 
@@ -16,6 +16,8 @@ import {
 import { UserDialog } from '@/components/user-dialog';
 
 export function Header() {
+  const router = useRouter();
+
   return (
     <div className="mb-3 flex w-full justify-between">
       <Link href={'/'} className="flex items-center gap-3">
@@ -38,13 +40,16 @@ export function Header() {
       </Link>
 
       <nav className="hidden gap-2 md:flex">
-        <Button variant="link" onClick={() => redirect('/')}>
+        <Button variant="link" onClick={() => router.push('/')}>
           Home
         </Button>
-        <Button variant="link" onClick={() => redirect('/users')}>
+        <Button variant="link" onClick={() => router.push('/users')}>
           Users
         </Button>
-        <Button variant="link" onClick={() => redirect('/allocation-groups')}>
+        <Button
+          variant="link"
+          onClick={() => router.push('/allocation-groups')}
+        >
           Allocations
         </Button>
       </nav>
@@ -65,15 +70,15 @@ export function Header() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => redirect('/')}>
+            <DropdownMenuItem onClick={() => router.push('/')}>
               <Home />
               Home
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => redirect('/users')}>
+            <DropdownMenuItem onClick={() => router.push('/users')}>
               <Users />
               Users
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => redirect('/allocation-groups')}>
+            <DropdownMenuItem onClick={() => router.push('/allocation-groups')}>
               <Wallet />
               Allocations
             </DropdownMenuItem>
