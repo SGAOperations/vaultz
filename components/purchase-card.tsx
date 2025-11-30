@@ -1,6 +1,7 @@
 'use client';
 
-<<<<<<< HEAD
+import { Calendar, DollarSign, FileText, User as UserIcon } from 'lucide-react';
+
 import { User } from '@/prisma/client';
 
 import {
@@ -9,11 +10,6 @@ import {
   AllocationGroupWithAllocations,
   PurchaseWithUser,
 } from '@/lib/types';
-=======
-import { Calendar, DollarSign, FileText, User } from 'lucide-react';
-
-import { PurchaseWithUser } from '@/lib/types';
->>>>>>> 3381e3520766469b99412b04de4a4d5681e781ad
 import { formatNumber } from '@/lib/utils';
 
 import { DateTime } from '@/components/date-time';
@@ -54,7 +50,7 @@ export function PurchaseCard({
           </div>
 
           <div className="col-span-3 flex items-center gap-1.5 overflow-hidden">
-            <User className="text-muted-foreground size-4 shrink-0" />
+            <UserIcon className="text-muted-foreground size-4 shrink-0" />
             <span className="text-muted-foreground truncate text-sm">
               {purchase.user.first} {purchase.user.last}
             </span>

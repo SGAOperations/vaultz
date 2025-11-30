@@ -20,17 +20,12 @@ import { getUsers } from '@/prisma/services/user';
 import { formatNumber } from '@/lib/utils';
 
 import { CreateAccountDialog } from '@/components/create-account-dialog';
-<<<<<<< HEAD
-import { PurchaseCard } from '@/components/purchase-card';
-import { CreatePurchaseDialog } from '@/components/purchase-dialog';
-=======
-import { CreatePurchaseDialog } from '@/components/create-purchase-dialog';
 import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/page-header';
 import { PurchaseCard } from '@/components/purchase-card';
+import { CreatePurchaseDialog } from '@/components/purchase-dialog';
 import { SectionHeader } from '@/components/section-header';
 import { StatCards } from '@/components/stat-card';
->>>>>>> 3381e3520766469b99412b04de4a4d5681e781ad
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 
@@ -168,50 +163,17 @@ export default async function Index({
       ) : (
         <div className="flex flex-col gap-2">
           {index.purchases.map((purchase) => (
-            <PurchaseCard key={purchase.id} purchase={purchase} />
+            <PurchaseCard
+              key={purchase.id}
+              purchase={purchase}
+              users={users}
+              accounts={accounts}
+              allocationGroups={allocationGroups}
+              miscAllocations={miscAllocations}
+            />
           ))}
         </div>
       )}
-<<<<<<< HEAD
-      <div className="grid grid-cols-3 gap-3">
-        {accounts.map((account) => (
-          <Link href={`/account/${account.id}`} key={account.id}>
-            <Card className="hover:bg-accent flex flex-row justify-between py-3">
-              <p>
-                {account.name} ({account.code})
-              </p>
-              <p>
-                $
-                {formatNumber(
-                  account.amount -
-                    index.purchases
-                      .filter((v) => v.accountId == account.id)
-                      .reduce((acc, purchase) => acc + purchase.amount, 0),
-                )}
-              </p>
-            </Card>
-          </Link>
-        ))}
-      </div>
-
-      <h2 className="mt-4 text-xl">Purchases</h2>
-      {index.purchases.length === 0 && (
-        <p className="text-muted-foreground">No purchases found.</p>
-      )}
-      <div className="flex flex-col gap-3">
-        {index.purchases.map((purchase) => (
-          <PurchaseCard
-            key={purchase.id}
-            purchase={purchase}
-            users={users}
-            accounts={accounts}
-            allocationGroups={allocationGroups}
-            miscAllocations={miscAllocations}
-          />
-        ))}
-      </div>
-=======
->>>>>>> 3381e3520766469b99412b04de4a4d5681e781ad
     </div>
   );
 }

@@ -6,20 +6,12 @@ import { getMiscAllocations } from '@/prisma/services/allocation';
 import { getAllAllocationGroups } from '@/prisma/services/allocation-groups';
 import { getUsers } from '@/prisma/services/user';
 
-<<<<<<< HEAD
-import { formatNumber } from '@/lib/utils';
-
-import { PurchaseCard } from '@/components/purchase-card';
-import { CreatePurchaseDialog } from '@/components/purchase-dialog';
-import { Card } from '@/components/ui/card';
-=======
-import { CreatePurchaseDialog } from '@/components/create-purchase-dialog';
 import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/page-header';
 import { PurchaseCard } from '@/components/purchase-card';
+import { CreatePurchaseDialog } from '@/components/purchase-dialog';
 import { SectionHeader } from '@/components/section-header';
 import { StatCards } from '@/components/stat-card';
->>>>>>> 3381e3520766469b99412b04de4a4d5681e781ad
 
 export const metadata: Metadata = { title: 'Account' };
 
@@ -70,25 +62,17 @@ export default async function Index({
       ) : (
         <div className="flex flex-col gap-2">
           {account.purchases.map((purchase) => (
-            <PurchaseCard key={purchase.id} purchase={purchase} />
+            <PurchaseCard
+              key={purchase.id}
+              purchase={purchase}
+              users={users}
+              accounts={[account]}
+              allocationGroups={allocationGroups}
+              miscAllocations={miscAllocations}
+            />
           ))}
         </div>
       )}
-<<<<<<< HEAD
-      <div className="flex flex-col gap-3">
-        {account.purchases.map((purchase) => (
-          <PurchaseCard
-            key={purchase.id}
-            purchase={purchase}
-            users={users}
-            accounts={[account]}
-            allocationGroups={allocationGroups}
-            miscAllocations={miscAllocations}
-          />
-        ))}
-      </div>
-=======
->>>>>>> 3381e3520766469b99412b04de4a4d5681e781ad
     </div>
   );
 }
