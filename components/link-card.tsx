@@ -3,6 +3,8 @@ import { ReactNode } from 'react';
 
 import { ChevronRight, LucideIcon } from 'lucide-react';
 
+import { cn } from '@/lib/utils';
+
 import {
   Card,
   CardContent,
@@ -64,12 +66,12 @@ export function LinkCard({
         {badges && badges.length > 0 && (
           <CardContent className="pt-0">
             <div className="flex flex-wrap gap-2">
-              {badges.map((badge, index) => (
+              {badges.map((badge) => (
                 <div
-                  key={index}
+                  key={badge.label}
                   className="bg-muted flex items-center gap-2 rounded-full px-3 py-1.5"
                 >
-                  <badge.icon className={`size-4 ${badge.iconColor}`} />
+                  <badge.icon className={cn('size-4', badge.iconColor)} />
                   <span className="text-sm">
                     <span className="text-muted-foreground">
                       {badge.label}:
