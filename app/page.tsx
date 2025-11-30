@@ -23,13 +23,13 @@ export default async function Home() {
       <div className="grid w-full grid-cols-1 gap-3 lg:grid-cols-2">
         {indexes.map((v, i) => (
           <IndexCard
-          key={i}
-          index={v}
-          users={users}
-          accounts={accounts}
-          allocationGroups={allocationGroups}
-          miscAllocations={miscAllocations}
-        />
+            key={i}
+            index={v}
+            users={users}
+            accounts={accounts}
+            allocationGroups={allocationGroups}
+            miscAllocations={miscAllocations}
+          />
         ))}
 
         <CreateIndexDialog
