@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 
 import { DollarSign, Plus, User } from 'lucide-react';
+import Link from 'next/link';
 
 import { getUsersWithPurchases } from '@/prisma/services/user';
 
@@ -20,61 +21,33 @@ export default async function UserOverview() {
   const users = await getUsersWithPurchases();
 
   return (
-    <div className="flex w-full flex-col">
-      <PageHeader
-        title="Users"
-        description="Manage team members and track their spending"
-        actions={
-          <UserDialog user={undefined}>
-            <Button className="gap-2">
-              <Plus className="size-4" />
-              Add User
-            </Button>
-          </UserDialog>
-        }
-      />
-
-      {users.length === 0 ? (
-        <EmptyState
-          message="No users found"
-          description="Add users to start tracking their purchases"
-        />
-      ) : (
-        <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-          {users.map((user) => {
-            const totalSpent = user.purchases.reduce(
-              (acc, purchase) => acc + purchase.amount,
-              0,
-            );
-            return (
-              <Card
-                key={user.id}
-                className="hover:border-primary/20 flex flex-row items-center gap-3 p-3 transition-all duration-150"
-              >
-                <div className="bg-primary/10 flex size-10 shrink-0 items-center justify-center rounded-full">
-                  <User className="text-primary size-5" />
-                </div>
-                <div className="flex min-w-0 flex-1 flex-col">
-                  <p className="truncate font-semibold">
-                    {user.first} {user.last}
-                  </p>
-                  <p className="text-muted-foreground text-sm">
-                    {user.purchases.length} purchase
-                    {user.purchases.length !== 1 ? 's' : ''}
-                  </p>
-                </div>
-                <div className="flex items-center gap-1">
-                  <DollarSign className="text-muted-foreground size-4" />
-                  <span className="font-semibold">
-                    {formatNumber(totalSpent)}
-                  </span>
-                </div>
-                <UserDropdown user={user} />
-              </Card>
-            );
-          })}
-        </div>
+    <div className="flex w-full flex-col gap-3">
+      <h1 className="mt-4 text-3xl font-bold">Users</h1>
+      {users.length === 0 && (
+        <p className="text-muted-foreground">No users found.</p>
       )}
+
+      <div className="grid grid-cols-2 gap-3">
+        {users.map((user) => (
+          <Link key={user.id} href={`/users/${user.id}`}>
+            <Card className="hover:bg-accent flex flex-row items-center justify-between py-2">
+              <p>
+                {user.first} {user.last}
+              </p>
+              <p>
+                $
+                {formatNumber(
+                  user.purchases.reduce(
+                    (acc, purchase) => acc + purchase.amount,
+                    0,
+                  ),
+                )}
+              </p>
+              <UserDropdown user={user} />
+            </Card>
+          </Link>
+        ))}
+      </div>
     </div>
   );
 }
