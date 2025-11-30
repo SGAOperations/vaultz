@@ -33,6 +33,7 @@ import {
 import { DateTime } from './date-time';
 import { Button } from './ui/button';
 import { Combobox } from './ui/combobox';
+import { DatePicker } from './ui/date-picker';
 import {
   Form,
   FormControl,
@@ -53,6 +54,7 @@ const schema = z.object({
     .number<number>()
     .min(0.01, 'Must be at least $0.01')
     .multipleOf(0.01, 'Must contain at most 2 decimal places'),
+  purchasedAt: z.date('Please select a valid date'),
   receipts: z.array(z.string()).optional(),
 });
 
@@ -88,6 +90,7 @@ export function PurchaseDialog({
       allocationId: purchase.allocationId || '',
       description: purchase.description,
       amount: purchase.amount,
+      purchasedAt: new Date(purchase.purchasedAt),
       receipts: purchase.receipts,
     },
   });
@@ -143,6 +146,7 @@ export function PurchaseDialog({
       allocationId: purchase.allocationId || '',
       description: purchase.description,
       amount: purchase.amount,
+      purchasedAt: new Date(purchase.purchasedAt),
       receipts: purchase.receipts,
     });
     setReceiptsToDisplay(purchase.receipts);
@@ -164,7 +168,7 @@ export function PurchaseDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="sm:max-w-1/3">
+      <DialogContent className="w-2/3 sm:max-w-full">
         <DialogHeader>
           <DialogTitle>
             {isEditing ? 'Edit Purchase' : 'Purchase Information'}
@@ -179,145 +183,163 @@ export function PurchaseDialog({
         {isEditing ? (
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              <FormField
-                control={form.control}
-                name="userId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Name</FormLabel>
-                    <FormControl>
-                      <Combobox
-                        data={[
-                          {
-                            items: users.map((v) => ({
-                              value: v.id,
-                              label: `${v.first} ${v.last}`,
-                            })),
-                          },
-                        ]}
-                        {...field}
-                        name="user"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="accountId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Account</FormLabel>
-                    <FormControl>
-                      <Combobox
-                        data={Object.entries(
-                          accounts.reduce(
-                            (acc, account) => {
-                              const group = account.indexId;
-                              acc[group] = acc[group] || { items: [] };
-                              acc[group].items.push({
-                                value: account.id,
-                                label: `${account.name} (${account.code})`,
-                              });
-                              return acc;
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="userId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Name</FormLabel>
+                      <FormControl>
+                        <Combobox
+                          data={[
+                            {
+                              items: users.map((v) => ({
+                                value: v.id,
+                                label: `${v.first} ${v.last}`,
+                              })),
                             },
-                            {} as Record<
-                              string,
-                              { items: { value: string; label: string }[] }
-                            >,
-                          ),
-                        ).map(([indexId, group]) => ({
-                          heading:
-                            accounts.find((a) => a.indexId === indexId)?.index
-                              .name || indexId,
-                          ...group,
-                        }))}
-                        {...field}
-                        name="account"
-                        disabled={accounts.length === 1}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="allocationId"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="flex gap-2">
-                      <FormLabel>Allocation</FormLabel>
-                      <FormDescription className="text-xs">
-                        Optional
-                      </FormDescription>
-                    </div>
-                    <FormControl>
-                      <Combobox
-                        data={[
-                          ...allocationGroups.map((group) => ({
-                            heading: group.name,
-                            items: group.allocations.map((allocation) => ({
-                              value: allocation.id,
-                              label: allocation.name,
+                          ]}
+                          {...field}
+                          name="user"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="flex gap-2">
+                        <FormLabel>Description</FormLabel>
+                        <FormDescription className="text-xs">
+                          Optional
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Input placeholder="Optional" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="accountId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Account</FormLabel>
+                      <FormControl>
+                        <Combobox
+                          data={Object.entries(
+                            accounts.reduce(
+                              (acc, account) => {
+                                const group = account.indexId;
+                                acc[group] = acc[group] || { items: [] };
+                                acc[group].items.push({
+                                  value: account.id,
+                                  label: `${account.name} (${account.code})`,
+                                });
+                                return acc;
+                              },
+                              {} as Record<
+                                string,
+                                { items: { value: string; label: string }[] }
+                              >,
+                            ),
+                          ).map(([indexId, group]) => ({
+                            heading:
+                              accounts.find((a) => a.indexId === indexId)?.index
+                                .name || indexId,
+                            ...group,
+                          }))}
+                          {...field}
+                          name="account"
+                          disabled={accounts.length === 1}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="allocationId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="flex gap-2">
+                        <FormLabel>Allocation</FormLabel>
+                        <FormDescription className="text-xs">
+                          Optional
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Combobox
+                          data={[
+                            ...allocationGroups.map((group) => ({
+                              heading: group.name,
+                              items: group.allocations.map((allocation) => ({
+                                value: allocation.id,
+                                label: allocation.name,
+                              })),
                             })),
-                          })),
-                          {
-                            heading: 'Miscellaneous',
-                            items: miscAllocations.map((allocation) => ({
-                              value: allocation.id,
-                              label: allocation.name,
-                            })),
-                          },
-                        ]}
-                        {...field}
-                        value={field.value || ''}
-                        name="allocation"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="flex gap-2">
-                      <FormLabel>Description</FormLabel>
-                      <FormDescription className="text-xs">
-                        Optional
-                      </FormDescription>
-                    </div>
-                    <FormControl>
-                      <Input placeholder="Optional" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="amount"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Amount</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="$21.45"
-                        {...field}
-                        value={field.value ? '$' + field.value : ''}
-                        onChange={(e) =>
-                          field.onChange(e.target.value.replace('$', ''))
-                        }
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                            {
+                              heading: 'Miscellaneous',
+                              items: miscAllocations.map((allocation) => ({
+                                value: allocation.id,
+                                label: allocation.name,
+                              })),
+                            },
+                          ]}
+                          {...field}
+                          value={field.value || ''}
+                          name="allocation"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="purchasedAt"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Purchase Date</FormLabel>
+                      <FormControl>
+                        <DatePicker
+                          value={new Date(field.value)}
+                          onChange={(val: Date) => field.onChange(val)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="amount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Amount</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="$21.45"
+                          {...field}
+                          value={field.value ? '$' + field.value : ''}
+                          onChange={(e) =>
+                            field.onChange(e.target.value.replace('$', ''))
+                          }
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
               <FormField
                 control={form.control}
                 name="receipts"
@@ -360,7 +382,7 @@ export function PurchaseDialog({
                         <UploadDropzone
                           endpoint="receipts"
                           config={{ mode: 'auto', cn: twMerge }}
-                          className="border-accent m-0 border-1 p-4"
+                          className="border-accent m-0 border p-4"
                           onClientUploadComplete={(data) => {
                             if (data.length === 0) return;
 

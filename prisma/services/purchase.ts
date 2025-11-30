@@ -49,6 +49,7 @@ export async function updatePurchase({
   description,
   amount,
   allocationId,
+  purchasedAt,
   receipts,
 }: {
   id: string;
@@ -57,6 +58,7 @@ export async function updatePurchase({
   description?: string;
   amount: number;
   allocationId?: string;
+  purchasedAt: Date;
   receipts?: string[];
 }): Promise<ResponseType<Purchase>> {
   const purchase = await prisma.purchase.update({
@@ -67,6 +69,7 @@ export async function updatePurchase({
       description: description || '',
       amount: new Decimal(amount),
       allocationId,
+      purchasedAt,
       receipts,
     },
   });
