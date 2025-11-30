@@ -38,7 +38,7 @@ export function PurchaseCard({
               <DollarSign className="text-primary size-4" />
             </div>
             <span className="font-semibold">
-              ${formatNumber(purchase.amount)}
+              {formatCurrency(purchase.amount)}
             </span>
           </div>
 
