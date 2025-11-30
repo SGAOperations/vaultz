@@ -46,6 +46,7 @@ export default async function AllocationGroup({
 
   return (
     <div className="flex w-full flex-col gap-3">
+      <h1 className="mt-4 text-3xl font-bold">{allocationGroup.name}</h1>
       <div className="grid w-full grid-cols-1 gap-4 md:grid-cols-3">
         <Card className="flex-row items-baseline">
           <p className="text-6xl">${formatNumber(amount)}</p>
