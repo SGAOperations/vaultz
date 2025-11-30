@@ -17,7 +17,7 @@ export function DatePicker({
   value,
   onChange,
 }: {
-  value?: string;
+  value?: Date;
   onChange: (value: Date) => void;
 }) {
   const date = value ? new Date(value) : undefined;

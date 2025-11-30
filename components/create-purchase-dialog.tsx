@@ -51,7 +51,7 @@ const schema = z.object({
     .number<number>()
     .min(0.01, 'Must be at least $0.01')
     .multipleOf(0.01, 'Must contain at most 2 decimal places'),
-  purchasedAt: z.string().date('Please select a valid date'),
+  purchasedAt: z.date('Please select a valid date'),
   receipts: z.array(z.string()).optional(),
 });
 
@@ -76,17 +76,10 @@ export function CreatePurchaseDialog({
       accountId: accounts.length == 1 ? accounts[0].id : '',
       description: '',
       amount: 0,
-      purchasedAt: new Date().toISOString().split('T')[0],
+      purchasedAt: new Date(),
       receipts: [],
     },
   });
-
-  // Update purchasedAt to today's date when dialog opens
-  useEffect(() => {
-    if (open) {
-      form.setValue('purchasedAt', new Date().toISOString().split('T')[0]);
-    }
-  }, [open, form]);
 
   async function onSubmit(data: z.infer<typeof schema>) {
     await handleError(createPurchase(data), {
@@ -252,7 +245,7 @@ export function CreatePurchaseDialog({
                     <FormLabel>Purchase Date</FormLabel>
                     <FormControl>
                       <DatePicker
-                        value={field.value}
+                        value={new Date(field.value)}
                         onChange={(val: Date) => field.onChange(val)}
                       />
                     </FormControl>
