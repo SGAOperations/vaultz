@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -289,7 +289,7 @@ export function CreatePurchaseDialog({
                     <UploadDropzone
                       endpoint="receipts"
                       config={{ mode: 'auto', cn: twMerge }}
-                      className="border-accent m-0 border-1 p-4"
+                      className="border-accent m-0 border p-4"
                       onClientUploadComplete={(data) => {
                         if (data.length === 0) return;
 
