@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import Link from 'next/link';
 
 import { getUsersWithPurchases } from '@/prisma/services/user';
 
@@ -22,24 +23,23 @@ export default async function UserOverview() {
 
       <div className="grid grid-cols-2 gap-3">
         {users.map((user) => (
-          <Card
-            key={user.id}
-            className="flex flex-row items-center justify-between py-2"
-          >
-            <p>
-              {user.first} {user.last}
-            </p>
-            <p>
-              $
-              {formatNumber(
-                user.purchases.reduce(
-                  (acc, purchase) => acc + purchase.amount,
-                  0,
-                ),
-              )}
-            </p>
-            <UserDropdown user={user} />
-          </Card>
+          <Link key={user.id} href={`/users/${user.id}`}>
+            <Card className="hover:bg-accent flex flex-row items-center justify-between py-2">
+              <p>
+                {user.first} {user.last}
+              </p>
+              <p>
+                $
+                {formatNumber(
+                  user.purchases.reduce(
+                    (acc, purchase) => acc + purchase.amount,
+                    0,
+                  ),
+                )}
+              </p>
+              <UserDropdown user={user} />
+            </Card>
+          </Link>
         ))}
       </div>
     </div>
