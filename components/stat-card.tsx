@@ -38,18 +38,18 @@ export function StatCard({ value, label, variant = 'total' }: StatCardProps) {
   const Icon = styles.icon;
 
   return (
-    <Card className="relative overflow-hidden p-6">
+    <Card className="relative overflow-hidden p-4">
       <div
-        className={`absolute top-4 right-4 rounded-xl p-2.5 ${styles.bg}`}
+        className={`absolute top-3 right-3 rounded-lg p-2 ${styles.bg}`}
         aria-hidden="true"
       >
-        <Icon className={`size-6 ${styles.iconColor}`} />
+        <Icon className={`size-5 ${styles.iconColor}`} />
       </div>
-      <div className="flex flex-col gap-1">
-        <p className="text-muted-foreground text-sm font-medium">{label}</p>
-        <div className="flex items-baseline gap-1">
-          <DollarSign className="text-muted-foreground size-5" />
-          <p className="text-4xl font-bold tracking-tight">
+      <div className="flex flex-col gap-0.5">
+        <p className="text-muted-foreground text-xs font-medium">{label}</p>
+        <div className="flex items-baseline gap-0.5">
+          <DollarSign className="text-muted-foreground size-4" />
+          <p className="text-3xl font-bold tracking-tight">
             {formatNumber(value)}
           </p>
         </div>
@@ -68,7 +68,7 @@ export function StatCards({ total, spent, remaining }: StatCardsProps) {
   const remainingValue = remaining !== undefined ? remaining : total - spent;
 
   return (
-    <div className="grid w-full grid-cols-1 gap-4 md:grid-cols-3">
+    <div className="grid w-full grid-cols-1 gap-3 md:grid-cols-3">
       <StatCard value={total} label="Total Budget" variant="total" />
       <StatCard value={spent} label="Total Spent" variant="spent" />
       <StatCard value={remainingValue} label="Remaining" variant="remaining" />

@@ -2,7 +2,14 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import { ChevronRight, CreditCard, DollarSign, Plus } from 'lucide-react';
+import {
+  ChevronRight,
+  CreditCard,
+  Plus,
+  TrendingDown,
+  TrendingUp,
+  Wallet,
+} from 'lucide-react';
 
 import { getIndex } from '@/prisma/services';
 import { getAccountsByIndex } from '@/prisma/services/account';
@@ -80,7 +87,7 @@ export default async function Index({
           description="Create accounts to organize this index's budget"
         />
       ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           {accounts.map((account) => {
             const accountSpent = index.purchases
               .filter((v) => v.accountId === account.id)
@@ -93,14 +100,14 @@ export default async function Index({
                 key={account.id}
                 className="group"
               >
-                <Card className="hover:border-primary/30 p-5 transition-all duration-200 hover:shadow-md">
+                <Card className="hover:border-primary/30 p-4 transition-all duration-200 hover:shadow-md">
                   <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="bg-primary/10 flex size-12 shrink-0 items-center justify-center rounded-xl">
-                        <CreditCard className="text-primary size-6" />
+                    <div className="flex items-center gap-3">
+                      <div className="bg-primary/10 flex size-10 shrink-0 items-center justify-center rounded-lg">
+                        <CreditCard className="text-primary size-5" />
                       </div>
                       <div>
-                        <h3 className="group-hover:text-primary text-lg font-semibold transition-colors">
+                        <h3 className="group-hover:text-primary font-semibold transition-colors">
                           {account.name}
                         </h3>
                         <p className="text-muted-foreground font-mono text-sm">
@@ -108,29 +115,35 @@ export default async function Index({
                         </p>
                       </div>
                     </div>
-                    <ChevronRight className="text-muted-foreground mt-1 size-5 shrink-0 transition-transform group-hover:translate-x-0.5" />
+                    <ChevronRight className="text-muted-foreground size-5 shrink-0 transition-transform group-hover:translate-x-0.5" />
                   </div>
-                  <div className="mt-4 grid grid-cols-3 gap-3">
-                    <div className="bg-stat-total/10 rounded-lg p-3 text-center">
-                      <DollarSign className="text-stat-total mx-auto mb-1 size-4" />
-                      <p className="font-semibold">
-                        ${formatNumber(account.amount)}
-                      </p>
-                      <p className="text-muted-foreground text-xs">Budget</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <div className="bg-muted flex items-center gap-2 rounded-full px-3 py-1.5">
+                      <Wallet className="text-stat-total size-4" />
+                      <span className="text-sm">
+                        <span className="text-muted-foreground">Budget:</span>{' '}
+                        <span className="font-semibold">
+                          ${formatNumber(account.amount)}
+                        </span>
+                      </span>
                     </div>
-                    <div className="bg-stat-spent/10 rounded-lg p-3 text-center">
-                      <DollarSign className="text-stat-spent mx-auto mb-1 size-4" />
-                      <p className="font-semibold">
-                        ${formatNumber(accountSpent)}
-                      </p>
-                      <p className="text-muted-foreground text-xs">Spent</p>
+                    <div className="bg-muted flex items-center gap-2 rounded-full px-3 py-1.5">
+                      <TrendingDown className="text-stat-spent size-4" />
+                      <span className="text-sm">
+                        <span className="text-muted-foreground">Spent:</span>{' '}
+                        <span className="font-semibold">
+                          ${formatNumber(accountSpent)}
+                        </span>
+                      </span>
                     </div>
-                    <div className="bg-stat-remaining/10 rounded-lg p-3 text-center">
-                      <DollarSign className="text-stat-remaining mx-auto mb-1 size-4" />
-                      <p className="font-semibold">
-                        ${formatNumber(remaining)}
-                      </p>
-                      <p className="text-muted-foreground text-xs">Remaining</p>
+                    <div className="bg-muted flex items-center gap-2 rounded-full px-3 py-1.5">
+                      <TrendingUp className="text-stat-remaining size-4" />
+                      <span className="text-sm">
+                        <span className="text-muted-foreground">Left:</span>{' '}
+                        <span className="font-semibold">
+                          ${formatNumber(remaining)}
+                        </span>
+                      </span>
                     </div>
                   </div>
                 </Card>

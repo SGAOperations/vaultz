@@ -3,21 +3,12 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-import { FolderKanban, Home, Plus, User, Users } from 'lucide-react';
+import { FolderKanban, Home, Users } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
 import { ModeToggle } from '@/components/theme-provider';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { UserDialog } from '@/components/user-dialog';
 
 const navItems = [
   { href: '/', label: 'Home', icon: Home },
@@ -29,11 +20,11 @@ export function Header() {
   const pathname = usePathname();
 
   return (
-    <header className="bg-header-bg border-header-border mb-6 flex w-full items-center justify-between rounded-2xl border px-6 py-4 shadow-sm">
-      <Link href={'/'} className="flex items-center gap-3">
-        <div className="bg-primary flex size-10 items-center justify-center rounded-xl shadow-md">
+    <header className="bg-header-bg border-header-border mb-4 flex w-full items-center justify-between rounded-2xl border px-4 py-3 shadow-sm">
+      <Link href={'/'} className="flex items-center gap-2">
+        <div className="bg-primary flex size-9 items-center justify-center rounded-xl shadow-md">
           <svg
-            className="size-6 text-white"
+            className="size-5 text-white"
             viewBox="0 0 348 287"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
@@ -46,7 +37,7 @@ export function Header() {
         </div>
 
         <div className="flex flex-col">
-          <h1 className="text-xl font-bold tracking-tight">VaultZ</h1>
+          <h1 className="text-lg font-bold tracking-tight">VaultZ</h1>
           <p className="text-muted-foreground text-xs">
             v{process.env.version}
           </p>
@@ -62,8 +53,9 @@ export function Header() {
             <Link key={href} href={href}>
               <Button
                 variant="ghost"
+                size="sm"
                 className={cn(
-                  'hover:bg-nav-hover gap-2 transition-colors',
+                  'hover:bg-nav-hover gap-1.5 transition-colors',
                   isActive &&
                     'bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary',
                 )}
@@ -76,32 +68,7 @@ export function Header() {
         })}
       </nav>
 
-      <div className="flex items-center gap-2">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="icon">
-              <User className="size-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>User Management</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <UserDialog user={undefined}>
-              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                <Plus className="mr-2 size-4" />
-                Add User
-              </DropdownMenuItem>
-            </UserDialog>
-            <Link href="/users">
-              <DropdownMenuItem>
-                <Users className="mr-2 size-4" />
-                View All Users
-              </DropdownMenuItem>
-            </Link>
-          </DropdownMenuContent>
-        </DropdownMenu>
-        <ModeToggle />
-      </div>
+      <ModeToggle />
     </header>
   );
 }
