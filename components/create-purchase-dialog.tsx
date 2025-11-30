@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -78,14 +78,6 @@ export function CreatePurchaseDialog({
     },
   });
 
-  useEffect(() => {
-    if (!open) {
-      setFilesUploaded([]);
-      form.reset();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
-
   async function onSubmit(data: z.infer<typeof schema>) {
     await handleError(createPurchase(data), {
       toast: {
@@ -95,6 +87,7 @@ export function CreatePurchaseDialog({
       },
       onSuccess: () => {
         form.reset();
+        setFilesUploaded([]);
         setOpen(false);
       },
     });
