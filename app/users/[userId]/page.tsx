@@ -25,15 +25,26 @@ export default async function UserPage({
     0,
   );
 
+  const purchaseCount = user.purchases.length;
+  const averagePurchase = purchaseCount > 0 ? totalSpent / purchaseCount : 0;
+
   return (
     <div className="flex w-full flex-col gap-3">
       <h1 className="mt-4 text-3xl font-bold">
         {user.first} {user.last}
       </h1>
-      <div className="grid w-full grid-cols-1 gap-4">
+      <div className="grid w-full grid-cols-1 gap-4 md:grid-cols-3">
         <Card className="flex-row items-baseline">
           <p className="text-6xl">${formatNumber(totalSpent)}</p>
           <p className="text-muted-foreground text-sm">Total Spent</p>
+        </Card>
+        <Card className="flex-row items-baseline">
+          <p className="text-6xl">{purchaseCount}</p>
+          <p className="text-muted-foreground text-sm">Purchases</p>
+        </Card>
+        <Card className="flex-row items-baseline">
+          <p className="text-6xl">${formatNumber(averagePurchase)}</p>
+          <p className="text-muted-foreground text-sm">Avg. Purchase</p>
         </Card>
       </div>
 
