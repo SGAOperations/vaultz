@@ -5,8 +5,23 @@ import { revalidatePath } from 'next/cache';
 import { Decimal } from '@/prisma/client/runtime/library';
 
 import prisma from '@/lib/prisma';
-import { Purchase } from '@/lib/types';
+import { Purchase, PurchaseWithUser } from '@/lib/types';
 import { ResponseType } from '@/lib/utils';
+
+export async function getLatestPurchases(
+  limit: number = 10,
+): Promise<PurchaseWithUser[]> {
+  const purchases = await prisma.purchase.findMany({
+    take: limit,
+    orderBy: { createdAt: 'desc' },
+    include: { user: true },
+  });
+
+  return purchases.map(({ amount, ...v }) => ({
+    ...v,
+    amount: amount.toNumber(),
+  }));
+}
 
 export async function createPurchase({
   userId,

@@ -1,5 +1,6 @@
 'use client';
 
+<<<<<<< HEAD
 import { User } from '@/prisma/client';
 
 import {
@@ -8,6 +9,11 @@ import {
   AllocationGroupWithAllocations,
   PurchaseWithUser,
 } from '@/lib/types';
+=======
+import { Calendar, DollarSign, FileText, User } from 'lucide-react';
+
+import { PurchaseWithUser } from '@/lib/types';
+>>>>>>> 3381e3520766469b99412b04de4a4d5681e781ad
 import { formatNumber } from '@/lib/utils';
 
 import { DateTime } from '@/components/date-time';
@@ -35,17 +41,38 @@ export function PurchaseCard({
       trigger={
         <Card
           key={purchase.id}
-          className="group-hover:bg-accent group-hover:border-muted hover:bg-accent grid cursor-pointer grid-cols-6 items-center overflow-hidden p-3"
+          className="hover:border-primary/20 hover:bg-accent/50 grid cursor-pointer grid-cols-12 items-center gap-2 overflow-hidden p-3 transition-all duration-150"
           onClick={stopPropagation ? (e) => e.stopPropagation() : undefined}
         >
-          <p>${formatNumber(purchase.amount)}</p>
-          <p className="col-span-2 text-sm">
-            {purchase.user.first} {purchase.user.last}
-          </p>
-          <p className="col-span-2 truncate text-sm">{purchase.description}</p>
-          <p className="col-span-1 text-sm">
-            <DateTime date={purchase.purchasedAt} dateOnly />
-          </p>
+          <div className="col-span-3 flex items-center gap-2">
+            <div className="bg-primary/10 flex size-8 shrink-0 items-center justify-center rounded-lg">
+              <DollarSign className="text-primary size-4" />
+            </div>
+            <span className="font-semibold">
+              ${formatNumber(purchase.amount)}
+            </span>
+          </div>
+
+          <div className="col-span-3 flex items-center gap-1.5 overflow-hidden">
+            <User className="text-muted-foreground size-4 shrink-0" />
+            <span className="text-muted-foreground truncate text-sm">
+              {purchase.user.first} {purchase.user.last}
+            </span>
+          </div>
+
+          <div className="col-span-4 flex items-center gap-1.5 overflow-hidden">
+            <FileText className="text-muted-foreground size-4 shrink-0" />
+            <span className="text-muted-foreground truncate text-sm">
+              {purchase.description || 'No description'}
+            </span>
+          </div>
+
+          <div className="col-span-2 flex items-center justify-end gap-1.5">
+            <Calendar className="text-muted-foreground size-4 shrink-0" />
+            <span className="text-muted-foreground text-sm">
+              <DateTime date={purchase.purchasedAt} dateOnly />
+            </span>
+          </div>
         </Card>
       }
       purchase={purchase}

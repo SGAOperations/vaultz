@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { CreditCard, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
 
 import { User } from '@/prisma/client';
 
@@ -10,20 +10,18 @@ import {
 } from '@/lib/types';
 import { formatNumber } from '@/lib/utils';
 
-import { PurchaseCard } from '@/components/purchase-card';
-import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { LinkCard } from '@/components/link-card';
 
 export function IndexCard({
+<<<<<<< HEAD
   index: { id, name, code, purchases },
   users,
   accounts,
   allocationGroups,
   miscAllocations,
+=======
+  index: { id, name, code, purchases, amount },
+>>>>>>> 3381e3520766469b99412b04de4a4d5681e781ad
 }: {
   index: IndexWithPurchases;
   users: User[];
@@ -31,24 +29,13 @@ export function IndexCard({
   allocationGroups: AllocationGroupWithAllocations[];
   miscAllocations: Allocation[];
 }) {
-  return (
-    <Link href={`/index/${id}`}>
-      <Card className="group hover:bg-accent h-full">
-        <CardHeader>
-          <CardTitle>
-            {name} ({code})
-          </CardTitle>
-          <CardDescription>
-            Total: $
-            {purchases.length == 0
-              ? 0
-              : formatNumber(
-                  purchases.map((v) => v.amount).reduce((p, c) => p + c),
-                )}{' '}
-            for {purchases.length} purchases
-          </CardDescription>
-        </CardHeader>
+  const spent =
+    purchases.length === 0
+      ? 0
+      : purchases.map((v) => v.amount).reduce((p, c) => p + c);
+  const remaining = amount - spent;
 
+<<<<<<< HEAD
         <div className="flex flex-col gap-3 px-6">
           {purchases.slice(0, 3).map((v) => (
             <PurchaseCard
@@ -69,5 +56,34 @@ export function IndexCard({
         </div>
       </Card>
     </Link>
+=======
+  return (
+    <LinkCard
+      href={`/index/${id}`}
+      icon={CreditCard}
+      title={name}
+      description={code}
+      badges={[
+        {
+          icon: Wallet,
+          iconColor: 'text-stat-total',
+          label: 'Budget',
+          value: `$${formatNumber(amount)}`,
+        },
+        {
+          icon: TrendingDown,
+          iconColor: 'text-stat-spent',
+          label: 'Spent',
+          value: `$${formatNumber(spent)}`,
+        },
+        {
+          icon: TrendingUp,
+          iconColor: 'text-stat-remaining',
+          label: 'Left',
+          value: `$${formatNumber(remaining)}`,
+        },
+      ]}
+    />
+>>>>>>> 3381e3520766469b99412b04de4a4d5681e781ad
   );
 }
