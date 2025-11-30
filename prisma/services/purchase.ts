@@ -14,6 +14,7 @@ export async function createPurchase({
   description,
   amount,
   allocationId,
+  purchasedAt,
   receipts,
 }: {
   userId: string;
@@ -21,6 +22,7 @@ export async function createPurchase({
   description?: string;
   amount: number;
   allocationId?: string;
+  purchasedAt: Date;
   receipts?: string[];
 }): Promise<ResponseType<Purchase>> {
   const purchase = await prisma.purchase.create({
@@ -30,6 +32,7 @@ export async function createPurchase({
       description: description || '',
       amount: new Decimal(amount),
       allocationId,
+      purchasedAt: purchasedAt,
       receipts,
     },
   });

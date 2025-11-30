@@ -2,6 +2,8 @@ import { Metadata } from 'next';
 
 import { getUsersWithPurchases } from '@/prisma/services/user';
 
+import { formatNumber } from '@/lib/utils';
+
 import { Card } from '@/components/ui/card';
 
 import { UserDropdown } from './client';
@@ -29,9 +31,11 @@ export default async function UserOverview() {
             </p>
             <p>
               $
-              {user.purchases.reduce(
-                (acc, purchase) => acc + purchase.amount,
-                0,
+              {formatNumber(
+                user.purchases.reduce(
+                  (acc, purchase) => acc + purchase.amount,
+                  0,
+                ),
               )}
             </p>
             <UserDropdown user={user} />
