@@ -90,6 +90,7 @@ export function CreatePurchaseDialog({
       },
       onSuccess: () => {
         form.reset();
+        setFilesUploaded([]);
         setOpen(false);
       },
     });
