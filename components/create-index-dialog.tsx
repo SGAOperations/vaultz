@@ -1,34 +1,13 @@
 'use client';
 
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-
-import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod/v4';
 
 import { createIndex } from '@/prisma/services';
 
-import { handleError } from '@/lib/utils';
+import { handleError, isError } from '@/lib/utils';
 
-import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
+import { FormDialog } from '@/components/ui/form-dialog';
+import { FormInput } from '@/components/ui/form-input';
 
 const schema = z.object({
   name: z
@@ -38,74 +17,40 @@ const schema = z.object({
   code: z.string().length(6, 'Must be exactly 6 characters long'),
 });
 
-export function CreateIndexDialog({ trigger }: { trigger: React.ReactNode }) {
-  const [open, setOpen] = useState<boolean>(false);
-  const form = useForm<z.infer<typeof schema>>({
-    resolver: zodResolver(schema),
-    defaultValues: { name: '', code: '' },
-  });
+type FormData = z.infer<typeof schema>;
 
-  async function onSubmit(data: z.infer<typeof schema>) {
-    await handleError(createIndex(data), {
+export function CreateIndexDialog({ trigger }: { trigger: React.ReactNode }) {
+  async function onSubmit(data: FormData): Promise<boolean> {
+    const result = await handleError(createIndex(data), {
       toast: {
         loading: 'Creating index...',
         success: 'Index created successfully',
         error: 'Failed to create index',
       },
-      onSuccess: () => {
-        form.reset();
-        setOpen(false);
-      },
     });
+    return !isError(result);
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
-
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Create Index</DialogTitle>
-          <DialogDescription>
-            An index contains multiple accounts that track purchases.
-          </DialogDescription>
-        </DialogHeader>
-
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Budget Index" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="code"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Code</FormLabel>
-                  <FormControl>
-                    <Input placeholder="80XXXX" {...field} />
-                  </FormControl>
-                  <FormDescription>
-                    The index number to be associated with this index.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button type="submit">Submit</Button>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+    <FormDialog
+      trigger={trigger}
+      title="Create Index"
+      description="An index contains multiple accounts that track purchases."
+      schema={schema}
+      defaultValues={{ name: '', code: '' }}
+      onSubmit={onSubmit}
+    >
+      <FormInput<FormData>
+        name="name"
+        label="Name"
+        placeholder="Budget Index"
+      />
+      <FormInput<FormData>
+        name="code"
+        label="Code"
+        placeholder="80XXXX"
+        description="The index number to be associated with this index."
+      />
+    </FormDialog>
   );
 }

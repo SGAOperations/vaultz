@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { FormProvider, useForm } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Plus } from 'lucide-react';
@@ -18,7 +18,7 @@ import {
   AllocationGroupWithAllocations,
 } from '@/lib/types';
 import { UploadDropzone } from '@/lib/uploadthing';
-import { handleError } from '@/lib/utils';
+import { handleError, isError } from '@/lib/utils';
 
 import { Button } from '@/components/ui/button';
 import { Combobox } from '@/components/ui/combobox';
@@ -32,7 +32,6 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import {
-  Form,
   FormControl,
   FormDescription,
   FormField,
@@ -40,7 +39,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
+import { FormInput } from '@/components/ui/form-input';
 
 const schema = z.object({
   userId: z.string().min(1, 'Please select a user'),
@@ -54,6 +53,8 @@ const schema = z.object({
   purchasedAt: z.date('Please select a valid date'),
   receipts: z.array(z.string()).optional(),
 });
+
+type FormData = z.infer<typeof schema>;
 
 export function CreatePurchaseDialog({
   users,
@@ -69,7 +70,7 @@ export function CreatePurchaseDialog({
   const [open, setOpen] = useState<boolean>(false);
   const [filesUploaded, setFilesUploaded] = useState<string[]>([]);
 
-  const form = useForm<z.infer<typeof schema>>({
+  const form = useForm({
     resolver: zodResolver(schema),
     defaultValues: {
       userId: '',
@@ -81,19 +82,19 @@ export function CreatePurchaseDialog({
     },
   });
 
-  async function onSubmit(data: z.infer<typeof schema>) {
-    await handleError(createPurchase(data), {
+  async function onSubmit(data: FormData) {
+    const result = await handleError(createPurchase(data), {
       toast: {
         loading: 'Creating purchase...',
         success: 'Purchase created successfully',
         error: 'Failed to create purchase',
       },
-      onSuccess: () => {
-        form.reset();
-        setFilesUploaded([]);
-        setOpen(false);
-      },
     });
+    if (!isError(result)) {
+      form.reset();
+      setFilesUploaded([]);
+      setOpen(false);
+    }
   }
 
   return (
@@ -114,7 +115,7 @@ export function CreatePurchaseDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <Form {...form}>
+        <FormProvider {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <FormField
@@ -141,23 +142,11 @@ export function CreatePurchaseDialog({
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
+              <FormInput<FormData>
                 name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="flex gap-2">
-                      <FormLabel>Description</FormLabel>
-                      <FormDescription className="text-xs">
-                        Optional
-                      </FormDescription>
-                    </div>
-                    <FormControl>
-                      <Input placeholder="Optional" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                label="Description"
+                placeholder="Optional"
+                description="Optional"
               />
               <FormField
                 control={form.control}
@@ -254,25 +243,11 @@ export function CreatePurchaseDialog({
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
+              <FormInput<FormData>
                 name="amount"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Amount</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="$21.45"
-                        {...field}
-                        value={field.value ? '$' + field.value : ''}
-                        onChange={(e) =>
-                          field.onChange(e.target.value.replace('$', ''))
-                        }
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                label="Amount"
+                placeholder="$21.45"
+                currency
               />
             </div>
             <FormField
@@ -334,7 +309,7 @@ export function CreatePurchaseDialog({
 
             <Button type="submit">Submit</Button>
           </form>
-        </Form>
+        </FormProvider>
       </DialogContent>
     </Dialog>
   );

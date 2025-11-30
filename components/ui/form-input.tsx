@@ -18,12 +18,14 @@ interface FormInputProps<TFieldValues extends FieldValues>
   name: Path<TFieldValues>;
   label: string;
   description?: string;
+  currency?: boolean;
 }
 
 function FormInput<TFieldValues extends FieldValues>({
   name,
   label,
   description,
+  currency,
   ...inputProps
 }: FormInputProps<TFieldValues>) {
   const form = useFormContext<TFieldValues>();
@@ -36,7 +38,18 @@ function FormInput<TFieldValues extends FieldValues>({
         <FormItem>
           <FormLabel>{label}</FormLabel>
           <FormControl>
-            <Input {...inputProps} {...field} />
+            {currency ? (
+              <Input
+                {...inputProps}
+                {...field}
+                value={field.value ? '$' + field.value : ''}
+                onChange={(e) =>
+                  field.onChange(e.target.value.replace('$', ''))
+                }
+              />
+            ) : (
+              <Input {...inputProps} {...field} />
+            )}
           </FormControl>
           {description && <FormDescription>{description}</FormDescription>}
           <FormMessage />

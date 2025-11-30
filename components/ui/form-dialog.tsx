@@ -5,7 +5,6 @@ import {
   DefaultValues,
   FieldValues,
   FormProvider,
-  Resolver,
   useForm,
 } from 'react-hook-form';
 
@@ -22,18 +21,24 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 
-interface FormDialogProps<TFieldValues extends FieldValues> {
+interface FormDialogProps<
+  TOutput extends FieldValues,
+  TInput extends FieldValues = TOutput,
+> {
   trigger: React.ReactNode;
   title: string;
   description?: string;
-  schema: z.ZodType<TFieldValues>;
-  defaultValues: DefaultValues<TFieldValues>;
-  onSubmit: (data: TFieldValues) => Promise<boolean>;
+  schema: z.ZodType<TOutput, TInput>;
+  defaultValues: DefaultValues<TInput>;
+  onSubmit: (data: TOutput) => Promise<boolean>;
   submitLabel?: string;
   children: React.ReactNode;
 }
 
-function FormDialog<TFieldValues extends FieldValues>({
+function FormDialog<
+  TOutput extends FieldValues,
+  TInput extends FieldValues = TOutput,
+>({
   trigger,
   title,
   description,
@@ -42,17 +47,12 @@ function FormDialog<TFieldValues extends FieldValues>({
   onSubmit,
   submitLabel = 'Submit',
   children,
-}: FormDialogProps<TFieldValues>) {
+}: FormDialogProps<TOutput, TInput>) {
   const [open, setOpen] = React.useState(false);
 
-  const form = useForm<TFieldValues>({
-    /* eslint-disable @typescript-eslint/no-explicit-any */
-    resolver: zodResolver(schema as any) as Resolver<TFieldValues>,
-    /* eslint-enable @typescript-eslint/no-explicit-any */
-    defaultValues,
-  });
+  const form = useForm({ resolver: zodResolver(schema), defaultValues });
 
-  async function handleSubmit(data: TFieldValues) {
+  async function handleSubmit(data: TOutput) {
     const success = await onSubmit(data);
     if (success) {
       form.reset();
