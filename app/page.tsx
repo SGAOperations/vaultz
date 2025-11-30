@@ -10,19 +10,22 @@ export default async function Home() {
   const indexes = await getAllIndexes();
 
   return (
-    <div className="grid w-full grid-cols-1 gap-3 lg:grid-cols-2">
-      {indexes.map((v, i) => (
-        <IndexCard key={i} index={v} />
-      ))}
+    <div className="flex w-full flex-col gap-3">
+      <h1 className="mt-4 text-3xl font-bold">Indexes</h1>
+      <div className="grid w-full grid-cols-1 gap-3 lg:grid-cols-2">
+        {indexes.map((v, i) => (
+          <IndexCard key={i} index={v} />
+        ))}
 
-      <CreateIndexDialog
-        trigger={
-          <Button>
-            <Plus />
-            Create Index
-          </Button>
-        }
-      />
+        <CreateIndexDialog
+          trigger={
+            <Button>
+              <Plus />
+              Create Index
+            </Button>
+          }
+        />
+      </div>
     </div>
   );
 }

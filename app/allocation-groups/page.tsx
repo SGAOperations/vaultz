@@ -10,19 +10,22 @@ export default async function AllocationGroups() {
   const allocationGroups = await getAllAllocationGroups();
 
   return (
-    <div className="grid w-full grid-cols-1 gap-3 lg:grid-cols-2">
-      {allocationGroups.map((v, i) => (
-        <AllocationGroupCard key={i} allocationGroup={v} />
-      ))}
+    <div className="flex w-full flex-col gap-3">
+      <h1 className="mt-4 text-3xl font-bold">Allocation Groups</h1>
+      <div className="grid w-full grid-cols-1 gap-3 lg:grid-cols-2">
+        {allocationGroups.map((v, i) => (
+          <AllocationGroupCard key={i} allocationGroup={v} />
+        ))}
 
-      <CreateAllocationGroupDialog
-        trigger={
-          <Button>
-            <Plus />
-            Create Allocation Group
-          </Button>
-        }
-      />
+        <CreateAllocationGroupDialog
+          trigger={
+            <Button>
+              <Plus />
+              Create Allocation Group
+            </Button>
+          }
+        />
+      </div>
     </div>
   );
 }
