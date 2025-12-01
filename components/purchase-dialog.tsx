@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { FormProvider, useForm } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Pencil, Plus, Trash2, X } from 'lucide-react';
@@ -39,7 +39,6 @@ import { Button } from './ui/button';
 import { Combobox } from './ui/combobox';
 import { DatePicker } from './ui/date-picker';
 import {
-  Form,
   FormControl,
   FormDescription,
   FormField,
@@ -47,7 +46,7 @@ import {
   FormLabel,
   FormMessage,
 } from './ui/form';
-import { Input } from './ui/input';
+import { FormInput } from './ui/form-input';
 
 const schema = z.object({
   userId: z.string().min(1, 'Please select a user'),
@@ -61,6 +60,8 @@ const schema = z.object({
   purchasedAt: z.date('Please select a valid date'),
   receipts: z.array(z.string()).optional(),
 });
+
+type FormData = z.infer<typeof schema>;
 
 // Props for creating a new purchase (no existing purchase)
 type CreatePurchaseProps = {
@@ -107,7 +108,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
 
   const receiptUrls = purchase?.receipts.map((r) => getFileUrl(r)) || [];
 
-  const form = useForm<z.infer<typeof schema>>({
+  const form = useForm({
     resolver: zodResolver(schema),
     defaultValues: {
       userId: purchase?.userId || '',
@@ -121,7 +122,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
     },
   });
 
-  async function onSubmit(data: z.infer<typeof schema>) {
+  async function onSubmit(data: FormData) {
     if (isCreateMode) {
       await handleError(createPurchase(data), {
         toast: {
@@ -246,7 +247,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
         </DialogHeader>
 
         {isEditing ? (
-          <Form {...form}>
+          <FormProvider {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <FormField
@@ -273,23 +274,11 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                     </FormItem>
                   )}
                 />
-                <FormField
-                  control={form.control}
+                <FormInput<FormData>
                   name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <div className="flex gap-2">
-                        <FormLabel>Description</FormLabel>
-                        <FormDescription className="text-xs">
-                          Optional
-                        </FormDescription>
-                      </div>
-                      <FormControl>
-                        <Input placeholder="Optional" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  label="Description"
+                  placeholder="Optional"
+                  description="Optional"
                 />
                 <FormField
                   control={form.control}
@@ -384,25 +373,11 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                     </FormItem>
                   )}
                 />
-                <FormField
-                  control={form.control}
+                <FormInput<FormData>
                   name="amount"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Amount</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="$21.45"
-                          {...field}
-                          value={field.value ? '$' + field.value : ''}
-                          onChange={(e) =>
-                            field.onChange(e.target.value.replace('$', ''))
-                          }
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  label="Amount"
+                  placeholder="$21.45"
+                  currency
                 />
               </div>
               <FormField
@@ -537,7 +512,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                 )}
               </div>
             </form>
-          </Form>
+          </FormProvider>
         ) : (
           <>
             <div className="grid grid-cols-2 gap-4">

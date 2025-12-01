@@ -13,8 +13,10 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 
-interface FormInputProps<TFieldValues extends FieldValues>
-  extends Omit<React.ComponentProps<'input'>, 'name'> {
+interface FormInputProps<TFieldValues extends FieldValues> extends Omit<
+  React.ComponentProps<'input'>,
+  'name'
+> {
   name: Path<TFieldValues>;
   label: string;
   description?: string;
