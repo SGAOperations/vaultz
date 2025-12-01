@@ -35,3 +35,12 @@ export type AllocationWithPurchases = Allocation & {
 export type AllocationGroupWithAllocations = AllocationGroup & {
   allocations: AllocationWithPurchases[];
 };
+
+export type PurchaseWithUserAndAccount = Purchase & {
+  user: User;
+  account: Account;
+};
+
+export type UserWithPurchasesAndAccount = User & {
+  purchases: PurchaseWithUserAndAccount[];
+};
