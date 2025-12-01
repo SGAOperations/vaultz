@@ -56,3 +56,50 @@ export async function createPurchase({
 
   return { ...purchase, amount: purchase.amount.toNumber() };
 }
+
+export async function updatePurchase({
+  id,
+  userId,
+  accountId,
+  description,
+  amount,
+  allocationId,
+  purchasedAt,
+  receipts,
+}: {
+  id: string;
+  userId: string;
+  accountId: string;
+  description?: string;
+  amount: number;
+  allocationId?: string;
+  purchasedAt: Date;
+  receipts?: string[];
+}): Promise<ResponseType<Purchase>> {
+  const purchase = await prisma.purchase.update({
+    where: { id },
+    data: {
+      userId,
+      accountId,
+      description: description || '',
+      amount: new Decimal(amount),
+      allocationId: allocationId || null,
+      purchasedAt,
+      receipts,
+    },
+  });
+
+  revalidatePath('/');
+
+  return { ...purchase, amount: purchase.amount.toNumber() };
+}
+
+export async function deletePurchase(
+  id: string,
+): Promise<ResponseType<Purchase>> {
+  const purchase = await prisma.purchase.delete({ where: { id } });
+
+  revalidatePath('/');
+
+  return { ...purchase, amount: purchase.amount.toNumber() };
+}

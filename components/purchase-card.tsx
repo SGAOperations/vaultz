@@ -1,9 +1,21 @@
 'use client';
 
-import { Calendar, DollarSign, FileText, User } from 'lucide-react';
+import { Calendar, DollarSign, FileText, User as UserIcon } from 'lucide-react';
 
+<<<<<<< HEAD
 import { PurchaseWithUser } from '@/lib/types';
 import { formatCurrency } from '@/lib/utils';
+=======
+import { User } from '@/prisma/client';
+
+import {
+  AccountWithIndex,
+  Allocation,
+  AllocationGroupWithAllocations,
+  PurchaseWithUser,
+} from '@/lib/types';
+import { formatNumber } from '@/lib/utils';
+>>>>>>> 5d5c5ec09ff29768194b7df3e763096a8ce1740d
 
 import { DateTime } from '@/components/date-time';
 import { Card } from '@/components/ui/card';
@@ -12,9 +24,17 @@ import { PurchaseDialog } from './purchase-dialog';
 
 export function PurchaseCard({
   purchase,
+  users,
+  accounts,
+  allocationGroups,
+  miscAllocations,
   stopPropagation = false,
 }: {
   purchase: PurchaseWithUser;
+  users: User[];
+  accounts: AccountWithIndex[];
+  allocationGroups: AllocationGroupWithAllocations[];
+  miscAllocations: Allocation[];
   stopPropagation?: boolean;
 }) {
   return (
@@ -35,7 +55,7 @@ export function PurchaseCard({
           </div>
 
           <div className="col-span-3 flex items-center gap-1.5 overflow-hidden">
-            <User className="text-muted-foreground size-4 shrink-0" />
+            <UserIcon className="text-muted-foreground size-4 shrink-0" />
             <span className="text-muted-foreground truncate text-sm">
               {purchase.user.first} {purchase.user.last}
             </span>
@@ -57,6 +77,10 @@ export function PurchaseCard({
         </Card>
       }
       purchase={purchase}
+      users={users}
+      accounts={accounts}
+      allocationGroups={allocationGroups}
+      miscAllocations={miscAllocations}
     />
   );
 }

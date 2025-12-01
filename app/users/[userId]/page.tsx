@@ -3,7 +3,10 @@ import { notFound } from 'next/navigation';
 
 import { Pencil } from 'lucide-react';
 
-import { getUserById } from '@/prisma/services/user';
+import { getAllAccounts } from '@/prisma/services/account';
+import { getMiscAllocations } from '@/prisma/services/allocation';
+import { getAllAllocationGroups } from '@/prisma/services/allocation-groups';
+import { getUserById, getUsers } from '@/prisma/services/user';
 
 import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/page-header';
@@ -22,7 +25,14 @@ export default async function UserPage({
 }) {
   const { userId } = await params;
 
-  const user = await getUserById({ id: userId });
+  const [user, users, accounts, allocationGroups, miscAllocations] =
+    await Promise.all([
+      getUserById({ id: userId }),
+      getUsers(),
+      getAllAccounts(),
+      getAllAllocationGroups(),
+      getMiscAllocations(),
+    ]);
   if (user === null) notFound();
 
   const totalSpent = user.purchases.reduce(
@@ -73,7 +83,14 @@ export default async function UserPage({
       ) : (
         <div className="flex flex-col gap-2">
           {user.purchases.map((purchase) => (
-            <PurchaseCard key={purchase.id} purchase={purchase} />
+            <PurchaseCard
+              key={purchase.id}
+              purchase={purchase}
+              users={users}
+              accounts={accounts}
+              allocationGroups={allocationGroups}
+              miscAllocations={miscAllocations}
+            />
           ))}
         </div>
       )}
