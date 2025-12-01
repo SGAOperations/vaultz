@@ -34,7 +34,7 @@ export async function getAccountById({
   id: string;
 }): Promise<AccountWithPurchases | null> {
   const account = await prisma.account.findUnique({
-    where: { id },
+    where: { id, deletedAt: null },
     include: {
       purchases: { orderBy: { createdAt: 'desc' }, include: { user: true } },
       index: true,
@@ -58,7 +58,7 @@ export async function getAccountsByIndex({
   indexId: string;
 }): Promise<AccountWithIndex[]> {
   const accounts = await prisma.account.findMany({
-    where: { indexId },
+    where: { indexId, deletedAt: null },
     include: { index: true },
   });
 
@@ -69,9 +69,44 @@ export async function getAccountsByIndex({
 }
 
 export async function getAllAccounts(): Promise<AccountWithIndex[]> {
-  const accounts = await prisma.account.findMany({ include: { index: true } });
+  const accounts = await prisma.account.findMany({
+    where: { deletedAt: null },
+    include: { index: true },
+  });
   return accounts.map((account) => ({
     ...account,
     amount: account.amount.toNumber(),
   }));
+}
+
+export async function updateAccount({
+  id,
+  code,
+  name,
+  amount,
+}: {
+  id: string;
+  code: string;
+  name: string;
+  amount: number;
+}): Promise<ResponseType<Account>> {
+  const account = await prisma.account.update({
+    where: { id },
+    data: { code, name, amount: new Decimal(amount) },
+  });
+
+  revalidatePath('/index');
+  revalidatePath('/account');
+
+  return { ...account, amount: account.amount.toNumber() };
+}
+
+export async function deleteAccount(id: string): Promise<ResponseType<void>> {
+  await prisma.account.update({
+    where: { id },
+    data: { deletedAt: new Date() },
+  });
+
+  revalidatePath('/index');
+  revalidatePath('/account');
 }
