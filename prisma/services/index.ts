@@ -89,6 +89,7 @@ export async function createIndex({
   const index = await prisma.index.create({ data: { code, name } });
 
   revalidatePath('/');
+  revalidatePath('/index');
 
   return index;
 }

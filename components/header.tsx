@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-import { FolderKanban, Home, Menu, Users } from 'lucide-react';
+import { BarChart3, FolderKanban, Home, Menu, Users } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
@@ -18,6 +18,7 @@ import {
 
 const navItems = [
   { href: '/', label: 'Home', icon: Home },
+  { href: '/index', label: 'Indexes', icon: BarChart3 },
   { href: '/users', label: 'Users', icon: Users },
   { href: '/allocation-groups', label: 'Allocations', icon: FolderKanban },
 ];
@@ -53,7 +54,11 @@ export function Header() {
       <nav className="hidden items-center gap-1 md:flex">
         {navItems.map(({ href, label, icon: Icon }) => {
           const isActive =
-            href === '/' ? pathname === '/' : pathname.startsWith(href);
+            href === '/'
+              ? pathname === '/'
+              : href === '/index'
+                ? pathname === '/index' || pathname.startsWith('/index/')
+                : pathname.startsWith(href);
 
           return (
             <Link key={href} href={href}>
