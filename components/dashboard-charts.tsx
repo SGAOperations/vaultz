@@ -61,17 +61,30 @@ export function DashboardCharts({
   });
 
   useEffect(() => {
-    setColors({
-      primary: getComputedColor('--primary'),
-      statTotal: getComputedColor('--stat-total'),
-      statSpent: getComputedColor('--stat-spent'),
-      statRemaining: getComputedColor('--stat-remaining'),
-      border: getComputedColor('--border'),
-      muted: getComputedColor('--muted-foreground'),
-      mutedLine: getComputedColor('--muted'),
-      background: getComputedColor('--background'),
-      foreground: getComputedColor('--foreground'),
+    const updateColors = () => {
+      setColors({
+        primary: getComputedColor('--primary'),
+        statTotal: getComputedColor('--stat-total'),
+        statSpent: getComputedColor('--stat-spent'),
+        statRemaining: getComputedColor('--stat-remaining'),
+        border: getComputedColor('--border'),
+        muted: getComputedColor('--muted-foreground'),
+        mutedLine: getComputedColor('--muted'),
+        background: getComputedColor('--background'),
+        foreground: getComputedColor('--foreground'),
+      });
+    };
+
+    updateColors();
+
+    // Listen for theme changes
+    const observer = new MutationObserver(updateColors);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
     });
+
+    return () => observer.disconnect();
   }, []);
 
   return (
@@ -105,7 +118,7 @@ export function DashboardCharts({
                     color: colors.foreground,
                   }}
                   labelStyle={{ color: colors.foreground, fontWeight: 600 }}
-                  formatter={(value: number) => [formatCurrency(value), 'Amount']}
+                  formatter={(value: number) => formatCurrency(value)}
                 />
                 <Legend
                   wrapperStyle={{ paddingTop: '20px' }}
