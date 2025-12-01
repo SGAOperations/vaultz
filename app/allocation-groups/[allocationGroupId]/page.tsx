@@ -19,10 +19,10 @@ import { getUsers } from '@/prisma/services/user';
 import { formatNumber } from '@/lib/utils';
 
 import { CreateAllocationDialog } from '@/components/create-allocation-dialog';
-import { CreatePurchaseDialog } from '@/components/create-purchase-dialog';
 import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/page-header';
 import { PurchaseCard } from '@/components/purchase-card';
+import { CreatePurchaseDialog } from '@/components/purchase-dialog';
 import { SectionHeader } from '@/components/section-header';
 import { StatCards } from '@/components/stat-card';
 import { Button } from '@/components/ui/button';
@@ -168,7 +168,14 @@ export default async function AllocationGroup({
       ) : (
         <div className="flex flex-col gap-2">
           {purchases.map((purchase) => (
-            <PurchaseCard key={purchase.id} purchase={purchase} />
+            <PurchaseCard
+              key={purchase.id}
+              purchase={purchase}
+              users={users}
+              accounts={accounts}
+              allocationGroups={[allocationGroup]}
+              miscAllocations={miscAllocations}
+            />
           ))}
         </div>
       )}
