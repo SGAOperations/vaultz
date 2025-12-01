@@ -141,6 +141,7 @@ export function CreatePurchaseDialog({
                           },
                         ]}
                         {...field}
+                        value={field.value || ''}
                         name="user"
                       />
                     </FormControl>
