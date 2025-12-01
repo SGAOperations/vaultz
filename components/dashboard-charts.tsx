@@ -46,30 +46,44 @@ export function DashboardCharts({
         <>
           <SectionHeader title="Purchases Over Time" />
           <Card className="mb-6 p-6">
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={purchasesByMonth}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+            <ResponsiveContainer width="100%" height={350}>
+              <LineChart
+                data={purchasesByMonth}
+                margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis
                   dataKey="month"
-                  className="text-muted-foreground text-xs"
+                  tick={{ fill: '#6b7280', fontSize: 12 }}
+                  tickLine={{ stroke: '#9ca3af' }}
                 />
-                <YAxis className="text-muted-foreground text-xs" />
+                <YAxis
+                  tick={{ fill: '#6b7280', fontSize: 12 }}
+                  tickLine={{ stroke: '#9ca3af' }}
+                  tickFormatter={(value) => `$${value}`}
+                />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: 'hsl(var(--background))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '6px',
+                    backgroundColor: '#ffffff',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
                   }}
-                  formatter={(value: number) => formatCurrency(value)}
+                  labelStyle={{ color: '#111827', fontWeight: 600 }}
+                  formatter={(value: number) => [formatCurrency(value), 'Amount']}
                 />
-                <Legend />
+                <Legend
+                  wrapperStyle={{ paddingTop: '20px' }}
+                  iconType="line"
+                />
                 <Line
                   type="monotone"
                   dataKey="amount"
                   name="Amount Spent"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth={2}
-                  dot={{ fill: 'hsl(var(--primary))' }}
+                  stroke="#3b82f6"
+                  strokeWidth={3}
+                  dot={{ fill: '#3b82f6', r: 4 }}
+                  activeDot={{ r: 6 }}
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -81,37 +95,43 @@ export function DashboardCharts({
         <>
           <SectionHeader title="Spending by Index" />
           <Card className="mb-6 p-6">
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={spendingByIndex}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+            <ResponsiveContainer width="100%" height={350}>
+              <BarChart
+                data={spendingByIndex}
+                margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis
                   dataKey="name"
-                  className="text-muted-foreground text-xs"
+                  tick={{ fill: '#6b7280', fontSize: 12 }}
+                  tickLine={{ stroke: '#9ca3af' }}
                 />
-                <YAxis className="text-muted-foreground text-xs" />
+                <YAxis
+                  tick={{ fill: '#6b7280', fontSize: 12 }}
+                  tickLine={{ stroke: '#9ca3af' }}
+                  tickFormatter={(value) => `$${value}`}
+                />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: 'hsl(var(--background))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '6px',
+                    backgroundColor: '#ffffff',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
                   }}
+                  labelStyle={{ color: '#111827', fontWeight: 600 }}
                   formatter={(value: number) => formatCurrency(value)}
                 />
-                <Legend />
-                <Bar
-                  dataKey="budget"
-                  name="Budget"
-                  fill="hsl(var(--stat-total))"
+                <Legend
+                  wrapperStyle={{ paddingTop: '20px' }}
+                  iconType="rect"
                 />
-                <Bar
-                  dataKey="spent"
-                  name="Spent"
-                  fill="hsl(var(--stat-spent))"
-                />
+                <Bar dataKey="budget" name="Budget" fill="#10b981" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="spent" name="Spent" fill="#ef4444" radius={[4, 4, 0, 0]} />
                 <Bar
                   dataKey="remaining"
                   name="Remaining"
-                  fill="hsl(var(--stat-remaining))"
+                  fill="#3b82f6"
+                  radius={[4, 4, 0, 0]}
                 />
               </BarChart>
             </ResponsiveContainer>
