@@ -91,7 +91,7 @@ export async function updateAccount({
   amount: number;
 }): Promise<ResponseType<Account>> {
   const account = await prisma.account.update({
-    where: { id },
+    where: { id, deletedAt: null },
     data: { code, name, amount: new Decimal(amount) },
   });
 
@@ -103,7 +103,7 @@ export async function updateAccount({
 
 export async function deleteAccount(id: string): Promise<ResponseType<void>> {
   await prisma.account.update({
-    where: { id },
+    where: { id, deletedAt: null },
     data: { deletedAt: new Date() },
   });
 

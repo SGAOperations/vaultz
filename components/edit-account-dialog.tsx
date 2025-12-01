@@ -161,7 +161,7 @@ export function EditAccountDialog({
                     <Input
                       placeholder="$21.45"
                       {...field}
-                      value={field.value ? '$' + field.value : ''}
+                      value={field.value != null ? '$' + field.value : ''}
                       onChange={(e) =>
                         field.onChange(e.target.value.replace('$', ''))
                       }
