@@ -3,12 +3,18 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-import { FolderKanban, Home, Users } from 'lucide-react';
+import { FolderKanban, Home, Menu, Users } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
 import { ModeToggle } from '@/components/theme-provider';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const navItems = [
   { href: '/', label: 'Home', icon: Home },
@@ -44,7 +50,7 @@ export function Header() {
         </div>
       </Link>
 
-      <nav className="flex items-center gap-1">
+      <nav className="hidden items-center gap-1 md:flex">
         {navItems.map(({ href, label, icon: Icon }) => {
           const isActive =
             href === '/' ? pathname === '/' : pathname.startsWith(href);
@@ -68,7 +74,28 @@ export function Header() {
         })}
       </nav>
 
-      <ModeToggle />
+      <div className="flex items-center gap-2">
+        <DropdownMenu modal={false}>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="icon" className="md:hidden">
+              <Menu className="h-[1.2rem] w-[1.2rem]" />
+              <span className="sr-only">Open menu</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {navItems.map(({ href, label, icon: Icon }) => (
+              <DropdownMenuItem key={href} asChild>
+                <Link href={href}>
+                  <Icon className="size-4" />
+                  {label}
+                </Link>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <ModeToggle />
+      </div>
     </header>
   );
 }
