@@ -1,9 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 
-import { Home, Menu, Plus, Users, Wallet } from 'lucide-react';
+import { FolderKanban, Home, Menu, Users } from 'lucide-react';
+
+import { cn } from '@/lib/utils';
 
 import { ModeToggle } from '@/components/theme-provider';
 import { Button } from '@/components/ui/button';
@@ -13,18 +15,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { UserDialog } from '@/components/user-dialog';
-
-export function Header() {
-  const router = useRouter();
-import { usePathname } from 'next/navigation';
-
-import { FolderKanban, Home, Users } from 'lucide-react';
-
-import { cn } from '@/lib/utils';
-
-import { ModeToggle } from '@/components/theme-provider';
-import { Button } from '@/components/ui/button';
 
 const navItems = [
   { href: '/', label: 'Home', icon: Home },
@@ -60,56 +50,7 @@ export function Header() {
         </div>
       </Link>
 
-      <nav className="hidden gap-2 md:flex">
-        <Button variant="link" onClick={() => router.push('/')}>
-          Home
-        </Button>
-        <Button variant="link" onClick={() => router.push('/users')}>
-          Users
-        </Button>
-        <Button
-          variant="link"
-          onClick={() => router.push('/allocation-groups')}
-        >
-          Allocations
-        </Button>
-      </nav>
-
-      <div className="flex gap-3">
-        <UserDialog user={undefined}>
-          <Button variant="ghost" className="hidden md:flex">
-            <Plus />
-            Create User
-          </Button>
-        </UserDialog>
-
-        <DropdownMenu modal={false}>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="icon" className="md:hidden">
-              <Menu className="h-[1.2rem] w-[1.2rem]" />
-              <span className="sr-only">Open menu</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => router.push('/')}>
-              <Home />
-              Home
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => router.push('/users')}>
-              <Users />
-              Users
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => router.push('/allocation-groups')}>
-              <Wallet />
-              Allocations
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        <ModeToggle />
-      </div>
-    </div>
-      <nav className="flex items-center gap-1">
+      <nav className="hidden items-center gap-1 md:flex">
         {navItems.map(({ href, label, icon: Icon }) => {
           const isActive =
             href === '/' ? pathname === '/' : pathname.startsWith(href);
@@ -133,7 +74,28 @@ export function Header() {
         })}
       </nav>
 
-      <ModeToggle />
+      <div className="flex items-center gap-2">
+        <DropdownMenu modal={false}>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="icon" className="md:hidden">
+              <Menu className="h-[1.2rem] w-[1.2rem]" />
+              <span className="sr-only">Open menu</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {navItems.map(({ href, label, icon: Icon }) => (
+              <DropdownMenuItem key={href} asChild>
+                <Link href={href}>
+                  <Icon className="size-4" />
+                  {label}
+                </Link>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <ModeToggle />
+      </div>
     </header>
   );
 }
