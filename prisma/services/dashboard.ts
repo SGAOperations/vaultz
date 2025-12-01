@@ -38,7 +38,7 @@ export async function getPurchasesByMonth() {
 
   const monthlyData = new Map<
     string,
-    { month: string; amount: number; count: number }
+    { monthKey: string; month: string; amount: number; count: number }
   >();
 
   purchases.forEach((purchase) => {
@@ -50,11 +50,13 @@ export async function getPurchasesByMonth() {
     });
 
     const existing = monthlyData.get(monthKey) || {
+      monthKey,
       month: monthLabel,
       amount: 0,
       count: 0,
     };
     monthlyData.set(monthKey, {
+      monthKey,
       month: monthLabel,
       amount: existing.amount + purchase.amount.toNumber(),
       count: existing.count + 1,
@@ -62,7 +64,7 @@ export async function getPurchasesByMonth() {
   });
 
   return Array.from(monthlyData.values()).sort((a, b) =>
-    a.month.localeCompare(b.month),
+    a.monthKey.localeCompare(b.monthKey),
   );
 }
 

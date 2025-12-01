@@ -13,6 +13,8 @@ import {
   YAxis,
 } from 'recharts';
 
+import { formatCurrency } from '@/lib/utils';
+
 import { SectionHeader } from '@/components/section-header';
 import { Card } from '@/components/ui/card';
 
@@ -58,12 +60,7 @@ export function DashboardCharts({
                     border: '1px solid hsl(var(--border))',
                     borderRadius: '6px',
                   }}
-                  formatter={(value: number) =>
-                    `$${value.toLocaleString(undefined, {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}`
-                  }
+                  formatter={(value: number) => formatCurrency(value)}
                 />
                 <Legend />
                 <Line
@@ -98,12 +95,7 @@ export function DashboardCharts({
                     border: '1px solid hsl(var(--border))',
                     borderRadius: '6px',
                   }}
-                  formatter={(value: number) =>
-                    `$${value.toLocaleString(undefined, {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}`
-                  }
+                  formatter={(value: number) => formatCurrency(value)}
                 />
                 <Legend />
                 <Bar
