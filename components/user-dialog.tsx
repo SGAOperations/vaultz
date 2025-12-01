@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { FormProvider, useForm } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod/v4';
@@ -9,7 +9,7 @@ import { z } from 'zod/v4';
 import { User } from '@/prisma/client';
 import { createUser, updateUser } from '@/prisma/services/user';
 
-import { handleError } from '@/lib/utils';
+import { handleError, isError } from '@/lib/utils';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -20,15 +20,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
+import { FormInput } from '@/components/ui/form-input';
 
 const schema = z.object({
   first: z
@@ -41,6 +33,8 @@ const schema = z.object({
     .max(50, 'Cannot be longer than 50 characters'),
 });
 
+type FormData = z.infer<typeof schema>;
+
 export function UserDialog({
   user,
   children,
@@ -49,37 +43,35 @@ export function UserDialog({
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState<boolean>(false);
-  const form = useForm<z.infer<typeof schema>>({
+  const form = useForm({
     resolver: zodResolver(schema),
     defaultValues: { first: user?.first || '', last: user?.last || '' },
   });
 
-  async function onSubmit(data: z.infer<typeof schema>) {
+  async function onSubmit(data: FormData) {
     if (user) {
-      // Update existing user
-      await handleError(updateUser({ ...data, id: user.id }), {
+      const result = await handleError(updateUser({ ...data, id: user.id }), {
         toast: {
           loading: 'Updating user...',
           success: 'User updated successfully',
           error: 'Failed to update user',
         },
-        onSuccess: () => {
-          setOpen(false);
-        },
       });
+      if (!isError(result)) {
+        setOpen(false);
+      }
     } else {
-      // Create new user
-      await handleError(createUser(data), {
+      const result = await handleError(createUser(data), {
         toast: {
           loading: 'Creating user...',
           success: 'User created successfully',
           error: 'Failed to create user',
         },
-        onSuccess: () => {
-          form.reset();
-          setOpen(false);
-        },
       });
+      if (!isError(result)) {
+        form.reset();
+        setOpen(false);
+      }
     }
   }
 
@@ -96,37 +88,21 @@ export function UserDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <Form {...form}>
+        <FormProvider {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            <FormField
-              control={form.control}
+            <FormInput<FormData>
               name="first"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>First Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="John" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              label="First Name"
+              placeholder="John"
             />
-            <FormField
-              control={form.control}
+            <FormInput<FormData>
               name="last"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Last Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Travolta" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              label="Last Name"
+              placeholder="Travolta"
             />
             <Button type="submit">Submit</Button>
           </form>
-        </Form>
+        </FormProvider>
       </DialogContent>
     </Dialog>
   );
