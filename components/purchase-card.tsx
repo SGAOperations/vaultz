@@ -2,10 +2,6 @@
 
 import { Calendar, DollarSign, FileText, User as UserIcon } from 'lucide-react';
 
-<<<<<<< HEAD
-import { PurchaseWithUser } from '@/lib/types';
-import { formatCurrency } from '@/lib/utils';
-=======
 import { User } from '@/prisma/client';
 
 import {
@@ -14,8 +10,7 @@ import {
   AllocationGroupWithAllocations,
   PurchaseWithUser,
 } from '@/lib/types';
-import { formatNumber } from '@/lib/utils';
->>>>>>> 5d5c5ec09ff29768194b7df3e763096a8ce1740d
+import { formatCurrency } from '@/lib/utils';
 
 import { DateTime } from '@/components/date-time';
 import { Card } from '@/components/ui/card';

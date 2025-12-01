@@ -1,9 +1,5 @@
 'use client';
 
-<<<<<<< HEAD
-import { PurchaseWithUser } from '@/lib/types';
-import { formatCurrency, getFileUrl } from '@/lib/utils';
-=======
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
@@ -27,8 +23,7 @@ import {
   PurchaseWithUser,
 } from '@/lib/types';
 import { UploadDropzone } from '@/lib/uploadthing';
-import { formatNumber, getFileUrl, handleError } from '@/lib/utils';
->>>>>>> 5d5c5ec09ff29768194b7df3e763096a8ce1740d
+import { formatCurrency, getFileUrl, handleError } from '@/lib/utils';
 
 import {
   Dialog,
@@ -61,8 +56,15 @@ const schema = z.object({
   description: z.string().optional(),
   amount: z.coerce
     .number<number>()
-    .min(0.01, 'Must be at least $0.01')
-    .multipleOf(0.01, 'Must contain at most 2 decimal places'),
+    .refine((val) => val !== 0, 'Amount cannot be $0.00')
+    .refine(
+      (val) => Math.abs(val) >= 0.01,
+      'Absolute value must be at least $0.01',
+    )
+    .refine(
+      (val) => Math.abs(Math.round(val * 100) - val * 100) < 0.001,
+      'Must contain at most 2 decimal places',
+    ),
   purchasedAt: z.date('Please select a valid date'),
   receipts: z.array(z.string()).optional(),
 });
@@ -250,44 +252,6 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
           <DialogDescription>{dialogDescription}</DialogDescription>
         </DialogHeader>
 
-<<<<<<< HEAD
-        <div className="grid grid-cols-2 gap-4">
-          <p>Purchase ID</p>
-          <p className="text-muted-foreground">{purchase.id}</p>
-          <p>Created</p>
-          <p className="text-muted-foreground">
-            <DateTime date={purchase.createdAt} />
-          </p>
-          <p>Purchase Date</p>
-          <p className="text-muted-foreground">
-            <DateTime date={purchase.purchasedAt} dateOnly />
-          </p>
-          <p>Name</p>
-          <p className="text-muted-foreground">
-            {purchase.user.first} {purchase.user.last}
-          </p>
-          <p>Description</p>
-          <p className="text-muted-foreground">{purchase.description}</p>
-          <p>Amount</p>
-          <p className="text-muted-foreground">
-            {formatCurrency(purchase.amount)}
-          </p>
-          <p>Receipts</p>
-          <p className="text-muted-foreground flex gap-3">
-            {receiptUrls.map((url, i) => (
-              <a
-                key={url}
-                href={url}
-                target="_blank"
-                className="hover:underline"
-              >
-                File {i + 1}
-              </a>
-            ))}
-            {receiptUrls.length === 0 && 'N/A'}
-          </p>
-        </div>
-=======
         {isEditing ? (
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -602,7 +566,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
               <p className="text-muted-foreground">{purchase!.description}</p>
               <p>Amount</p>
               <p className="text-muted-foreground">
-                ${formatNumber(purchase!.amount)}
+                {formatCurrency(purchase!.amount)}
               </p>
               <p>Receipts</p>
               <p className="text-muted-foreground flex gap-3">
@@ -628,7 +592,6 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
             </div>
           </>
         )}
->>>>>>> 5d5c5ec09ff29768194b7df3e763096a8ce1740d
       </DialogContent>
     </Dialog>
   );
