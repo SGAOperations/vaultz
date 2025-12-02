@@ -40,8 +40,40 @@ export function parseDateOnly(dateValue: Date | string): Date {
 
   // If it's a string (e.g., "2024-01-15"), parse it as local date
   const dateStr = String(dateValue);
-  const [year, month, day] = dateStr.split('-').map(Number);
-  return new Date(year, month - 1, day);
+  const parts = dateStr.split('-');
+
+  // Validate the format and parse
+  if (parts.length !== 3) {
+    throw new Error(`Invalid date format: expected YYYY-MM-DD, got ${dateStr}`);
+  }
+
+  const [yearStr, monthStr, dayStr] = parts;
+  const year = parseInt(yearStr, 10);
+  const month = parseInt(monthStr, 10);
+  const day = parseInt(dayStr, 10);
+
+  // Validate parsed values
+  if (isNaN(year) || isNaN(month) || isNaN(day)) {
+    throw new Error(`Invalid date values in: ${dateStr}`);
+  }
+
+  if (month < 1 || month > 12) {
+    throw new Error(`Invalid month value: ${month}`);
+  }
+
+  if (day < 1 || day > 31) {
+    throw new Error(`Invalid day value: ${day}`);
+  }
+
+  // Create Date in local timezone (month is 0-indexed in JS)
+  const result = new Date(year, month - 1, day);
+
+  // Validate the resulting date
+  if (isNaN(result.getTime())) {
+    throw new Error(`Failed to create valid date from: ${dateStr}`);
+  }
+
+  return result;
 }
 
 // Type definitions for toast handling
