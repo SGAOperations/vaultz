@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+
 import {
   Bar,
   BarChart,
@@ -120,10 +121,7 @@ export function DashboardCharts({
                   labelStyle={{ color: colors.foreground, fontWeight: 600 }}
                   formatter={(value: number) => formatCurrency(value)}
                 />
-                <Legend
-                  wrapperStyle={{ paddingTop: '20px' }}
-                  iconType="line"
-                />
+                <Legend wrapperStyle={{ paddingTop: '20px' }} iconType="line" />
                 <Line
                   type="monotone"
                   dataKey="amount"
@@ -170,10 +168,7 @@ export function DashboardCharts({
                   labelStyle={{ color: colors.foreground, fontWeight: 600 }}
                   formatter={(value: number) => formatCurrency(value)}
                 />
-                <Legend
-                  wrapperStyle={{ paddingTop: '20px' }}
-                  iconType="rect"
-                />
+                <Legend wrapperStyle={{ paddingTop: '20px' }} iconType="rect" />
                 <Bar
                   dataKey="budget"
                   name="Budget"

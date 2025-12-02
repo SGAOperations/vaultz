@@ -5,7 +5,10 @@ import prisma from '@/lib/prisma';
 export async function getDashboardStats() {
   const [designations, categories, purchases, users] = await Promise.all([
     prisma.designation.count(),
-    prisma.category.findMany({ where: { deletedAt: null }, select: { amount: true } }),
+    prisma.category.findMany({
+      where: { deletedAt: null },
+      select: { amount: true },
+    }),
     prisma.purchase.findMany({ select: { amount: true, purchasedAt: true } }),
     prisma.user.count(),
   ]);
