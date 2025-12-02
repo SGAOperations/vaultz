@@ -68,9 +68,16 @@ export function parseDateOnly(dateValue: Date | string): Date {
   // Create Date in local timezone (month is 0-indexed in JS)
   const result = new Date(year, month - 1, day);
 
-  // Validate the resulting date
-  if (isNaN(result.getTime())) {
-    throw new Error(`Failed to create valid date from: ${dateStr}`);
+  // Validate the resulting date matches what was requested
+  // This catches cases like Feb 31 which gets auto-adjusted to Mar 3
+  if (
+    result.getFullYear() !== year ||
+    result.getMonth() !== month - 1 ||
+    result.getDate() !== day
+  ) {
+    throw new Error(
+      `Invalid date: ${dateStr} (day ${day} does not exist in month ${month})`,
+    );
   }
 
   return result;
