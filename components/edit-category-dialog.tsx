@@ -8,9 +8,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Trash2 } from 'lucide-react';
 import { z } from 'zod/v4';
 
-import { deleteAccount, updateAccount } from '@/prisma/services/account';
+import { deleteCategory, updateCategory } from '@/prisma/services/category';
 
-import { Account } from '@/lib/types';
+import { Category } from '@/lib/types';
 import { handleError } from '@/lib/utils';
 
 import { Button } from '@/components/ui/button';
@@ -35,18 +35,18 @@ import { Input } from '@/components/ui/input';
 
 const schema = z.object({
   code: z.string().length(4, 'Must be exactly 4 characters long'),
-  name: z.string().min(1, 'Please enter an account name'),
+  name: z.string().min(1, 'Please enter a category name'),
   amount: z.coerce
     .number<number>()
     .min(0.01, 'Must be at least $0.01')
     .multipleOf(0.01, 'Must contain at most 2 decimal places'),
 });
 
-export function EditAccountDialog({
-  account,
+export function EditCategoryDialog({
+  category,
   trigger,
 }: {
-  account: Account;
+  category: Category;
   trigger: React.ReactNode;
 }) {
   const router = useRouter();
@@ -55,18 +55,18 @@ export function EditAccountDialog({
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {
-      code: account.code,
-      name: account.name,
-      amount: account.amount,
+      code: category.code,
+      name: category.name,
+      amount: category.amount,
     },
   });
 
   async function onSubmit(data: z.infer<typeof schema>) {
-    await handleError(updateAccount({ id: account.id, ...data }), {
+    await handleError(updateCategory({ id: category.id, ...data }), {
       toast: {
-        loading: 'Updating account...',
-        success: 'Account updated successfully',
-        error: 'Failed to update account',
+        loading: 'Updating spending category...',
+        success: 'Spending category updated successfully',
+        error: 'Failed to update spending category',
       },
       onSuccess: () => {
         setOpen(false);
@@ -80,16 +80,16 @@ export function EditAccountDialog({
       return;
     }
 
-    await handleError(deleteAccount(account.id), {
+    await handleError(deleteCategory(category.id), {
       toast: {
-        loading: 'Deleting account...',
-        success: 'Account deleted successfully',
-        error: 'Failed to delete account',
+        loading: 'Deleting spending category...',
+        success: 'Spending category deleted successfully',
+        error: 'Failed to delete spending category',
       },
       onSuccess: () => {
         setOpen(false);
-        // Navigate to the parent index page
-        router.push(`/index/${account.indexId}`);
+        // Navigate to the parent designation page
+        router.push(`/designation/${category.designationId}`);
       },
     });
   }
@@ -114,9 +114,9 @@ export function EditAccountDialog({
 
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Edit Account</DialogTitle>
+          <DialogTitle>Edit Spending Category</DialogTitle>
           <DialogDescription>
-            Update the account details or delete it entirely.
+            Update the spending category details or delete it entirely.
           </DialogDescription>
         </DialogHeader>
 
@@ -145,8 +145,8 @@ export function EditAccountDialog({
                     <Input placeholder="7XXX" {...field} />
                   </FormControl>
                   <FormDescription>
-                    The spend category number to be associated with this
-                    account.
+                    The spending category number to be associated with this
+                    category.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

@@ -11,9 +11,9 @@ import {
   Wallet,
 } from 'lucide-react';
 
-import { getAllAccounts } from '@/prisma/services/account';
 import { getMiscAllocations } from '@/prisma/services/allocation';
 import { getAllocationGroup } from '@/prisma/services/allocation-groups';
+import { getAllCategories } from '@/prisma/services/category';
 import { getUsers } from '@/prisma/services/user';
 
 import { formatNumber } from '@/lib/utils';
@@ -40,7 +40,7 @@ export default async function AllocationGroup({
   const allocationGroup = await getAllocationGroup({ id: allocationGroupId });
   if (allocationGroup === null) notFound();
 
-  const accounts = await getAllAccounts();
+  const categories = await getAllCategories();
   const miscAllocations = await getMiscAllocations();
   const users = await getUsers();
 
@@ -63,7 +63,7 @@ export default async function AllocationGroup({
           <div className="flex gap-2">
             <CreatePurchaseDialog
               users={users}
-              accounts={accounts}
+              categories={categories}
               allocationGroups={[allocationGroup]}
               miscAllocations={miscAllocations}
             />
@@ -172,7 +172,7 @@ export default async function AllocationGroup({
               key={purchase.id}
               purchase={purchase}
               users={users}
-              accounts={accounts}
+              categories={categories}
               allocationGroups={[allocationGroup]}
               miscAllocations={miscAllocations}
             />

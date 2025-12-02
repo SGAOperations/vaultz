@@ -11,15 +11,15 @@ import {
   Wallet,
 } from 'lucide-react';
 
-import { getIndex } from '@/prisma/services';
-import { getAccountsByIndex } from '@/prisma/services/account';
 import { getMiscAllocations } from '@/prisma/services/allocation';
 import { getAllAllocationGroups } from '@/prisma/services/allocation-groups';
+import { getCategoriesByDesignation } from '@/prisma/services/category';
+import { getDesignation } from '@/prisma/services/designation';
 import { getUsers } from '@/prisma/services/user';
 
 import { formatNumber } from '@/lib/utils';
 
-import { CreateAccountDialog } from '@/components/create-account-dialog';
+import { CreateCategoryDialog } from '@/components/create-category-dialog';
 import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/page-header';
 import { PurchaseCard } from '@/components/purchase-card';
@@ -29,24 +29,24 @@ import { StatCards } from '@/components/stat-card';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 
-export const metadata: Metadata = { title: 'Index' };
+export const metadata: Metadata = { title: 'Designation' };
 
-export default async function Index({
+export default async function DesignationPage({
   params,
 }: {
-  params: Promise<{ indexId: string }>;
+  params: Promise<{ designationId: string }>;
 }) {
-  const { indexId } = await params;
+  const { designationId } = await params;
 
-  const index = await getIndex({ id: indexId });
-  if (index === null) notFound();
+  const designation = await getDesignation({ id: designationId });
+  if (designation === null) notFound();
 
   const allocationGroups = await getAllAllocationGroups();
   const miscAllocations = await getMiscAllocations();
-  const accounts = await getAccountsByIndex({ indexId });
+  const categories = await getCategoriesByDesignation({ designationId });
   const users = await getUsers();
 
-  const spent = index.purchases.reduce(
+  const spent = designation.purchases.reduce(
     (acc, purchase) => acc + purchase.amount,
     0,
   );
@@ -54,22 +54,22 @@ export default async function Index({
   return (
     <div className="flex w-full flex-col">
       <PageHeader
-        title={index.name}
-        description={`Index code: ${index.code}`}
+        title={designation.name}
+        description={`Designation code: ${designation.code}`}
         actions={
           <div className="flex gap-2">
             <CreatePurchaseDialog
               users={users}
-              accounts={accounts}
+              categories={categories}
               allocationGroups={allocationGroups}
               miscAllocations={miscAllocations}
             />
-            <CreateAccountDialog
-              indexId={indexId}
+            <CreateCategoryDialog
+              designationId={designationId}
               trigger={
                 <Button variant="outline" className="gap-2">
                   <Plus className="size-4" />
-                  Create Account
+                  Create Spending Category
                 </Button>
               }
             />
@@ -77,27 +77,27 @@ export default async function Index({
         }
       />
 
-      <StatCards total={index.amount} spent={spent} />
+      <StatCards total={designation.amount} spent={spent} />
 
-      <SectionHeader title="Accounts" />
+      <SectionHeader title="Spending Categories" />
 
-      {accounts.length === 0 ? (
+      {categories.length === 0 ? (
         <EmptyState
-          message="No accounts yet"
-          description="Create accounts to organize this index's budget"
+          message="No spending categories yet"
+          description="Create categories to organize this designation's budget"
         />
       ) : (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          {accounts.map((account) => {
-            const accountSpent = index.purchases
-              .filter((v) => v.accountId === account.id)
+          {categories.map((category) => {
+            const categorySpent = designation.purchases
+              .filter((v) => v.categoryId === category.id)
               .reduce((acc, purchase) => acc + purchase.amount, 0);
-            const remaining = account.amount - accountSpent;
+            const remaining = category.amount - categorySpent;
 
             return (
               <Link
-                href={`/account/${account.id}`}
-                key={account.id}
+                href={`/category/${category.id}`}
+                key={category.id}
                 className="group"
               >
                 <Card className="hover:border-primary/30 p-4 transition-all duration-200 hover:shadow-md">
@@ -108,10 +108,10 @@ export default async function Index({
                       </div>
                       <div>
                         <h3 className="group-hover:text-primary font-semibold transition-colors">
-                          {account.name}
+                          {category.name}
                         </h3>
                         <p className="text-muted-foreground font-mono text-sm">
-                          {account.code}
+                          {category.code}
                         </p>
                       </div>
                     </div>
@@ -123,7 +123,7 @@ export default async function Index({
                       <span className="text-sm">
                         <span className="text-muted-foreground">Budget:</span>{' '}
                         <span className="font-semibold">
-                          ${formatNumber(account.amount)}
+                          ${formatNumber(category.amount)}
                         </span>
                       </span>
                     </div>
@@ -132,7 +132,7 @@ export default async function Index({
                       <span className="text-sm">
                         <span className="text-muted-foreground">Spent:</span>{' '}
                         <span className="font-semibold">
-                          ${formatNumber(accountSpent)}
+                          ${formatNumber(categorySpent)}
                         </span>
                       </span>
                     </div>
@@ -155,19 +155,19 @@ export default async function Index({
 
       <SectionHeader title="Purchases" />
 
-      {index.purchases.length === 0 ? (
+      {designation.purchases.length === 0 ? (
         <EmptyState
           message="No purchases yet"
-          description="Record purchases to track spending in this index"
+          description="Record purchases to track spending in this designation"
         />
       ) : (
         <div className="flex flex-col gap-2">
-          {index.purchases.map((purchase) => (
+          {designation.purchases.map((purchase) => (
             <PurchaseCard
               key={purchase.id}
               purchase={purchase}
               users={users}
-              accounts={accounts}
+              categories={categories}
               allocationGroups={allocationGroups}
               miscAllocations={miscAllocations}
             />

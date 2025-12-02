@@ -1,14 +1,14 @@
 import { CreditCard, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
 
-import { IndexWithPurchases } from '@/lib/types';
+import { DesignationWithPurchases } from '@/lib/types';
 import { formatNumber } from '@/lib/utils';
 
 import { LinkCard } from '@/components/link-card';
 
-export function IndexCard({
-  index: { id, name, code, purchases, amount },
+export function DesignationCard({
+  designation: { id, name, code, purchases, amount },
 }: {
-  index: IndexWithPurchases;
+  designation: DesignationWithPurchases;
 }) {
   const spent =
     purchases.length === 0
@@ -18,7 +18,7 @@ export function IndexCard({
 
   return (
     <LinkCard
-      href={`/index/${id}`}
+      href={`/designation/${id}`}
       icon={CreditCard}
       title={name}
       description={code}

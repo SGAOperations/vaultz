@@ -3,9 +3,9 @@ import { notFound } from 'next/navigation';
 
 import { Pencil } from 'lucide-react';
 
-import { getAllAccounts } from '@/prisma/services/account';
 import { getMiscAllocations } from '@/prisma/services/allocation';
 import { getAllAllocationGroups } from '@/prisma/services/allocation-groups';
+import { getAllCategories } from '@/prisma/services/category';
 import { getUserById, getUsers } from '@/prisma/services/user';
 
 import { EmptyState } from '@/components/empty-state';
@@ -25,11 +25,11 @@ export default async function UserPage({
 }) {
   const { userId } = await params;
 
-  const [user, users, accounts, allocationGroups, miscAllocations] =
+  const [user, users, categories, allocationGroups, miscAllocations] =
     await Promise.all([
       getUserById({ id: userId }),
       getUsers(),
-      getAllAccounts(),
+      getAllCategories(),
       getAllAllocationGroups(),
       getMiscAllocations(),
     ]);
@@ -87,7 +87,7 @@ export default async function UserPage({
               key={purchase.id}
               purchase={purchase}
               users={users}
-              accounts={accounts}
+              categories={categories}
               allocationGroups={allocationGroups}
               miscAllocations={miscAllocations}
             />

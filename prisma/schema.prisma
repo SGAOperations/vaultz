@@ -18,23 +18,23 @@ model User {
     purchases Purchase[]
 }
 
-model Index {
+model Designation {
     id   String @id @default(uuid())
     code String
     name String
 
-    accounts Account[]
+    categories Category[]
 }
 
-model Account {
+model Category {
     id        String    @id @default(uuid())
     code      String
     name      String
     amount    Decimal
     deletedAt DateTime?
 
-    indexId String
-    index   Index  @relation(fields: [indexId], references: [id])
+    designationId String
+    designation   Designation  @relation(fields: [designationId], references: [id])
 
     purchases Purchase[]
 }
@@ -47,8 +47,8 @@ model Purchase {
     purchasedAt DateTime @db.Date
     receipts    String[]
 
-    accountId    String
-    account      Account     @relation(fields: [accountId], references: [id])
+    categoryId   String
+    category     Category    @relation(fields: [categoryId], references: [id])
     allocationId String?
     allocation   Allocation? @relation(fields: [allocationId], references: [id])
     userId       String

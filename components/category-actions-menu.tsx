@@ -2,9 +2,9 @@
 
 import { Ellipsis, Pencil } from 'lucide-react';
 
-import { Account } from '@/lib/types';
+import { Category } from '@/lib/types';
 
-import { EditAccountDialog } from '@/components/edit-account-dialog';
+import { EditCategoryDialog } from '@/components/edit-category-dialog';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-export function AccountActionsMenu({ account }: { account: Account }) {
+export function CategoryActionsMenu({ category }: { category: Category }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -22,12 +22,12 @@ export function AccountActionsMenu({ account }: { account: Account }) {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <EditAccountDialog
-          account={account}
+        <EditCategoryDialog
+          category={category}
           trigger={
             <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
               <Pencil className="size-4" />
-              Edit Account
+              Edit Spending Category
             </DropdownMenuItem>
           }
         />
