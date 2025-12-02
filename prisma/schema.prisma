@@ -27,11 +27,12 @@ model Designation {
 }
 
 model Category {
-    id        String    @id @default(uuid())
-    code      String
-    name      String
-    amount    Decimal
-    deletedAt DateTime?
+    id         String    @id @default(uuid())
+    code       String
+    ledgerCode String
+    name       String
+    amount     Decimal
+    deletedAt  DateTime?
 
     designationId String
     designation   Designation  @relation(fields: [designationId], references: [id])

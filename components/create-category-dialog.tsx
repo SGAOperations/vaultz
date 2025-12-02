@@ -11,7 +11,11 @@ import { FormInput } from '@/components/ui/form-input';
 
 const schema = z.object({
   designationId: z.string().min(1, 'Please select a designation'),
-  code: z.string().length(4, 'Must be exactly 4 characters long'),
+  code: z
+    .string()
+    .length(3, 'Must be exactly 3 numbers')
+    .regex(/^\d{3}$/, 'Must be 3 numeric digits'),
+  ledgerCode: z.string().length(4, 'Must be exactly 4 characters long'),
   name: z.string().min(1, 'Please enter a category name'),
   amount: z.coerce
     .number<number>()
@@ -29,13 +33,17 @@ export function CreateCategoryDialog({
   trigger: React.ReactNode;
 }) {
   async function onSubmit(data: FormData): Promise<boolean> {
-    const result = await handleError(createCategory(data), {
-      toast: {
-        loading: 'Creating spending category...',
-        success: 'Spending category created successfully',
-        error: 'Failed to create spending category',
+    // Prefix the code with 'SC' before sending to backend
+    const result = await handleError(
+      createCategory({ ...data, code: `SC${data.code}` }),
+      {
+        toast: {
+          loading: 'Creating spending category...',
+          success: 'Spending category created successfully',
+          error: 'Failed to create spending category',
+        },
       },
-    });
+    );
     return !isError(result);
   }
 
@@ -45,15 +53,27 @@ export function CreateCategoryDialog({
       title="Create Spending Category"
       description="Each spending category has a set budget."
       schema={schema}
-      defaultValues={{ designationId, code: '', name: '', amount: 0 }}
+      defaultValues={{
+        designationId,
+        code: '',
+        ledgerCode: '',
+        name: '',
+        amount: 0,
+      }}
       onSubmit={onSubmit}
     >
       <FormInput<FormData> name="name" label="Name" placeholder="Food" />
       <FormInput<FormData>
         name="code"
-        label="Code"
+        label="Spending Category Code"
+        placeholder="123"
+        description="Enter 3 numbers (will be prefixed with SC, e.g., SC123)."
+      />
+      <FormInput<FormData>
+        name="ledgerCode"
+        label="Ledger Code"
         placeholder="7XXX"
-        description="The spending category number to be associated with this category."
+        description="The ledger code to be associated with this category."
       />
       <FormInput<FormData>
         name="amount"
