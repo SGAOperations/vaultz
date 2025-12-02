@@ -30,7 +30,7 @@ export function Combobox({
   disabled = false,
 }: {
   data: { heading?: string; items: { label: string; value: string }[] }[];
-  value: string;
+  value?: string;
   onChange: (value: string) => void;
   name: string;
   disabled?: boolean;
