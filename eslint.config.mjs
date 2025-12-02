@@ -1,9 +1,9 @@
-import nextConfig from 'eslint-config-next';
-import nextTypescriptConfig from 'eslint-config-next/typescript';
+import coreWebVitalsConfig from 'eslint-config-next/core-web-vitals';
+import typescriptConfig from 'eslint-config-next/typescript';
 
 const eslintConfig = [
-  ...nextConfig,
-  ...nextTypescriptConfig,
+  ...coreWebVitalsConfig,
+  ...typescriptConfig,
   { ignores: ['.next/*', 'prisma/client/*'] },
 ];
 
