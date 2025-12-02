@@ -80,7 +80,7 @@ export async function getUserById({
     where: { id, deletedAt: null },
     include: {
       purchases: {
-        orderBy: { createdAt: 'desc' },
+        orderBy: { purchasedAt: 'desc' },
         include: { user: true, category: true },
       },
     },
