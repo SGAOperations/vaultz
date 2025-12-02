@@ -25,7 +25,7 @@ export async function getLatestPurchases(
 
 export async function createPurchase({
   userId,
-  accountId,
+  categoryId,
   description,
   amount,
   allocationId,
@@ -33,7 +33,7 @@ export async function createPurchase({
   receipts,
 }: {
   userId: string;
-  accountId: string;
+  categoryId: string;
   description?: string;
   amount: number;
   allocationId?: string;
@@ -43,7 +43,7 @@ export async function createPurchase({
   const purchase = await prisma.purchase.create({
     data: {
       userId,
-      accountId,
+      categoryId,
       description: description || '',
       amount: new Decimal(amount),
       allocationId,
@@ -61,7 +61,7 @@ export async function createPurchase({
 export async function updatePurchase({
   id,
   userId,
-  accountId,
+  categoryId,
   description,
   amount,
   allocationId,
@@ -70,7 +70,7 @@ export async function updatePurchase({
 }: {
   id: string;
   userId: string;
-  accountId: string;
+  categoryId: string;
   description?: string;
   amount: number;
   allocationId?: string;
@@ -81,7 +81,7 @@ export async function updatePurchase({
     where: { id },
     data: {
       userId,
-      accountId,
+      categoryId,
       description: description || '',
       amount: new Decimal(amount),
       allocationId: allocationId || null,

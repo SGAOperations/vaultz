@@ -12,12 +12,29 @@ import {
   getPurchasesByMonth,
   getSpendingByIndex,
 } from '@/prisma/services/dashboard';
+import { Plus } from 'lucide-react';
+
+import { getMiscAllocations } from '@/prisma/services/allocation';
+import { getAllAllocationGroups } from '@/prisma/services/allocation-groups';
+import { getAllCategories } from '@/prisma/services/category';
+import { getAllDesignations } from '@/prisma/services/designation';
+import { getLatestPurchases } from '@/prisma/services/purchase';
+import { getUsers } from '@/prisma/services/user';
 
 import { DashboardCharts } from '@/components/dashboard-charts';
+import { CreateDesignationDialog } from '@/components/create-designation-dialog';
+import { DesignationCard } from '@/components/designation-card';
+import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/page-header';
 import { Card } from '@/components/ui/card';
 
 export default async function Home() {
+  const designations = await getAllDesignations();
+  const latestPurchases = await getLatestPurchases(10);
+  const users = await getUsers();
+  const categories = await getAllCategories();
+  const allocationGroups = await getAllAllocationGroups();
+  const miscAllocations = await getMiscAllocations();
   const stats = await getDashboardStats();
   const purchasesByMonth = await getPurchasesByMonth();
   const spendingByIndex = await getSpendingByIndex();
@@ -51,6 +68,24 @@ export default async function Home() {
           value={stats.totalPurchases}
           iconColor="text-orange-500"
           bgColor="bg-orange-500/10 dark:bg-orange-500/20"
+        title="Designations"
+        description="Manage your financial designations and track all purchases"
+        actions={
+          <CreateDesignationDialog
+            trigger={
+              <Button className="gap-2 shadow-sm">
+                <Plus className="size-4" />
+                Create Designation
+              </Button>
+            }
+          />
+        }
+      />
+
+      {designations.length === 0 ? (
+        <EmptyState
+          message="No designations yet"
+          description="Create your first designation to start tracking purchases"
         />
         <StatCard
           icon={Users}
@@ -68,6 +103,20 @@ export default async function Home() {
           value={stats.totalBudget}
           icon={Wallet}
           variant="total"
+      ) : (
+        <div className="grid w-full grid-cols-1 gap-4 lg:grid-cols-2">
+          {designations.map((v, i) => (
+            <DesignationCard key={i} designation={v} />
+          ))}
+        </div>
+      )}
+
+      <SectionHeader title="Latest Purchases" />
+
+      {latestPurchases.length === 0 ? (
+        <EmptyState
+          message="No purchases yet"
+          description="Purchases will appear here as they are recorded"
         />
         <FinancialStatCard
           label="Total Spent"
@@ -88,6 +137,20 @@ export default async function Home() {
         purchasesByMonth={purchasesByMonth}
         spendingByIndex={spendingByIndex}
       />
+      ) : (
+        <div className="flex flex-col gap-2">
+          {latestPurchases.map((purchase) => (
+            <PurchaseCard
+              key={purchase.id}
+              purchase={purchase}
+              users={users}
+              categories={categories}
+              allocationGroups={allocationGroups}
+              miscAllocations={miscAllocations}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

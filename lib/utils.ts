@@ -53,8 +53,10 @@ export async function handleError<T>(
     const result = await promise;
 
     if (isError(result)) {
-      // Show error toast for ErrorType
-      toast.error(options.toast.error || 'An error occurred', { id: toastId });
+      // Show error toast for ErrorType - prefer server error message when available
+      const errorMessage =
+        result.error || options.toast.error || 'An error occurred';
+      toast.error(errorMessage, { id: toastId });
       if (options.onError) options.onError(result);
       return result;
     }

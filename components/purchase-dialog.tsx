@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { FormProvider, useForm } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Pencil, Plus, Trash2, X } from 'lucide-react';
@@ -17,9 +17,9 @@ import {
 } from '@/prisma/services/purchase';
 
 import {
-  AccountWithIndex,
   Allocation,
   AllocationGroupWithAllocations,
+  CategoryWithDesignation,
   PurchaseWithUser,
 } from '@/lib/types';
 import { UploadDropzone } from '@/lib/uploadthing';
@@ -39,7 +39,6 @@ import { Button } from './ui/button';
 import { Combobox } from './ui/combobox';
 import { DatePicker } from './ui/date-picker';
 import {
-  Form,
   FormControl,
   FormDescription,
   FormField,
@@ -47,11 +46,11 @@ import {
   FormLabel,
   FormMessage,
 } from './ui/form';
-import { Input } from './ui/input';
+import { FormInput } from './ui/form-input';
 
 const schema = z.object({
   userId: z.string().min(1, 'Please select a user'),
-  accountId: z.string().min(1, 'Please select an account'),
+  categoryId: z.string().min(1, 'Please select a category'),
   allocationId: z.string().optional(),
   description: z.string().optional(),
   amount: z.coerce
@@ -62,13 +61,15 @@ const schema = z.object({
   receipts: z.array(z.string()).optional(),
 });
 
+type FormData = z.infer<typeof schema>;
+
 // Props for creating a new purchase (no existing purchase)
 type CreatePurchaseProps = {
   mode: 'create';
   trigger?: React.ReactNode;
   purchase?: never;
   users: User[];
-  accounts: AccountWithIndex[];
+  categories: CategoryWithDesignation[];
   allocationGroups?: AllocationGroupWithAllocations[];
   miscAllocations?: Allocation[];
 };
@@ -79,7 +80,7 @@ type ViewEditPurchaseProps = {
   trigger: React.ReactNode;
   purchase: PurchaseWithUser;
   users: User[];
-  accounts: AccountWithIndex[];
+  categories: CategoryWithDesignation[];
   allocationGroups: AllocationGroupWithAllocations[];
   miscAllocations: Allocation[];
 };
@@ -89,7 +90,7 @@ type PurchaseDialogProps = CreatePurchaseProps | ViewEditPurchaseProps;
 export function PurchaseDialog(props: PurchaseDialogProps) {
   const {
     users,
-    accounts,
+    categories,
     allocationGroups = [],
     miscAllocations = [],
   } = props;
@@ -107,12 +108,13 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
 
   const receiptUrls = purchase?.receipts.map((r) => getFileUrl(r)) || [];
 
-  const form = useForm<z.infer<typeof schema>>({
+  const form = useForm({
     resolver: zodResolver(schema),
     defaultValues: {
       userId: purchase?.userId || '',
-      accountId:
-        purchase?.accountId || (accounts.length === 1 ? accounts[0].id : ''),
+      categoryId:
+        purchase?.categoryId ||
+        (categories.length === 1 ? categories[0].id : ''),
       allocationId: purchase?.allocationId || '',
       description: purchase?.description || '',
       amount: purchase?.amount || 0,
@@ -121,7 +123,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
     },
   });
 
-  async function onSubmit(data: z.infer<typeof schema>) {
+  async function onSubmit(data: FormData) {
     if (isCreateMode) {
       await handleError(createPurchase(data), {
         toast: {
@@ -192,7 +194,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
     // Reset form to original values
     form.reset({
       userId: purchase!.userId,
-      accountId: purchase!.accountId,
+      categoryId: purchase!.categoryId,
       allocationId: purchase!.allocationId || '',
       description: purchase!.description,
       amount: purchase!.amount,
@@ -246,7 +248,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
         </DialogHeader>
 
         {isEditing ? (
-          <Form {...form}>
+          <FormProvider {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <FormField
@@ -273,40 +275,28 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                     </FormItem>
                   )}
                 />
-                <FormField
-                  control={form.control}
+                <FormInput<FormData>
                   name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <div className="flex gap-2">
-                        <FormLabel>Description</FormLabel>
-                        <FormDescription className="text-xs">
-                          Optional
-                        </FormDescription>
-                      </div>
-                      <FormControl>
-                        <Input placeholder="Optional" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  label="Description"
+                  placeholder="Optional"
+                  description="Optional"
                 />
                 <FormField
                   control={form.control}
-                  name="accountId"
+                  name="categoryId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Account</FormLabel>
+                      <FormLabel>Spending Category</FormLabel>
                       <FormControl>
                         <Combobox
                           data={Object.entries(
-                            accounts.reduce(
-                              (acc, account) => {
-                                const group = account.indexId;
+                            categories.reduce(
+                              (acc, category) => {
+                                const group = category.designationId;
                                 acc[group] = acc[group] || { items: [] };
                                 acc[group].items.push({
-                                  value: account.id,
-                                  label: `${account.name} (${account.code})`,
+                                  value: category.id,
+                                  label: `${category.name} (${category.code})`,
                                 });
                                 return acc;
                               },
@@ -315,15 +305,16 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                                 { items: { value: string; label: string }[] }
                               >,
                             ),
-                          ).map(([indexId, group]) => ({
+                          ).map(([designationId, group]) => ({
                             heading:
-                              accounts.find((a) => a.indexId === indexId)?.index
-                                .name || indexId,
+                              categories.find(
+                                (c) => c.designationId === designationId,
+                              )?.designation.name || designationId,
                             ...group,
                           }))}
                           {...field}
-                          name="account"
-                          disabled={accounts.length === 1}
+                          name="category"
+                          disabled={categories.length === 1}
                         />
                       </FormControl>
                       <FormMessage />
@@ -384,25 +375,11 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                     </FormItem>
                   )}
                 />
-                <FormField
-                  control={form.control}
+                <FormInput<FormData>
                   name="amount"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Amount</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="$21.45"
-                          {...field}
-                          value={field.value ? '$' + field.value : ''}
-                          onChange={(e) =>
-                            field.onChange(e.target.value.replace('$', ''))
-                          }
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  label="Amount"
+                  placeholder="$21.45"
+                  currency
                 />
               </div>
               <FormField
@@ -537,7 +514,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                 )}
               </div>
             </form>
-          </Form>
+          </FormProvider>
         ) : (
           <>
             <div className="grid grid-cols-2 gap-4">
@@ -593,7 +570,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
 // Backward compatibility export for CreatePurchaseDialog
 export function CreatePurchaseDialog(props: {
   users: User[];
-  accounts: AccountWithIndex[];
+  categories: CategoryWithDesignation[];
   allocationGroups?: AllocationGroupWithAllocations[];
   miscAllocations?: Allocation[];
 }) {
