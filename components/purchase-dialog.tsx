@@ -351,7 +351,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                             },
                           ]}
                           {...field}
-                          value={field.value || ''}
+                          value={field.value ?? ''}
                           name="allocation"
                         />
                       </FormControl>
