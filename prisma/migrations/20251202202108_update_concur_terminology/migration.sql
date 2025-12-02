@@ -15,3 +15,9 @@ ALTER TABLE "Category" RENAME CONSTRAINT "Account_indexId_fkey" TO "Category_des
 
 -- RenameForeignKey: Rename foreign key constraint in Purchase table
 ALTER TABLE "Purchase" RENAME CONSTRAINT "Purchase_accountId_fkey" TO "Purchase_categoryId_fkey";
+
+-- AlterTable
+ALTER TABLE "Category" RENAME CONSTRAINT "Account_pkey" TO "Category_pkey";
+
+-- AlterTable
+ALTER TABLE "Designation" RENAME CONSTRAINT "Index_pkey" TO "Designation_pkey";
