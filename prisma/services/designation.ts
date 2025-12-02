@@ -91,6 +91,7 @@ export async function createDesignation({
   const designation = await prisma.designation.create({ data: { code, name } });
 
   revalidatePath('/');
+  revalidatePath('/designation');
 
   return designation;
 }

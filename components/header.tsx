@@ -18,7 +18,7 @@ import {
 
 const navItems = [
   { href: '/', label: 'Home', icon: Home },
-  { href: '/index', label: 'Indexes', icon: BarChart3 },
+  { href: '/designation', label: 'Designations', icon: BarChart3 },
   { href: '/users', label: 'Users', icon: Users },
   { href: '/allocation-groups', label: 'Allocations', icon: FolderKanban },
 ];

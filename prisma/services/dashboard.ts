@@ -3,15 +3,15 @@
 import prisma from '@/lib/prisma';
 
 export async function getDashboardStats() {
-  const [indexes, accounts, purchases, users] = await Promise.all([
-    prisma.index.count(),
-    prisma.account.findMany({ select: { amount: true } }),
+  const [designations, categories, purchases, users] = await Promise.all([
+    prisma.designation.count(),
+    prisma.category.findMany({ where: { deletedAt: null }, select: { amount: true } }),
     prisma.purchase.findMany({ select: { amount: true, purchasedAt: true } }),
     prisma.user.count(),
   ]);
 
-  const totalBudget = accounts.reduce(
-    (sum, account) => sum + account.amount.toNumber(),
+  const totalBudget = categories.reduce(
+    (sum, category) => sum + category.amount.toNumber(),
     0,
   );
   const totalSpent = purchases.reduce(
@@ -20,8 +20,8 @@ export async function getDashboardStats() {
   );
 
   return {
-    totalIndexes: indexes,
-    totalAccounts: accounts.length,
+    totalDesignations: designations,
+    totalCategories: categories.length,
     totalPurchases: purchases.length,
     totalUsers: users,
     totalBudget,
@@ -68,30 +68,31 @@ export async function getPurchasesByMonth() {
   );
 }
 
-export async function getSpendingByIndex() {
-  const indexes = await prisma.index.findMany({
+export async function getSpendingByDesignation() {
+  const designations = await prisma.designation.findMany({
     include: {
-      accounts: {
+      categories: {
+        where: { deletedAt: null },
         select: { amount: true, purchases: { select: { amount: true } } },
       },
     },
   });
 
-  return indexes.map((index) => {
-    const budget = index.accounts.reduce(
-      (sum, account) => sum + account.amount.toNumber(),
+  return designations.map((designation) => {
+    const budget = designation.categories.reduce(
+      (sum, category) => sum + category.amount.toNumber(),
       0,
     );
-    const spent = index.accounts.reduce(
-      (sum, account) =>
+    const spent = designation.categories.reduce(
+      (sum, category) =>
         sum +
-        account.purchases.reduce(
+        category.purchases.reduce(
           (pSum, purchase) => pSum + purchase.amount.toNumber(),
           0,
         ),
       0,
     );
 
-    return { name: index.name, budget, spent, remaining: budget - spent };
+    return { name: designation.name, budget, spent, remaining: budget - spent };
   });
 }
