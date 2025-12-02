@@ -6,6 +6,7 @@ import { getMiscAllocations } from '@/prisma/services/allocation';
 import { getAllAllocationGroups } from '@/prisma/services/allocation-groups';
 import { getUsers } from '@/prisma/services/user';
 
+import { AccountActionsMenu } from '@/components/account-actions-menu';
 import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/page-header';
 import { PurchaseCard } from '@/components/purchase-card';
@@ -41,12 +42,15 @@ export default async function Index({
         title={account.name}
         description={`Account code: ${account.code}`}
         actions={
-          <CreatePurchaseDialog
-            users={users}
-            accounts={[account]}
-            allocationGroups={allocationGroups}
-            miscAllocations={miscAllocations}
-          />
+          <div className="flex gap-2">
+            <CreatePurchaseDialog
+              users={users}
+              accounts={[account]}
+              allocationGroups={allocationGroups}
+              miscAllocations={miscAllocations}
+            />
+            <AccountActionsMenu account={account} />
+          </div>
         }
       />
 

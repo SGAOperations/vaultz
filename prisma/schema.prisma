@@ -27,10 +27,11 @@ model Index {
 }
 
 model Account {
-    id     String  @id @default(uuid())
-    code   String
-    name   String
-    amount Decimal
+    id        String    @id @default(uuid())
+    code      String
+    name      String
+    amount    Decimal
+    deletedAt DateTime?
 
     indexId String
     index   Index  @relation(fields: [indexId], references: [id])
