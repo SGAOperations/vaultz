@@ -59,7 +59,9 @@ export function EditCategoryDialog({
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {
-      code: category.code.replace('SC', ''), // Remove SC prefix for editing
+      code: category.code.startsWith('SC')
+        ? category.code.slice(2)
+        : category.code, // Remove SC prefix for editing
       ledgerCode: category.ledgerCode,
       name: category.name,
       amount: category.amount,
