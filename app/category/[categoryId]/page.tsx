@@ -6,7 +6,7 @@ import { getAllAllocationGroups } from '@/prisma/services/allocation-groups';
 import { getCategoryById } from '@/prisma/services/category';
 import { getUsers } from '@/prisma/services/user';
 
-import { AccountActionsMenu } from '@/components/account-actions-menu';
+import { CategoryActionsMenu } from '@/components/category-actions-menu';
 import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/page-header';
 import { PurchaseCard } from '@/components/purchase-card';
@@ -49,7 +49,7 @@ export default async function CategoryPage({
               allocationGroups={allocationGroups}
               miscAllocations={miscAllocations}
             />
-            <AccountActionsMenu account={category} />
+            <CategoryActionsMenu category={category} />
           </div>
         }
       />
