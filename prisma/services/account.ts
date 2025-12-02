@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 
-import { Decimal } from '@/prisma/client/runtime/library';
+import { Prisma } from '@/prisma/client';
 
 import prisma from '@/lib/prisma';
 import { Account, AccountWithIndex, AccountWithPurchases } from '@/lib/types';
@@ -20,7 +20,7 @@ export async function createAccount({
   amount: number;
 }): Promise<ResponseType<Account>> {
   const account = await prisma.account.create({
-    data: { indexId, code, name, amount: new Decimal(amount) },
+    data: { indexId, code, name, amount: new Prisma.Decimal(amount) },
   });
 
   revalidatePath('/index');

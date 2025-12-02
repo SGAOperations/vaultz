@@ -1,73 +1,72 @@
 generator client {
-    provider = "prisma-client-js"
-    output   = "client"
+  provider = "prisma-client-js"
+  output   = "client"
 }
 
 datasource db {
-    provider = "postgresql"
-    url      = env("DATABASE_URL")
+  provider = "postgresql"
 }
 
 model User {
-    id        String    @id @default(uuid())
-    first     String
-    last      String
-    createdAt DateTime  @default(now())
-    deletedAt DateTime?
+  id        String    @id @default(uuid())
+  first     String
+  last      String
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
 
-    purchases Purchase[]
+  purchases Purchase[]
 }
 
 model Index {
-    id   String @id @default(uuid())
-    code String
-    name String
+  id   String @id @default(uuid())
+  code String
+  name String
 
-    accounts Account[]
+  accounts Account[]
 }
 
 model Account {
-    id     String  @id @default(uuid())
-    code   String
-    name   String
-    amount Decimal
+  id     String  @id @default(uuid())
+  code   String
+  name   String
+  amount Decimal
 
-    indexId String
-    index   Index  @relation(fields: [indexId], references: [id])
+  indexId String
+  index   Index  @relation(fields: [indexId], references: [id])
 
-    purchases Purchase[]
+  purchases Purchase[]
 }
 
 model Purchase {
-    id          String   @id @default(uuid())
-    amount      Decimal
-    description String
-    createdAt   DateTime @default(now())
-    purchasedAt DateTime @db.Date
-    receipts    String[]
+  id          String   @id @default(uuid())
+  amount      Decimal
+  description String
+  createdAt   DateTime @default(now())
+  purchasedAt DateTime @db.Date
+  receipts    String[]
 
-    accountId    String
-    account      Account     @relation(fields: [accountId], references: [id])
-    allocationId String?
-    allocation   Allocation? @relation(fields: [allocationId], references: [id])
-    userId       String
-    user         User        @relation(fields: [userId], references: [id])
+  accountId    String
+  account      Account     @relation(fields: [accountId], references: [id])
+  allocationId String?
+  allocation   Allocation? @relation(fields: [allocationId], references: [id])
+  userId       String
+  user         User        @relation(fields: [userId], references: [id])
 }
 
 model AllocationGroup {
-    id   String @id @default(uuid())
-    name String
+  id   String @id @default(uuid())
+  name String
 
-    allocations Allocation[]
+  allocations Allocation[]
 }
 
 model Allocation {
-    id     String  @id @default(uuid())
-    name   String
-    amount Decimal
+  id     String  @id @default(uuid())
+  name   String
+  amount Decimal
 
-    allocationGroupId String?
-    allocationGroup   AllocationGroup? @relation(fields: [allocationGroupId], references: [id])
+  allocationGroupId String?
+  allocationGroup   AllocationGroup? @relation(fields: [allocationGroupId], references: [id])
 
-    purchases Purchase[]
+  purchases Purchase[]
 }
