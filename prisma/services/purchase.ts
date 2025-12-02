@@ -53,6 +53,7 @@ export async function createPurchase({
   });
 
   revalidatePath('/');
+  revalidatePath('/designation');
 
   return { ...purchase, amount: purchase.amount.toNumber() };
 }
@@ -90,6 +91,7 @@ export async function updatePurchase({
   });
 
   revalidatePath('/');
+  revalidatePath('/designation');
 
   return { ...purchase, amount: purchase.amount.toNumber() };
 }
@@ -100,6 +102,7 @@ export async function deletePurchase(
   const purchase = await prisma.purchase.delete({ where: { id } });
 
   revalidatePath('/');
+  revalidatePath('/designation');
 
   return { ...purchase, amount: purchase.amount.toNumber() };
 }
