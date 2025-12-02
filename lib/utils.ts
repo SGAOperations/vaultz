@@ -22,6 +22,28 @@ export function getFileUrl(key: string) {
   return `https://${process.env.NEXT_PUBLIC_UPLOADTHING_APP_ID}.ufs.sh/f/${key}`;
 }
 
+/**
+ * Parses a date-only value from the database into a Date object in local timezone.
+ * This prevents off-by-one errors when date-only fields are interpreted as UTC midnight.
+ * @param dateValue The date value from the database (Date or string)
+ * @returns A Date object with the correct date in local timezone
+ */
+export function parseDateOnly(dateValue: Date | string): Date {
+  if (dateValue instanceof Date) {
+    // If it's already a Date object, extract the year, month, and day
+    // and create a new Date in local timezone
+    const year = dateValue.getUTCFullYear();
+    const month = dateValue.getUTCMonth();
+    const day = dateValue.getUTCDate();
+    return new Date(year, month, day);
+  }
+
+  // If it's a string (e.g., "2024-01-15"), parse it as local date
+  const dateStr = String(dateValue);
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
+
 // Type definitions for toast handling
 export type ErrorType = { error: string };
 
