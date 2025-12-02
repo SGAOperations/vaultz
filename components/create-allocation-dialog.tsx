@@ -1,33 +1,13 @@
 'use client';
 
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-
-import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod/v4';
 
 import { createAllocation } from '@/prisma/services/allocation';
 
-import { handleError } from '@/lib/utils';
+import { handleError, isError } from '@/lib/utils';
 
-import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
+import { FormDialog } from '@/components/ui/form-dialog';
+import { FormInput } from '@/components/ui/form-input';
 
 const schema = z.object({
   name: z
@@ -40,6 +20,8 @@ const schema = z.object({
     .multipleOf(0.01, 'Must contain at most 2 decimal places'),
 });
 
+type FormData = z.infer<typeof schema>;
+
 export function CreateAllocationDialog({
   trigger,
   allocationGroupId,
@@ -47,77 +29,40 @@ export function CreateAllocationDialog({
   trigger: React.ReactNode;
   allocationGroupId?: string;
 }) {
-  const [open, setOpen] = useState<boolean>(false);
-  const form = useForm<z.infer<typeof schema>>({
-    resolver: zodResolver(schema),
-    defaultValues: { name: '', amount: 0 },
-  });
-
-  async function onSubmit(data: z.infer<typeof schema>) {
-    await handleError(createAllocation({ ...data, allocationGroupId }), {
-      toast: {
-        loading: 'Creating allocation...',
-        success: 'Allocation created successfully',
-        error: 'Failed to create allocation',
+  async function onSubmit(data: FormData): Promise<boolean> {
+    const result = await handleError(
+      createAllocation({ ...data, allocationGroupId }),
+      {
+        toast: {
+          loading: 'Creating allocation...',
+          success: 'Allocation created successfully',
+          error: 'Failed to create allocation',
+        },
       },
-      onSuccess: () => {
-        form.reset();
-        setOpen(false);
-      },
-    });
+    );
+    return !isError(result);
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
-
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Create Allocation</DialogTitle>
-          <DialogDescription>
-            An allocation is a budgeted amount of money for a specific purpose.
-          </DialogDescription>
-        </DialogHeader>
-
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Sustainability Tabling" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="amount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Amount</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="$21.45"
-                      {...field}
-                      value={field.value ? '$' + field.value : ''}
-                      onChange={(e) =>
-                        field.onChange(e.target.value.replace('$', ''))
-                      }
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button type="submit">Submit</Button>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+    <FormDialog
+      trigger={trigger}
+      title="Create Allocation"
+      description="An allocation is a budgeted amount of money for a specific purpose."
+      schema={schema}
+      defaultValues={{ name: '', amount: 0 }}
+      onSubmit={onSubmit}
+    >
+      <FormInput<FormData>
+        name="name"
+        label="Name"
+        placeholder="Sustainability Tabling"
+      />
+      <FormInput<FormData>
+        name="amount"
+        label="Amount"
+        placeholder="$21.45"
+        currency
+      />
+    </FormDialog>
   );
 }
