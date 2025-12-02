@@ -25,6 +25,19 @@ export function getFileUrl(key: string) {
 /**
  * Parses a date-only value from the database into a Date object in local timezone.
  * This prevents off-by-one errors when date-only fields are interpreted as UTC midnight.
+ *
+ * @example
+ * // For a user in EST (UTC-5):
+ * // Database has date-only value: 2024-01-15
+ *
+ * // Without parseDateOnly (incorrect):
+ * const wrong = new Date('2024-01-15'); // 2024-01-15T00:00:00.000Z (midnight UTC)
+ * wrong.toLocaleDateString(); // "1/14/2024" - off by one day!
+ *
+ * // With parseDateOnly (correct):
+ * const correct = parseDateOnly('2024-01-15'); // 2024-01-15T00:00:00.000-0500 (midnight EST)
+ * correct.toLocaleDateString(); // "1/15/2024" - correct!
+ *
  * @param dateValue The date value from the database (Date or string)
  * @returns A Date object with the correct date in local timezone
  */
@@ -61,6 +74,8 @@ export function parseDateOnly(dateValue: Date | string): Date {
     throw new Error(`Invalid month value: ${month}`);
   }
 
+  // Basic day range validation (1-31)
+  // More specific month/year validation happens after creating the Date object
   if (day < 1 || day > 31) {
     throw new Error(`Invalid day value: ${day}`);
   }
