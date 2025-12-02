@@ -1,19 +1,19 @@
 import {
   AllocationGroup,
-  Index,
-  Account as PrismaAccount,
+  Designation,
   Allocation as PrismaAllocation,
+  Category as PrismaCategory,
   Purchase as PrismaPurchase,
   User,
 } from '@/prisma/client';
 
 export type Purchase = Omit<PrismaPurchase, 'amount'> & { amount: number };
 
-export type Account = Omit<PrismaAccount, 'amount'> & { amount: number };
+export type Category = Omit<PrismaCategory, 'amount'> & { amount: number };
 
-export type AccountWithIndex = Account & { index: Index };
+export type CategoryWithDesignation = Category & { designation: Designation };
 
-export type AccountWithPurchases = AccountWithIndex & {
+export type CategoryWithPurchases = CategoryWithDesignation & {
   purchases: PurchaseWithUser[];
 };
 
@@ -21,7 +21,7 @@ export type UserWithPurchases = User & { purchases: Purchase[] };
 
 export type PurchaseWithUser = Purchase & { user: User };
 
-export type IndexWithPurchases = Index & {
+export type DesignationWithPurchases = Designation & {
   purchases: PurchaseWithUser[];
   amount: number;
 };
@@ -36,11 +36,11 @@ export type AllocationGroupWithAllocations = AllocationGroup & {
   allocations: AllocationWithPurchases[];
 };
 
-export type PurchaseWithUserAndAccount = Purchase & {
+export type PurchaseWithUserAndCategory = Purchase & {
   user: User;
-  account: Account;
+  category: Category;
 };
 
-export type UserWithPurchasesAndAccount = User & {
-  purchases: PurchaseWithUserAndAccount[];
+export type UserWithPurchasesAndCategory = User & {
+  purchases: PurchaseWithUserAndCategory[];
 };

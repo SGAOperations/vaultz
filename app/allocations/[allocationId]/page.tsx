@@ -1,8 +1,8 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
-import { getAllAccounts } from '@/prisma/services/account';
 import { getAllocationById } from '@/prisma/services/allocation';
+import { getAllCategories } from '@/prisma/services/category';
 import { getUsers } from '@/prisma/services/user';
 
 import { EmptyState } from '@/components/empty-state';
@@ -24,7 +24,7 @@ export default async function Allocation({
   const allocation = await getAllocationById({ id: allocationId });
   if (allocation === null) notFound();
 
-  const accounts = await getAllAccounts();
+  const categories = await getAllCategories();
   const users = await getUsers();
 
   const spent = allocation.purchases.reduce(
@@ -39,7 +39,7 @@ export default async function Allocation({
         actions={
           <CreatePurchaseDialog
             users={users}
-            accounts={accounts}
+            categories={categories}
             miscAllocations={[allocation]}
           />
         }
@@ -61,7 +61,7 @@ export default async function Allocation({
               key={purchase.id}
               purchase={purchase}
               users={users}
-              accounts={accounts}
+              categories={categories}
               allocationGroups={[]}
               miscAllocations={[allocation]}
             />

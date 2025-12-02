@@ -2,7 +2,7 @@
 
 import { z } from 'zod/v4';
 
-import { createIndex } from '@/prisma/services';
+import { createDesignation } from '@/prisma/services/designation';
 
 import { handleError, isError } from '@/lib/utils';
 
@@ -19,13 +19,17 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
-export function CreateIndexDialog({ trigger }: { trigger: React.ReactNode }) {
+export function CreateDesignationDialog({
+  trigger,
+}: {
+  trigger: React.ReactNode;
+}) {
   async function onSubmit(data: FormData): Promise<boolean> {
-    const result = await handleError(createIndex(data), {
+    const result = await handleError(createDesignation(data), {
       toast: {
-        loading: 'Creating index...',
-        success: 'Index created successfully',
-        error: 'Failed to create index',
+        loading: 'Creating designation...',
+        success: 'Designation created successfully',
+        error: 'Failed to create designation',
       },
     });
     return !isError(result);
@@ -34,8 +38,8 @@ export function CreateIndexDialog({ trigger }: { trigger: React.ReactNode }) {
   return (
     <FormDialog
       trigger={trigger}
-      title="Create Index"
-      description="An index contains multiple accounts that track purchases."
+      title="Create Designation"
+      description="A designation contains multiple spending categories that track purchases."
       schema={schema}
       defaultValues={{ name: '', code: '' }}
       onSubmit={onSubmit}
@@ -43,13 +47,13 @@ export function CreateIndexDialog({ trigger }: { trigger: React.ReactNode }) {
       <FormInput<FormData>
         name="name"
         label="Name"
-        placeholder="Budget Index"
+        placeholder="Budget Designation"
       />
       <FormInput<FormData>
         name="code"
         label="Code"
         placeholder="80XXXX"
-        description="The index number to be associated with this index."
+        description="The designation number to be associated with this designation."
       />
     </FormDialog>
   );
