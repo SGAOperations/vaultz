@@ -11,6 +11,13 @@ export function formatNumber(value: number) {
   return value.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
+export function formatCurrency(value: number) {
+  return `$${value.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
 export function getFileUrl(key: string) {
   return `https://${process.env.NEXT_PUBLIC_UPLOADTHING_APP_ID}.ufs.sh/f/${key}`;
 }
@@ -46,8 +53,10 @@ export async function handleError<T>(
     const result = await promise;
 
     if (isError(result)) {
-      // Show error toast for ErrorType
-      toast.error(options.toast.error || 'An error occurred', { id: toastId });
+      // Show error toast for ErrorType - prefer server error message when available
+      const errorMessage =
+        result.error || options.toast.error || 'An error occurred';
+      toast.error(errorMessage, { id: toastId });
       if (options.onError) options.onError(result);
       return result;
     }

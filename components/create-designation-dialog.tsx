@@ -2,7 +2,7 @@
 
 import { z } from 'zod/v4';
 
-import { createAllocationGroup } from '@/prisma/services/allocation-groups';
+import { createDesignation } from '@/prisma/services/designation';
 
 import { handleError, isError } from '@/lib/utils';
 
@@ -14,21 +14,22 @@ const schema = z.object({
     .string()
     .min(2, 'Must be at least 2 characters')
     .max(50, 'Cannot be longer than 50 characters'),
+  code: z.string().length(6, 'Must be exactly 6 characters long'),
 });
 
 type FormData = z.infer<typeof schema>;
 
-export function CreateAllocationGroupDialog({
+export function CreateDesignationDialog({
   trigger,
 }: {
   trigger: React.ReactNode;
 }) {
   async function onSubmit(data: FormData): Promise<boolean> {
-    const result = await handleError(createAllocationGroup(data), {
+    const result = await handleError(createDesignation(data), {
       toast: {
-        loading: 'Creating allocation group...',
-        success: 'Allocation group created successfully',
-        error: 'Failed to create allocation group',
+        loading: 'Creating designation...',
+        success: 'Designation created successfully',
+        error: 'Failed to create designation',
       },
     });
     return !isError(result);
@@ -37,16 +38,22 @@ export function CreateAllocationGroupDialog({
   return (
     <FormDialog
       trigger={trigger}
-      title="Create Allocation Group"
-      description="An allocation group contains multiple allocations that track expenses."
+      title="Create Designation"
+      description="A designation contains multiple spending categories that track purchases."
       schema={schema}
-      defaultValues={{ name: '' }}
+      defaultValues={{ name: '', code: '' }}
       onSubmit={onSubmit}
     >
       <FormInput<FormData>
         name="name"
         label="Name"
-        placeholder="Office of the President"
+        placeholder="Budget Designation"
+      />
+      <FormInput<FormData>
+        name="code"
+        label="Code"
+        placeholder="80XXXX"
+        description="The designation number to be associated with this designation."
       />
     </FormDialog>
   );
