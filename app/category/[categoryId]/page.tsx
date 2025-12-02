@@ -6,6 +6,7 @@ import { getAllAllocationGroups } from '@/prisma/services/allocation-groups';
 import { getCategoryById } from '@/prisma/services/category';
 import { getUsers } from '@/prisma/services/user';
 
+import { AccountActionsMenu } from '@/components/account-actions-menu';
 import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/page-header';
 import { PurchaseCard } from '@/components/purchase-card';
@@ -41,12 +42,15 @@ export default async function CategoryPage({
         title={category.name}
         description={`Category code: ${category.code}`}
         actions={
-          <CreatePurchaseDialog
-            users={users}
-            categories={[category]}
-            allocationGroups={allocationGroups}
-            miscAllocations={miscAllocations}
-          />
+          <div className="flex gap-2">
+            <CreatePurchaseDialog
+              users={users}
+              categories={[category]}
+              allocationGroups={allocationGroups}
+              miscAllocations={miscAllocations}
+            />
+            <AccountActionsMenu account={category} />
+          </div>
         }
       />
 
