@@ -54,13 +54,8 @@ export function Header() {
       <nav className="hidden items-center gap-1 md:flex">
         {navItems.map(({ href, label, icon: Icon }) => {
           let isActive = false;
-          if (href === '/') {
-            isActive = pathname === '/';
-          } else if (href === '/index') {
-            isActive = pathname === '/index' || pathname.startsWith('/index/');
-          } else {
-            isActive = pathname.startsWith(href);
-          }
+          if (href === '/') isActive = pathname === '/';
+          else isActive = pathname.startsWith(href);
 
           return (
             <Link key={href} href={href}>
