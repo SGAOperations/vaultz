@@ -95,6 +95,7 @@ export function EditAccountDialog({
   }
 
   function handleCancel() {
+    handleOpenChange(false);
     setConfirmDelete(false);
     form.reset();
   }
