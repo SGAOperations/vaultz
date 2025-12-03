@@ -5,9 +5,9 @@ import { Calendar, DollarSign, FileText, User as UserIcon } from 'lucide-react';
 import { User } from '@/prisma/client';
 
 import {
-  AccountWithIndex,
   Allocation,
   AllocationGroupWithAllocations,
+  CategoryWithDesignation,
   PurchaseWithUser,
 } from '@/lib/types';
 import { formatNumber } from '@/lib/utils';
@@ -20,14 +20,14 @@ import { PurchaseDialog } from './purchase-dialog';
 export function PurchaseCard({
   purchase,
   users,
-  accounts,
+  categories,
   allocationGroups,
   miscAllocations,
   stopPropagation = false,
 }: {
   purchase: PurchaseWithUser;
   users: User[];
-  accounts: AccountWithIndex[];
+  categories: CategoryWithDesignation[];
   allocationGroups: AllocationGroupWithAllocations[];
   miscAllocations: Allocation[];
   stopPropagation?: boolean;
@@ -73,7 +73,7 @@ export function PurchaseCard({
       }
       purchase={purchase}
       users={users}
-      accounts={accounts}
+      categories={categories}
       allocationGroups={allocationGroups}
       miscAllocations={miscAllocations}
     />
