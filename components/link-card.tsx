@@ -18,6 +18,7 @@ export interface BadgeItem {
   iconColor: string;
   label: string;
   value: string;
+  valueColor?: string;
 }
 
 interface LinkCardProps {
@@ -76,7 +77,9 @@ export function LinkCard({
                     <span className="text-muted-foreground">
                       {badge.label}:
                     </span>{' '}
-                    <span className="font-semibold">{badge.value}</span>
+                    <span className={cn('font-semibold', badge.valueColor)}>
+                      {badge.value}
+                    </span>
                   </span>
                 </div>
               ))}

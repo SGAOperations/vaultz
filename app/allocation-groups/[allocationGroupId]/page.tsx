@@ -145,7 +145,9 @@ export default async function AllocationGroup({
                       <TrendingUp className="text-stat-remaining size-4" />
                       <span className="text-sm">
                         <span className="text-muted-foreground">Left:</span>{' '}
-                        <span className="font-semibold">
+                        <span
+                          className={`font-semibold ${remaining < 0 ? 'text-destructive' : ''}`}
+                        >
                           ${formatNumber(remaining)}
                         </span>
                       </span>

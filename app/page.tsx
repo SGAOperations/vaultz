@@ -154,6 +154,7 @@ function FinancialStatCard({
   };
 
   const styles = variantStyles[variant];
+  const isNegative = variant === 'remaining' && value < 0;
 
   return (
     <Card className="relative overflow-hidden p-4">
@@ -167,7 +168,9 @@ function FinancialStatCard({
         <p className="text-muted-foreground text-xs font-medium">{label}</p>
         <div className="flex items-baseline gap-0.5">
           <span className="text-muted-foreground text-xl">$</span>
-          <p className="text-3xl font-bold tracking-tight">
+          <p
+            className={`text-3xl font-bold tracking-tight ${isNegative ? 'text-destructive' : ''}`}
+          >
             {value.toLocaleString(undefined, {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2,

@@ -55,6 +55,7 @@ export function StatCard({
 }: StatCardProps) {
   const styles = variantStyles[variant];
   const Icon = styles.icon;
+  const isNegative = variant === 'remaining' && value < 0;
 
   return (
     <Card className="relative overflow-hidden p-4">
@@ -70,7 +71,9 @@ export function StatCard({
           {format === 'currency' && (
             <DollarSign className="text-muted-foreground size-4" />
           )}
-          <p className="text-3xl font-bold tracking-tight">
+          <p
+            className={`text-3xl font-bold tracking-tight ${isNegative ? 'text-destructive' : ''}`}
+          >
             {formatNumber(value)}
           </p>
         </div>
