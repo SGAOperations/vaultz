@@ -32,7 +32,7 @@ export async function getAllocationById({
   const allocation = await prisma.allocation.findUnique({
     where: { id },
     include: {
-      purchases: { orderBy: { timestamp: 'desc' }, include: { user: true } },
+      purchases: { orderBy: { purchasedAt: 'desc' }, include: { user: true } },
     },
   });
 
@@ -52,7 +52,7 @@ export async function getMiscAllocations(): Promise<AllocationWithPurchases[]> {
   const allocations = await prisma.allocation.findMany({
     where: { allocationGroupId: null },
     include: {
-      purchases: { orderBy: { timestamp: 'desc' }, include: { user: true } },
+      purchases: { orderBy: { purchasedAt: 'desc' }, include: { user: true } },
     },
     orderBy: { name: 'asc' },
   });

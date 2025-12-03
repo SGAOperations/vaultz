@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation';
 
 import {
   ChevronRight,
-  Layers,
+  CreditCard,
   Plus,
   TrendingDown,
   TrendingUp,
@@ -12,13 +12,14 @@ import {
 } from 'lucide-react';
 
 import { getMiscAllocations } from '@/prisma/services/allocation';
-import { getAllocationGroup } from '@/prisma/services/allocation-groups';
-import { getAllCategories } from '@/prisma/services/category';
+import { getAllAllocationGroups } from '@/prisma/services/allocation-groups';
+import { getCategoriesByDesignation } from '@/prisma/services/category';
+import { getDesignation } from '@/prisma/services/designation';
 import { getUsers } from '@/prisma/services/user';
 
 import { formatNumber } from '@/lib/utils';
 
-import { CreateAllocationDialog } from '@/components/create-allocation-dialog';
+import { CreateCategoryDialog } from '@/components/create-category-dialog';
 import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/page-header';
 import { PurchaseCard } from '@/components/purchase-card';
@@ -28,95 +29,89 @@ import { StatCards } from '@/components/stat-card';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 
-export const metadata: Metadata = { title: 'Allocation Group' };
+export const metadata: Metadata = { title: 'Designation' };
 
-export default async function AllocationGroup({
+export default async function DesignationPage({
   params,
 }: {
-  params: Promise<{ allocationGroupId: string }>;
+  params: Promise<{ designationId: string }>;
 }) {
-  const { allocationGroupId } = await params;
+  const { designationId } = await params;
 
-  const allocationGroup = await getAllocationGroup({ id: allocationGroupId });
-  if (allocationGroup === null) notFound();
+  const designation = await getDesignation({ id: designationId });
+  if (designation === null) notFound();
 
-  const categories = await getAllCategories();
+  const allocationGroups = await getAllAllocationGroups();
   const miscAllocations = await getMiscAllocations();
+  const categories = await getCategoriesByDesignation({ designationId });
   const users = await getUsers();
 
-  const amount = allocationGroup.allocations.reduce(
-    (acc, allocation) => acc + allocation.amount,
+  const spent = designation.purchases.reduce(
+    (acc, purchase) => acc + purchase.amount,
     0,
   );
-
-  const purchases = allocationGroup.allocations
-    .flatMap((allocation) => allocation.purchases)
-    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-
-  const spent = purchases.reduce((acc, purchase) => acc + purchase.amount, 0);
 
   return (
     <div className="flex w-full flex-col">
       <PageHeader
-        title={allocationGroup.name}
+        title={designation.name}
+        description={`Designation code: ${designation.code}`}
         actions={
           <div className="flex gap-2">
             <CreatePurchaseDialog
               users={users}
               categories={categories}
-              allocationGroups={[allocationGroup]}
+              allocationGroups={allocationGroups}
               miscAllocations={miscAllocations}
             />
-            <CreateAllocationDialog
+            <CreateCategoryDialog
+              designationId={designationId}
               trigger={
                 <Button variant="outline" className="gap-2">
                   <Plus className="size-4" />
-                  Create Allocation
+                  Create Spending Category
                 </Button>
               }
-              allocationGroupId={allocationGroup.id}
             />
           </div>
         }
       />
 
-      <StatCards total={amount} spent={spent} />
+      <StatCards total={designation.amount} spent={spent} />
 
-      <SectionHeader title="Allocations" />
+      <SectionHeader title="Spending Categories" />
 
-      {allocationGroup.allocations.length === 0 ? (
+      {categories.length === 0 ? (
         <EmptyState
-          message="No allocations yet"
-          description="Create allocations to organize this group's budget"
+          message="No spending categories yet"
+          description="Create categories to organize this designation's budget"
         />
       ) : (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          {allocationGroup.allocations.map((allocation) => {
-            const allocationSpent = allocation.purchases.reduce(
-              (acc, purchase) => acc + purchase.amount,
-              0,
-            );
-            const remaining = allocation.amount - allocationSpent;
+          {categories.map((category) => {
+            const categorySpent = designation.purchases
+              .filter((v) => v.categoryId === category.id)
+              .reduce((acc, purchase) => acc + purchase.amount, 0);
+            const remaining = category.amount - categorySpent;
 
             return (
               <Link
-                href={`/allocations/${allocation.id}`}
-                key={allocation.id}
+                href={`/category/${category.id}`}
+                key={category.id}
                 className="group"
               >
                 <Card className="hover:border-primary/30 p-4 transition-all duration-200 hover:shadow-md">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
                       <div className="bg-primary/10 flex size-10 shrink-0 items-center justify-center rounded-lg">
-                        <Layers className="text-primary size-5" />
+                        <CreditCard className="text-primary size-5" />
                       </div>
                       <div>
                         <h3 className="group-hover:text-primary font-semibold transition-colors">
-                          {allocation.name}
+                          {category.name}
                         </h3>
-                        <p className="text-muted-foreground text-sm">
-                          {allocation.purchases.length} purchase
-                          {allocation.purchases.length !== 1 ? 's' : ''}
+                        <p className="text-muted-foreground font-mono text-sm">
+                          {category.code}
                         </p>
                       </div>
                     </div>
@@ -128,7 +123,7 @@ export default async function AllocationGroup({
                       <span className="text-sm">
                         <span className="text-muted-foreground">Budget:</span>{' '}
                         <span className="font-semibold">
-                          ${formatNumber(allocation.amount)}
+                          ${formatNumber(category.amount)}
                         </span>
                       </span>
                     </div>
@@ -137,7 +132,7 @@ export default async function AllocationGroup({
                       <span className="text-sm">
                         <span className="text-muted-foreground">Spent:</span>{' '}
                         <span className="font-semibold">
-                          ${formatNumber(allocationSpent)}
+                          ${formatNumber(categorySpent)}
                         </span>
                       </span>
                     </div>
@@ -160,20 +155,20 @@ export default async function AllocationGroup({
 
       <SectionHeader title="Purchases" />
 
-      {purchases.length === 0 ? (
+      {designation.purchases.length === 0 ? (
         <EmptyState
           message="No purchases yet"
-          description="Record purchases to track spending in this group"
+          description="Record purchases to track spending in this designation"
         />
       ) : (
         <div className="flex flex-col gap-2">
-          {purchases.map((purchase) => (
+          {designation.purchases.map((purchase) => (
             <PurchaseCard
               key={purchase.id}
               purchase={purchase}
               users={users}
               categories={categories}
-              allocationGroups={[allocationGroup]}
+              allocationGroups={allocationGroups}
               miscAllocations={miscAllocations}
             />
           ))}
