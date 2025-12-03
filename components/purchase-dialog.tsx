@@ -127,6 +127,17 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
 
   const receiptUrls = purchase?.receipts.map((r) => getFileUrl(r)) || [];
 
+  // Lookup category and allocation names for display
+  const categoryName = purchase
+    ? categories.find((c) => c.id === purchase.categoryId)?.name || 'Unknown'
+    : '';
+  const allocationName = purchase?.allocationId
+    ? [
+        ...allocationGroups.flatMap((g) => g.allocations),
+        ...miscAllocations,
+      ].find((a) => a.id === purchase.allocationId)?.name || 'Unknown'
+    : '';
+
   const form = useForm({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -597,10 +608,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                     <Tag className="text-primary size-4" />
                     <span className="text-sm">
                       <span className="text-muted-foreground">Category:</span>{' '}
-                      <span className="font-semibold">
-                        {categories.find((c) => c.id === purchase!.categoryId)
-                          ?.name || 'Unknown'}
-                      </span>
+                      <span className="font-semibold">{categoryName}</span>
                     </span>
                   </div>
                 )}
@@ -610,13 +618,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                     <FolderOpen className="text-primary size-4" />
                     <span className="text-sm">
                       <span className="text-muted-foreground">Allocation:</span>{' '}
-                      <span className="font-semibold">
-                        {[
-                          ...allocationGroups.flatMap((g) => g.allocations),
-                          ...miscAllocations,
-                        ].find((a) => a.id === purchase!.allocationId)?.name ||
-                          'Unknown'}
-                      </span>
+                      <span className="font-semibold">{allocationName}</span>
                     </span>
                   </div>
                 )}
