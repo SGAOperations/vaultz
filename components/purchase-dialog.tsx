@@ -23,7 +23,12 @@ import {
   PurchaseWithUser,
 } from '@/lib/types';
 import { UploadDropzone } from '@/lib/uploadthing';
-import { formatNumber, getFileUrl, handleError } from '@/lib/utils';
+import {
+  formatNumber,
+  getFileUrl,
+  handleError,
+  parseDateOnly,
+} from '@/lib/utils';
 
 import {
   Dialog,
@@ -118,7 +123,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
       allocationId: purchase?.allocationId || '',
       description: purchase?.description || '',
       amount: purchase?.amount || 0,
-      purchasedAt: purchase ? new Date(purchase.purchasedAt) : new Date(),
+      purchasedAt: purchase ? parseDateOnly(purchase.purchasedAt) : new Date(),
       receipts: purchase?.receipts || [],
     },
   });
@@ -198,7 +203,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
       allocationId: purchase!.allocationId || '',
       description: purchase!.description,
       amount: purchase!.amount,
-      purchasedAt: new Date(purchase!.purchasedAt),
+      purchasedAt: parseDateOnly(purchase!.purchasedAt),
       receipts: purchase!.receipts,
     });
     setReceiptsToDisplay(purchase!.receipts);
