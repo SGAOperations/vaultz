@@ -556,7 +556,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
           <>
             {/* Main Purchase Information with prominent badges */}
             <div className="space-y-6">
-              {/* Primary Info - Amount and User */}
+              {/* Primary Info - Amount and Description */}
               <div className="flex flex-wrap gap-3">
                 <div className="bg-primary/10 ring-primary/20 flex items-center gap-3 rounded-lg px-4 py-3 ring-1">
                   <div className="bg-primary/20 flex size-10 items-center justify-center rounded-lg">
@@ -570,21 +570,35 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                   </div>
                 </div>
 
-                <div className="bg-muted flex flex-1 items-center gap-3 rounded-lg px-4 py-3">
-                  <div className="bg-primary/10 flex size-10 items-center justify-center rounded-lg">
-                    <UserIcon className="text-primary size-5" />
+                {purchase!.description && (
+                  <div className="bg-muted flex flex-1 items-center gap-3 rounded-lg px-4 py-3">
+                    <div className="bg-primary/10 flex size-10 items-center justify-center rounded-lg">
+                      <FileText className="text-primary size-5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-muted-foreground text-xs">
+                        Description
+                      </p>
+                      <p className="truncate font-semibold">
+                        {purchase!.description}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-muted-foreground text-xs">Purchaser</p>
-                    <p className="font-semibold">
-                      {purchase!.user.first} {purchase!.user.last}
-                    </p>
-                  </div>
-                </div>
+                )}
               </div>
 
-              {/* Secondary Info - Dates */}
+              {/* Secondary Info - User, Dates, and ID */}
               <div className="flex flex-wrap gap-3">
+                <div className="bg-muted flex items-center gap-2 rounded-full px-4 py-2">
+                  <UserIcon className="text-primary size-4" />
+                  <span className="text-sm">
+                    <span className="text-muted-foreground">Purchaser:</span>{' '}
+                    <span className="font-semibold">
+                      {purchase!.user.first} {purchase!.user.last}
+                    </span>
+                  </span>
+                </div>
+
                 <div className="bg-muted flex items-center gap-2 rounded-full px-4 py-2">
                   <Calendar className="text-primary size-4" />
                   <span className="text-sm">
@@ -603,6 +617,16 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                     <span className="text-muted-foreground">Created:</span>{' '}
                     <span className="font-semibold">
                       <DateTime date={purchase!.createdAt} />
+                    </span>
+                  </span>
+                </div>
+
+                <div className="bg-muted flex items-center gap-2 rounded-full px-4 py-2">
+                  <Hash className="text-muted-foreground size-4" />
+                  <span className="text-sm">
+                    <span className="text-muted-foreground">ID:</span>{' '}
+                    <span className="font-mono text-xs font-semibold">
+                      {purchase!.id.slice(0, 8)}
                     </span>
                   </span>
                 </div>
@@ -631,19 +655,6 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                 )}
               </div>
 
-              {/* Description */}
-              {purchase!.description && (
-                <div className="bg-muted rounded-lg px-4 py-3">
-                  <div className="mb-2 flex items-center gap-2">
-                    <FileText className="text-primary size-4" />
-                    <span className="text-muted-foreground text-sm font-medium">
-                      Description
-                    </span>
-                  </div>
-                  <p className="text-sm">{purchase!.description}</p>
-                </div>
-              )}
-
               {/* Receipts */}
               {receiptUrls.length > 0 && (
                 <div className="bg-muted rounded-lg px-4 py-3">
@@ -669,16 +680,6 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                   </div>
                 </div>
               )}
-
-              {/* Purchase ID - Less prominent */}
-              <div className="border-t pt-4">
-                <div className="flex items-center gap-2">
-                  <Hash className="text-muted-foreground size-4" />
-                  <span className="text-muted-foreground text-xs">
-                    Purchase ID: {purchase!.id}
-                  </span>
-                </div>
-              </div>
             </div>
 
             <div className="flex gap-2">
