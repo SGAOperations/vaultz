@@ -356,7 +356,6 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                             },
                           ]}
                           {...field}
-                          value={field.value || ''}
                           name="allocation"
                         />
                       </FormControl>
@@ -372,7 +371,9 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                       <FormLabel>Purchase Date</FormLabel>
                       <FormControl>
                         <DatePicker
-                          value={new Date(field.value)}
+                          value={
+                            field.value ? new Date(field.value) : new Date()
+                          }
                           onChange={(val: Date) => field.onChange(val)}
                         />
                       </FormControl>
