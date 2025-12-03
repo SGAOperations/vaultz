@@ -21,6 +21,8 @@ interface FormInputProps<TFieldValues extends FieldValues> extends Omit<
   label: string;
   description?: string;
   currency?: boolean;
+  prefix?: string;
+  numbersOnly?: boolean;
 }
 
 function FormInput<TFieldValues extends FieldValues>({
@@ -28,6 +30,8 @@ function FormInput<TFieldValues extends FieldValues>({
   label,
   description,
   currency,
+  prefix,
+  numbersOnly,
   ...inputProps
 }: FormInputProps<TFieldValues>) {
   const form = useFormContext<TFieldValues>();
@@ -48,6 +52,22 @@ function FormInput<TFieldValues extends FieldValues>({
                 onChange={(e) =>
                   field.onChange(e.target.value.replace(/^\$/, ''))
                 }
+              />
+            ) : prefix ? (
+              <Input
+                {...inputProps}
+                {...field}
+                value={field.value ? prefix + field.value : prefix}
+                onChange={(e) => {
+                  let value = e.target.value.replace(
+                    new RegExp(`^${prefix}`),
+                    '',
+                  );
+                  if (numbersOnly) {
+                    value = value.replace(/\D/g, '');
+                  }
+                  field.onChange(value);
+                }}
               />
             ) : (
               <Input {...inputProps} {...field} />
