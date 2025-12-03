@@ -587,8 +587,9 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                 )}
               </div>
 
-              {/* Secondary Info - User, Dates, and ID */}
+              {/* All Badges - Ordered: Purchaser, Purchase Date, Category, Allocation, Created, ID */}
               <div className="flex flex-wrap gap-3">
+                {/* Purchaser */}
                 <div className="bg-muted flex items-center gap-2 rounded-full px-4 py-2">
                   <UserIcon className="text-primary size-4" />
                   <span className="text-sm">
@@ -599,6 +600,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                   </span>
                 </div>
 
+                {/* Purchase Date */}
                 <div className="bg-muted flex items-center gap-2 rounded-full px-4 py-2">
                   <Calendar className="text-primary size-4" />
                   <span className="text-sm">
@@ -611,29 +613,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                   </span>
                 </div>
 
-                <div className="bg-muted flex items-center gap-2 rounded-full px-4 py-2">
-                  <Clock className="text-muted-foreground size-4" />
-                  <span className="text-sm">
-                    <span className="text-muted-foreground">Created:</span>{' '}
-                    <span className="font-semibold">
-                      <DateTime date={purchase!.createdAt} />
-                    </span>
-                  </span>
-                </div>
-
-                <div className="bg-muted flex items-center gap-2 rounded-full px-4 py-2">
-                  <Hash className="text-muted-foreground size-4" />
-                  <span className="text-sm">
-                    <span className="text-muted-foreground">ID:</span>{' '}
-                    <span className="font-mono text-xs font-semibold">
-                      {purchase!.id.slice(0, 8)}
-                    </span>
-                  </span>
-                </div>
-              </div>
-
-              {/* Category and Allocation Info */}
-              <div className="flex flex-wrap gap-3">
+                {/* Category (optional) */}
                 {categoryName && (
                   <div className="bg-muted flex items-center gap-2 rounded-full px-4 py-2">
                     <Tag className="text-primary size-4" />
@@ -644,6 +624,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                   </div>
                 )}
 
+                {/* Allocation (optional) */}
                 {allocationName && (
                   <div className="bg-muted flex items-center gap-2 rounded-full px-4 py-2">
                     <FolderOpen className="text-primary size-4" />
@@ -653,6 +634,28 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                     </span>
                   </div>
                 )}
+
+                {/* Created */}
+                <div className="bg-muted flex items-center gap-2 rounded-full px-4 py-2">
+                  <Clock className="text-muted-foreground size-4" />
+                  <span className="text-sm">
+                    <span className="text-muted-foreground">Created:</span>{' '}
+                    <span className="font-semibold">
+                      <DateTime date={purchase!.createdAt} />
+                    </span>
+                  </span>
+                </div>
+
+                {/* ID */}
+                <div className="bg-muted flex items-center gap-2 rounded-full px-4 py-2">
+                  <Hash className="text-muted-foreground size-4" />
+                  <span className="text-sm">
+                    <span className="text-muted-foreground">ID:</span>{' '}
+                    <span className="font-mono text-xs font-semibold">
+                      {purchase!.id}
+                    </span>
+                  </span>
+                </div>
               </div>
 
               {/* Receipts */}
