@@ -16,7 +16,7 @@ import { getAllocationGroup } from '@/prisma/services/allocation-groups';
 import { getAllCategories } from '@/prisma/services/category';
 import { getUsers } from '@/prisma/services/user';
 
-import { formatNumber } from '@/lib/utils';
+import { cn, formatNumber } from '@/lib/utils';
 
 import { CreateAllocationDialog } from '@/components/create-allocation-dialog';
 import { EmptyState } from '@/components/empty-state';
@@ -146,7 +146,10 @@ export default async function AllocationGroup({
                       <span className="text-sm">
                         <span className="text-muted-foreground">Left:</span>{' '}
                         <span
-                          className={`font-semibold ${remaining < 0 ? 'text-destructive' : ''}`}
+                          className={cn(
+                            'font-semibold',
+                            remaining < 0 && 'text-destructive',
+                          )}
                         >
                           ${formatNumber(remaining)}
                         </span>

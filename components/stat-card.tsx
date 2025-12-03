@@ -7,7 +7,7 @@ import {
   Wallet,
 } from 'lucide-react';
 
-import { formatNumber } from '@/lib/utils';
+import { cn, formatNumber } from '@/lib/utils';
 
 import { Card } from '@/components/ui/card';
 
@@ -72,7 +72,10 @@ export function StatCard({
             <DollarSign className="text-muted-foreground size-4" />
           )}
           <p
-            className={`text-3xl font-bold tracking-tight ${isNegative ? 'text-destructive' : ''}`}
+            className={cn(
+              'text-3xl font-bold tracking-tight',
+              isNegative && 'text-destructive',
+            )}
           >
             {formatNumber(value)}
           </p>

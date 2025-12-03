@@ -13,6 +13,8 @@ import {
   getSpendingByDesignation,
 } from '@/prisma/services/dashboard';
 
+import { cn } from '@/lib/utils';
+
 import { DashboardCharts } from '@/components/dashboard-charts';
 import { PageHeader } from '@/components/page-header';
 import { Card } from '@/components/ui/card';
@@ -169,7 +171,10 @@ function FinancialStatCard({
         <div className="flex items-baseline gap-0.5">
           <span className="text-muted-foreground text-xl">$</span>
           <p
-            className={`text-3xl font-bold tracking-tight ${isNegative ? 'text-destructive' : ''}`}
+            className={cn(
+              'text-3xl font-bold tracking-tight',
+              isNegative && 'text-destructive',
+            )}
           >
             {value.toLocaleString(undefined, {
               minimumFractionDigits: 2,
