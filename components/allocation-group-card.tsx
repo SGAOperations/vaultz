@@ -20,8 +20,8 @@ export function AllocationGroupCard({
       ? 0
       : purchases.map((v) => v.amount).reduce((p, c) => p + c);
   const totalRemaining = totalAllocated - totalSpent;
-  const percentSpent =
-    totalAllocated === 0 ? 0 : (totalSpent / totalAllocated) * 100;
+  const percentRemaining =
+    totalAllocated === 0 ? 0 : (totalRemaining / totalAllocated) * 100;
 
   return (
     <LinkCard
@@ -50,9 +50,9 @@ export function AllocationGroupCard({
         },
         {
           icon: Percent,
-          iconColor: 'text-stat-remaining',
-          label: 'Spent',
-          value: `${formatNumber(percentSpent)}%`,
+          iconColor: 'text-info',
+          label: 'Left',
+          value: `${formatNumber(percentRemaining)}%`,
         },
       ]}
     />
