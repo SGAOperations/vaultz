@@ -1,4 +1,10 @@
-import { CreditCard, Percent, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
+import {
+  CreditCard,
+  Percent,
+  TrendingDown,
+  TrendingUp,
+  Wallet,
+} from 'lucide-react';
 
 import { DesignationWithPurchases } from '@/lib/types';
 import { formatNumber } from '@/lib/utils';

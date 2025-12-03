@@ -1,4 +1,10 @@
-import { Layers, Percent, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
+import {
+  Layers,
+  Percent,
+  TrendingDown,
+  TrendingUp,
+  Wallet,
+} from 'lucide-react';
 
 import { AllocationGroupWithAllocations } from '@/lib/types';
 import { formatNumber } from '@/lib/utils';
