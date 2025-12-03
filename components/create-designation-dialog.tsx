@@ -14,7 +14,7 @@ const schema = z.object({
     .string()
     .min(2, 'Must be at least 2 characters')
     .max(50, 'Cannot be longer than 50 characters'),
-  code: z.string().regex(/^\d{4,6}$/, 'Must be 4-6 digits'),
+  code: z.string().regex(/^\d{4}$/, 'Must be exactly 4 digits'),
 });
 
 type FormData = z.infer<typeof schema>;
