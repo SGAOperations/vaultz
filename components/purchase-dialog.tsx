@@ -10,7 +10,6 @@ import {
   DollarSign,
   FileText,
   FolderOpen,
-  Hash,
   Pencil,
   Plus,
   Receipt,
@@ -278,10 +277,23 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="w-2/3 sm:max-w-full">
+      <DialogContent
+        className={
+          isEditing ? 'w-2/3 sm:max-w-full' : 'sm:max-w-lg md:max-w-xl'
+        }
+      >
         <DialogHeader>
-          <DialogTitle>{dialogTitle}</DialogTitle>
-          <DialogDescription>{dialogDescription}</DialogDescription>
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1">
+              <DialogTitle>{dialogTitle}</DialogTitle>
+              <DialogDescription>{dialogDescription}</DialogDescription>
+            </div>
+            {!isEditing && purchase && (
+              <div className="text-muted-foreground shrink-0 text-right text-xs">
+                <span className="font-mono">{purchase.id}</span>
+              </div>
+            )}
+          </div>
         </DialogHeader>
 
         {isEditing ? (
@@ -587,7 +599,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                 )}
               </div>
 
-              {/* All Badges - Ordered: Purchaser, Purchase Date, Category, Allocation, Created, ID */}
+              {/* All Badges - Ordered: Purchaser, Purchase Date, Category, Allocation, Created */}
               <div className="flex flex-wrap gap-3">
                 {/* Purchaser */}
                 <div className="bg-muted flex items-center gap-2 rounded-full px-4 py-2">
@@ -642,17 +654,6 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                     <span className="text-muted-foreground">Created:</span>{' '}
                     <span className="font-semibold">
                       <DateTime date={purchase!.createdAt} />
-                    </span>
-                  </span>
-                </div>
-
-                {/* ID */}
-                <div className="bg-muted flex items-center gap-2 rounded-full px-4 py-2">
-                  <Hash className="text-muted-foreground size-4" />
-                  <span className="text-sm">
-                    <span className="text-muted-foreground">ID:</span>{' '}
-                    <span className="font-mono text-xs font-semibold">
-                      {purchase!.id}
                     </span>
                   </span>
                 </div>
