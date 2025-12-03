@@ -4,7 +4,21 @@ import { useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Pencil, Plus, Trash2, X } from 'lucide-react';
+import {
+  Calendar,
+  Clock,
+  DollarSign,
+  FileText,
+  FolderOpen,
+  Hash,
+  Pencil,
+  Plus,
+  Receipt,
+  Tag,
+  Trash2,
+  User as UserIcon,
+  X,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { twMerge } from 'tailwind-merge';
 import { z } from 'zod/v4';
@@ -522,41 +536,140 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
           </FormProvider>
         ) : (
           <>
-            <div className="grid grid-cols-2 gap-4">
-              <p>Purchase ID</p>
-              <p className="text-muted-foreground">{purchase!.id}</p>
-              <p>Created</p>
-              <p className="text-muted-foreground">
-                <DateTime date={purchase!.createdAt} />
-              </p>
-              <p>Purchase Date</p>
-              <p className="text-muted-foreground">
-                <DateTime date={purchase!.purchasedAt} dateOnly />
-              </p>
-              <p>Name</p>
-              <p className="text-muted-foreground">
-                {purchase!.user.first} {purchase!.user.last}
-              </p>
-              <p>Description</p>
-              <p className="text-muted-foreground">{purchase!.description}</p>
-              <p>Amount</p>
-              <p className="text-muted-foreground">
-                ${formatNumber(purchase!.amount)}
-              </p>
-              <p>Receipts</p>
-              <p className="text-muted-foreground flex gap-3">
-                {receiptUrls.map((url, i) => (
-                  <a
-                    key={url}
-                    href={url}
-                    target="_blank"
-                    className="hover:underline"
-                  >
-                    File {i + 1}
-                  </a>
-                ))}
-                {receiptUrls.length === 0 && 'N/A'}
-              </p>
+            {/* Main Purchase Information with prominent badges */}
+            <div className="space-y-6">
+              {/* Primary Info - Amount and User */}
+              <div className="flex flex-wrap gap-3">
+                <div className="bg-primary/10 ring-primary/20 flex items-center gap-3 rounded-lg px-4 py-3 ring-1">
+                  <div className="bg-primary/20 flex size-10 items-center justify-center rounded-lg">
+                    <DollarSign className="text-primary size-6" />
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs">Amount</p>
+                    <p className="text-2xl font-bold">
+                      ${formatNumber(purchase!.amount)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-muted flex flex-1 items-center gap-3 rounded-lg px-4 py-3">
+                  <div className="bg-primary/10 flex size-10 items-center justify-center rounded-lg">
+                    <UserIcon className="text-primary size-5" />
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs">Purchaser</p>
+                    <p className="font-semibold">
+                      {purchase!.user.first} {purchase!.user.last}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Secondary Info - Dates */}
+              <div className="flex flex-wrap gap-3">
+                <div className="bg-muted flex items-center gap-2 rounded-full px-4 py-2">
+                  <Calendar className="text-primary size-4" />
+                  <span className="text-sm">
+                    <span className="text-muted-foreground">
+                      Purchase Date:
+                    </span>{' '}
+                    <span className="font-semibold">
+                      <DateTime date={purchase!.purchasedAt} dateOnly />
+                    </span>
+                  </span>
+                </div>
+
+                <div className="bg-muted flex items-center gap-2 rounded-full px-4 py-2">
+                  <Clock className="text-muted-foreground size-4" />
+                  <span className="text-sm">
+                    <span className="text-muted-foreground">Created:</span>{' '}
+                    <span className="font-semibold">
+                      <DateTime date={purchase!.createdAt} />
+                    </span>
+                  </span>
+                </div>
+              </div>
+
+              {/* Category and Allocation Info */}
+              <div className="flex flex-wrap gap-3">
+                {purchase!.categoryId && (
+                  <div className="bg-muted flex items-center gap-2 rounded-full px-4 py-2">
+                    <Tag className="text-primary size-4" />
+                    <span className="text-sm">
+                      <span className="text-muted-foreground">Category:</span>{' '}
+                      <span className="font-semibold">
+                        {categories.find((c) => c.id === purchase!.categoryId)
+                          ?.name || 'Unknown'}
+                      </span>
+                    </span>
+                  </div>
+                )}
+
+                {purchase!.allocationId && (
+                  <div className="bg-muted flex items-center gap-2 rounded-full px-4 py-2">
+                    <FolderOpen className="text-primary size-4" />
+                    <span className="text-sm">
+                      <span className="text-muted-foreground">Allocation:</span>{' '}
+                      <span className="font-semibold">
+                        {[
+                          ...allocationGroups.flatMap((g) => g.allocations),
+                          ...miscAllocations,
+                        ].find((a) => a.id === purchase!.allocationId)?.name ||
+                          'Unknown'}
+                      </span>
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Description */}
+              {purchase!.description && (
+                <div className="bg-muted rounded-lg px-4 py-3">
+                  <div className="mb-2 flex items-center gap-2">
+                    <FileText className="text-primary size-4" />
+                    <span className="text-muted-foreground text-sm font-medium">
+                      Description
+                    </span>
+                  </div>
+                  <p className="text-sm">{purchase!.description}</p>
+                </div>
+              )}
+
+              {/* Receipts */}
+              {receiptUrls.length > 0 && (
+                <div className="bg-muted rounded-lg px-4 py-3">
+                  <div className="mb-2 flex items-center gap-2">
+                    <Receipt className="text-primary size-4" />
+                    <span className="text-muted-foreground text-sm font-medium">
+                      Receipts
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {receiptUrls.map((url, i) => (
+                      <a
+                        key={url}
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="bg-background hover:bg-accent flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:underline"
+                      >
+                        <Receipt className="size-4" />
+                        File {i + 1}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Purchase ID - Less prominent */}
+              <div className="border-t pt-4">
+                <div className="flex items-center gap-2">
+                  <Hash className="text-muted-foreground size-4" />
+                  <span className="text-muted-foreground text-xs">
+                    Purchase ID: {purchase!.id}
+                  </span>
+                </div>
+              </div>
             </div>
 
             <div className="flex gap-2">
