@@ -23,13 +23,6 @@ export function formatCurrency(value: number) {
   return isNegative ? `-$${formatted}` : `$${formatted}`;
 }
 
-export function formatCurrency(value: number) {
-  return `$${value.toLocaleString(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
-}
-
 export function getFileUrl(key: string) {
   return `https://${process.env.NEXT_PUBLIC_UPLOADTHING_APP_ID}.ufs.sh/f/${key}`;
 }
