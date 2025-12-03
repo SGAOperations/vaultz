@@ -22,6 +22,57 @@ export function getFileUrl(key: string) {
   return `https://${process.env.NEXT_PUBLIC_UPLOADTHING_APP_ID}.ufs.sh/f/${key}`;
 }
 
+/**
+ * Parses a date-only value from the database into a Date object in local timezone.
+ * This prevents off-by-one errors when date-only fields are interpreted as UTC midnight.
+ */
+export function parseDateOnly(dateValue: Date | string): Date {
+  if (dateValue instanceof Date) {
+    const year = dateValue.getUTCFullYear();
+    const month = dateValue.getUTCMonth();
+    const day = dateValue.getUTCDate();
+    return new Date(year, month, day);
+  }
+
+  const dateStr = String(dateValue);
+  const parts = dateStr.split('-');
+
+  if (parts.length !== 3) {
+    throw new Error(`Invalid date format: expected YYYY-MM-DD, got ${dateStr}`);
+  }
+
+  const [yearStr, monthStr, dayStr] = parts;
+  const year = parseInt(yearStr, 10);
+  const month = parseInt(monthStr, 10);
+  const day = parseInt(dayStr, 10);
+
+  if (isNaN(year) || isNaN(month) || isNaN(day)) {
+    throw new Error(`Invalid date values in: ${dateStr}`);
+  }
+
+  if (month < 1 || month > 12) {
+    throw new Error(`Invalid month value: ${month}`);
+  }
+
+  if (day < 1 || day > 31) {
+    throw new Error(`Invalid day value: ${day}`);
+  }
+
+  const result = new Date(year, month - 1, day);
+
+  if (
+    result.getFullYear() !== year ||
+    result.getMonth() !== month - 1 ||
+    result.getDate() !== day
+  ) {
+    throw new Error(
+      `Invalid date: ${dateStr} (day ${day} does not exist in month ${month})`,
+    );
+  }
+
+  return result;
+}
+
 // Type definitions for toast handling
 export type ErrorType = { error: string };
 
