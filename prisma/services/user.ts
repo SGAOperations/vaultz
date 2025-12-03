@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { User } from '@/prisma/client';
 
 import prisma from '@/lib/prisma';
-import { UserWithPurchases, UserWithPurchasesAndAccount } from '@/lib/types';
+import { UserWithPurchases, UserWithPurchasesAndCategory } from '@/lib/types';
 import { ResponseType } from '@/lib/utils';
 
 export async function createUser({
@@ -75,13 +75,13 @@ export async function getUserById({
   id,
 }: {
   id: string;
-}): Promise<UserWithPurchasesAndAccount | null> {
+}): Promise<UserWithPurchasesAndCategory | null> {
   const user = await prisma.user.findUnique({
     where: { id, deletedAt: null },
     include: {
       purchases: {
-        orderBy: { createdAt: 'desc' },
-        include: { user: true, account: true },
+        orderBy: { purchasedAt: 'desc' },
+        include: { user: true, category: true },
       },
     },
   });
@@ -92,9 +92,9 @@ export async function getUserById({
     purchases: user.purchases.map((purchase) => ({
       ...purchase,
       amount: purchase.amount.toNumber(),
-      account: {
-        ...purchase.account,
-        amount: purchase.account.amount.toNumber(),
+      category: {
+        ...purchase.category,
+        amount: purchase.category.amount.toNumber(),
       },
     })),
   };

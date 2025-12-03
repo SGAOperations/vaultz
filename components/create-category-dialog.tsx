@@ -2,7 +2,7 @@
 
 import { z } from 'zod/v4';
 
-import { createAccount } from '@/prisma/services/account';
+import { createCategory } from '@/prisma/services/category';
 
 import { handleError, isError } from '@/lib/utils';
 
@@ -10,9 +10,9 @@ import { FormDialog } from '@/components/ui/form-dialog';
 import { FormInput } from '@/components/ui/form-input';
 
 const schema = z.object({
-  indexId: z.string().min(1, 'Please select an index'),
+  designationId: z.string().min(1, 'Please select a designation'),
   code: z.string().length(4, 'Must be exactly 4 characters long'),
-  name: z.string().min(1, 'Please enter an account name'),
+  name: z.string().min(1, 'Please enter a category name'),
   amount: z.coerce
     .number<number>()
     .min(0.01, 'Must be at least $0.01')
@@ -21,19 +21,19 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
-export function CreateAccountDialog({
-  indexId,
+export function CreateCategoryDialog({
+  designationId,
   trigger,
 }: {
-  indexId: string;
+  designationId: string;
   trigger: React.ReactNode;
 }) {
   async function onSubmit(data: FormData): Promise<boolean> {
-    const result = await handleError(createAccount(data), {
+    const result = await handleError(createCategory(data), {
       toast: {
-        loading: 'Creating account...',
-        success: 'Account created successfully',
-        error: 'Failed to create account',
+        loading: 'Creating spending category...',
+        success: 'Spending category created successfully',
+        error: 'Failed to create spending category',
       },
     });
     return !isError(result);
@@ -42,10 +42,10 @@ export function CreateAccountDialog({
   return (
     <FormDialog
       trigger={trigger}
-      title="Create Account"
-      description="Each account has a set budget."
+      title="Create Spending Category"
+      description="Each spending category has a set budget."
       schema={schema}
-      defaultValues={{ indexId, code: '', name: '', amount: 0 }}
+      defaultValues={{ designationId, code: '', name: '', amount: 0 }}
       onSubmit={onSubmit}
     >
       <FormInput<FormData> name="name" label="Name" placeholder="Food" />
@@ -53,7 +53,7 @@ export function CreateAccountDialog({
         name="code"
         label="Code"
         placeholder="7XXX"
-        description="The spend category number to be associated with this account."
+        description="The spending category number to be associated with this category."
       />
       <FormInput<FormData>
         name="amount"

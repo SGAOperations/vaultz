@@ -17,13 +17,19 @@ import {
 } from '@/prisma/services/purchase';
 
 import {
-  AccountWithIndex,
   Allocation,
   AllocationGroupWithAllocations,
+  CategoryWithDesignation,
   PurchaseWithUser,
 } from '@/lib/types';
 import { UploadDropzone } from '@/lib/uploadthing';
-import { formatCurrency, getFileUrl, handleError } from '@/lib/utils';
+import {
+  formatCurrency,
+  formatNumber,
+  getFileUrl,
+  handleError,
+  parseDateOnly,
+} from '@/lib/utils';
 
 import {
   Dialog,
@@ -50,7 +56,7 @@ import { FormInput } from './ui/form-input';
 
 const schema = z.object({
   userId: z.string().min(1, 'Please select a user'),
-  accountId: z.string().min(1, 'Please select an account'),
+  categoryId: z.string().min(1, 'Please select a category'),
   allocationId: z.string().optional(),
   description: z.string().optional(),
   amount: z.coerce
@@ -76,7 +82,7 @@ type CreatePurchaseProps = {
   trigger?: React.ReactNode;
   purchase?: never;
   users: User[];
-  accounts: AccountWithIndex[];
+  categories: CategoryWithDesignation[];
   allocationGroups?: AllocationGroupWithAllocations[];
   miscAllocations?: Allocation[];
 };
@@ -87,7 +93,7 @@ type ViewEditPurchaseProps = {
   trigger: React.ReactNode;
   purchase: PurchaseWithUser;
   users: User[];
-  accounts: AccountWithIndex[];
+  categories: CategoryWithDesignation[];
   allocationGroups: AllocationGroupWithAllocations[];
   miscAllocations: Allocation[];
 };
@@ -97,7 +103,7 @@ type PurchaseDialogProps = CreatePurchaseProps | ViewEditPurchaseProps;
 export function PurchaseDialog(props: PurchaseDialogProps) {
   const {
     users,
-    accounts,
+    categories,
     allocationGroups = [],
     miscAllocations = [],
   } = props;
@@ -119,12 +125,13 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
     resolver: zodResolver(schema),
     defaultValues: {
       userId: purchase?.userId || '',
-      accountId:
-        purchase?.accountId || (accounts.length === 1 ? accounts[0].id : ''),
+      categoryId:
+        purchase?.categoryId ||
+        (categories.length === 1 ? categories[0].id : ''),
       allocationId: purchase?.allocationId || '',
       description: purchase?.description || '',
       amount: purchase?.amount || 0,
-      purchasedAt: purchase ? new Date(purchase.purchasedAt) : new Date(),
+      purchasedAt: purchase ? parseDateOnly(purchase.purchasedAt) : new Date(),
       receipts: purchase?.receipts || [],
     },
   });
@@ -200,11 +207,11 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
     // Reset form to original values
     form.reset({
       userId: purchase!.userId,
-      accountId: purchase!.accountId,
+      categoryId: purchase!.categoryId,
       allocationId: purchase!.allocationId || '',
       description: purchase!.description,
       amount: purchase!.amount,
-      purchasedAt: new Date(purchase!.purchasedAt),
+      purchasedAt: parseDateOnly(purchase!.purchasedAt),
       receipts: purchase!.receipts,
     });
     setReceiptsToDisplay(purchase!.receipts);
@@ -290,20 +297,20 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                 />
                 <FormField
                   control={form.control}
-                  name="accountId"
+                  name="categoryId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Account</FormLabel>
+                      <FormLabel>Spending Category</FormLabel>
                       <FormControl>
                         <Combobox
                           data={Object.entries(
-                            accounts.reduce(
-                              (acc, account) => {
-                                const group = account.indexId;
+                            categories.reduce(
+                              (acc, category) => {
+                                const group = category.designationId;
                                 acc[group] = acc[group] || { items: [] };
                                 acc[group].items.push({
-                                  value: account.id,
-                                  label: `${account.name} (${account.code})`,
+                                  value: category.id,
+                                  label: `${category.name} (${category.code})`,
                                 });
                                 return acc;
                               },
@@ -312,16 +319,16 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                                 { items: { value: string; label: string }[] }
                               >,
                             ),
-                          ).map(([indexId, group]) => ({
+                          ).map(([designationId, group]) => ({
                             heading:
-                              accounts.find((a) => a.indexId === indexId)?.index
-                                .name || indexId,
+                              categories.find(
+                                (c) => c.designationId === designationId,
+                              )?.designation.name || designationId,
                             ...group,
                           }))}
                           {...field}
-                          value={field.value || ''}
-                          name="account"
-                          disabled={accounts.length === 1}
+                          name="category"
+                          disabled={categories.length === 1}
                         />
                       </FormControl>
                       <FormMessage />
@@ -577,7 +584,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
 // Backward compatibility export for CreatePurchaseDialog
 export function CreatePurchaseDialog(props: {
   users: User[];
-  accounts: AccountWithIndex[];
+  categories: CategoryWithDesignation[];
   allocationGroups?: AllocationGroupWithAllocations[];
   miscAllocations?: Allocation[];
 }) {

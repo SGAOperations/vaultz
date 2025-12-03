@@ -13,7 +13,7 @@ export async function getLatestPurchases(
 ): Promise<PurchaseWithUser[]> {
   const purchases = await prisma.purchase.findMany({
     take: limit,
-    orderBy: { createdAt: 'desc' },
+    orderBy: { purchasedAt: 'desc' },
     include: { user: true },
   });
 
@@ -25,7 +25,7 @@ export async function getLatestPurchases(
 
 export async function createPurchase({
   userId,
-  accountId,
+  categoryId,
   description,
   amount,
   allocationId,
@@ -33,7 +33,7 @@ export async function createPurchase({
   receipts,
 }: {
   userId: string;
-  accountId: string;
+  categoryId: string;
   description?: string;
   amount: number;
   allocationId?: string;
@@ -43,7 +43,7 @@ export async function createPurchase({
   const purchase = await prisma.purchase.create({
     data: {
       userId,
-      accountId,
+      categoryId,
       description: description || '',
       amount: new Decimal(amount),
       allocationId,
@@ -53,6 +53,7 @@ export async function createPurchase({
   });
 
   revalidatePath('/');
+  revalidatePath('/designation');
 
   return { ...purchase, amount: purchase.amount.toNumber() };
 }
@@ -60,7 +61,7 @@ export async function createPurchase({
 export async function updatePurchase({
   id,
   userId,
-  accountId,
+  categoryId,
   description,
   amount,
   allocationId,
@@ -69,7 +70,7 @@ export async function updatePurchase({
 }: {
   id: string;
   userId: string;
-  accountId: string;
+  categoryId: string;
   description?: string;
   amount: number;
   allocationId?: string;
@@ -80,7 +81,7 @@ export async function updatePurchase({
     where: { id },
     data: {
       userId,
-      accountId,
+      categoryId,
       description: description || '',
       amount: new Decimal(amount),
       allocationId: allocationId || null,
@@ -90,6 +91,7 @@ export async function updatePurchase({
   });
 
   revalidatePath('/');
+  revalidatePath('/designation');
 
   return { ...purchase, amount: purchase.amount.toNumber() };
 }
@@ -100,6 +102,7 @@ export async function deletePurchase(
   const purchase = await prisma.purchase.delete({ where: { id } });
 
   revalidatePath('/');
+  revalidatePath('/designation');
 
   return { ...purchase, amount: purchase.amount.toNumber() };
 }
