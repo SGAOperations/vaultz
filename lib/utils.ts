@@ -25,37 +25,18 @@ export function getFileUrl(key: string) {
 /**
  * Parses a date-only value from the database into a Date object in local timezone.
  * This prevents off-by-one errors when date-only fields are interpreted as UTC midnight.
- *
- * @example
- * // For a user in EST (UTC-5):
- * // Database has date-only value: 2024-01-15
- *
- * // Without parseDateOnly (incorrect):
- * const wrong = new Date('2024-01-15'); // 2024-01-15T00:00:00.000Z (midnight UTC)
- * wrong.toLocaleDateString(); // "1/14/2024" - off by one day!
- *
- * // With parseDateOnly (correct):
- * const correct = parseDateOnly('2024-01-15'); // 2024-01-15T00:00:00.000-0500 (midnight EST)
- * correct.toLocaleDateString(); // "1/15/2024" - correct!
- *
- * @param dateValue The date value from the database (Date or string)
- * @returns A Date object with the correct date in local timezone
  */
 export function parseDateOnly(dateValue: Date | string): Date {
   if (dateValue instanceof Date) {
-    // If it's already a Date object, extract the year, month, and day
-    // and create a new Date in local timezone
     const year = dateValue.getUTCFullYear();
     const month = dateValue.getUTCMonth();
     const day = dateValue.getUTCDate();
     return new Date(year, month, day);
   }
 
-  // If it's a string (e.g., "2024-01-15"), parse it as local date
   const dateStr = String(dateValue);
   const parts = dateStr.split('-');
 
-  // Validate the format and parse
   if (parts.length !== 3) {
     throw new Error(`Invalid date format: expected YYYY-MM-DD, got ${dateStr}`);
   }
@@ -65,7 +46,6 @@ export function parseDateOnly(dateValue: Date | string): Date {
   const month = parseInt(monthStr, 10);
   const day = parseInt(dayStr, 10);
 
-  // Validate parsed values
   if (isNaN(year) || isNaN(month) || isNaN(day)) {
     throw new Error(`Invalid date values in: ${dateStr}`);
   }
@@ -74,17 +54,12 @@ export function parseDateOnly(dateValue: Date | string): Date {
     throw new Error(`Invalid month value: ${month}`);
   }
 
-  // Basic day range validation (1-31)
-  // More specific month/year validation happens after creating the Date object
   if (day < 1 || day > 31) {
     throw new Error(`Invalid day value: ${day}`);
   }
 
-  // Create Date in local timezone (month is 0-indexed in JS)
   const result = new Date(year, month - 1, day);
 
-  // Validate the resulting date matches what was requested
-  // This catches cases like Feb 31 which gets auto-adjusted to Mar 3
   if (
     result.getFullYear() !== year ||
     result.getMonth() !== month - 1 ||
