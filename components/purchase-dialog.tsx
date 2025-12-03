@@ -279,7 +279,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent
         className={
-          isEditing ? 'w-2/3 sm:max-w-full' : 'sm:max-w-lg md:max-w-xl'
+          isEditing ? 'w-2/3 sm:max-w-full' : 'sm:max-w-full md:w-1/3'
         }
       >
         <DialogHeader>
@@ -289,7 +289,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
               <DialogDescription>{dialogDescription}</DialogDescription>
             </div>
             {!isEditing && purchase && (
-              <div className="text-muted-foreground shrink-0 text-right text-xs">
+              <div className="hidden md:block text-muted-foreground text-xs mr-5">
                 <span className="font-mono">{purchase.id}</span>
               </div>
             )}
