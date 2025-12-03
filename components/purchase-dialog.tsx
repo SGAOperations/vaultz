@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -127,16 +127,23 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
 
   const receiptUrls = purchase?.receipts.map((r) => getFileUrl(r)) || [];
 
-  // Lookup category and allocation names for display
-  const categoryName = purchase
-    ? categories.find((c) => c.id === purchase.categoryId)?.name || 'Unknown'
-    : '';
-  const allocationName = purchase?.allocationId
-    ? [
-        ...allocationGroups.flatMap((g) => g.allocations),
-        ...miscAllocations,
-      ].find((a) => a.id === purchase.allocationId)?.name || 'Unknown'
-    : '';
+  // Lookup category and allocation names for display (memoized for performance)
+  const categoryName = useMemo(
+    () =>
+      purchase
+        ? categories.find((c) => c.id === purchase.categoryId)?.name
+        : undefined,
+    [purchase, categories],
+  );
+
+  const allocationName = useMemo(() => {
+    if (!purchase?.allocationId) return undefined;
+    const allAllocations = [
+      ...allocationGroups.flatMap((g) => g.allocations),
+      ...miscAllocations,
+    ];
+    return allAllocations.find((a) => a.id === purchase.allocationId)?.name;
+  }, [purchase, allocationGroups, miscAllocations]);
 
   const form = useForm({
     resolver: zodResolver(schema),
@@ -603,7 +610,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
 
               {/* Category and Allocation Info */}
               <div className="flex flex-wrap gap-3">
-                {purchase!.categoryId && (
+                {categoryName && (
                   <div className="bg-muted flex items-center gap-2 rounded-full px-4 py-2">
                     <Tag className="text-primary size-4" />
                     <span className="text-sm">
@@ -613,7 +620,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                   </div>
                 )}
 
-                {purchase!.allocationId && (
+                {allocationName && (
                   <div className="bg-muted flex items-center gap-2 rounded-full px-4 py-2">
                     <FolderOpen className="text-primary size-4" />
                     <span className="text-sm">
