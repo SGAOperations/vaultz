@@ -278,9 +278,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent
-        className={
-          isEditing ? 'w-2/3 sm:max-w-full' : 'sm:max-w-full md:w-1/3'
-        }
+        className={isEditing ? 'w-2/3 sm:max-w-full' : 'sm:max-w-full md:w-1/3'}
       >
         <DialogHeader>
           <div className="flex items-start justify-between gap-4">
@@ -289,7 +287,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
               <DialogDescription>{dialogDescription}</DialogDescription>
             </div>
             {!isEditing && purchase && (
-              <div className="hidden md:block text-muted-foreground text-xs mr-5">
+              <div className="text-muted-foreground mr-5 hidden text-xs md:block">
                 <span className="font-mono">{purchase.id}</span>
               </div>
             )}
