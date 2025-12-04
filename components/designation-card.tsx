@@ -47,6 +47,7 @@ export function DesignationCard({
           iconColor: 'text-stat-remaining',
           label: 'Left',
           value: `$${formatNumber(remaining)}`,
+          valueColor: remaining < 0 ? 'text-destructive' : undefined,
         },
         {
           icon: Percent,

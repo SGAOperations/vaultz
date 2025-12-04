@@ -17,7 +17,7 @@ import { getCategoriesByDesignation } from '@/prisma/services/category';
 import { getDesignation } from '@/prisma/services/designation';
 import { getUsers } from '@/prisma/services/user';
 
-import { formatNumber } from '@/lib/utils';
+import { cn, formatNumber } from '@/lib/utils';
 
 import { CreateCategoryDialog } from '@/components/create-category-dialog';
 import { EmptyState } from '@/components/empty-state';
@@ -140,7 +140,12 @@ export default async function DesignationPage({
                       <TrendingUp className="text-stat-remaining size-4" />
                       <span className="text-sm">
                         <span className="text-muted-foreground">Left:</span>{' '}
-                        <span className="font-semibold">
+                        <span
+                          className={cn(
+                            'font-semibold',
+                            remaining < 0 && 'text-destructive',
+                          )}
+                        >
                           ${formatNumber(remaining)}
                         </span>
                       </span>
