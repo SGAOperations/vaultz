@@ -37,7 +37,7 @@ import {
 } from '@/lib/types';
 import { UploadDropzone } from '@/lib/uploadthing';
 import {
-  formatNumber,
+  formatCurrency,
   getFileUrl,
   handleError,
   parseDateOnly,
@@ -73,8 +73,15 @@ const schema = z.object({
   description: z.string().optional(),
   amount: z.coerce
     .number<number>()
-    .min(0.01, 'Must be at least $0.01')
-    .multipleOf(0.01, 'Must contain at most 2 decimal places'),
+    .refine((val: number) => val !== 0, 'Amount cannot be $0.00')
+    .refine(
+      (val: number) => Math.abs(val) >= 0.01,
+      'Absolute value must be at least $0.01',
+    )
+    .refine(
+      (val: number) => Math.abs(Math.round(val * 100) - val * 100) < 0.001,
+      'Must contain at most 2 decimal places',
+    ),
   purchasedAt: z.date('Please select a valid date'),
   receipts: z.array(z.string()).optional(),
 });
@@ -315,6 +322,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                             },
                           ]}
                           {...field}
+                          value={field.value || ''}
                           name="user"
                         />
                       </FormControl>
@@ -576,7 +584,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                   <div>
                     <p className="text-muted-foreground text-xs">Amount</p>
                     <p className="text-2xl font-bold">
-                      ${formatNumber(purchase!.amount)}
+                      {formatCurrency(purchase!.amount)}
                     </p>
                   </div>
                 </div>

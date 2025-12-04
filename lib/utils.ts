@@ -6,16 +6,21 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+function formatAbsoluteNumber(value: number) {
+  const rounded = Math.round(value * 100) / 100;
+  return rounded.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
 export function formatNumber(value: number) {
-  value = Math.round(value * 100) / 100;
-  return value.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  const isNegative = value < 0;
+  const formatted = formatAbsoluteNumber(Math.abs(value));
+  return isNegative ? `-${formatted}` : formatted;
 }
 
 export function formatCurrency(value: number) {
-  return `$${value.toLocaleString(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
+  const isNegative = value < 0;
+  const formatted = formatAbsoluteNumber(Math.abs(value));
+  return isNegative ? `-$${formatted}` : `$${formatted}`;
 }
 
 export function getFileUrl(key: string) {
