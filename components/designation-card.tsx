@@ -1,4 +1,10 @@
-import { CreditCard, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
+import {
+  CreditCard,
+  Percent,
+  TrendingDown,
+  TrendingUp,
+  Wallet,
+} from 'lucide-react';
 
 import { DesignationWithPurchases } from '@/lib/types';
 import { formatNumber } from '@/lib/utils';
@@ -15,6 +21,7 @@ export function DesignationCard({
       ? 0
       : purchases.map((v) => v.amount).reduce((p, c) => p + c);
   const remaining = amount - spent;
+  const percentRemaining = amount === 0 ? 0 : (remaining / amount) * 100;
 
   return (
     <LinkCard
@@ -40,6 +47,12 @@ export function DesignationCard({
           iconColor: 'text-stat-remaining',
           label: 'Left',
           value: `$${formatNumber(remaining)}`,
+        },
+        {
+          icon: Percent,
+          iconColor: 'text-info',
+          label: 'Left',
+          value: `${formatNumber(percentRemaining)}%`,
         },
       ]}
     />
