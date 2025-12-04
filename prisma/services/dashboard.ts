@@ -1,6 +1,7 @@
 'use server';
 
 import prisma from '@/lib/prisma';
+import { parseDateOnly } from '@/lib/utils';
 
 export async function getDashboardStats() {
   const [designations, categories, purchases, users] = await Promise.all([
@@ -45,7 +46,7 @@ export async function getPurchasesByMonth() {
   >();
 
   purchases.forEach((purchase) => {
-    const date = new Date(purchase.purchasedAt);
+    const date = parseDateOnly(purchase.purchasedAt);
     const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
     const monthLabel = date.toLocaleDateString('en-US', {
       year: 'numeric',
