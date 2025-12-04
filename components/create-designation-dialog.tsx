@@ -25,16 +25,13 @@ export function CreateDesignationDialog({
   trigger: React.ReactNode;
 }) {
   async function onSubmit(data: FormData): Promise<boolean> {
-    const result = await handleError(
-      createDesignation({ ...data, code: `DN${data.code}` }),
-      {
-        toast: {
-          loading: 'Creating designation...',
-          success: 'Designation created successfully',
-          error: 'Failed to create designation',
-        },
+    const result = await handleError(createDesignation(data), {
+      toast: {
+        loading: 'Creating designation...',
+        success: 'Designation created successfully',
+        error: 'Failed to create designation',
       },
-    );
+    });
     return !isError(result);
   }
 

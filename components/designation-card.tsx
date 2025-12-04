@@ -28,7 +28,7 @@ export function DesignationCard({
       href={`/designation/${id}`}
       icon={CreditCard}
       title={name}
-      description={code}
+      description={`DN${code}`}
       badges={[
         {
           icon: Wallet,

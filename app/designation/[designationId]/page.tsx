@@ -55,7 +55,7 @@ export default async function DesignationPage({
     <div className="flex w-full flex-col">
       <PageHeader
         title={designation.name}
-        description={`Designation code: ${designation.code}`}
+        description={`Designation code: DN${designation.code}`}
         actions={
           <div className="flex gap-2">
             <CreatePurchaseDialog
