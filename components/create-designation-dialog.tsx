@@ -14,7 +14,7 @@ const schema = z.object({
     .string()
     .min(2, 'Must be at least 2 characters')
     .max(50, 'Cannot be longer than 50 characters'),
-  code: z.string().length(6, 'Must be exactly 6 characters long'),
+  code: z.string().regex(/^\d{4}$/, 'Must be exactly 4 digits'),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -52,8 +52,10 @@ export function CreateDesignationDialog({
       <FormInput<FormData>
         name="code"
         label="Code"
-        placeholder="80XXXX"
+        placeholder="DNXXXX"
         description="The designation number to be associated with this designation."
+        prefix="DN"
+        numbersOnly
       />
     </FormDialog>
   );

@@ -1,10 +1,23 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Pencil, Plus, Trash2, X } from 'lucide-react';
+import {
+  Calendar,
+  Clock,
+  DollarSign,
+  FileText,
+  FolderOpen,
+  Pencil,
+  Plus,
+  Receipt,
+  Tag,
+  Trash2,
+  User as UserIcon,
+  X,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { twMerge } from 'tailwind-merge';
 import { z } from 'zod/v4';
@@ -24,7 +37,7 @@ import {
 } from '@/lib/types';
 import { UploadDropzone } from '@/lib/uploadthing';
 import {
-  formatNumber,
+  formatCurrency,
   getFileUrl,
   handleError,
   parseDateOnly,
@@ -60,8 +73,15 @@ const schema = z.object({
   description: z.string().optional(),
   amount: z.coerce
     .number<number>()
-    .min(0.01, 'Must be at least $0.01')
-    .multipleOf(0.01, 'Must contain at most 2 decimal places'),
+    .refine((val: number) => val !== 0, 'Amount cannot be $0.00')
+    .refine(
+      (val: number) => Math.abs(val) >= 0.01,
+      'Absolute value must be at least $0.01',
+    )
+    .refine(
+      (val: number) => Math.abs(Math.round(val * 100) - val * 100) < 0.001,
+      'Must contain at most 2 decimal places',
+    ),
   purchasedAt: z.date('Please select a valid date'),
   receipts: z.array(z.string()).optional(),
 });
@@ -112,6 +132,24 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
   );
 
   const receiptUrls = purchase?.receipts.map((r) => getFileUrl(r)) || [];
+
+  // Lookup category and allocation names for display (memoized for performance)
+  const categoryName = useMemo(
+    () =>
+      purchase
+        ? categories.find((c) => c.id === purchase.categoryId)?.name
+        : undefined,
+    [purchase, categories],
+  );
+
+  const allocationName = useMemo(() => {
+    if (!purchase?.allocationId) return undefined;
+    const allAllocations = [
+      ...allocationGroups.flatMap((g) => g.allocations),
+      ...miscAllocations,
+    ];
+    return allAllocations.find((a) => a.id === purchase.allocationId)?.name;
+  }, [purchase, allocationGroups, miscAllocations]);
 
   const form = useForm({
     resolver: zodResolver(schema),
@@ -246,10 +284,21 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="w-2/3 sm:max-w-full">
+      <DialogContent
+        className={isEditing ? 'w-2/3 sm:max-w-full' : 'sm:max-w-full md:w-1/3'}
+      >
         <DialogHeader>
-          <DialogTitle>{dialogTitle}</DialogTitle>
-          <DialogDescription>{dialogDescription}</DialogDescription>
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1">
+              <DialogTitle>{dialogTitle}</DialogTitle>
+              <DialogDescription>{dialogDescription}</DialogDescription>
+            </div>
+            {!isEditing && purchase && (
+              <div className="text-muted-foreground mr-5 hidden text-xs md:block">
+                <span className="font-mono">{purchase.id}</span>
+              </div>
+            )}
+          </div>
         </DialogHeader>
 
         {isEditing ? (
@@ -273,6 +322,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                             },
                           ]}
                           {...field}
+                          value={field.value || ''}
                           name="user"
                         />
                       </FormControl>
@@ -356,7 +406,6 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                             },
                           ]}
                           {...field}
-                          value={field.value || ''}
                           name="allocation"
                         />
                       </FormControl>
@@ -372,7 +421,9 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                       <FormLabel>Purchase Date</FormLabel>
                       <FormControl>
                         <DatePicker
-                          value={new Date(field.value)}
+                          value={
+                            field.value ? new Date(field.value) : new Date()
+                          }
                           onChange={(val: Date) => field.onChange(val)}
                         />
                       </FormControl>
@@ -522,41 +573,124 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
           </FormProvider>
         ) : (
           <>
-            <div className="grid grid-cols-2 gap-4">
-              <p>Purchase ID</p>
-              <p className="text-muted-foreground">{purchase!.id}</p>
-              <p>Created</p>
-              <p className="text-muted-foreground">
-                <DateTime date={purchase!.createdAt} />
-              </p>
-              <p>Purchase Date</p>
-              <p className="text-muted-foreground">
-                <DateTime date={purchase!.purchasedAt} dateOnly />
-              </p>
-              <p>Name</p>
-              <p className="text-muted-foreground">
-                {purchase!.user.first} {purchase!.user.last}
-              </p>
-              <p>Description</p>
-              <p className="text-muted-foreground">{purchase!.description}</p>
-              <p>Amount</p>
-              <p className="text-muted-foreground">
-                ${formatNumber(purchase!.amount)}
-              </p>
-              <p>Receipts</p>
-              <p className="text-muted-foreground flex gap-3">
-                {receiptUrls.map((url, i) => (
-                  <a
-                    key={url}
-                    href={url}
-                    target="_blank"
-                    className="hover:underline"
-                  >
-                    File {i + 1}
-                  </a>
-                ))}
-                {receiptUrls.length === 0 && 'N/A'}
-              </p>
+            {/* Main Purchase Information with prominent badges */}
+            <div className="space-y-6">
+              {/* Primary Info - Amount and Description */}
+              <div className="flex flex-wrap gap-3">
+                <div className="bg-primary/10 ring-primary/20 flex items-center gap-3 rounded-lg px-4 py-3 ring-1">
+                  <div className="bg-primary/20 flex size-10 items-center justify-center rounded-lg">
+                    <DollarSign className="text-primary size-6" />
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs">Amount</p>
+                    <p className="text-2xl font-bold">
+                      {formatCurrency(purchase!.amount)}
+                    </p>
+                  </div>
+                </div>
+
+                {purchase!.description && (
+                  <div className="bg-muted flex flex-1 items-center gap-3 rounded-lg px-4 py-3">
+                    <div className="bg-primary/10 flex size-10 items-center justify-center rounded-lg">
+                      <FileText className="text-primary size-5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-muted-foreground text-xs">
+                        Description
+                      </p>
+                      <p className="truncate font-semibold">
+                        {purchase!.description}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* All Badges - Ordered: Purchaser, Purchase Date, Category, Allocation, Created */}
+              <div className="flex flex-wrap gap-3">
+                {/* Purchaser */}
+                <div className="bg-muted flex items-center gap-2 rounded-full px-4 py-2">
+                  <UserIcon className="text-primary size-4" />
+                  <span className="text-sm">
+                    <span className="text-muted-foreground">Purchaser:</span>{' '}
+                    <span className="font-semibold">
+                      {purchase!.user.first} {purchase!.user.last}
+                    </span>
+                  </span>
+                </div>
+
+                {/* Purchase Date */}
+                <div className="bg-muted flex items-center gap-2 rounded-full px-4 py-2">
+                  <Calendar className="text-primary size-4" />
+                  <span className="text-sm">
+                    <span className="text-muted-foreground">
+                      Purchase Date:
+                    </span>{' '}
+                    <span className="font-semibold">
+                      <DateTime date={purchase!.purchasedAt} dateOnly />
+                    </span>
+                  </span>
+                </div>
+
+                {/* Category (optional) */}
+                {categoryName && (
+                  <div className="bg-muted flex items-center gap-2 rounded-full px-4 py-2">
+                    <Tag className="text-primary size-4" />
+                    <span className="text-sm">
+                      <span className="text-muted-foreground">Category:</span>{' '}
+                      <span className="font-semibold">{categoryName}</span>
+                    </span>
+                  </div>
+                )}
+
+                {/* Allocation (optional) */}
+                {allocationName && (
+                  <div className="bg-muted flex items-center gap-2 rounded-full px-4 py-2">
+                    <FolderOpen className="text-primary size-4" />
+                    <span className="text-sm">
+                      <span className="text-muted-foreground">Allocation:</span>{' '}
+                      <span className="font-semibold">{allocationName}</span>
+                    </span>
+                  </div>
+                )}
+
+                {/* Created */}
+                <div className="bg-muted flex items-center gap-2 rounded-full px-4 py-2">
+                  <Clock className="text-muted-foreground size-4" />
+                  <span className="text-sm">
+                    <span className="text-muted-foreground">Created:</span>{' '}
+                    <span className="font-semibold">
+                      <DateTime date={purchase!.createdAt} />
+                    </span>
+                  </span>
+                </div>
+              </div>
+
+              {/* Receipts */}
+              {receiptUrls.length > 0 && (
+                <div className="bg-muted rounded-lg px-4 py-3">
+                  <div className="mb-2 flex items-center gap-2">
+                    <Receipt className="text-primary size-4" />
+                    <span className="text-muted-foreground text-sm font-medium">
+                      Receipts
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {receiptUrls.map((url, i) => (
+                      <a
+                        key={url}
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="bg-background hover:bg-accent flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:underline"
+                      >
+                        <Receipt className="size-4" />
+                        File {i + 1}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="flex gap-2">
