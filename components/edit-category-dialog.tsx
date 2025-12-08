@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Trash2 } from 'lucide-react';
+import { Loader2, Trash2 } from 'lucide-react';
 import { z } from 'zod/v4';
 
 import { deleteCategory, updateCategory } from '@/prisma/services/category';
@@ -65,6 +65,7 @@ export function EditCategoryDialog({
       amount: category.amount,
     },
   });
+  const isSubmitting = form.formState.isSubmitting;
 
   async function onSubmit(data: z.infer<typeof schema>) {
     await handleError(updateCategory({ id: category.id, ...data }), {
@@ -199,10 +200,12 @@ export function EditCategoryDialog({
                 variant="outline"
                 onClick={handleCancel}
                 className="flex-1"
+                disabled={isSubmitting}
               >
                 Cancel
               </Button>
-              <Button type="submit" className="flex-1">
+              <Button type="submit" className="flex-1" disabled={isSubmitting}>
+                {isSubmitting && <Loader2 className="animate-spin" />}
                 Save Changes
               </Button>
               <Button
@@ -210,6 +213,7 @@ export function EditCategoryDialog({
                 variant={confirmDelete ? 'destructive' : 'outline'}
                 onClick={handleDelete}
                 className="flex-1"
+                disabled={isSubmitting}
               >
                 {confirmDelete ? (
                   'Confirm Delete'
