@@ -414,13 +414,19 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                                 label: allocation.name,
                               })),
                             })),
-                            {
-                              heading: 'Miscellaneous',
-                              items: miscAllocations.map((allocation) => ({
-                                value: allocation.id,
-                                label: allocation.name,
-                              })),
-                            },
+                            ...(miscAllocations.length > 0
+                              ? [
+                                  {
+                                    heading: 'Miscellaneous',
+                                    items: miscAllocations.map(
+                                      (allocation) => ({
+                                        value: allocation.id,
+                                        label: allocation.name,
+                                      }),
+                                    ),
+                                  },
+                                ]
+                              : []),
                           ]}
                           {...field}
                           name="allocation"
