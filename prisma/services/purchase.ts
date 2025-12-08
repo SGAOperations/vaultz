@@ -34,6 +34,7 @@ export async function createPurchase({
   excludeFromTotal,
   expenseReportCreated,
   reimbursed,
+  notes,
 }: {
   userId: string;
   categoryId: string;
@@ -45,6 +46,7 @@ export async function createPurchase({
   excludeFromTotal?: boolean;
   expenseReportCreated?: boolean;
   reimbursed?: boolean;
+  notes?: string;
 }): Promise<ResponseType<Purchase>> {
   const purchase = await prisma.purchase.create({
     data: {
@@ -58,6 +60,7 @@ export async function createPurchase({
       excludeFromTotal: excludeFromTotal ?? false,
       expenseReportCreated: expenseReportCreated ?? false,
       reimbursed: reimbursed ?? false,
+      notes: notes || null,
     },
   });
 
@@ -79,6 +82,7 @@ export async function updatePurchase({
   excludeFromTotal,
   expenseReportCreated,
   reimbursed,
+  notes,
 }: {
   id: string;
   userId: string;
@@ -91,6 +95,7 @@ export async function updatePurchase({
   excludeFromTotal?: boolean;
   expenseReportCreated?: boolean;
   reimbursed?: boolean;
+  notes?: string;
 }): Promise<ResponseType<Purchase>> {
   const purchase = await prisma.purchase.update({
     where: { id },
@@ -105,6 +110,7 @@ export async function updatePurchase({
       excludeFromTotal: excludeFromTotal ?? false,
       expenseReportCreated: expenseReportCreated ?? false,
       reimbursed: reimbursed ?? false,
+      notes: notes || null,
     },
   });
 

@@ -7,6 +7,7 @@ import {
   DollarSign,
   FileCheck,
   FileText,
+  StickyNote,
   User as UserIcon,
 } from 'lucide-react';
 
@@ -22,6 +23,12 @@ import { formatCurrency } from '@/lib/utils';
 
 import { DateTime } from '@/components/date-time';
 import { Card } from '@/components/ui/card';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 import { PurchaseDialog } from './purchase-dialog';
 
@@ -65,7 +72,7 @@ export function PurchaseCard({
               </span>
             </div>
 
-            <div className="col-span-4 flex items-center gap-1.5 overflow-hidden">
+            <div className="col-span-3 flex items-center gap-1.5 overflow-hidden">
               <FileText className="text-muted-foreground size-4 shrink-0" />
               <span className="text-muted-foreground truncate text-sm">
                 {purchase.description || 'No description'}
@@ -77,6 +84,25 @@ export function PurchaseCard({
               <span className="text-muted-foreground text-sm">
                 <DateTime date={purchase.purchasedAt} dateOnly />
               </span>
+            </div>
+
+            <div className="col-span-1 flex items-center justify-end">
+              {purchase.notes && (
+                <TooltipProvider delayDuration={200}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="hover:bg-accent/50 flex size-8 items-center justify-center rounded-lg transition-colors">
+                        <StickyNote className="text-muted-foreground size-4" />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="left" className="max-w-sm">
+                      <p className="whitespace-pre-wrap text-sm">
+                        {purchase.notes}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
             </div>
           </div>
 

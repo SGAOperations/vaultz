@@ -17,6 +17,7 @@ import {
   Pencil,
   Plus,
   Receipt,
+  StickyNote,
   Tag,
   Trash2,
   User as UserIcon,
@@ -70,6 +71,7 @@ import {
   FormMessage,
 } from './ui/form';
 import { FormInput } from './ui/form-input';
+import { Textarea } from './ui/textarea';
 
 const schema = z.object({
   userId: z.string().min(1, 'Please select a user'),
@@ -92,6 +94,7 @@ const schema = z.object({
   excludeFromTotal: z.boolean().optional(),
   expenseReportCreated: z.boolean().optional(),
   reimbursed: z.boolean().optional(),
+  notes: z.string().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -174,6 +177,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
       excludeFromTotal: purchase?.excludeFromTotal || false,
       expenseReportCreated: purchase?.expenseReportCreated || false,
       reimbursed: purchase?.reimbursed || false,
+      notes: purchase?.notes || '',
     },
   });
   const isSubmitting = form.formState.isSubmitting;
@@ -260,6 +264,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
       excludeFromTotal: purchase!.excludeFromTotal,
       expenseReportCreated: purchase!.expenseReportCreated,
       reimbursed: purchase!.reimbursed,
+      notes: purchase!.notes || '',
     });
     setReceiptsToDisplay(purchase!.receipts);
     setFilesUploaded([]);
@@ -460,6 +465,29 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                   currency
                 />
               </div>
+              <FormField
+                control={form.control}
+                name="notes"
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="flex gap-2">
+                      <FormLabel>Notes</FormLabel>
+                      <FormDescription className="text-xs">
+                        Optional
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Add any notes about this purchase..."
+                        className="resize-none"
+                        rows={3}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="receipts"
@@ -825,6 +853,21 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                       </a>
                     ))}
                   </div>
+                </div>
+              )}
+
+              {/* Notes */}
+              {purchase!.notes && (
+                <div className="bg-muted rounded-lg px-4 py-3">
+                  <div className="mb-2 flex items-center gap-2">
+                    <StickyNote className="text-primary size-4" />
+                    <span className="text-muted-foreground text-sm font-medium">
+                      Notes
+                    </span>
+                  </div>
+                  <p className="whitespace-pre-wrap text-sm">
+                    {purchase!.notes}
+                  </p>
                 </div>
               )}
             </div>
