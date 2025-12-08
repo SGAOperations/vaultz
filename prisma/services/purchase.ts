@@ -13,7 +13,7 @@ export async function getLatestPurchases(
 ): Promise<PurchaseWithUser[]> {
   const purchases = await prisma.purchase.findMany({
     take: limit,
-    orderBy: { purchasedAt: 'desc' },
+    orderBy: [{ purchasedAt: 'desc' }, { createdAt: 'desc' }],
     include: { user: true },
   });
 
