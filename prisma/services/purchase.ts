@@ -37,7 +37,7 @@ export async function createPurchase({
 }: {
   userId: string;
   categoryId: string;
-  description?: string;
+  description: string;
   amount: number;
   allocationId?: string;
   purchasedAt: Date;
@@ -50,7 +50,7 @@ export async function createPurchase({
     data: {
       userId,
       categoryId,
-      description: description || '',
+      description,
       amount: new Decimal(amount),
       allocationId: allocationId || null,
       purchasedAt: purchasedAt,
@@ -83,7 +83,7 @@ export async function updatePurchase({
   id: string;
   userId: string;
   categoryId: string;
-  description?: string;
+  description: string;
   amount: number;
   allocationId?: string;
   purchasedAt: Date;
@@ -97,7 +97,7 @@ export async function updatePurchase({
     data: {
       userId,
       categoryId,
-      description: description || '',
+      description,
       amount: new Decimal(amount),
       allocationId: allocationId || null,
       purchasedAt,
