@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -131,13 +131,6 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
     purchase?.receipts || [],
   );
 
-  // Reset receiptsToDisplay when dialog opens or when purchase changes
-  useEffect(() => {
-    if (open) {
-      setReceiptsToDisplay(purchase?.receipts || []);
-    }
-  }, [open, purchase]);
-
   const receiptUrls = purchase?.receipts.map((r) => getFileUrl(r)) || [];
 
   // Lookup category and allocation names for display (memoized for performance)
@@ -184,6 +177,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
         onSuccess: () => {
           form.reset();
           setFilesUploaded([]);
+          setReceiptsToDisplay([]);
           setOpen(false);
         },
       });
@@ -236,6 +230,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
       setOpen(false);
       form.reset();
       setFilesUploaded([]);
+      setReceiptsToDisplay([]);
       return;
     }
 
