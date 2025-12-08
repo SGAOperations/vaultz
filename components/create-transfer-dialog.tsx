@@ -23,10 +23,9 @@ import { FormDialog } from '@/components/ui/form-dialog';
 import { FormInput } from '@/components/ui/form-input';
 
 const schema = z.object({
-  sourceType: z.enum(['category', 'allocation']),
-  sourceId: z.string().min(1, 'Please select a source'),
-  destinationType: z.enum(['category', 'allocation']),
-  destinationId: z.string().min(1, 'Please select a destination'),
+  accountType: z.enum(['category', 'allocation']),
+  sourceId: z.string().min(1, 'Please select a source account'),
+  destinationId: z.string().min(1, 'Please select a destination account'),
   amount: z.coerce
     .number<number>()
     .min(0.01, 'Must be at least $0.01')
@@ -53,13 +52,13 @@ export function CreateTransferDialog({
   async function onSubmit(data: FormData): Promise<boolean> {
     const transferData = {
       fromCategoryId:
-        data.sourceType === 'category' ? data.sourceId : undefined,
+        data.accountType === 'category' ? data.sourceId : undefined,
       fromAllocationId:
-        data.sourceType === 'allocation' ? data.sourceId : undefined,
+        data.accountType === 'allocation' ? data.sourceId : undefined,
       toCategoryId:
-        data.destinationType === 'category' ? data.destinationId : undefined,
+        data.accountType === 'category' ? data.destinationId : undefined,
       toAllocationId:
-        data.destinationType === 'allocation' ? data.destinationId : undefined,
+        data.accountType === 'allocation' ? data.destinationId : undefined,
       amount: data.amount,
       description: data.description,
     };
@@ -78,12 +77,11 @@ export function CreateTransferDialog({
     <FormDialog
       trigger={trigger}
       title="Transfer Funds"
-      description="Transfer funds between categories and allocations."
+      description="Transfer funds between accounts of the same type."
       schema={schema}
       defaultValues={{
-        sourceType: 'category' as const,
+        accountType: 'category' as const,
         sourceId: '',
-        destinationType: 'category' as const,
         destinationId: '',
         amount: 0,
         description: '',
@@ -92,194 +90,170 @@ export function CreateTransferDialog({
     >
       {(form) => (
         <>
+          <FormField
+            control={form.control}
+            name="accountType"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Account Type</FormLabel>
+                <FormControl>
+                  <Combobox
+                    data={[
+                      {
+                        items: [
+                          { value: 'category', label: 'Category' },
+                          { value: 'allocation', label: 'Allocation' },
+                        ],
+                      },
+                    ]}
+                    {...field}
+                    name="accountType"
+                    onChange={(value) => {
+                      field.onChange(value);
+                      form.setValue('sourceId', '');
+                      form.setValue('destinationId', '');
+                    }}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <div className="space-y-4">
-              <h3 className="text-sm font-medium">From</h3>
-              <FormField
-                control={form.control}
-                name="sourceType"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Source Type</FormLabel>
-                    <FormControl>
-                      <Combobox
-                        data={[
-                          {
-                            items: [
-                              { value: 'category', label: 'Category' },
-                              { value: 'allocation', label: 'Allocation' },
-                            ],
+            <FormField
+              control={form.control}
+              name="sourceId"
+              render={({ field }) => {
+                const accountType = form.watch('accountType');
+                const data =
+                  accountType === 'category'
+                    ? Object.entries(
+                        categories.reduce(
+                          (acc, category) => {
+                            const group = category.designationId;
+                            acc[group] = acc[group] || { items: [] };
+                            acc[group].items.push({
+                              value: category.id,
+                              label: `${category.name} (SC${category.code})`,
+                            });
+                            return acc;
                           },
-                        ]}
-                        {...field}
-                        name="sourceType"
-                        onChange={(value) => {
-                          field.onChange(value);
-                          form.setValue('sourceId', '');
-                        }}
-                      />
+                          {} as Record<
+                            string,
+                            { items: { value: string; label: string }[] }
+                          >,
+                        ),
+                      ).map(([designationId, group]) => ({
+                        heading:
+                          categories.find(
+                            (c) => c.designationId === designationId,
+                          )?.designation.name || designationId,
+                        ...group,
+                      }))
+                    : [
+                        ...allocationGroups.map((group) => ({
+                          heading: group.name,
+                          items: group.allocations.map((allocation) => ({
+                            value: allocation.id,
+                            label: allocation.name,
+                          })),
+                        })),
+                        ...(miscAllocations.length > 0
+                          ? [
+                              {
+                                heading: 'Miscellaneous',
+                                items: miscAllocations.map((allocation) => ({
+                                  value: allocation.id,
+                                  label: allocation.name,
+                                })),
+                              },
+                            ]
+                          : []),
+                      ];
+
+                return (
+                  <FormItem>
+                    <FormLabel>Source Account</FormLabel>
+                    <FormControl>
+                      <Combobox data={data} {...field} name="source" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="sourceId"
-                render={({ field }) => {
-                  const sourceType = form.watch('sourceType');
-                  const data =
-                    sourceType === 'category'
-                      ? Object.entries(
-                          categories.reduce(
-                            (acc, category) => {
-                              const group = category.designationId;
-                              acc[group] = acc[group] || { items: [] };
+                );
+              }}
+            />
+
+            <FormField
+              control={form.control}
+              name="destinationId"
+              render={({ field }) => {
+                const accountType = form.watch('accountType');
+                const sourceId = form.watch('sourceId');
+                const data =
+                  accountType === 'category'
+                    ? Object.entries(
+                        categories.reduce(
+                          (acc, category) => {
+                            const group = category.designationId;
+                            acc[group] = acc[group] || { items: [] };
+                            // Filter out the source account from destination options
+                            if (category.id !== sourceId) {
                               acc[group].items.push({
                                 value: category.id,
                                 label: `${category.name} (SC${category.code})`,
                               });
-                              return acc;
-                            },
-                            {} as Record<
-                              string,
-                              { items: { value: string; label: string }[] }
-                            >,
-                          ),
-                        ).map(([designationId, group]) => ({
-                          heading:
-                            categories.find(
-                              (c) => c.designationId === designationId,
-                            )?.designation.name || designationId,
-                          ...group,
-                        }))
-                      : [
-                          ...allocationGroups.map((group) => ({
-                            heading: group.name,
-                            items: group.allocations.map((allocation) => ({
+                            }
+                            return acc;
+                          },
+                          {} as Record<
+                            string,
+                            { items: { value: string; label: string }[] }
+                          >,
+                        ),
+                      ).map(([designationId, group]) => ({
+                        heading:
+                          categories.find(
+                            (c) => c.designationId === designationId,
+                          )?.designation.name || designationId,
+                        ...group,
+                      }))
+                    : [
+                        ...allocationGroups.map((group) => ({
+                          heading: group.name,
+                          items: group.allocations
+                            .filter((allocation) => allocation.id !== sourceId)
+                            .map((allocation) => ({
                               value: allocation.id,
                               label: allocation.name,
                             })),
-                          })),
-                          ...(miscAllocations.length > 0
-                            ? [
-                                {
-                                  heading: 'Miscellaneous',
-                                  items: miscAllocations.map((allocation) => ({
+                        })),
+                        ...(miscAllocations.length > 0
+                          ? [
+                              {
+                                heading: 'Miscellaneous',
+                                items: miscAllocations
+                                  .filter((allocation) => allocation.id !== sourceId)
+                                  .map((allocation) => ({
                                     value: allocation.id,
                                     label: allocation.name,
                                   })),
-                                },
-                              ]
-                            : []),
-                        ];
+                              },
+                            ]
+                          : []),
+                      ];
 
-                  return (
-                    <FormItem>
-                      <FormLabel>Source</FormLabel>
-                      <FormControl>
-                        <Combobox data={data} {...field} name="source" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  );
-                }}
-              />
-            </div>
-
-            <div className="space-y-4">
-              <h3 className="text-sm font-medium">To</h3>
-              <FormField
-                control={form.control}
-                name="destinationType"
-                render={({ field }) => (
+                return (
                   <FormItem>
-                    <FormLabel>Destination Type</FormLabel>
+                    <FormLabel>Destination Account</FormLabel>
                     <FormControl>
-                      <Combobox
-                        data={[
-                          {
-                            items: [
-                              { value: 'category', label: 'Category' },
-                              { value: 'allocation', label: 'Allocation' },
-                            ],
-                          },
-                        ]}
-                        {...field}
-                        name="destinationType"
-                        onChange={(value) => {
-                          field.onChange(value);
-                          form.setValue('destinationId', '');
-                        }}
-                      />
+                      <Combobox data={data} {...field} name="destination" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="destinationId"
-                render={({ field }) => {
-                  const destinationType = form.watch('destinationType');
-                  const data =
-                    destinationType === 'category'
-                      ? Object.entries(
-                          categories.reduce(
-                            (acc, category) => {
-                              const group = category.designationId;
-                              acc[group] = acc[group] || { items: [] };
-                              acc[group].items.push({
-                                value: category.id,
-                                label: `${category.name} (SC${category.code})`,
-                              });
-                              return acc;
-                            },
-                            {} as Record<
-                              string,
-                              { items: { value: string; label: string }[] }
-                            >,
-                          ),
-                        ).map(([designationId, group]) => ({
-                          heading:
-                            categories.find(
-                              (c) => c.designationId === designationId,
-                            )?.designation.name || designationId,
-                          ...group,
-                        }))
-                      : [
-                          ...allocationGroups.map((group) => ({
-                            heading: group.name,
-                            items: group.allocations.map((allocation) => ({
-                              value: allocation.id,
-                              label: allocation.name,
-                            })),
-                          })),
-                          ...(miscAllocations.length > 0
-                            ? [
-                                {
-                                  heading: 'Miscellaneous',
-                                  items: miscAllocations.map((allocation) => ({
-                                    value: allocation.id,
-                                    label: allocation.name,
-                                  })),
-                                },
-                              ]
-                            : []),
-                        ];
-
-                  return (
-                    <FormItem>
-                      <FormLabel>Destination</FormLabel>
-                      <FormControl>
-                        <Combobox data={data} {...field} name="destination" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  );
-                }}
-              />
-            </div>
+                );
+              }}
+            />
           </div>
 
           <FormInput<FormData>

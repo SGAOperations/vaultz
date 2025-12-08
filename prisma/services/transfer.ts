@@ -31,6 +31,16 @@ export async function createTransfer({
     throw new Error('Must specify exactly one source and one destination');
   }
 
+  // Validate that source and destination are of the same type
+  if (
+    (fromCategoryId && !toCategoryId) ||
+    (!fromCategoryId && toCategoryId)
+  ) {
+    throw new Error(
+      'Transfers must be between accounts of the same type (category to category or allocation to allocation)',
+    );
+  }
+
   // Validate that source and destination are different
   if (
     (fromCategoryId && fromCategoryId === toCategoryId) ||
