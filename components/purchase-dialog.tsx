@@ -6,14 +6,18 @@ import { FormProvider, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Calendar,
+  Check,
+  CircleDollarSign,
   Clock,
   DollarSign,
+  FileCheck,
   FileText,
   FolderOpen,
   Loader2,
   Pencil,
   Plus,
   Receipt,
+  StickyNote,
   Tag,
   Trash2,
   User as UserIcon,
@@ -55,6 +59,7 @@ import {
 
 import { DateTime } from './date-time';
 import { Button } from './ui/button';
+import { Checkbox } from './ui/checkbox';
 import { Combobox } from './ui/combobox';
 import { DatePicker } from './ui/date-picker';
 import {
@@ -66,12 +71,13 @@ import {
   FormMessage,
 } from './ui/form';
 import { FormInput } from './ui/form-input';
+import { Textarea } from './ui/textarea';
 
 const schema = z.object({
   userId: z.string().min(1, 'Please select a user'),
   categoryId: z.string().min(1, 'Please select a category'),
   allocationId: z.string().optional(),
-  description: z.string().optional(),
+  description: z.string().min(1, 'Please enter a description'),
   amount: z.coerce
     .number<number>()
     .refine((val: number) => val !== 0, 'Amount cannot be $0.00')
@@ -85,6 +91,10 @@ const schema = z.object({
     ),
   purchasedAt: z.date('Please select a valid date'),
   receipts: z.array(z.string()).optional(),
+  excludeFromTotal: z.boolean().optional(),
+  expenseReportCreated: z.boolean().optional(),
+  reimbursed: z.boolean().optional(),
+  notes: z.string().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -164,6 +174,10 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
       amount: purchase?.amount || 0,
       purchasedAt: purchase ? parseDateOnly(purchase.purchasedAt) : new Date(),
       receipts: purchase?.receipts || [],
+      excludeFromTotal: purchase?.excludeFromTotal || false,
+      expenseReportCreated: purchase?.expenseReportCreated || false,
+      reimbursed: purchase?.reimbursed || false,
+      notes: purchase?.notes ?? '',
     },
   });
   const isSubmitting = form.formState.isSubmitting;
@@ -247,9 +261,17 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
       amount: purchase!.amount,
       purchasedAt: parseDateOnly(purchase!.purchasedAt),
       receipts: purchase!.receipts,
+      excludeFromTotal: purchase!.excludeFromTotal,
+      expenseReportCreated: purchase!.expenseReportCreated,
+      reimbursed: purchase!.reimbursed,
+      notes: purchase!.notes ?? '',
     });
     setReceiptsToDisplay(purchase!.receipts);
     setFilesUploaded([]);
+  }
+
+  function handleCancelDelete() {
+    setConfirmDelete(false);
   }
 
   function handleOpenChange(newOpen: boolean) {
@@ -337,8 +359,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                 <FormInput<FormData>
                   name="description"
                   label="Description"
-                  placeholder="Optional"
-                  description="Optional"
+                  placeholder="Enter a description"
                 />
                 <FormField
                   control={form.control}
@@ -401,13 +422,19 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                                 label: allocation.name,
                               })),
                             })),
-                            {
-                              heading: 'Miscellaneous',
-                              items: miscAllocations.map((allocation) => ({
-                                value: allocation.id,
-                                label: allocation.name,
-                              })),
-                            },
+                            ...(miscAllocations.length > 0
+                              ? [
+                                  {
+                                    heading: 'Miscellaneous',
+                                    items: miscAllocations.map(
+                                      (allocation) => ({
+                                        value: allocation.id,
+                                        label: allocation.name,
+                                      }),
+                                    ),
+                                  },
+                                ]
+                              : []),
                           ]}
                           {...field}
                           name="allocation"
@@ -442,6 +469,29 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                   currency
                 />
               </div>
+              <FormField
+                control={form.control}
+                name="notes"
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="flex gap-2">
+                      <FormLabel>Notes</FormLabel>
+                      <FormDescription className="text-xs">
+                        Optional
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Add any notes about this purchase..."
+                        className="resize-none"
+                        rows={3}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="receipts"
@@ -537,6 +587,78 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                 )}
               />
 
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <FormField
+                  control={form.control}
+                  name="excludeFromTotal"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="flex items-center gap-3">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onChange={(e) => field.onChange(e.target.checked)}
+                          />
+                        </FormControl>
+                        <FormLabel className="!mt-0 cursor-pointer font-normal">
+                          Exclude from total
+                        </FormLabel>
+                      </div>
+                      <FormDescription className="text-xs">
+                        Exclude from budget calculations
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="expenseReportCreated"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="flex items-center gap-3">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onChange={(e) => field.onChange(e.target.checked)}
+                          />
+                        </FormControl>
+                        <FormLabel className="!mt-0 cursor-pointer font-normal">
+                          Expense report created
+                        </FormLabel>
+                      </div>
+                      <FormDescription className="text-xs">
+                        Report has been filed
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="reimbursed"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="flex items-center gap-3">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onChange={(e) => field.onChange(e.target.checked)}
+                          />
+                        </FormControl>
+                        <FormLabel className="!mt-0 cursor-pointer font-normal">
+                          Reimbursed
+                        </FormLabel>
+                      </div>
+                      <FormDescription className="text-xs">
+                        Payment has been received
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
               <div className="flex gap-2">
                 {isCreateMode ? (
                   <Button
@@ -552,20 +674,24 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={handleCancel}
+                      onClick={
+                        confirmDelete ? handleCancelDelete : handleCancel
+                      }
                       className="flex-1"
                       disabled={isSubmitting}
                     >
-                      Cancel
+                      {confirmDelete ? 'Cancel Delete' : 'Cancel'}
                     </Button>
-                    <Button
-                      type="submit"
-                      className="flex-1"
-                      disabled={isSubmitting}
-                    >
-                      {isSubmitting && <Loader2 className="animate-spin" />}
-                      Save Changes
-                    </Button>
+                    {!confirmDelete && (
+                      <Button
+                        type="submit"
+                        className="flex-1"
+                        disabled={isSubmitting}
+                      >
+                        {isSubmitting && <Loader2 className="animate-spin" />}
+                        Save Changes
+                      </Button>
+                    )}
                     <Button
                       type="button"
                       variant={confirmDelete ? 'destructive' : 'outline'}
@@ -682,6 +808,36 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                 </div>
               </div>
 
+              {/* Selector Status Indicators */}
+              {(purchase!.excludeFromTotal ||
+                purchase!.expenseReportCreated ||
+                purchase!.reimbursed) && (
+                <div className="flex flex-wrap gap-3">
+                  {purchase!.excludeFromTotal && (
+                    <div className="bg-muted flex items-center gap-2 rounded-full px-4 py-2">
+                      <CircleDollarSign className="text-primary size-4" />
+                      <span className="text-sm font-semibold">
+                        Excluded from Budget
+                      </span>
+                    </div>
+                  )}
+                  {purchase!.expenseReportCreated && (
+                    <div className="bg-muted flex items-center gap-2 rounded-full px-4 py-2">
+                      <FileCheck className="text-primary size-4" />
+                      <span className="text-sm font-semibold">
+                        Expense Report Created
+                      </span>
+                    </div>
+                  )}
+                  {purchase!.reimbursed && (
+                    <div className="bg-muted flex items-center gap-2 rounded-full px-4 py-2">
+                      <Check className="text-primary size-4" />
+                      <span className="text-sm font-semibold">Reimbursed</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Receipts */}
               {receiptUrls.length > 0 && (
                 <div className="bg-muted rounded-lg px-4 py-3">
@@ -705,6 +861,21 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                       </a>
                     ))}
                   </div>
+                </div>
+              )}
+
+              {/* Notes */}
+              {purchase!.notes && (
+                <div className="bg-muted rounded-lg px-4 py-3">
+                  <div className="mb-2 flex items-center gap-2">
+                    <StickyNote className="text-primary size-4" />
+                    <span className="text-muted-foreground text-sm font-medium">
+                      Notes
+                    </span>
+                  </div>
+                  <p className="text-sm whitespace-pre-wrap">
+                    {purchase!.notes}
+                  </p>
                 </div>
               )}
             </div>

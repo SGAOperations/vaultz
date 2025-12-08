@@ -37,7 +37,7 @@ export async function getDashboardStats() {
 export async function getPurchasesByMonth() {
   const purchases = await prisma.purchase.findMany({
     select: { amount: true, purchasedAt: true },
-    orderBy: { purchasedAt: 'asc' },
+    orderBy: [{ purchasedAt: 'asc' }, { createdAt: 'asc' }],
   });
 
   const monthlyData = new Map<

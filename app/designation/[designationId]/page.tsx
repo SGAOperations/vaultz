@@ -46,10 +46,9 @@ export default async function DesignationPage({
   const categories = await getCategoriesByDesignation({ designationId });
   const users = await getUsers();
 
-  const spent = designation.purchases.reduce(
-    (acc, purchase) => acc + purchase.amount,
-    0,
-  );
+  const spent = designation.purchases
+    .filter((purchase) => !purchase.excludeFromTotal)
+    .reduce((acc, purchase) => acc + purchase.amount, 0);
 
   return (
     <div className="flex w-full flex-col">
@@ -91,6 +90,7 @@ export default async function DesignationPage({
           {categories.map((category) => {
             const categorySpent = designation.purchases
               .filter((v) => v.categoryId === category.id)
+              .filter((v) => !v.excludeFromTotal)
               .reduce((acc, purchase) => acc + purchase.amount, 0);
             const remaining = category.amount - categorySpent;
 
