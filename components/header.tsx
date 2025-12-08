@@ -3,7 +3,14 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-import { BarChart3, FolderKanban, Home, Menu, Users } from 'lucide-react';
+import {
+  ArrowLeftRight,
+  BarChart3,
+  FolderKanban,
+  Home,
+  Menu,
+  Users,
+} from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
@@ -21,6 +28,7 @@ const navItems = [
   { href: '/designation', label: 'Designations', icon: BarChart3 },
   { href: '/users', label: 'Users', icon: Users },
   { href: '/allocation-groups', label: 'Allocations', icon: FolderKanban },
+  { href: '/transfers', label: 'Transfers', icon: ArrowLeftRight },
 ];
 
 export function Header() {
