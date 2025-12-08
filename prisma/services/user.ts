@@ -23,13 +23,17 @@ export async function createUser({
 }
 
 export async function getUsers(): Promise<User[]> {
-  return prisma.user.findMany({ where: { deletedAt: null } });
+  return prisma.user.findMany({
+    where: { deletedAt: null },
+    orderBy: { last: 'asc' },
+  });
 }
 
 export async function getUsersWithPurchases(): Promise<UserWithPurchases[]> {
   return (
     await prisma.user.findMany({
       where: { deletedAt: null },
+      orderBy: { last: 'asc' },
       include: { purchases: { orderBy: { purchasedAt: 'desc' } } },
     })
   ).map((user) => ({
