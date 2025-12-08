@@ -17,7 +17,7 @@ export async function getAllDesignations(): Promise<
         categories: {
           select: {
             purchases: {
-              orderBy: { createdAt: 'desc' },
+              orderBy: { purchasedAt: 'desc' },
               include: { user: true },
             },
             amount: true,
@@ -38,7 +38,7 @@ export async function getAllDesignations(): Promise<
           amount: amount.toNumber(),
         })),
       )
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
+      .sort((a, b) => b.purchasedAt.getTime() - a.purchasedAt.getTime()),
   }));
 }
 
@@ -53,7 +53,7 @@ export async function getDesignation({
       categories: {
         select: {
           purchases: {
-            orderBy: { createdAt: 'desc' },
+            orderBy: { purchasedAt: 'desc' },
             include: { user: true },
           },
           amount: true,
@@ -77,7 +77,7 @@ export async function getDesignation({
           amount: amount.toNumber(),
         })),
       )
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
+      .sort((a, b) => b.purchasedAt.getTime() - a.purchasedAt.getTime()),
   };
 }
 

@@ -10,7 +10,7 @@ import {
   CategoryWithDesignation,
   PurchaseWithUser,
 } from '@/lib/types';
-import { formatNumber } from '@/lib/utils';
+import { formatCurrency } from '@/lib/utils';
 
 import { DateTime } from '@/components/date-time';
 import { Card } from '@/components/ui/card';
@@ -45,7 +45,7 @@ export function PurchaseCard({
               <DollarSign className="text-primary size-4" />
             </div>
             <span className="font-semibold">
-              ${formatNumber(purchase.amount)}
+              {formatCurrency(purchase.amount)}
             </span>
           </div>
 
