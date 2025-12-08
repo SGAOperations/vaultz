@@ -195,19 +195,21 @@ export function EditCategoryDialog({
             />
 
             <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleCancel}
-                className="flex-1"
-                disabled={isSubmitting}
-              >
-                Cancel
-              </Button>
               <Button type="submit" className="flex-1" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="animate-spin" />}
                 Save Changes
               </Button>
+              {confirmDelete && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleCancel}
+                  className="flex-1"
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </Button>
+              )}
               <Button
                 type="button"
                 variant={confirmDelete ? 'destructive' : 'outline'}
