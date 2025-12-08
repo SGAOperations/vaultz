@@ -35,14 +35,16 @@ export default async function UserPage({
     ]);
   if (user === null) notFound();
 
-  const totalSpent = user.purchases
-    .filter((purchase) => !purchase.excludeFromTotal)
-    .reduce((acc, purchase) => acc + purchase.amount, 0);
+  const filteredPurchases = user.purchases.filter(
+    (purchase) => !purchase.excludeFromTotal,
+  );
+  const totalSpent = filteredPurchases.reduce(
+    (acc, purchase) => acc + purchase.amount,
+    0,
+  );
 
   const purchaseCount = user.purchases.length;
-  const filteredPurchaseCount = user.purchases.filter(
-    (purchase) => !purchase.excludeFromTotal,
-  ).length;
+  const filteredPurchaseCount = filteredPurchases.length;
   const averagePurchase =
     filteredPurchaseCount > 0 ? totalSpent / filteredPurchaseCount : 0;
 
