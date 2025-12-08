@@ -351,7 +351,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                                 acc[group] = acc[group] || { items: [] };
                                 acc[group].items.push({
                                   value: category.id,
-                                  label: `${category.name} (${category.code})`,
+                                  label: `${category.name} (SC${category.code})`,
                                 });
                                 return acc;
                               },

@@ -8,6 +8,6 @@ UPDATE "Category" SET "ledgerCode" = "code";
 -- Make ledgerCode NOT NULL after data migration
 ALTER TABLE "Category" ALTER COLUMN "ledgerCode" SET NOT NULL;
 
--- Update code column to use SC prefix format (default to SC000 for existing records)
+-- Update code column to use numeric format (default to 000 for existing records)
 -- Note: Manual data cleanup may be needed for existing records
-UPDATE "Category" SET "code" = 'SC000' WHERE "code" IS NOT NULL;
+UPDATE "Category" SET "code" = '000' WHERE "code" IS NOT NULL;

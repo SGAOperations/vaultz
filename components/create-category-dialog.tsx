@@ -33,17 +33,13 @@ export function CreateCategoryDialog({
   trigger: React.ReactNode;
 }) {
   async function onSubmit(data: FormData): Promise<boolean> {
-    // Prefix the code with 'SC' before sending to backend
-    const result = await handleError(
-      createCategory({ ...data, code: `SC${data.code}` }),
-      {
-        toast: {
-          loading: 'Creating spending category...',
-          success: 'Spending category created successfully',
-          error: 'Failed to create spending category',
-        },
+    const result = await handleError(createCategory(data), {
+      toast: {
+        loading: 'Creating spending category...',
+        success: 'Spending category created successfully',
+        error: 'Failed to create spending category',
       },
-    );
+    });
     return !isError(result);
   }
 
@@ -67,7 +63,7 @@ export function CreateCategoryDialog({
         name="code"
         label="Spending Category Code"
         placeholder="123"
-        description="Enter 3 numbers (will be prefixed with SC, e.g., SC123)."
+        description="Enter 3 numbers (displayed with SC prefix, e.g., SC123)."
       />
       <FormInput<FormData>
         name="ledgerCode"

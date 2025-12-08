@@ -59,9 +59,7 @@ export function EditCategoryDialog({
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {
-      code: category.code.startsWith('SC')
-        ? category.code.slice(2)
-        : category.code, // Remove SC prefix for editing
+      code: category.code,
       ledgerCode: category.ledgerCode,
       name: category.name,
       amount: category.amount,
@@ -69,19 +67,16 @@ export function EditCategoryDialog({
   });
 
   async function onSubmit(data: z.infer<typeof schema>) {
-    await handleError(
-      updateCategory({ id: category.id, ...data, code: `SC${data.code}` }),
-      {
-        toast: {
-          loading: 'Updating spending category...',
-          success: 'Spending category updated successfully',
-          error: 'Failed to update spending category',
-        },
-        onSuccess: () => {
-          setOpen(false);
-        },
+    await handleError(updateCategory({ id: category.id, ...data }), {
+      toast: {
+        loading: 'Updating spending category...',
+        success: 'Spending category updated successfully',
+        error: 'Failed to update spending category',
       },
-    );
+      onSuccess: () => {
+        setOpen(false);
+      },
+    });
   }
 
   async function handleDelete() {
@@ -155,7 +150,7 @@ export function EditCategoryDialog({
                     <Input placeholder="123" {...field} />
                   </FormControl>
                   <FormDescription>
-                    Enter 3 numbers (will be prefixed with SC, e.g., SC123).
+                    Enter 3 numbers (displayed with SC prefix, e.g., SC123).
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
