@@ -106,6 +106,10 @@ export function EditCategoryDialog({
     form.reset();
   }
 
+  function handleCancelDelete() {
+    setConfirmDelete(false);
+  }
+
   function handleOpenChange(newOpen: boolean) {
     setOpen(newOpen);
     if (!newOpen) {
@@ -198,16 +202,22 @@ export function EditCategoryDialog({
               <Button
                 type="button"
                 variant="outline"
-                onClick={handleCancel}
+                onClick={confirmDelete ? handleCancelDelete : handleCancel}
                 className="flex-1"
                 disabled={isSubmitting}
               >
-                Cancel
+                {confirmDelete ? 'Cancel Delete' : 'Cancel'}
               </Button>
-              <Button type="submit" className="flex-1" disabled={isSubmitting}>
-                {isSubmitting && <Loader2 className="animate-spin" />}
-                Save Changes
-              </Button>
+              {!confirmDelete && (
+                <Button
+                  type="submit"
+                  className="flex-1"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting && <Loader2 className="animate-spin" />}
+                  Save Changes
+                </Button>
+              )}
               <Button
                 type="button"
                 variant={confirmDelete ? 'destructive' : 'outline'}
