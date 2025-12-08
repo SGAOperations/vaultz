@@ -8,6 +8,6 @@ UPDATE "Category" SET "ledgerCode" = "code";
 -- Make ledgerCode NOT NULL after data migration
 ALTER TABLE "Category" ALTER COLUMN "ledgerCode" SET NOT NULL;
 
--- Update code column to use numeric format (default to 000 for existing records)
--- Note: Manual data cleanup may be needed for existing records
+-- Update code column to default placeholder value (existing records need manual update)
+-- Note: All existing records will be set to '000' and require manual cleanup
 UPDATE "Category" SET "code" = '000' WHERE "code" IS NOT NULL;
