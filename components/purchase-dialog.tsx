@@ -265,6 +265,10 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
     setFilesUploaded([]);
   }
 
+  function handleCancelDelete() {
+    setConfirmDelete(false);
+  }
+
   function handleOpenChange(newOpen: boolean) {
     setOpen(newOpen);
     if (!newOpen) {
@@ -635,6 +639,15 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                 ) : (
                   <>
                     <Button
+                      type="button"
+                      variant="outline"
+                      onClick={confirmDelete ? handleCancelDelete : handleCancel}
+                      className="flex-1"
+                      disabled={isSubmitting}
+                    >
+                      {confirmDelete ? 'Cancel Delete' : 'Cancel'}
+                    </Button>
+                    <Button
                       type="submit"
                       className="flex-1"
                       disabled={isSubmitting}
@@ -642,17 +655,6 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                       {isSubmitting && <Loader2 className="animate-spin" />}
                       Save Changes
                     </Button>
-                    {confirmDelete && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleCancel}
-                        className="flex-1"
-                        disabled={isSubmitting}
-                      >
-                        Cancel
-                      </Button>
-                    )}
                     <Button
                       type="button"
                       variant={confirmDelete ? 'destructive' : 'outline'}
