@@ -71,15 +71,15 @@ export function Combobox({
               {onCreate && inputValue.trim() ? (
                 <CommandItem
                   onSelect={() => {
-                    onCreate(inputValue);
+                    onCreate(inputValue.trim());
                     setOpen(false);
                     setInputValue('');
                   }}
                   className="cursor-pointer justify-center"
                   role="button"
-                  aria-label={`Create new ${name}: ${inputValue}`}
+                  aria-label={`Create new ${name}: ${inputValue.trim()}`}
                 >
-                  Create "{inputValue}"
+                  Create "{inputValue.trim()}"
                 </CommandItem>
               ) : (
                 `No ${name} found.`
