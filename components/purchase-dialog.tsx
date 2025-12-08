@@ -865,7 +865,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                       Notes
                     </span>
                   </div>
-                  <p className="whitespace-pre-wrap text-sm">
+                  <p className="text-sm whitespace-pre-wrap">
                     {purchase!.notes}
                   </p>
                 </div>

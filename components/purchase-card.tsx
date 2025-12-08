@@ -96,7 +96,7 @@ export function PurchaseCard({
                       </div>
                     </TooltipTrigger>
                     <TooltipContent side="left" className="max-w-sm">
-                      <p className="whitespace-pre-wrap text-sm">
+                      <p className="text-sm whitespace-pre-wrap">
                         {purchase.notes}
                       </p>
                     </TooltipContent>
