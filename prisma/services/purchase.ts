@@ -46,7 +46,7 @@ export async function createPurchase({
       categoryId,
       description: description || '',
       amount: new Decimal(amount),
-      allocationId,
+      allocationId: allocationId || null,
       purchasedAt: purchasedAt,
       receipts,
     },
