@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Loader2 } from 'lucide-react';
 import { z } from 'zod/v4';
 
 import { User } from '@/prisma/client';
@@ -47,6 +48,7 @@ export function UserDialog({
     resolver: zodResolver(schema),
     defaultValues: { first: user?.first || '', last: user?.last || '' },
   });
+  const isSubmitting = form.formState.isSubmitting;
 
   async function onSubmit(data: FormData) {
     if (user) {
@@ -100,7 +102,10 @@ export function UserDialog({
               label="Last Name"
               placeholder="Travolta"
             />
-            <Button type="submit">Submit</Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting && <Loader2 className="animate-spin" />}
+              Submit
+            </Button>
           </form>
         </FormProvider>
       </DialogContent>
