@@ -240,12 +240,15 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
     setReceiptsToDisplay((prev) => prev.filter((r) => r !== receiptKey));
   }
 
-  function handleCreateUser(searchTerm: string) {
-    // Parse the search term to extract first and last name
+  function parseNameFromSearch(searchTerm: string): { first: string; last: string } {
     const nameParts = searchTerm.trim().split(/\s+/);
-    const firstName = nameParts[0] || '';
-    const lastName = nameParts.slice(1).join(' ') || '';
-    
+    return {
+      first: nameParts[0] || '',
+      last: nameParts.slice(1).join(' ') || '',
+    };
+  }
+
+  function handleCreateUser(searchTerm: string) {
     setNewUserSearchTerm(searchTerm);
     setUserDialogOpen(true);
   }
@@ -856,15 +859,15 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
       </DialogContent>
       
       {/* Inline User Creation Dialog */}
-      <UserDialog
-        open={userDialogOpen}
-        onOpenChange={setUserDialogOpen}
-        onUserCreated={handleUserCreated}
-        initialFirst={newUserSearchTerm.trim().split(/\s+/)[0] || ''}
-        initialLast={newUserSearchTerm.trim().split(/\s+/).slice(1).join(' ') || ''}
-      >
-        <div /> {/* Empty trigger since we control it programmatically */}
-      </UserDialog>
+      {userDialogOpen && (
+        <UserDialog
+          open={userDialogOpen}
+          onOpenChange={setUserDialogOpen}
+          onUserCreated={handleUserCreated}
+          initialFirst={parseNameFromSearch(newUserSearchTerm).first}
+          initialLast={parseNameFromSearch(newUserSearchTerm).last}
+        />
+      )}
     </Dialog>
   );
 }

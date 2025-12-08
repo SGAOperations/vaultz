@@ -46,7 +46,7 @@ export function UserDialog({
   onOpenChange,
 }: {
   user?: User;
-  children: React.ReactNode;
+  children?: React.ReactNode;
   onUserCreated?: (user: User) => void;
   initialFirst?: string;
   initialLast?: string;
@@ -111,7 +111,7 @@ export function UserDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+      {children && <DialogTrigger asChild>{children}</DialogTrigger>}
 
       <DialogContent>
         <DialogHeader>
