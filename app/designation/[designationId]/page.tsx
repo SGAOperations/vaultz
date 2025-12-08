@@ -111,7 +111,7 @@ export default async function DesignationPage({
                           {category.name}
                         </h3>
                         <p className="text-muted-foreground font-mono text-sm">
-                          {category.code}
+                          SC{category.code}
                         </p>
                       </div>
                     </div>

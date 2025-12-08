@@ -10,6 +10,7 @@ import {
   DollarSign,
   FileText,
   FolderOpen,
+  Loader2,
   Pencil,
   Plus,
   Receipt,
@@ -165,6 +166,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
       receipts: purchase?.receipts || [],
     },
   });
+  const isSubmitting = form.formState.isSubmitting;
 
   async function onSubmit(data: FormData) {
     if (isCreateMode) {
@@ -177,6 +179,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
         onSuccess: () => {
           form.reset();
           setFilesUploaded([]);
+          setReceiptsToDisplay([]);
           setOpen(false);
         },
       });
@@ -229,6 +232,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
       setOpen(false);
       form.reset();
       setFilesUploaded([]);
+      setReceiptsToDisplay([]);
       return;
     }
 
@@ -351,7 +355,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                                 acc[group] = acc[group] || { items: [] };
                                 acc[group].items.push({
                                   value: category.id,
-                                  label: `${category.name} (${category.code})`,
+                                  label: `${category.name} (SC${category.code})`,
                                 });
                                 return acc;
                               },
@@ -535,7 +539,12 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
 
               <div className="flex gap-2">
                 {isCreateMode ? (
-                  <Button type="submit" className="flex-1">
+                  <Button
+                    type="submit"
+                    className="flex-1"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting && <Loader2 className="animate-spin" />}
                     Submit
                   </Button>
                 ) : (
@@ -545,10 +554,16 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                       variant="outline"
                       onClick={handleCancel}
                       className="flex-1"
+                      disabled={isSubmitting}
                     >
                       Cancel
                     </Button>
-                    <Button type="submit" className="flex-1">
+                    <Button
+                      type="submit"
+                      className="flex-1"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting && <Loader2 className="animate-spin" />}
                       Save Changes
                     </Button>
                     <Button
@@ -556,6 +571,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                       variant={confirmDelete ? 'destructive' : 'outline'}
                       onClick={handleDelete}
                       className="flex-1"
+                      disabled={isSubmitting}
                     >
                       {confirmDelete ? (
                         'Confirm Delete'
