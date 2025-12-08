@@ -30,7 +30,7 @@ export async function getUsersWithPurchases(): Promise<UserWithPurchases[]> {
   return (
     await prisma.user.findMany({
       where: { deletedAt: null },
-      include: { purchases: true },
+      include: { purchases: { orderBy: { purchasedAt: 'desc' } } },
     })
   ).map((user) => ({
     ...user,
