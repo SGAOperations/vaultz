@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 
-import { Decimal } from '@/prisma/client/runtime/library';
+import { Prisma } from '@/prisma/client';
 
 import prisma from '@/lib/prisma';
 import {
@@ -24,7 +24,7 @@ export async function createCategory({
   amount: number;
 }): Promise<ResponseType<Category>> {
   const category = await prisma.category.create({
-    data: { designationId, code, name, amount: new Decimal(amount) },
+    data: { designationId, code, name, amount: new Prisma.Decimal(amount) },
   });
 
   revalidatePath('/designation');
@@ -96,7 +96,7 @@ export async function updateCategory({
 }): Promise<ResponseType<Category>> {
   const category = await prisma.category.update({
     where: { id },
-    data: { code, name, amount: new Decimal(amount) },
+    data: { code, name, amount: new Prisma.Decimal(amount) },
   });
 
   revalidatePath('/category');

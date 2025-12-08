@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 
-import { Decimal } from '@/prisma/client/runtime/library';
+import { Prisma } from '@/prisma/client';
 
 import prisma from '@/lib/prisma';
 import { Purchase, PurchaseWithUser } from '@/lib/types';
@@ -45,7 +45,7 @@ export async function createPurchase({
       userId,
       categoryId,
       description: description || '',
-      amount: new Decimal(amount),
+      amount: new Prisma.Decimal(amount),
       allocationId,
       purchasedAt: purchasedAt,
       receipts,
@@ -83,7 +83,7 @@ export async function updatePurchase({
       userId,
       categoryId,
       description: description || '',
-      amount: new Decimal(amount),
+      amount: new Prisma.Decimal(amount),
       allocationId: allocationId || null,
       purchasedAt,
       receipts,
