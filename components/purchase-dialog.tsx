@@ -6,8 +6,11 @@ import { FormProvider, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Calendar,
+  Check,
+  CircleDollarSign,
   Clock,
   DollarSign,
+  FileCheck,
   FileText,
   FolderOpen,
   Loader2,
@@ -55,6 +58,7 @@ import {
 
 import { DateTime } from './date-time';
 import { Button } from './ui/button';
+import { Checkbox } from './ui/checkbox';
 import { Combobox } from './ui/combobox';
 import { DatePicker } from './ui/date-picker';
 import {
@@ -85,6 +89,9 @@ const schema = z.object({
     ),
   purchasedAt: z.date('Please select a valid date'),
   receipts: z.array(z.string()).optional(),
+  excludeFromTotal: z.boolean().optional(),
+  expenseReportCreated: z.boolean().optional(),
+  reimbursed: z.boolean().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -164,6 +171,9 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
       amount: purchase?.amount || 0,
       purchasedAt: purchase ? parseDateOnly(purchase.purchasedAt) : new Date(),
       receipts: purchase?.receipts || [],
+      excludeFromTotal: purchase?.excludeFromTotal || false,
+      expenseReportCreated: purchase?.expenseReportCreated || false,
+      reimbursed: purchase?.reimbursed || false,
     },
   });
   const isSubmitting = form.formState.isSubmitting;
@@ -247,6 +257,9 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
       amount: purchase!.amount,
       purchasedAt: parseDateOnly(purchase!.purchasedAt),
       receipts: purchase!.receipts,
+      excludeFromTotal: purchase!.excludeFromTotal,
+      expenseReportCreated: purchase!.expenseReportCreated,
+      reimbursed: purchase!.reimbursed,
     });
     setReceiptsToDisplay(purchase!.receipts);
     setFilesUploaded([]);
@@ -537,6 +550,78 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                 )}
               />
 
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <FormField
+                  control={form.control}
+                  name="excludeFromTotal"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="flex items-center gap-3">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <FormLabel className="!mt-0 cursor-pointer font-normal">
+                          Exclude from total
+                        </FormLabel>
+                      </div>
+                      <FormDescription className="text-xs">
+                        Don't count towards budget
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="expenseReportCreated"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="flex items-center gap-3">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <FormLabel className="!mt-0 cursor-pointer font-normal">
+                          Expense report created
+                        </FormLabel>
+                      </div>
+                      <FormDescription className="text-xs">
+                        Report has been filed
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="reimbursed"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="flex items-center gap-3">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <FormLabel className="!mt-0 cursor-pointer font-normal">
+                          Reimbursed
+                        </FormLabel>
+                      </div>
+                      <FormDescription className="text-xs">
+                        Payment has been received
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
               <div className="flex gap-2">
                 {isCreateMode ? (
                   <Button
@@ -681,6 +766,36 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                   </span>
                 </div>
               </div>
+
+              {/* Selector Status Indicators */}
+              {(purchase!.excludeFromTotal ||
+                purchase!.expenseReportCreated ||
+                purchase!.reimbursed) && (
+                <div className="flex flex-wrap gap-3">
+                  {purchase!.excludeFromTotal && (
+                    <div className="bg-muted flex items-center gap-2 rounded-full px-4 py-2">
+                      <CircleDollarSign className="text-primary size-4" />
+                      <span className="text-sm font-semibold">
+                        Excluded from Budget
+                      </span>
+                    </div>
+                  )}
+                  {purchase!.expenseReportCreated && (
+                    <div className="bg-muted flex items-center gap-2 rounded-full px-4 py-2">
+                      <FileCheck className="text-primary size-4" />
+                      <span className="text-sm font-semibold">
+                        Expense Report Created
+                      </span>
+                    </div>
+                  )}
+                  {purchase!.reimbursed && (
+                    <div className="bg-muted flex items-center gap-2 rounded-full px-4 py-2">
+                      <Check className="text-primary size-4" />
+                      <span className="text-sm font-semibold">Reimbursed</span>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Receipts */}
               {receiptUrls.length > 0 && (

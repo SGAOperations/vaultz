@@ -35,10 +35,9 @@ export default async function UserPage({
     ]);
   if (user === null) notFound();
 
-  const totalSpent = user.purchases.reduce(
-    (acc, purchase) => acc + purchase.amount,
-    0,
-  );
+  const totalSpent = user.purchases
+    .filter((purchase) => !purchase.excludeFromTotal)
+    .reduce((acc, purchase) => acc + purchase.amount, 0);
 
   const purchaseCount = user.purchases.length;
   const averagePurchase = purchaseCount > 0 ? totalSpent / purchaseCount : 0;

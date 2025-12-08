@@ -27,10 +27,9 @@ export default async function Allocation({
   const categories = await getAllCategories();
   const users = await getUsers();
 
-  const spent = allocation.purchases.reduce(
-    (acc, purchase) => acc + purchase.amount,
-    0,
-  );
+  const spent = allocation.purchases
+    .filter((purchase) => !purchase.excludeFromTotal)
+    .reduce((acc, purchase) => acc + purchase.amount, 0);
 
   return (
     <div className="flex w-full flex-col">

@@ -53,7 +53,9 @@ export default async function AllocationGroup({
     .flatMap((allocation) => allocation.purchases)
     .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
-  const spent = purchases.reduce((acc, purchase) => acc + purchase.amount, 0);
+  const spent = purchases
+    .filter((purchase) => !purchase.excludeFromTotal)
+    .reduce((acc, purchase) => acc + purchase.amount, 0);
 
   return (
     <div className="flex w-full flex-col">
@@ -92,10 +94,9 @@ export default async function AllocationGroup({
       ) : (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           {allocationGroup.allocations.map((allocation) => {
-            const allocationSpent = allocation.purchases.reduce(
-              (acc, purchase) => acc + purchase.amount,
-              0,
-            );
+            const allocationSpent = allocation.purchases
+              .filter((purchase) => !purchase.excludeFromTotal)
+              .reduce((acc, purchase) => acc + purchase.amount, 0);
             const remaining = allocation.amount - allocationSpent;
 
             return (
