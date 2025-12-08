@@ -57,6 +57,7 @@ import {
 } from '@/components/ui/dialog';
 
 import { DateTime } from './date-time';
+import { UserDialog } from './user-dialog';
 import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
 import { Combobox } from './ui/combobox';
@@ -138,6 +139,8 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
   const [receiptsToDisplay, setReceiptsToDisplay] = useState<string[]>(
     purchase?.receipts || [],
   );
+  const [userDialogOpen, setUserDialogOpen] = useState(false);
+  const [newUserSearchTerm, setNewUserSearchTerm] = useState('');
 
   const receiptUrls = purchase?.receipts.map((r) => getFileUrl(r)) || [];
 
@@ -235,6 +238,23 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
       currentReceipts.filter((r) => r !== receiptKey),
     );
     setReceiptsToDisplay((prev) => prev.filter((r) => r !== receiptKey));
+  }
+
+  function handleCreateUser(searchTerm: string) {
+    // Parse the search term to extract first and last name
+    const nameParts = searchTerm.trim().split(/\s+/);
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || '';
+    
+    setNewUserSearchTerm(searchTerm);
+    setUserDialogOpen(true);
+  }
+
+  function handleUserCreated(user: User) {
+    // Auto-select the newly created user
+    form.setValue('userId', user.id);
+    setUserDialogOpen(false);
+    setNewUserSearchTerm('');
   }
 
   function handleCancel() {
@@ -341,6 +361,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                           {...field}
                           value={field.value || ''}
                           name="user"
+                          onCreate={handleCreateUser}
                         />
                       </FormControl>
                       <FormMessage />
@@ -833,6 +854,17 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
           </>
         )}
       </DialogContent>
+      
+      {/* Inline User Creation Dialog */}
+      <UserDialog
+        open={userDialogOpen}
+        onOpenChange={setUserDialogOpen}
+        onUserCreated={handleUserCreated}
+        initialFirst={newUserSearchTerm.trim().split(/\s+/)[0] || ''}
+        initialLast={newUserSearchTerm.trim().split(/\s+/).slice(1).join(' ') || ''}
+      >
+        <div /> {/* Empty trigger since we control it programmatically */}
+      </UserDialog>
     </Dialog>
   );
 }

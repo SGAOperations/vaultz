@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -39,16 +39,42 @@ type FormData = z.infer<typeof schema>;
 export function UserDialog({
   user,
   children,
+  onUserCreated,
+  initialFirst,
+  initialLast,
+  open: controlledOpen,
+  onOpenChange,
 }: {
   user?: User;
   children: React.ReactNode;
+  onUserCreated?: (user: User) => void;
+  initialFirst?: string;
+  initialLast?: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState<boolean>(false);
+  const [internalOpen, setInternalOpen] = useState<boolean>(false);
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const setOpen = onOpenChange || setInternalOpen;
+  
   const form = useForm({
     resolver: zodResolver(schema),
-    defaultValues: { first: user?.first || '', last: user?.last || '' },
+    defaultValues: { 
+      first: user?.first || initialFirst || '', 
+      last: user?.last || initialLast || '' 
+    },
   });
   const isSubmitting = form.formState.isSubmitting;
+
+  // Update form values when initialFirst or initialLast change
+  useEffect(() => {
+    if (open && !user) {
+      form.reset({
+        first: initialFirst || '',
+        last: initialLast || '',
+      });
+    }
+  }, [open, initialFirst, initialLast, user, form]);
 
   async function onSubmit(data: FormData) {
     if (user) {
@@ -61,6 +87,9 @@ export function UserDialog({
       });
       if (!isError(result)) {
         setOpen(false);
+        if (onUserCreated) {
+          onUserCreated(result);
+        }
       }
     } else {
       const result = await handleError(createUser(data), {
@@ -73,6 +102,9 @@ export function UserDialog({
       if (!isError(result)) {
         form.reset();
         setOpen(false);
+        if (onUserCreated) {
+          onUserCreated(result);
+        }
       }
     }
   }

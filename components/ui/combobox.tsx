@@ -28,14 +28,17 @@ export function Combobox({
   onChange,
   name,
   disabled = false,
+  onCreate,
 }: {
   data: { heading?: string; items: { label: string; value: string }[] }[];
   value?: string;
   onChange: (value: string) => void;
   name: string;
   disabled?: boolean;
+  onCreate?: (searchTerm: string) => void;
 }) {
   const [open, setOpen] = React.useState(false);
+  const [search, setSearch] = React.useState('');
 
   return (
     <Popover modal open={open} onOpenChange={setOpen}>
@@ -59,9 +62,28 @@ export function Combobox({
             return search && keywords ? fuzzy(keywords[0], search) - 0.1 : 0;
           }}
         >
-          <CommandInput placeholder={`Search ${name}s...`} />
+          <CommandInput 
+            placeholder={`Search ${name}s...`} 
+            value={search}
+            onValueChange={setSearch}
+          />
           <CommandList>
-            <CommandEmpty>No {name} found.</CommandEmpty>
+            <CommandEmpty>
+              {onCreate && search ? (
+                <CommandItem
+                  onSelect={() => {
+                    onCreate(search);
+                    setOpen(false);
+                    setSearch('');
+                  }}
+                  className="cursor-pointer justify-center"
+                >
+                  Create &quot;{search}&quot;
+                </CommandItem>
+              ) : (
+                `No ${name} found.`
+              )}
+            </CommandEmpty>
             {data.map((v, i) => (
               <CommandGroup key={i} heading={v.heading}>
                 {v.items.map((item) => (
@@ -71,6 +93,7 @@ export function Combobox({
                     onSelect={(currentValue) => {
                       onChange(currentValue === value ? '' : currentValue);
                       setOpen(false);
+                      setSearch('');
                     }}
                     keywords={[item.label]}
                   >
