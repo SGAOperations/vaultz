@@ -38,7 +38,7 @@ export function Combobox({
   onCreate?: (searchTerm: string) => void;
 }) {
   const [open, setOpen] = React.useState(false);
-  const [search, setSearch] = React.useState('');
+  const [inputValue, setInputValue] = React.useState('');
 
   return (
     <Popover modal open={open} onOpenChange={setOpen}>
@@ -63,24 +63,23 @@ export function Combobox({
           }}
         >
           <CommandInput 
-            placeholder={`Search ${name}s...`} 
-            value={search}
-            onValueChange={setSearch}
+            placeholder={`Search ${name}s...`}
+            onValueChange={setInputValue}
           />
           <CommandList>
             <CommandEmpty>
-              {onCreate && search ? (
+              {onCreate && inputValue.trim() ? (
                 <CommandItem
                   onSelect={() => {
-                    onCreate(search);
+                    onCreate(inputValue);
                     setOpen(false);
-                    setSearch('');
+                    setInputValue('');
                   }}
                   className="cursor-pointer justify-center"
                   role="button"
-                  aria-label={`Create new ${name}: ${search}`}
+                  aria-label={`Create new ${name}: ${inputValue}`}
                 >
-                  Create "{search}"
+                  Create "{inputValue}"
                 </CommandItem>
               ) : (
                 `No ${name} found.`
@@ -95,7 +94,7 @@ export function Combobox({
                     onSelect={(currentValue) => {
                       onChange(currentValue === value ? '' : currentValue);
                       setOpen(false);
-                      setSearch('');
+                      setInputValue('');
                     }}
                     keywords={[item.label]}
                   >
