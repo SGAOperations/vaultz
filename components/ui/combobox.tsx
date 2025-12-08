@@ -77,6 +77,8 @@ export function Combobox({
                     setSearch('');
                   }}
                   className="cursor-pointer justify-center"
+                  role="button"
+                  aria-label={`Create new ${name}: ${search}`}
                 >
                   Create "{search}"
                 </CommandItem>

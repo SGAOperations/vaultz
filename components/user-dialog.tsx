@@ -54,8 +54,9 @@ export function UserDialog({
   onOpenChange?: (open: boolean) => void;
 }) {
   const [internalOpen, setInternalOpen] = useState<boolean>(false);
-  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
-  const setOpen = onOpenChange || setInternalOpen;
+  const isControlled = controlledOpen !== undefined && onOpenChange !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+  const setOpen = isControlled ? onOpenChange : setInternalOpen;
   
   const form = useForm({
     resolver: zodResolver(schema),

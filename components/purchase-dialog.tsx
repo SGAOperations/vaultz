@@ -97,6 +97,15 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
+// Helper function to parse search term into first and last name
+function parseNameFromSearch(searchTerm: string): { first: string; last: string } {
+  const nameParts = searchTerm.trim().split(/\s+/);
+  return {
+    first: nameParts[0] || '',
+    last: nameParts.slice(1).join(' ') || '',
+  };
+}
+
 // Props for creating a new purchase (no existing purchase)
 type CreatePurchaseProps = {
   mode: 'create';
@@ -244,14 +253,6 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
       currentReceipts.filter((r) => r !== receiptKey),
     );
     setReceiptsToDisplay((prev) => prev.filter((r) => r !== receiptKey));
-  }
-
-  function parseNameFromSearch(searchTerm: string): { first: string; last: string } {
-    const nameParts = searchTerm.trim().split(/\s+/);
-    return {
-      first: nameParts[0] || '',
-      last: nameParts.slice(1).join(' ') || '',
-    };
   }
 
   function handleCreateUser(searchTerm: string) {
