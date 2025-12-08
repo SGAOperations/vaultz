@@ -88,9 +88,6 @@ export function UserDialog({
       });
       if (!isError(result)) {
         setOpen(false);
-        if (onUserCreated) {
-          onUserCreated(result);
-        }
       }
     } else {
       const result = await handleError(createUser(data), {
