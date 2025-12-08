@@ -641,7 +641,9 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={confirmDelete ? handleCancelDelete : handleCancel}
+                      onClick={
+                        confirmDelete ? handleCancelDelete : handleCancel
+                      }
                       className="flex-1"
                       disabled={isSubmitting}
                     >

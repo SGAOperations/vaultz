@@ -209,7 +209,11 @@ export function EditCategoryDialog({
                 {confirmDelete ? 'Cancel Delete' : 'Cancel'}
               </Button>
               {!confirmDelete && (
-                <Button type="submit" className="flex-1" disabled={isSubmitting}>
+                <Button
+                  type="submit"
+                  className="flex-1"
+                  disabled={isSubmitting}
+                >
                   {isSubmitting && <Loader2 className="animate-spin" />}
                   Save Changes
                 </Button>
