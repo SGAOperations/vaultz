@@ -560,7 +560,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                         <FormControl>
                           <Checkbox
                             checked={field.value}
-                            onCheckedChange={field.onChange}
+                            onChange={(e) => field.onChange(e.target.checked)}
                           />
                         </FormControl>
                         <FormLabel className="!mt-0 cursor-pointer font-normal">
@@ -568,7 +568,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                         </FormLabel>
                       </div>
                       <FormDescription className="text-xs">
-                        Don't count towards budget
+                        Don&apos;t count towards budget
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -583,7 +583,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                         <FormControl>
                           <Checkbox
                             checked={field.value}
-                            onCheckedChange={field.onChange}
+                            onChange={(e) => field.onChange(e.target.checked)}
                           />
                         </FormControl>
                         <FormLabel className="!mt-0 cursor-pointer font-normal">
@@ -606,7 +606,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                         <FormControl>
                           <Checkbox
                             checked={field.value}
-                            onCheckedChange={field.onChange}
+                            onChange={(e) => field.onChange(e.target.checked)}
                           />
                         </FormControl>
                         <FormLabel className="!mt-0 cursor-pointer font-normal">
