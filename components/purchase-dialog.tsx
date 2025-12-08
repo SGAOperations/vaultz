@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -130,6 +130,13 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
   const [receiptsToDisplay, setReceiptsToDisplay] = useState<string[]>(
     purchase?.receipts || [],
   );
+
+  // Reset receiptsToDisplay when dialog opens or when purchase changes
+  useEffect(() => {
+    if (open) {
+      setReceiptsToDisplay(purchase?.receipts || []);
+    }
+  }, [open, purchase]);
 
   const receiptUrls = purchase?.receipts.map((r) => getFileUrl(r)) || [];
 
