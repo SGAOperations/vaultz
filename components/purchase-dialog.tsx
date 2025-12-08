@@ -75,7 +75,7 @@ const schema = z.object({
   userId: z.string().min(1, 'Please select a user'),
   categoryId: z.string().min(1, 'Please select a category'),
   allocationId: z.string().optional(),
-  description: z.string().optional(),
+  description: z.string().min(1, 'Please enter a description'),
   amount: z.coerce
     .number<number>()
     .refine((val: number) => val !== 0, 'Amount cannot be $0.00')
@@ -350,8 +350,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                 <FormInput<FormData>
                   name="description"
                   label="Description"
-                  placeholder="Optional"
-                  description="Optional"
+                  placeholder="Enter a description"
                 />
                 <FormField
                   control={form.control}
