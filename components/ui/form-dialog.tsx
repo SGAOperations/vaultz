@@ -9,6 +9,7 @@ import {
 } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Loader2 } from 'lucide-react';
 import { z } from 'zod/v4';
 
 import { Button } from '@/components/ui/button';
@@ -51,6 +52,7 @@ function FormDialog<
   const [open, setOpen] = React.useState(false);
 
   const form = useForm({ resolver: zodResolver(schema), defaultValues });
+  const isSubmitting = form.formState.isSubmitting;
 
   async function handleSubmit(data: TOutput) {
     const success = await onSubmit(data);
@@ -76,7 +78,10 @@ function FormDialog<
             className="space-y-8"
           >
             {children}
-            <Button type="submit">{submitLabel}</Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting && <Loader2 className="animate-spin" />}
+              {submitLabel}
+            </Button>
           </form>
         </FormProvider>
       </DialogContent>
