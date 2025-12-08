@@ -179,6 +179,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
         onSuccess: () => {
           form.reset();
           setFilesUploaded([]);
+          setReceiptsToDisplay([]);
           setOpen(false);
         },
       });
@@ -231,6 +232,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
       setOpen(false);
       form.reset();
       setFilesUploaded([]);
+      setReceiptsToDisplay([]);
       return;
     }
 
