@@ -177,7 +177,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
       excludeFromTotal: purchase?.excludeFromTotal || false,
       expenseReportCreated: purchase?.expenseReportCreated || false,
       reimbursed: purchase?.reimbursed || false,
-      notes: purchase?.notes || '',
+      notes: purchase?.notes ?? '',
     },
   });
   const isSubmitting = form.formState.isSubmitting;
@@ -264,7 +264,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
       excludeFromTotal: purchase!.excludeFromTotal,
       expenseReportCreated: purchase!.expenseReportCreated,
       reimbursed: purchase!.reimbursed,
-      notes: purchase!.notes || '',
+      notes: purchase!.notes ?? '',
     });
     setReceiptsToDisplay(purchase!.receipts);
     setFilesUploaded([]);

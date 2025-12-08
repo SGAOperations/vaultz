@@ -60,7 +60,7 @@ export async function createPurchase({
       excludeFromTotal: excludeFromTotal ?? false,
       expenseReportCreated: expenseReportCreated ?? false,
       reimbursed: reimbursed ?? false,
-      notes: notes || null,
+      notes: notes ?? null,
     },
   });
 
@@ -110,7 +110,7 @@ export async function updatePurchase({
       excludeFromTotal: excludeFromTotal ?? false,
       expenseReportCreated: expenseReportCreated ?? false,
       reimbursed: reimbursed ?? false,
-      notes: notes || null,
+      notes: notes ?? null,
     },
   });
 
