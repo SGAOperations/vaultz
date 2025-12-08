@@ -171,12 +171,6 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
     return allAllocations.find((a) => a.id === purchase.allocationId)?.name;
   }, [purchase, allocationGroups, miscAllocations]);
 
-  // Parse name for inline user creation
-  const parsedNewUserName = useMemo(() => 
-    parseNameFromSearch(newUserSearchTerm),
-    [newUserSearchTerm]
-  );
-
   const form = useForm({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -866,15 +860,18 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
       </DialogContent>
       
       {/* Inline User Creation Dialog */}
-      {userDialogOpen && (
-        <UserDialog
-          open={userDialogOpen}
-          onOpenChange={setUserDialogOpen}
-          onUserCreated={handleUserCreated}
-          initialFirst={parsedNewUserName.first}
-          initialLast={parsedNewUserName.last}
-        />
-      )}
+      {userDialogOpen && (() => {
+        const { first, last } = parseNameFromSearch(newUserSearchTerm);
+        return (
+          <UserDialog
+            open={userDialogOpen}
+            onOpenChange={setUserDialogOpen}
+            onUserCreated={handleUserCreated}
+            initialFirst={first}
+            initialLast={last}
+          />
+        );
+      })()}
     </Dialog>
   );
 }
