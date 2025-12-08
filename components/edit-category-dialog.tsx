@@ -34,7 +34,11 @@ import {
 import { Input } from '@/components/ui/input';
 
 const schema = z.object({
-  code: z.string().length(4, 'Must be exactly 4 characters long'),
+  code: z
+    .string()
+    .length(3, 'Must be exactly 3 numbers')
+    .regex(/^\d{3}$/, 'Must be 3 numeric digits'),
+  ledgerCode: z.string().length(4, 'Must be exactly 4 characters long'),
   name: z.string().min(1, 'Please enter a category name'),
   amount: z.coerce
     .number<number>()
@@ -56,6 +60,7 @@ export function EditCategoryDialog({
     resolver: zodResolver(schema),
     defaultValues: {
       code: category.code,
+      ledgerCode: category.ledgerCode,
       name: category.name,
       amount: category.amount,
     },
@@ -141,13 +146,28 @@ export function EditCategoryDialog({
               name="code"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Code</FormLabel>
+                  <FormLabel>Spending Category Code</FormLabel>
+                  <FormControl>
+                    <Input placeholder="123" {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    Enter 3 numbers (displayed with SC prefix, e.g., SC123).
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="ledgerCode"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Ledger Code</FormLabel>
                   <FormControl>
                     <Input placeholder="7XXX" {...field} />
                   </FormControl>
                   <FormDescription>
-                    The spending category number to be associated with this
-                    category.
+                    The ledger code to be associated with this category.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
