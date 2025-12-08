@@ -568,7 +568,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                         </FormLabel>
                       </div>
                       <FormDescription className="text-xs">
-                        Don&apos;t count towards budget
+                        Exclude from budget calculations
                       </FormDescription>
                       <FormMessage />
                     </FormItem>

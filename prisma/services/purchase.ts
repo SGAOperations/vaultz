@@ -55,9 +55,9 @@ export async function createPurchase({
       allocationId: allocationId || null,
       purchasedAt: purchasedAt,
       receipts,
-      excludeFromTotal: excludeFromTotal || false,
-      expenseReportCreated: expenseReportCreated || false,
-      reimbursed: reimbursed || false,
+      excludeFromTotal: excludeFromTotal ?? false,
+      expenseReportCreated: expenseReportCreated ?? false,
+      reimbursed: reimbursed ?? false,
     },
   });
 
@@ -102,9 +102,9 @@ export async function updatePurchase({
       allocationId: allocationId || null,
       purchasedAt,
       receipts,
-      excludeFromTotal: excludeFromTotal || false,
-      expenseReportCreated: expenseReportCreated || false,
-      reimbursed: reimbursed || false,
+      excludeFromTotal: excludeFromTotal ?? false,
+      expenseReportCreated: expenseReportCreated ?? false,
+      reimbursed: reimbursed ?? false,
     },
   });
 
