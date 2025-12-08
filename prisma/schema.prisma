@@ -26,11 +26,12 @@ model Designation {
 }
 
 model Category {
-    id        String    @id @default(uuid())
-    code      String
-    name      String
-    amount    Decimal
-    deletedAt DateTime?
+    id         String    @id @default(uuid())
+    code       String
+    ledgerCode String
+    name       String
+    amount     Decimal
+    deletedAt  DateTime?
 
     designationId String
     designation   Designation  @relation(fields: [designationId], references: [id])
@@ -39,12 +40,15 @@ model Category {
 }
 
 model Purchase {
-    id          String   @id @default(uuid())
-    amount      Decimal
-    description String
-    createdAt   DateTime @default(now())
-    purchasedAt DateTime @db.Date
-    receipts    String[]
+    id                   String   @id @default(uuid())
+    amount               Decimal
+    description          String
+    createdAt            DateTime @default(now())
+    purchasedAt          DateTime @db.Date
+    receipts             String[]
+    excludeFromTotal     Boolean  @default(false)
+    expenseReportCreated Boolean  @default(false)
+    reimbursed           Boolean  @default(false)
 
     categoryId   String
     category     Category    @relation(fields: [categoryId], references: [id])

@@ -31,16 +31,15 @@ export default async function CategoryPage({
   const allocationGroups = await getAllAllocationGroups();
   const miscAllocations = await getMiscAllocations();
 
-  const spent = category.purchases.reduce(
-    (acc, purchase) => acc + purchase.amount,
-    0,
-  );
+  const spent = category.purchases
+    .filter((purchase) => !purchase.excludeFromTotal)
+    .reduce((acc, purchase) => acc + purchase.amount, 0);
 
   return (
     <div className="flex w-full flex-col">
       <PageHeader
         title={category.name}
-        description={`Category code: ${category.code}`}
+        description={`Category code: SC${category.code}`}
         actions={
           <div className="flex gap-2">
             <CreatePurchaseDialog

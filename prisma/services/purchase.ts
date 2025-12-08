@@ -13,7 +13,7 @@ export async function getLatestPurchases(
 ): Promise<PurchaseWithUser[]> {
   const purchases = await prisma.purchase.findMany({
     take: limit,
-    orderBy: { purchasedAt: 'desc' },
+    orderBy: [{ purchasedAt: 'desc' }, { createdAt: 'desc' }],
     include: { user: true },
   });
 
@@ -31,24 +31,33 @@ export async function createPurchase({
   allocationId,
   purchasedAt,
   receipts,
+  excludeFromTotal,
+  expenseReportCreated,
+  reimbursed,
 }: {
   userId: string;
   categoryId: string;
-  description?: string;
+  description: string;
   amount: number;
   allocationId?: string;
   purchasedAt: Date;
   receipts?: string[];
+  excludeFromTotal?: boolean;
+  expenseReportCreated?: boolean;
+  reimbursed?: boolean;
 }): Promise<ResponseType<Purchase>> {
   const purchase = await prisma.purchase.create({
     data: {
       userId,
       categoryId,
-      description: description || '',
+      description,
       amount: new Prisma.Decimal(amount),
-      allocationId,
+      allocationId: allocationId || null,
       purchasedAt: purchasedAt,
       receipts,
+      excludeFromTotal: excludeFromTotal ?? false,
+      expenseReportCreated: expenseReportCreated ?? false,
+      reimbursed: reimbursed ?? false,
     },
   });
 
@@ -67,26 +76,35 @@ export async function updatePurchase({
   allocationId,
   purchasedAt,
   receipts,
+  excludeFromTotal,
+  expenseReportCreated,
+  reimbursed,
 }: {
   id: string;
   userId: string;
   categoryId: string;
-  description?: string;
+  description: string;
   amount: number;
   allocationId?: string;
   purchasedAt: Date;
   receipts?: string[];
+  excludeFromTotal?: boolean;
+  expenseReportCreated?: boolean;
+  reimbursed?: boolean;
 }): Promise<ResponseType<Purchase>> {
   const purchase = await prisma.purchase.update({
     where: { id },
     data: {
       userId,
       categoryId,
-      description: description || '',
+      description,
       amount: new Prisma.Decimal(amount),
       allocationId: allocationId || null,
       purchasedAt,
       receipts,
+      excludeFromTotal: excludeFromTotal ?? false,
+      expenseReportCreated: expenseReportCreated ?? false,
+      reimbursed: reimbursed ?? false,
     },
   });
 

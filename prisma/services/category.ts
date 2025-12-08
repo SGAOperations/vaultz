@@ -15,16 +15,24 @@ import { ResponseType } from '@/lib/utils';
 export async function createCategory({
   designationId,
   code,
+  ledgerCode,
   name,
   amount,
 }: {
   designationId: string;
   code: string;
+  ledgerCode: string;
   name: string;
   amount: number;
 }): Promise<ResponseType<Category>> {
   const category = await prisma.category.create({
-    data: { designationId, code, name, amount: new Prisma.Decimal(amount) },
+    data: {
+      designationId,
+      code,
+      ledgerCode,
+      name,
+      amount: new Prisma.Decimal(amount),
+    },
   });
 
   revalidatePath('/designation');
@@ -40,7 +48,10 @@ export async function getCategoryById({
   const category = await prisma.category.findUnique({
     where: { id, deletedAt: null },
     include: {
-      purchases: { orderBy: { purchasedAt: 'desc' }, include: { user: true } },
+      purchases: {
+        orderBy: [{ purchasedAt: 'desc' }, { createdAt: 'desc' }],
+        include: { user: true },
+      },
       designation: true,
     },
   });
@@ -86,17 +97,19 @@ export async function getAllCategories(): Promise<CategoryWithDesignation[]> {
 export async function updateCategory({
   id,
   code,
+  ledgerCode,
   name,
   amount,
 }: {
   id: string;
   code: string;
+  ledgerCode: string;
   name: string;
   amount: number;
 }): Promise<ResponseType<Category>> {
   const category = await prisma.category.update({
     where: { id },
-    data: { code, name, amount: new Prisma.Decimal(amount) },
+    data: { code, ledgerCode, name, amount: new Prisma.Decimal(amount) },
   });
 
   revalidatePath('/category');

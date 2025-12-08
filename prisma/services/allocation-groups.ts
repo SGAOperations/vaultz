@@ -17,7 +17,7 @@ export async function getAllAllocationGroups(): Promise<
         allocations: {
           include: {
             purchases: {
-              orderBy: { createdAt: 'desc' },
+              orderBy: [{ purchasedAt: 'desc' }, { createdAt: 'desc' }],
               include: { user: true },
             },
           },
@@ -48,7 +48,7 @@ export async function getAllocationGroup({
       allocations: {
         include: {
           purchases: {
-            orderBy: { createdAt: 'desc' },
+            orderBy: [{ purchasedAt: 'desc' }, { createdAt: 'desc' }],
             include: { user: true },
           },
         },
