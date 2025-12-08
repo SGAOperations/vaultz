@@ -78,7 +78,7 @@ export function Combobox({
                   }}
                   className="cursor-pointer justify-center"
                 >
-                  Create &quot;{search}&quot;
+                  Create "{search}"
                 </CommandItem>
               ) : (
                 `No ${name} found.`
