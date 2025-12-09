@@ -38,7 +38,7 @@ export function Combobox({
   onCreate?: (searchTerm: string) => void;
 }) {
   const [open, setOpen] = React.useState(false);
-  const [inputValue, setInputValue] = React.useState('');
+  const [search, setSearch] = React.useState('');
 
   return (
     <Popover modal open={open} onOpenChange={setOpen}>
@@ -58,38 +58,35 @@ export function Combobox({
       </PopoverTrigger>
       <PopoverContent className="w-full p-0">
         <Command
-          filter={(_, search, keywords) => {
+          filter={(value, search, keywords) => {
+            // Update our search state when Command's internal search changes
+            if (search !== undefined) {
+              setSearch(search);
+            }
             return search && keywords ? fuzzy(keywords[0], search) - 0.1 : 0;
           }}
         >
           <CommandInput 
             placeholder={`Search ${name}s...`}
-            onValueChange={(value) => {
-              console.log('[Combobox] onValueChange:', value);
-              setInputValue(value);
-            }}
           />
           <CommandList>
             <CommandEmpty>
-              {(() => {
-                console.log('[Combobox CommandEmpty] onCreate:', !!onCreate, 'inputValue:', inputValue, 'trimmed:', inputValue.trim());
-                return onCreate && inputValue.trim() ? (
-                  <CommandItem
-                    onSelect={() => {
-                      onCreate(inputValue.trim());
-                      setOpen(false);
-                      setInputValue('');
-                    }}
-                    className="cursor-pointer justify-center"
-                    role="button"
-                    aria-label={`Create new ${name}: ${inputValue.trim()}`}
-                  >
-                    Create "{inputValue.trim()}"
-                  </CommandItem>
-                ) : (
-                  `No ${name} found.`
-                );
-              })()}
+              {onCreate && search.trim() ? (
+                <CommandItem
+                  onSelect={() => {
+                    onCreate(search.trim());
+                    setOpen(false);
+                    setSearch('');
+                  }}
+                  className="cursor-pointer justify-center"
+                  role="button"
+                  aria-label={`Create new ${name}: ${search.trim()}`}
+                >
+                  Create "{search.trim()}"
+                </CommandItem>
+              ) : (
+                `No ${name} found.`
+              )}
             </CommandEmpty>
             {data.map((v, i) => (
               <CommandGroup key={i} heading={v.heading}>
@@ -100,7 +97,7 @@ export function Combobox({
                     onSelect={(currentValue) => {
                       onChange(currentValue === value ? '' : currentValue);
                       setOpen(false);
-                      setInputValue('');
+                      setSearch('');
                     }}
                     keywords={[item.label]}
                   >
