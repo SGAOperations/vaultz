@@ -233,7 +233,9 @@ export function CreateTransferDialog({
                               {
                                 heading: 'Miscellaneous',
                                 items: miscAllocations
-                                  .filter((allocation) => allocation.id !== sourceId)
+                                  .filter(
+                                    (allocation) => allocation.id !== sourceId,
+                                  )
                                   .map((allocation) => ({
                                     value: allocation.id,
                                     label: allocation.name,

@@ -32,10 +32,7 @@ export async function createTransfer({
   }
 
   // Validate that source and destination are of the same type
-  if (
-    (fromCategoryId && !toCategoryId) ||
-    (!fromCategoryId && toCategoryId)
-  ) {
+  if ((fromCategoryId && !toCategoryId) || (!fromCategoryId && toCategoryId)) {
     throw new Error(
       'Transfers must be between accounts of the same type (category to category or allocation to allocation)',
     );
