@@ -7,8 +7,8 @@ import { getUsers } from '@/prisma/services/user';
 
 import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/page-header';
-import { PurchaseCard } from '@/components/purchase-card';
 import { CreatePurchaseDialog } from '@/components/purchase-dialog';
+import { PurchaseList } from '@/components/purchase-list';
 import { SectionHeader } from '@/components/section-header';
 import { StatCards } from '@/components/stat-card';
 
@@ -54,18 +54,13 @@ export default async function Allocation({
           description="Record purchases to track spending in this allocation"
         />
       ) : (
-        <div className="flex flex-col gap-2">
-          {allocation.purchases.map((purchase) => (
-            <PurchaseCard
-              key={purchase.id}
-              purchase={purchase}
-              users={users}
-              categories={categories}
-              allocationGroups={[]}
-              miscAllocations={[allocation]}
-            />
-          ))}
-        </div>
+        <PurchaseList
+          purchases={allocation.purchases}
+          users={users}
+          categories={categories}
+          allocationGroups={[]}
+          miscAllocations={[allocation]}
+        />
       )}
     </div>
   );

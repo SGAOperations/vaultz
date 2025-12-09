@@ -130,3 +130,40 @@ export async function deletePurchase(
 
   return { ...purchase, amount: purchase.amount.toNumber() };
 }
+
+export async function bulkUpdatePurchases({
+  ids,
+  excludeFromTotal,
+  expenseReportCreated,
+  reimbursed,
+  purchasedAt,
+}: {
+  ids: string[];
+  excludeFromTotal?: boolean;
+  expenseReportCreated?: boolean;
+  reimbursed?: boolean;
+  purchasedAt?: Date;
+}): Promise<{ count: number }> {
+  const data: {
+    excludeFromTotal?: boolean;
+    expenseReportCreated?: boolean;
+    reimbursed?: boolean;
+    purchasedAt?: Date;
+  } = {};
+
+  if (excludeFromTotal !== undefined) data.excludeFromTotal = excludeFromTotal;
+  if (expenseReportCreated !== undefined)
+    data.expenseReportCreated = expenseReportCreated;
+  if (reimbursed !== undefined) data.reimbursed = reimbursed;
+  if (purchasedAt !== undefined) data.purchasedAt = purchasedAt;
+
+  const result = await prisma.purchase.updateMany({
+    where: { id: { in: ids } },
+    data,
+  });
+
+  revalidatePath('/');
+  revalidatePath('/designation');
+
+  return { count: result.count };
+}
