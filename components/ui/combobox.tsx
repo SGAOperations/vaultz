@@ -64,26 +64,32 @@ export function Combobox({
         >
           <CommandInput 
             placeholder={`Search ${name}s...`}
-            onValueChange={setInputValue}
+            onValueChange={(value) => {
+              console.log('[Combobox] onValueChange:', value);
+              setInputValue(value);
+            }}
           />
           <CommandList>
             <CommandEmpty>
-              {onCreate && inputValue.trim() ? (
-                <CommandItem
-                  onSelect={() => {
-                    onCreate(inputValue.trim());
-                    setOpen(false);
-                    setInputValue('');
-                  }}
-                  className="cursor-pointer justify-center"
-                  role="button"
-                  aria-label={`Create new ${name}: ${inputValue.trim()}`}
-                >
-                  Create "{inputValue.trim()}"
-                </CommandItem>
-              ) : (
-                `No ${name} found.`
-              )}
+              {(() => {
+                console.log('[Combobox CommandEmpty] onCreate:', !!onCreate, 'inputValue:', inputValue, 'trimmed:', inputValue.trim());
+                return onCreate && inputValue.trim() ? (
+                  <CommandItem
+                    onSelect={() => {
+                      onCreate(inputValue.trim());
+                      setOpen(false);
+                      setInputValue('');
+                    }}
+                    className="cursor-pointer justify-center"
+                    role="button"
+                    aria-label={`Create new ${name}: ${inputValue.trim()}`}
+                  >
+                    Create "{inputValue.trim()}"
+                  </CommandItem>
+                ) : (
+                  `No ${name} found.`
+                );
+              })()}
             </CommandEmpty>
             {data.map((v, i) => (
               <CommandGroup key={i} heading={v.heading}>
