@@ -3,7 +3,10 @@ import { notFound } from 'next/navigation';
 
 import { ArrowLeftRight } from 'lucide-react';
 
-import { getAllocationById } from '@/prisma/services/allocation';
+import {
+  getAllocationById,
+  getMiscAllocations,
+} from '@/prisma/services/allocation';
 import { getAllAllocationGroups } from '@/prisma/services/allocation-groups';
 import { getAllCategories } from '@/prisma/services/category';
 import { getUsers } from '@/prisma/services/user';
@@ -32,7 +35,7 @@ export default async function Allocation({
   const categories = await getAllCategories();
   const users = await getUsers();
   const allocationGroups = await getAllAllocationGroups();
-  const miscAllocations = [allocation];
+  const miscAllocations = await getMiscAllocations();
 
   const spent = allocation.purchases
     .filter((purchase) => !purchase.excludeFromTotal)
