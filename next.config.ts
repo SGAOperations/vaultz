@@ -4,12 +4,8 @@ import config from './package.json' with { type: 'json' };
 
 const nextConfig: NextConfig = {
   env: { version: config.version },
-  webpack: (config, { isServer }) => {
-    if (isServer) {
-      config.externals.push('@prisma/client');
-    }
-    return config;
-  },
+  // Externalize Prisma client to prevent bundling issues with WASM modules
+  serverExternalPackages: ['@prisma/client', '@prisma/engines'],
 };
 
 export default nextConfig;
