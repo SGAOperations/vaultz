@@ -43,11 +43,15 @@ export function CreateTransferDialog({
   categories,
   allocationGroups,
   miscAllocations,
+  defaultAccountType,
+  defaultSourceId,
 }: {
   trigger: React.ReactNode;
   categories: CategoryWithDesignation[];
   allocationGroups: AllocationGroupWithAllocations[];
   miscAllocations: Allocation[];
+  defaultAccountType?: 'category' | 'allocation';
+  defaultSourceId?: string;
 }) {
   async function onSubmit(data: FormData): Promise<boolean> {
     const transferData = {
@@ -80,8 +84,8 @@ export function CreateTransferDialog({
       description="Transfer funds between accounts of the same type."
       schema={schema}
       defaultValues={{
-        accountType: 'category' as const,
-        sourceId: '',
+        accountType: defaultAccountType || ('category' as const),
+        sourceId: defaultSourceId || '',
         destinationId: '',
         amount: 0,
         description: '',
@@ -90,35 +94,37 @@ export function CreateTransferDialog({
     >
       {(form) => (
         <>
-          <FormField
-            control={form.control}
-            name="accountType"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Account Type</FormLabel>
-                <FormControl>
-                  <Combobox
-                    data={[
-                      {
-                        items: [
-                          { value: 'category', label: 'Category' },
-                          { value: 'allocation', label: 'Allocation' },
-                        ],
-                      },
-                    ]}
-                    {...field}
-                    name="accountType"
-                    onChange={(value) => {
-                      field.onChange(value);
-                      form.setValue('sourceId', '');
-                      form.setValue('destinationId', '');
-                    }}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          {!defaultAccountType && (
+            <FormField
+              control={form.control}
+              name="accountType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Account Type</FormLabel>
+                  <FormControl>
+                    <Combobox
+                      data={[
+                        {
+                          items: [
+                            { value: 'category', label: 'Category' },
+                            { value: 'allocation', label: 'Allocation' },
+                          ],
+                        },
+                      ]}
+                      {...field}
+                      name="accountType"
+                      onChange={(value) => {
+                        field.onChange(value);
+                        form.setValue('sourceId', '');
+                        form.setValue('destinationId', '');
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <FormField
