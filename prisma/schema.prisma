@@ -43,6 +43,7 @@ model Purchase {
     id                   String   @id @default(uuid())
     amount               Decimal
     description          String
+    notes                String?
     createdAt            DateTime @default(now())
     purchasedAt          DateTime @db.Date
     receipts             String[]
