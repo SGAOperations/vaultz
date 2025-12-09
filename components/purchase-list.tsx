@@ -369,9 +369,7 @@ export function PurchaseList({
                     <Checkbox
                       checked={filterExcluded === true}
                       onChange={(e) =>
-                        setFilterExcluded(
-                          (e.target as HTMLInputElement).checked ? true : null,
-                        )
+                        setFilterExcluded(e.target.checked ? true : null)
                       }
                     />
                     <span className="text-sm">Excluded from total</span>
@@ -380,9 +378,7 @@ export function PurchaseList({
                     <Checkbox
                       checked={filterExpenseReport === true}
                       onChange={(e) =>
-                        setFilterExpenseReport(
-                          (e.target as HTMLInputElement).checked ? true : null,
-                        )
+                        setFilterExpenseReport(e.target.checked ? true : null)
                       }
                     />
                     <span className="text-sm">Expense report created</span>
@@ -391,9 +387,7 @@ export function PurchaseList({
                     <Checkbox
                       checked={filterReimbursed === true}
                       onChange={(e) =>
-                        setFilterReimbursed(
-                          (e.target as HTMLInputElement).checked ? true : null,
-                        )
+                        setFilterReimbursed(e.target.checked ? true : null)
                       }
                     />
                     <span className="text-sm">Reimbursed</span>
@@ -413,7 +407,7 @@ export function PurchaseList({
               displayedPurchases.length > 0 &&
               selectedIds.size === displayedPurchases.length
             }
-            onChange={toggleSelectAll}
+            onChange={() => toggleSelectAll()}
           />
           <span className="text-muted-foreground text-sm">
             {selectedIds.size > 0

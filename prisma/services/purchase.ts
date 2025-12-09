@@ -162,8 +162,7 @@ export async function bulkUpdatePurchases({
     data,
   });
 
-  revalidatePath('/');
-  revalidatePath('/designation');
+  revalidatePath('/', 'layout');
 
   return { count: result.count };
 }
