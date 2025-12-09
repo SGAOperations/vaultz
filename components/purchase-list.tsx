@@ -368,7 +368,7 @@ export function PurchaseList({
                   <div className="flex items-center gap-2">
                     <Checkbox
                       checked={filterExcluded === true}
-                      onChange={(e) =>
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                         setFilterExcluded(e.target.checked ? true : null)
                       }
                     />
@@ -377,7 +377,7 @@ export function PurchaseList({
                   <div className="flex items-center gap-2">
                     <Checkbox
                       checked={filterExpenseReport === true}
-                      onChange={(e) =>
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                         setFilterExpenseReport(e.target.checked ? true : null)
                       }
                     />
@@ -386,7 +386,7 @@ export function PurchaseList({
                   <div className="flex items-center gap-2">
                     <Checkbox
                       checked={filterReimbursed === true}
-                      onChange={(e) =>
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                         setFilterReimbursed(e.target.checked ? true : null)
                       }
                     />
