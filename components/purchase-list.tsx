@@ -2,7 +2,9 @@
 
 import { useMemo, useState } from 'react';
 
+import { search } from 'fast-fuzzy';
 import {
+  AlertCircle,
   ArrowDownAZ,
   ArrowUpAZ,
   Calendar as CalendarIcon,
@@ -24,13 +26,25 @@ import {
   PurchaseWithUser,
 } from '@/lib/types';
 
-import { PurchaseCard } from './purchase-card';
-import { Button } from './ui/button';
-import { Card } from './ui/card';
-import { Checkbox } from './ui/checkbox';
-import { DatePicker } from './ui/date-picker';
-import { Input } from './ui/input';
-import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { PurchaseCard } from '@/components/purchase-card';
+import {
+  PurchaseFilters,
+  PurchaseFiltersForm,
+} from '@/components/purchase-filters';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { DatePicker } from '@/components/ui/date-picker';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 type SortField = 'date' | 'amount' | 'user' | 'description';
 type SortDirection = 'asc' | 'desc';
@@ -56,66 +70,88 @@ export function PurchaseList({
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<SortField>('date');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
-  const [filterUserId, setFilterUserId] = useState<string>('');
-  const [filterCategoryId, setFilterCategoryId] = useState<string>('');
-  const [filterDateFrom, setFilterDateFrom] = useState<Date | undefined>();
-  const [filterDateTo, setFilterDateTo] = useState<Date | undefined>();
-  const [filterExcluded, setFilterExcluded] = useState<boolean | null>(null);
-  const [filterExpenseReport, setFilterExpenseReport] = useState<
-    boolean | null
-  >(null);
-  const [filterReimbursed, setFilterReimbursed] = useState<boolean | null>(
-    null,
-  );
+  const [filters, setFilters] = useState<PurchaseFilters>({
+    userId: '',
+    categoryId: '',
+    dateFrom: undefined,
+    dateTo: undefined,
+    excluded: null,
+    expenseReport: null,
+    reimbursed: null,
+  });
   const [displayLimit, setDisplayLimit] = useState(initialLimit);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [pendingUpdate, setPendingUpdate] = useState<{
+    excludeFromTotal?: boolean;
+    expenseReportCreated?: boolean;
+    reimbursed?: boolean;
+    purchasedAt?: Date;
+  } | null>(null);
 
   const filteredAndSortedPurchases = useMemo(() => {
     let filtered = [...purchases];
 
-    // Text search
+    // Fuzzy text search across all searchable fields
     if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (p) =>
-          p.description?.toLowerCase().includes(query) ||
-          p.notes?.toLowerCase().includes(query),
-      );
+      // Build searchable strings for each purchase
+      const searchableItems = purchases.map((p) => ({
+        purchase: p,
+        searchText: [
+          p.description || '',
+          p.notes || '',
+          `${p.user.first} ${p.user.last}`,
+          p.amount.toString(),
+          categories.find((c) => c.id === p.categoryId)?.name || '',
+        ]
+          .join(' ')
+          .toLowerCase(),
+      }));
+
+      // Use fast-fuzzy search with scoring
+      const results = search(searchQuery, searchableItems, {
+        keySelector: (item) => item.searchText,
+        threshold: 0.3, // Allow some tolerance for typos
+      });
+
+      filtered = results.map((item) => item.purchase);
     }
 
     // Filter by user
-    if (filterUserId) {
-      filtered = filtered.filter((p) => p.userId === filterUserId);
+    if (filters.userId) {
+      filtered = filtered.filter((p) => p.userId === filters.userId);
     }
 
     // Filter by category
-    if (filterCategoryId) {
-      filtered = filtered.filter((p) => p.categoryId === filterCategoryId);
+    if (filters.categoryId) {
+      filtered = filtered.filter((p) => p.categoryId === filters.categoryId);
     }
 
     // Filter by date range
-    if (filterDateFrom) {
+    if (filters.dateFrom) {
       filtered = filtered.filter(
-        (p) => new Date(p.purchasedAt) >= filterDateFrom,
+        (p) => new Date(p.purchasedAt) >= filters.dateFrom!,
       );
     }
-    if (filterDateTo) {
+    if (filters.dateTo) {
       filtered = filtered.filter(
-        (p) => new Date(p.purchasedAt) <= filterDateTo,
+        (p) => new Date(p.purchasedAt) <= filters.dateTo!,
       );
     }
 
     // Filter by status flags
-    if (filterExcluded !== null) {
-      filtered = filtered.filter((p) => p.excludeFromTotal === filterExcluded);
-    }
-    if (filterExpenseReport !== null) {
+    if (filters.excluded !== null) {
       filtered = filtered.filter(
-        (p) => p.expenseReportCreated === filterExpenseReport,
+        (p) => p.excludeFromTotal === filters.excluded,
       );
     }
-    if (filterReimbursed !== null) {
-      filtered = filtered.filter((p) => p.reimbursed === filterReimbursed);
+    if (filters.expenseReport !== null) {
+      filtered = filtered.filter(
+        (p) => p.expenseReportCreated === filters.expenseReport,
+      );
+    }
+    if (filters.reimbursed !== null) {
+      filtered = filtered.filter((p) => p.reimbursed === filters.reimbursed);
     }
 
     // Sort
@@ -145,19 +181,7 @@ export function PurchaseList({
     });
 
     return filtered;
-  }, [
-    purchases,
-    searchQuery,
-    sortField,
-    sortDirection,
-    filterUserId,
-    filterCategoryId,
-    filterDateFrom,
-    filterDateTo,
-    filterExcluded,
-    filterExpenseReport,
-    filterReimbursed,
-  ]);
+  }, [purchases, searchQuery, sortField, sortDirection, filters, categories]);
 
   const displayedPurchases = filteredAndSortedPurchases.slice(0, displayLimit);
   const hasMore = filteredAndSortedPurchases.length > displayLimit;
@@ -193,16 +217,28 @@ export function PurchaseList({
     setSelectedIds(new Set());
   };
 
-  const handleBulkUpdate = async (updates: {
+  const requestBulkUpdate = (updates: {
     excludeFromTotal?: boolean;
     expenseReportCreated?: boolean;
     reimbursed?: boolean;
     purchasedAt?: Date;
   }) => {
+    setPendingUpdate(updates);
+    setConfirmDialogOpen(true);
+  };
+
+  const handleBulkUpdate = async () => {
+    if (!pendingUpdate) return;
+
     setIsUpdating(true);
+    setConfirmDialogOpen(false);
     try {
-      await bulkUpdatePurchases({ ids: Array.from(selectedIds), ...updates });
+      await bulkUpdatePurchases({
+        ids: Array.from(selectedIds),
+        ...pendingUpdate,
+      });
       setSelectedIds(new Set());
+      setPendingUpdate(null);
     } catch (error) {
       console.error('Failed to update purchases:', error);
     } finally {
@@ -210,23 +246,34 @@ export function PurchaseList({
     }
   };
 
+  const cancelBulkUpdate = () => {
+    setConfirmDialogOpen(false);
+    setPendingUpdate(null);
+  };
+
   const activeFiltersCount =
-    (filterUserId ? 1 : 0) +
-    (filterCategoryId ? 1 : 0) +
-    (filterDateFrom ? 1 : 0) +
-    (filterDateTo ? 1 : 0) +
-    (filterExcluded !== null ? 1 : 0) +
-    (filterExpenseReport !== null ? 1 : 0) +
-    (filterReimbursed !== null ? 1 : 0);
+    (filters.userId ? 1 : 0) +
+    (filters.categoryId ? 1 : 0) +
+    (filters.dateFrom ? 1 : 0) +
+    (filters.dateTo ? 1 : 0) +
+    (filters.excluded !== null ? 1 : 0) +
+    (filters.expenseReport !== null ? 1 : 0) +
+    (filters.reimbursed !== null ? 1 : 0);
 
   const clearFilters = () => {
-    setFilterUserId('');
-    setFilterCategoryId('');
-    setFilterDateFrom(undefined);
-    setFilterDateTo(undefined);
-    setFilterExcluded(null);
-    setFilterExpenseReport(null);
-    setFilterReimbursed(null);
+    setFilters({
+      userId: '',
+      categoryId: '',
+      dateFrom: undefined,
+      dateTo: undefined,
+      excluded: null,
+      expenseReport: null,
+      reimbursed: null,
+    });
+  };
+
+  const handleFilterChange = (updates: Partial<PurchaseFilters>) => {
+    setFilters((prev) => ({ ...prev, ...updates }));
   };
 
   return (
@@ -298,102 +345,14 @@ export function PurchaseList({
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-80">
-              <div className="flex flex-col gap-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-semibold">Filters</h4>
-                  {activeFiltersCount > 0 && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={clearFilters}
-                      className="h-auto p-1 text-xs"
-                    >
-                      Clear all
-                    </Button>
-                  )}
-                </div>
-
-                {/* User Filter */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-medium">User</label>
-                  <select
-                    value={filterUserId}
-                    onChange={(e) => setFilterUserId(e.target.value)}
-                    className="border-input bg-background ring-offset-background focus-visible:ring-ring flex h-9 w-full rounded-md border px-3 py-1 text-sm focus-visible:ring-1 focus-visible:ring-offset-1 focus-visible:outline-none"
-                  >
-                    <option value="">All users</option>
-                    {users.map((user) => (
-                      <option key={user.id} value={user.id}>
-                        {user.first} {user.last}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Category Filter */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-medium">Category</label>
-                  <select
-                    value={filterCategoryId}
-                    onChange={(e) => setFilterCategoryId(e.target.value)}
-                    className="border-input bg-background ring-offset-background focus-visible:ring-ring flex h-9 w-full rounded-md border px-3 py-1 text-sm focus-visible:ring-1 focus-visible:ring-offset-1 focus-visible:outline-none"
-                  >
-                    <option value="">All categories</option>
-                    {categories.map((category) => (
-                      <option key={category.id} value={category.id}>
-                        {category.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Date Range Filter */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-medium">Date Range</label>
-                  <div className="flex flex-col gap-2">
-                    <DatePicker
-                      value={filterDateFrom}
-                      onChange={setFilterDateFrom}
-                    />
-                    <DatePicker
-                      value={filterDateTo}
-                      onChange={setFilterDateTo}
-                    />
-                  </div>
-                </div>
-
-                {/* Status Filters */}
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-medium">Status</label>
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      checked={filterExcluded === true}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        setFilterExcluded(e.target.checked ? true : null)
-                      }
-                    />
-                    <span className="text-sm">Excluded from total</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      checked={filterExpenseReport === true}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        setFilterExpenseReport(e.target.checked ? true : null)
-                      }
-                    />
-                    <span className="text-sm">Expense report created</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      checked={filterReimbursed === true}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        setFilterReimbursed(e.target.checked ? true : null)
-                      }
-                    />
-                    <span className="text-sm">Reimbursed</span>
-                  </div>
-                </div>
-              </div>
+              <PurchaseFiltersForm
+                filters={filters}
+                users={users}
+                categories={categories}
+                onFilterChange={handleFilterChange}
+                onClearFilters={clearFilters}
+                activeFiltersCount={activeFiltersCount}
+              />
             </PopoverContent>
           </Popover>
         </div>
@@ -426,33 +385,104 @@ export function PurchaseList({
               selected
             </span>
             <div className="ml-auto flex flex-wrap gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleBulkUpdate({ excludeFromTotal: true })}
-                disabled={isUpdating}
-              >
-                {isUpdating && <Loader2 className="mr-2 size-4 animate-spin" />}
-                Mark Excluded
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleBulkUpdate({ expenseReportCreated: true })}
-                disabled={isUpdating}
-              >
-                {isUpdating && <Loader2 className="mr-2 size-4 animate-spin" />}
-                Mark Report Filed
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleBulkUpdate({ reimbursed: true })}
-                disabled={isUpdating}
-              >
-                {isUpdating && <Loader2 className="mr-2 size-4 animate-spin" />}
-                Mark Reimbursed
-              </Button>
+              {/* Exclude from Total Actions */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" disabled={isUpdating}>
+                    Exclude
+                    <ChevronDown className="ml-2 size-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-48">
+                  <div className="flex flex-col gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() =>
+                        requestBulkUpdate({ excludeFromTotal: true })
+                      }
+                      className="justify-start"
+                    >
+                      Mark as Excluded
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() =>
+                        requestBulkUpdate({ excludeFromTotal: false })
+                      }
+                      className="justify-start"
+                    >
+                      Mark as Included
+                    </Button>
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              {/* Expense Report Actions */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" disabled={isUpdating}>
+                    Report
+                    <ChevronDown className="ml-2 size-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-48">
+                  <div className="flex flex-col gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() =>
+                        requestBulkUpdate({ expenseReportCreated: true })
+                      }
+                      className="justify-start"
+                    >
+                      Mark Report Filed
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() =>
+                        requestBulkUpdate({ expenseReportCreated: false })
+                      }
+                      className="justify-start"
+                    >
+                      Mark Report Not Filed
+                    </Button>
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              {/* Reimbursed Actions */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" disabled={isUpdating}>
+                    Reimburse
+                    <ChevronDown className="ml-2 size-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-48">
+                  <div className="flex flex-col gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => requestBulkUpdate({ reimbursed: true })}
+                      className="justify-start"
+                    >
+                      Mark as Reimbursed
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => requestBulkUpdate({ reimbursed: false })}
+                      className="justify-start"
+                    >
+                      Mark as Not Reimbursed
+                    </Button>
+                  </div>
+                </PopoverContent>
+              </Popover>
+
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" size="sm" disabled={isUpdating}>
@@ -465,7 +495,7 @@ export function PurchaseList({
                     value={undefined}
                     onChange={(date) => {
                       if (date) {
-                        handleBulkUpdate({ purchasedAt: date });
+                        requestBulkUpdate({ purchasedAt: date });
                       }
                     }}
                   />
@@ -532,6 +562,67 @@ export function PurchaseList({
           )}
         </div>
       )}
+
+      {/* Confirmation Dialog */}
+      <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Bulk Update</DialogTitle>
+            <DialogDescription>
+              You are about to update {selectedIds.size} purchase
+              {selectedIds.size !== 1 ? 's' : ''}. This action cannot be
+              undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="bg-muted rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="text-primary mt-0.5 size-5 shrink-0" />
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Update Details:</p>
+                <ul className="text-muted-foreground list-inside list-disc text-sm">
+                  {pendingUpdate?.excludeFromTotal !== undefined && (
+                    <li>
+                      {pendingUpdate.excludeFromTotal ? 'Mark' : 'Unmark'} as
+                      excluded from total
+                    </li>
+                  )}
+                  {pendingUpdate?.expenseReportCreated !== undefined && (
+                    <li>
+                      {pendingUpdate.expenseReportCreated ? 'Mark' : 'Unmark'}{' '}
+                      expense report as created
+                    </li>
+                  )}
+                  {pendingUpdate?.reimbursed !== undefined && (
+                    <li>
+                      {pendingUpdate.reimbursed ? 'Mark' : 'Unmark'} as
+                      reimbursed
+                    </li>
+                  )}
+                  {pendingUpdate?.purchasedAt && (
+                    <li>
+                      Update purchase date to{' '}
+                      {pendingUpdate.purchasedAt.toLocaleDateString()}
+                    </li>
+                  )}
+                </ul>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={cancelBulkUpdate}
+              disabled={isUpdating}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleBulkUpdate} disabled={isUpdating}>
+              {isUpdating && <Loader2 className="mr-2 size-4 animate-spin" />}
+              Confirm
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
