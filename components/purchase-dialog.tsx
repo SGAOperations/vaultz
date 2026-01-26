@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -13,6 +13,7 @@ import {
   FileCheck,
   FileText,
   FolderOpen,
+  ListChecks,
   Loader2,
   Pencil,
   Plus,
@@ -33,12 +34,15 @@ import {
   deletePurchase,
   updatePurchase,
 } from '@/prisma/services/purchase';
+import { bulkUpdatePurchaseSteps } from '@/prisma/services/purchase-step';
+import { getDefaultStepList, getStepLists } from '@/prisma/services/step-list';
 
 import {
   Allocation,
   AllocationGroupWithAllocations,
   CategoryWithDesignation,
   PurchaseWithUser,
+  StepListWithTemplates,
 } from '@/lib/types';
 import { UploadDropzone } from '@/lib/uploadthing';
 import {
@@ -57,6 +61,8 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 
+import { PurchaseSteps } from './purchase-steps';
+import { StepData, StepEditor } from './step-editor';
 import { DateTime } from './date-time';
 import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
@@ -95,6 +101,7 @@ const schema = z.object({
   expenseReportCreated: z.boolean().optional(),
   reimbursed: z.boolean().optional(),
   notes: z.string().optional(),
+  stepListId: z.string().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -141,8 +148,48 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
   const [receiptsToDisplay, setReceiptsToDisplay] = useState<string[]>(
     purchase?.receipts || [],
   );
+  const [stepLists, setStepLists] = useState<StepListWithTemplates[]>([]);
+  const [steps, setSteps] = useState<StepData[]>([]);
+  const [stepsKey, setStepsKey] = useState(0); // For forcing re-render
 
   const receiptUrls = purchase?.receipts.map((r) => getFileUrl(r)) || [];
+
+  // Load step lists on mount
+  useEffect(() => {
+    async function loadStepLists() {
+      const lists = await getStepLists();
+      setStepLists(lists);
+
+      // If creating a new purchase, load default step list
+      if (isCreateMode) {
+        const defaultList = lists.find((l) => l.isDefault);
+        if (defaultList) {
+          setSteps(
+            defaultList.steps.map((s) => ({
+              name: s.name,
+              order: s.order,
+            })),
+          );
+        }
+      }
+    }
+    loadStepLists();
+  }, [isCreateMode]);
+
+  // Load purchase steps when viewing an existing purchase
+  useEffect(() => {
+    if (purchase?.steps) {
+      setSteps(
+        purchase.steps.map((s) => ({
+          id: s.id,
+          name: s.name,
+          order: s.order,
+          completedAt: s.completedAt || undefined,
+          skipped: s.skipped,
+        })),
+      );
+    }
+  }, [purchase]);
 
   // Lookup category and allocation names for display (memoized for performance)
   const categoryName = useMemo(
@@ -178,6 +225,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
       expenseReportCreated: purchase?.expenseReportCreated || false,
       reimbursed: purchase?.reimbursed || false,
       notes: purchase?.notes ?? '',
+      stepListId: purchase?.stepListId ?? '',
     },
   });
   const isSubmitting = form.formState.isSubmitting;
@@ -190,10 +238,18 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
           success: 'Purchase created successfully',
           error: 'Failed to create purchase',
         },
-        onSuccess: () => {
+        onSuccess: async (newPurchase) => {
+          // Create steps for the new purchase
+          if (steps.length > 0) {
+            await bulkUpdatePurchaseSteps({
+              purchaseId: newPurchase.id,
+              steps,
+            });
+          }
           form.reset();
           setFilesUploaded([]);
           setReceiptsToDisplay([]);
+          setSteps([]);
           setOpen(false);
         },
       });
@@ -204,7 +260,12 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
           success: 'Purchase updated successfully',
           error: 'Failed to update purchase',
         },
-        onSuccess: () => {
+        onSuccess: async () => {
+          // Update steps for the purchase
+          await bulkUpdatePurchaseSteps({
+            purchaseId: purchase!.id,
+            steps,
+          });
           setIsEditing(false);
           setOpen(false);
         },
@@ -587,6 +648,9 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                 )}
               />
 
+              {/* Step Editor */}
+              <StepEditor steps={steps} onChange={setSteps} />
+
               <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <FormField
                   control={form.control}
@@ -835,6 +899,24 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                       <span className="text-sm font-semibold">Reimbursed</span>
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* Purchase Steps */}
+              {purchase!.steps && purchase!.steps.length > 0 && (
+                <div className="bg-muted rounded-lg px-4 py-3">
+                  <div className="mb-3 flex items-center gap-2">
+                    <ListChecks className="text-primary size-4" />
+                    <span className="text-muted-foreground text-sm font-medium">
+                      Progress Steps
+                    </span>
+                  </div>
+                  <PurchaseSteps
+                    key={stepsKey}
+                    steps={purchase!.steps}
+                    editable={false}
+                    onStepsChange={() => setStepsKey((k) => k + 1)}
+                  />
                 </div>
               )}
 

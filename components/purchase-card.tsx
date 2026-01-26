@@ -3,6 +3,8 @@
 import {
   Calendar,
   Check,
+  CheckCircle2,
+  Circle,
   CircleDollarSign,
   DollarSign,
   FileCheck,
@@ -129,6 +131,26 @@ export function PurchaseCard({
                   <span className="text-xs">Reimbursed</span>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Step Progress */}
+          {purchase.steps && purchase.steps.length > 0 && (
+            <div className="mt-2">
+              <div className="flex items-center gap-2">
+                <div className="bg-muted h-1.5 flex-1 overflow-hidden rounded-full">
+                  <div
+                    className="bg-primary h-full transition-all"
+                    style={{
+                      width: `${Math.round((purchase.steps.filter((s) => s.completedAt).length / purchase.steps.length) * 100)}%`,
+                    }}
+                  />
+                </div>
+                <span className="text-muted-foreground text-xs">
+                  {purchase.steps.filter((s) => s.completedAt).length}/
+                  {purchase.steps.length}
+                </span>
+              </div>
             </div>
           )}
         </Card>
