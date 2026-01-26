@@ -6,7 +6,9 @@ import prisma from '@/lib/prisma';
 import { PurchaseStep } from '@/lib/types';
 import { ResponseType } from '@/lib/utils';
 
-export async function getPurchaseSteps(purchaseId: string): Promise<PurchaseStep[]> {
+export async function getPurchaseSteps(
+  purchaseId: string,
+): Promise<PurchaseStep[]> {
   const steps = await prisma.purchaseStep.findMany({
     where: { purchaseId },
     orderBy: { order: 'asc' },
@@ -71,7 +73,9 @@ export async function updatePurchaseStep({
   return step;
 }
 
-export async function deletePurchaseStep(id: string): Promise<ResponseType<PurchaseStep>> {
+export async function deletePurchaseStep(
+  id: string,
+): Promise<ResponseType<PurchaseStep>> {
   const step = await prisma.purchaseStep.delete({ where: { id } });
 
   revalidatePath('/');
@@ -131,10 +135,7 @@ export async function bulkUpdatePurchaseSteps({
   // Delete steps that are not in the new list
   const stepIds = steps.filter((s) => s.id).map((s) => s.id!);
   await prisma.purchaseStep.deleteMany({
-    where: {
-      purchaseId,
-      id: { notIn: stepIds },
-    },
+    where: { purchaseId, id: { notIn: stepIds } },
   });
 
   // Update or create steps
@@ -148,11 +149,7 @@ export async function bulkUpdatePurchaseSteps({
       results.push(updated);
     } else {
       const created = await prisma.purchaseStep.create({
-        data: {
-          purchaseId,
-          name: step.name,
-          order: step.order,
-        },
+        data: { purchaseId, name: step.name, order: step.order },
       });
       results.push(created);
     }

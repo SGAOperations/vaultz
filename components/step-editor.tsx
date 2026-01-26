@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-import { GripVertical, Plus, Trash2, X } from 'lucide-react';
+import { GripVertical, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -33,7 +33,8 @@ export function StepEditor({
       return;
     }
 
-    const newOrder = steps.length > 0 ? Math.max(...steps.map((s) => s.order)) + 1 : 1;
+    const newOrder =
+      steps.length > 0 ? Math.max(...steps.map((s) => s.order)) + 1 : 1;
     const newSteps = [...steps, { name: newStepName.trim(), order: newOrder }];
     setSteps(newSteps);
     onChange(newSteps);

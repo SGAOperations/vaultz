@@ -4,10 +4,10 @@ import {
   Allocation as PrismaAllocation,
   Category as PrismaCategory,
   Purchase as PrismaPurchase,
-  User,
+  PurchaseStep as PrismaPurchaseStep,
   StepList as PrismaStepList,
   StepTemplate as PrismaStepTemplate,
-  PurchaseStep as PrismaPurchaseStep,
+  User,
 } from '@/prisma/client';
 
 export type Purchase = Omit<PrismaPurchase, 'amount'> & { amount: number };
@@ -22,7 +22,10 @@ export type CategoryWithPurchases = CategoryWithDesignation & {
 
 export type UserWithPurchases = User & { purchases: Purchase[] };
 
-export type PurchaseWithUser = Purchase & { user: User; steps?: PurchaseStep[] };
+export type PurchaseWithUser = Purchase & {
+  user: User;
+  steps?: PurchaseStep[];
+};
 
 export type DesignationWithPurchases = Designation & {
   purchases: PurchaseWithUser[];
@@ -54,13 +57,9 @@ export type StepTemplate = PrismaStepTemplate;
 
 export type PurchaseStep = PrismaPurchaseStep;
 
-export type StepListWithTemplates = StepList & {
-  steps: StepTemplate[];
-};
+export type StepListWithTemplates = StepList & { steps: StepTemplate[] };
 
-export type PurchaseWithSteps = Purchase & {
-  steps: PurchaseStep[];
-};
+export type PurchaseWithSteps = Purchase & { steps: PurchaseStep[] };
 
 export type PurchaseWithUserAndSteps = PurchaseWithUser & {
   steps: PurchaseStep[];

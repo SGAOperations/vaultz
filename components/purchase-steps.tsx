@@ -253,7 +253,9 @@ export function PurchaseSteps({
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => handleToggleComplete(step)}>
+                    <DropdownMenuItem
+                      onClick={() => handleToggleComplete(step)}
+                    >
                       <Check className="mr-2 size-4" />
                       {isCompleted ? 'Unmark Complete' : 'Mark Complete'}
                     </DropdownMenuItem>

@@ -14,12 +14,7 @@ export async function getLatestPurchases(
   const purchases = await prisma.purchase.findMany({
     take: limit,
     orderBy: [{ purchasedAt: 'desc' }, { createdAt: 'desc' }],
-    include: { 
-      user: true,
-      steps: {
-        orderBy: { order: 'asc' },
-      },
-    },
+    include: { user: true, steps: { orderBy: { order: 'asc' } } },
   });
 
   return purchases.map(({ amount, ...v }) => ({

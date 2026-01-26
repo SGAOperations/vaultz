@@ -35,14 +35,13 @@ import {
   updatePurchase,
 } from '@/prisma/services/purchase';
 import { bulkUpdatePurchaseSteps } from '@/prisma/services/purchase-step';
-import { getDefaultStepList, getStepLists } from '@/prisma/services/step-list';
+import { getStepLists } from '@/prisma/services/step-list';
 
 import {
   Allocation,
   AllocationGroupWithAllocations,
   CategoryWithDesignation,
   PurchaseWithUser,
-  StepListWithTemplates,
 } from '@/lib/types';
 import { UploadDropzone } from '@/lib/uploadthing';
 import {
@@ -61,9 +60,9 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 
+import { DateTime } from './date-time';
 import { PurchaseSteps } from './purchase-steps';
 import { StepData, StepEditor } from './step-editor';
-import { DateTime } from './date-time';
 import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
 import { Combobox } from './ui/combobox';
@@ -148,48 +147,43 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
   const [receiptsToDisplay, setReceiptsToDisplay] = useState<string[]>(
     purchase?.receipts || [],
   );
-  const [stepLists, setStepLists] = useState<StepListWithTemplates[]>([]);
-  const [steps, setSteps] = useState<StepData[]>([]);
+
+  // Initialize steps from purchase or empty array
+  const initialSteps = useMemo(() => {
+    if (purchase?.steps) {
+      return purchase.steps.map((s) => ({
+        id: s.id,
+        name: s.name,
+        order: s.order,
+        completedAt: s.completedAt || undefined,
+        skipped: s.skipped,
+      }));
+    }
+    return [];
+  }, [purchase]);
+
+  const [steps, setSteps] = useState<StepData[]>(initialSteps);
   const [stepsKey, setStepsKey] = useState(0); // For forcing re-render
 
   const receiptUrls = purchase?.receipts.map((r) => getFileUrl(r)) || [];
 
-  // Load step lists on mount
+  // Load step lists on mount and set default steps for new purchases
   useEffect(() => {
     async function loadStepLists() {
       const lists = await getStepLists();
-      setStepLists(lists);
 
       // If creating a new purchase, load default step list
       if (isCreateMode) {
         const defaultList = lists.find((l) => l.isDefault);
         if (defaultList) {
           setSteps(
-            defaultList.steps.map((s) => ({
-              name: s.name,
-              order: s.order,
-            })),
+            defaultList.steps.map((s) => ({ name: s.name, order: s.order })),
           );
         }
       }
     }
     loadStepLists();
   }, [isCreateMode]);
-
-  // Load purchase steps when viewing an existing purchase
-  useEffect(() => {
-    if (purchase?.steps) {
-      setSteps(
-        purchase.steps.map((s) => ({
-          id: s.id,
-          name: s.name,
-          order: s.order,
-          completedAt: s.completedAt || undefined,
-          skipped: s.skipped,
-        })),
-      );
-    }
-  }, [purchase]);
 
   // Lookup category and allocation names for display (memoized for performance)
   const categoryName = useMemo(
@@ -262,10 +256,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
         },
         onSuccess: async () => {
           // Update steps for the purchase
-          await bulkUpdatePurchaseSteps({
-            purchaseId: purchase!.id,
-            steps,
-          });
+          await bulkUpdatePurchaseSteps({ purchaseId: purchase!.id, steps });
           setIsEditing(false);
           setOpen(false);
         },

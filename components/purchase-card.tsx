@@ -3,8 +3,6 @@
 import {
   Calendar,
   Check,
-  CheckCircle2,
-  Circle,
   CircleDollarSign,
   DollarSign,
   FileCheck,

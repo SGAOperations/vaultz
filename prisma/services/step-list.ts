@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 
 import prisma from '@/lib/prisma';
-import { StepList, StepListWithTemplates, StepTemplate } from '@/lib/types';
+import { StepList, StepListWithTemplates } from '@/lib/types';
 import { ResponseType } from '@/lib/utils';
 
 export async function getStepLists(): Promise<StepListWithTemplates[]> {
@@ -24,7 +24,9 @@ export async function getDefaultStepList(): Promise<StepListWithTemplates | null
   return stepList;
 }
 
-export async function getStepList(id: string): Promise<StepListWithTemplates | null> {
+export async function getStepList(
+  id: string,
+): Promise<StepListWithTemplates | null> {
   const stepList = await prisma.stepList.findUnique({
     where: { id },
     include: { steps: { orderBy: { order: 'asc' } } },
@@ -94,10 +96,7 @@ export async function updateStepList({
     // Delete steps that are not in the new list
     const stepIds = steps.filter((s) => s.id).map((s) => s.id!);
     await prisma.stepTemplate.deleteMany({
-      where: {
-        stepListId: id,
-        id: { notIn: stepIds },
-      },
+      where: { stepListId: id, id: { notIn: stepIds } },
     });
 
     // Update or create steps
@@ -109,11 +108,7 @@ export async function updateStepList({
         });
       } else {
         await prisma.stepTemplate.create({
-          data: {
-            stepListId: id,
-            name: step.name,
-            order: step.order,
-          },
+          data: { stepListId: id, name: step.name, order: step.order },
         });
       }
     }
@@ -121,10 +116,7 @@ export async function updateStepList({
 
   const stepList = await prisma.stepList.update({
     where: { id },
-    data: {
-      name: name,
-      isDefault: isDefault,
-    },
+    data: { name: name, isDefault: isDefault },
   });
 
   revalidatePath('/');
@@ -132,7 +124,9 @@ export async function updateStepList({
   return stepList;
 }
 
-export async function deleteStepList(id: string): Promise<ResponseType<StepList>> {
+export async function deleteStepList(
+  id: string,
+): Promise<ResponseType<StepList>> {
   const stepList = await prisma.stepList.delete({ where: { id } });
 
   revalidatePath('/');
