@@ -5,6 +5,9 @@ import {
   Category as PrismaCategory,
   Purchase as PrismaPurchase,
   User,
+  StepList as PrismaStepList,
+  StepTemplate as PrismaStepTemplate,
+  PurchaseStep as PrismaPurchaseStep,
 } from '@/prisma/client';
 
 export type Purchase = Omit<PrismaPurchase, 'amount'> & { amount: number };
@@ -43,4 +46,22 @@ export type PurchaseWithUserAndCategory = Purchase & {
 
 export type UserWithPurchasesAndCategory = User & {
   purchases: PurchaseWithUserAndCategory[];
+};
+
+export type StepList = PrismaStepList;
+
+export type StepTemplate = PrismaStepTemplate;
+
+export type PurchaseStep = PrismaPurchaseStep;
+
+export type StepListWithTemplates = StepList & {
+  steps: StepTemplate[];
+};
+
+export type PurchaseWithSteps = Purchase & {
+  steps: PurchaseStep[];
+};
+
+export type PurchaseWithUserAndSteps = PurchaseWithUser & {
+  steps: PurchaseStep[];
 };

@@ -58,6 +58,10 @@ model Purchase {
     allocation   Allocation? @relation(fields: [allocationId], references: [id])
     userId       String
     user         User        @relation(fields: [userId], references: [id])
+    stepListId   String?
+    stepList     StepList?   @relation(fields: [stepListId], references: [id])
+    
+    steps        PurchaseStep[]
 }
 
 model AllocationGroup {
@@ -76,4 +80,42 @@ model Allocation {
     allocationGroup   AllocationGroup? @relation(fields: [allocationGroupId], references: [id])
 
     purchases Purchase[]
+}
+
+model StepList {
+    id        String   @id @default(uuid())
+    name      String
+    isDefault Boolean  @default(false)
+    createdAt DateTime @default(now())
+
+    steps     StepTemplate[]
+    purchases Purchase[]
+}
+
+model StepTemplate {
+    id         String   @id @default(uuid())
+    name       String
+    order      Int
+    createdAt  DateTime @default(now())
+
+    stepListId String
+    stepList   StepList @relation(fields: [stepListId], references: [id], onDelete: Cascade)
+
+    @@unique([stepListId, order])
+    @@index([stepListId, order])
+}
+
+model PurchaseStep {
+    id            String    @id @default(uuid())
+    name          String
+    order         Int
+    completedAt   DateTime?
+    skipped       Boolean   @default(false)
+    createdAt     DateTime  @default(now())
+
+    purchaseId    String
+    purchase      Purchase  @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+
+    @@unique([purchaseId, order])
+    @@index([purchaseId, order])
 }

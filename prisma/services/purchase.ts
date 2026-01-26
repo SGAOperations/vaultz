@@ -14,7 +14,12 @@ export async function getLatestPurchases(
   const purchases = await prisma.purchase.findMany({
     take: limit,
     orderBy: [{ purchasedAt: 'desc' }, { createdAt: 'desc' }],
-    include: { user: true },
+    include: { 
+      user: true,
+      steps: {
+        orderBy: { order: 'asc' },
+      },
+    },
   });
 
   return purchases.map(({ amount, ...v }) => ({
@@ -35,6 +40,7 @@ export async function createPurchase({
   expenseReportCreated,
   reimbursed,
   notes,
+  stepListId,
 }: {
   userId: string;
   categoryId: string;
@@ -47,6 +53,7 @@ export async function createPurchase({
   expenseReportCreated?: boolean;
   reimbursed?: boolean;
   notes?: string;
+  stepListId?: string;
 }): Promise<ResponseType<Purchase>> {
   const purchase = await prisma.purchase.create({
     data: {
@@ -61,6 +68,7 @@ export async function createPurchase({
       expenseReportCreated: expenseReportCreated ?? false,
       reimbursed: reimbursed ?? false,
       notes: notes ?? null,
+      stepListId: stepListId || null,
     },
   });
 
@@ -83,6 +91,7 @@ export async function updatePurchase({
   expenseReportCreated,
   reimbursed,
   notes,
+  stepListId,
 }: {
   id: string;
   userId: string;
@@ -96,6 +105,7 @@ export async function updatePurchase({
   expenseReportCreated?: boolean;
   reimbursed?: boolean;
   notes?: string;
+  stepListId?: string;
 }): Promise<ResponseType<Purchase>> {
   const purchase = await prisma.purchase.update({
     where: { id },
@@ -111,6 +121,7 @@ export async function updatePurchase({
       expenseReportCreated: expenseReportCreated ?? false,
       reimbursed: reimbursed ?? false,
       notes: notes ?? null,
+      stepListId: stepListId !== undefined ? stepListId || null : undefined,
     },
   });
 
