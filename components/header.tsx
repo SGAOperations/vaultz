@@ -27,7 +27,7 @@ export function Header() {
   const pathname = usePathname();
 
   return (
-    <header className="bg-header-bg border-header-border mb-4 flex w-full items-center justify-between rounded-2xl border px-4 py-3 shadow-sm">
+    <header className="bg-header-bg border-header-border sticky top-0 z-50 mb-4 flex w-full items-center justify-between rounded-2xl border px-4 py-3 shadow-sm">
       <Link href={'/'} className="flex items-center gap-2">
         <div className="bg-primary flex size-9 items-center justify-center rounded-xl shadow-md">
           <svg
