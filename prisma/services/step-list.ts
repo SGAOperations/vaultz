@@ -95,9 +95,16 @@ export async function updateStepList({
   if (steps !== undefined) {
     // Delete steps that are not in the new list
     const stepIds = steps.filter((s) => s.id).map((s) => s.id!);
-    await prisma.stepTemplate.deleteMany({
-      where: { stepListId: id, id: { notIn: stepIds } },
-    });
+    if (stepIds.length > 0) {
+      await prisma.stepTemplate.deleteMany({
+        where: { stepListId: id, id: { notIn: stepIds } },
+      });
+    } else {
+      // If no existing steps in the new list, delete all existing steps
+      await prisma.stepTemplate.deleteMany({
+        where: { stepListId: id },
+      });
+    }
 
     // Update or create steps
     for (const step of steps) {

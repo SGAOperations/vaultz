@@ -134,9 +134,16 @@ export async function bulkUpdatePurchaseSteps({
 }): Promise<ResponseType<PurchaseStep[]>> {
   // Delete steps that are not in the new list
   const stepIds = steps.filter((s) => s.id).map((s) => s.id!);
-  await prisma.purchaseStep.deleteMany({
-    where: { purchaseId, id: { notIn: stepIds } },
-  });
+  if (stepIds.length > 0) {
+    await prisma.purchaseStep.deleteMany({
+      where: { purchaseId, id: { notIn: stepIds } },
+    });
+  } else {
+    // If no existing steps in the new list, delete all existing steps
+    await prisma.purchaseStep.deleteMany({
+      where: { purchaseId },
+    });
+  }
 
   // Update or create steps
   const results = [];

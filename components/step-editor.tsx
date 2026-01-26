@@ -83,11 +83,9 @@ export function StepEditor({
             >
               <button
                 type="button"
-                className="text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing"
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  // Simple keyboard-based reordering
-                }}
+                className="text-muted-foreground"
+                disabled
+                title="Use arrow buttons to reorder"
               >
                 <GripVertical className="size-4" />
               </button>

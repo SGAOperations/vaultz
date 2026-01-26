@@ -1,5 +1,7 @@
 'use client';
 
+import { useMemo } from 'react';
+
 import {
   Calendar,
   Check,
@@ -47,6 +49,14 @@ export function PurchaseCard({
   miscAllocations: Allocation[];
   stopPropagation?: boolean;
 }) {
+  const stepProgress = useMemo(() => {
+    if (!purchase.steps || purchase.steps.length === 0) return null;
+    const completed = purchase.steps.filter((s) => s.completedAt).length;
+    const total = purchase.steps.length;
+    const percent = Math.round((completed / total) * 100);
+    return { completed, total, percent };
+  }, [purchase.steps]);
+
   return (
     <PurchaseDialog
       trigger={
@@ -133,20 +143,17 @@ export function PurchaseCard({
           )}
 
           {/* Step Progress */}
-          {purchase.steps && purchase.steps.length > 0 && (
+          {stepProgress && (
             <div className="mt-2">
               <div className="flex items-center gap-2">
                 <div className="bg-muted h-1.5 flex-1 overflow-hidden rounded-full">
                   <div
                     className="bg-primary h-full transition-all"
-                    style={{
-                      width: `${Math.round((purchase.steps.filter((s) => s.completedAt).length / purchase.steps.length) * 100)}%`,
-                    }}
+                    style={{ width: `${stepProgress.percent}%` }}
                   />
                 </div>
                 <span className="text-muted-foreground text-xs">
-                  {purchase.steps.filter((s) => s.completedAt).length}/
-                  {purchase.steps.length}
+                  {stepProgress.completed}/{stepProgress.total}
                 </span>
               </div>
             </div>
