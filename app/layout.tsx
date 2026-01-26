@@ -34,9 +34,11 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <main className="mx-auto flex w-full flex-col items-center p-3 2xl:w-4/5">
-            <Header />
-            {children}
+          <main className="mx-auto flex w-full flex-col items-center 2xl:w-4/5">
+            <div className="bg-background sticky top-0 z-50 w-full px-3 pt-3">
+              <Header />
+            </div>
+            <div className="w-full px-3 pb-3">{children}</div>
           </main>
           <Toaster
             richColors
