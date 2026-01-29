@@ -4,7 +4,6 @@ import {
   Allocation as PrismaAllocation,
   Category as PrismaCategory,
   Purchase as PrismaPurchase,
-  Transfer as PrismaTransfer,
   User,
 } from '@/prisma/client';
 
@@ -44,12 +43,4 @@ export type PurchaseWithUserAndCategory = Purchase & {
 
 export type UserWithPurchasesAndCategory = User & {
   purchases: PurchaseWithUserAndCategory[];
-};
-
-export type Transfer = Omit<PrismaTransfer, 'amount'> & {
-  amount: number;
-  fromCategory?: CategoryWithDesignation | null;
-  toCategory?: CategoryWithDesignation | null;
-  fromAllocation?: Allocation | null;
-  toAllocation?: Allocation | null;
 };

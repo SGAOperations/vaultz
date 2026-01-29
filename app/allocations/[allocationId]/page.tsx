@@ -11,13 +11,13 @@ import { getAllAllocationGroups } from '@/prisma/services/allocation-groups';
 import { getAllCategories } from '@/prisma/services/category';
 import { getUsers } from '@/prisma/services/user';
 
-import { CreateTransferDialog } from '@/components/create-transfer-dialog';
 import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/page-header';
 import { PurchaseCard } from '@/components/purchase-card';
 import { CreatePurchaseDialog } from '@/components/purchase-dialog';
 import { SectionHeader } from '@/components/section-header';
 import { StatCards } from '@/components/stat-card';
+import { TransferDialog } from '@/components/transfer-dialog';
 import { Button } from '@/components/ui/button';
 
 export const metadata: Metadata = { title: 'Allocation' };
@@ -47,18 +47,18 @@ export default async function Allocation({
         title={allocation.name}
         actions={
           <div className="flex gap-2">
-            <CreateTransferDialog
+            <TransferDialog
               trigger={
                 <Button variant="outline">
                   <ArrowLeftRight />
-                  Transfer Funds
+                  Transfer
                 </Button>
               }
+              accountType="allocation"
+              currentAccountId={allocationId}
               categories={categories}
               allocationGroups={allocationGroups}
               miscAllocations={miscAllocations}
-              defaultAccountType="allocation"
-              defaultSourceId={allocationId}
             />
             <CreatePurchaseDialog
               users={users}

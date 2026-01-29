@@ -9,13 +9,13 @@ import { getAllCategories, getCategoryById } from '@/prisma/services/category';
 import { getUsers } from '@/prisma/services/user';
 
 import { CategoryActionsMenu } from '@/components/category-actions-menu';
-import { CreateTransferDialog } from '@/components/create-transfer-dialog';
 import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/page-header';
 import { PurchaseCard } from '@/components/purchase-card';
 import { CreatePurchaseDialog } from '@/components/purchase-dialog';
 import { SectionHeader } from '@/components/section-header';
 import { StatCards } from '@/components/stat-card';
+import { TransferDialog } from '@/components/transfer-dialog';
 import { Button } from '@/components/ui/button';
 
 export const metadata: Metadata = { title: 'Spending Category' };
@@ -47,18 +47,18 @@ export default async function CategoryPage({
         description={`Category code: SC${category.code}`}
         actions={
           <div className="flex gap-2">
-            <CreateTransferDialog
+            <TransferDialog
               trigger={
                 <Button variant="outline">
                   <ArrowLeftRight />
-                  Transfer Funds
+                  Transfer
                 </Button>
               }
+              accountType="category"
+              currentAccountId={categoryId}
               categories={categories}
               allocationGroups={allocationGroups}
               miscAllocations={miscAllocations}
-              defaultAccountType="category"
-              defaultSourceId={categoryId}
             />
             <CreatePurchaseDialog
               users={users}

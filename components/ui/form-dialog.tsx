@@ -33,11 +33,7 @@ interface FormDialogProps<
   defaultValues: DefaultValues<TInput>;
   onSubmit: (data: TOutput) => Promise<boolean>;
   submitLabel?: string;
-  children:
-    | React.ReactNode
-    | ((
-        form: ReturnType<typeof useForm<TInput, unknown, TOutput>>,
-      ) => React.ReactNode);
+  children: React.ReactNode;
 }
 
 function FormDialog<
@@ -81,7 +77,7 @@ function FormDialog<
             onSubmit={form.handleSubmit(handleSubmit)}
             className="space-y-8"
           >
-            {typeof children === 'function' ? children(form) : children}
+            {children}
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="animate-spin" />}
               {submitLabel}

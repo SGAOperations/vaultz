@@ -5,24 +5,21 @@ import { revalidatePath } from 'next/cache';
 import { Decimal } from '@/prisma/client/runtime/library';
 
 import prisma from '@/lib/prisma';
-import { Transfer } from '@/lib/types';
 import { ResponseType } from '@/lib/utils';
 
-export async function createTransfer({
+export async function transferFunds({
   fromCategoryId,
   toCategoryId,
   fromAllocationId,
   toAllocationId,
   amount,
-  description,
 }: {
   fromCategoryId?: string;
   toCategoryId?: string;
   fromAllocationId?: string;
   toAllocationId?: string;
   amount: number;
-  description: string;
-}): Promise<ResponseType<Transfer>> {
+}): Promise<ResponseType<void>> {
   // Validate that we have exactly one source and one destination
   const sources = [fromCategoryId, fromAllocationId].filter(Boolean);
   const destinations = [toCategoryId, toAllocationId].filter(Boolean);
@@ -49,7 +46,7 @@ export async function createTransfer({
   const transferAmount = new Decimal(amount);
 
   // Start a transaction to ensure atomicity
-  const result = await prisma.$transaction(async (tx) => {
+  await prisma.$transaction(async (tx) => {
     // Deduct from source
     if (fromCategoryId) {
       const category = await tx.category.findUnique({
@@ -97,114 +94,11 @@ export async function createTransfer({
         data: { amount: allocation.amount.plus(transferAmount) },
       });
     }
-
-    // Create transfer record
-    const transfer = await tx.transfer.create({
-      data: {
-        fromCategoryId: fromCategoryId || null,
-        toCategoryId: toCategoryId || null,
-        fromAllocationId: fromAllocationId || null,
-        toAllocationId: toAllocationId || null,
-        amount: transferAmount,
-        description,
-      },
-    });
-
-    return transfer;
   });
 
   revalidatePath('/');
-  revalidatePath('/transfers');
   revalidatePath('/designation');
   revalidatePath('/allocation-groups');
-
-  return { ...result, amount: result.amount.toNumber() };
-}
-
-export async function getAllTransfers(): Promise<Transfer[]> {
-  const transfers = await prisma.transfer.findMany({
-    orderBy: { createdAt: 'desc' },
-    include: {
-      fromCategory: { include: { designation: true } },
-      toCategory: { include: { designation: true } },
-      fromAllocation: true,
-      toAllocation: true,
-    },
-  });
-
-  return transfers.map((transfer) => ({
-    ...transfer,
-    amount: transfer.amount.toNumber(),
-    fromCategory: transfer.fromCategory
-      ? {
-          ...transfer.fromCategory,
-          amount: transfer.fromCategory.amount.toNumber(),
-        }
-      : null,
-    toCategory: transfer.toCategory
-      ? {
-          ...transfer.toCategory,
-          amount: transfer.toCategory.amount.toNumber(),
-        }
-      : null,
-    fromAllocation: transfer.fromAllocation
-      ? {
-          ...transfer.fromAllocation,
-          amount: transfer.fromAllocation.amount.toNumber(),
-        }
-      : null,
-    toAllocation: transfer.toAllocation
-      ? {
-          ...transfer.toAllocation,
-          amount: transfer.toAllocation.amount.toNumber(),
-        }
-      : null,
-  }));
-}
-
-export async function getTransferById({
-  id,
-}: {
-  id: string;
-}): Promise<Transfer | null> {
-  const transfer = await prisma.transfer.findUnique({
-    where: { id },
-    include: {
-      fromCategory: { include: { designation: true } },
-      toCategory: { include: { designation: true } },
-      fromAllocation: true,
-      toAllocation: true,
-    },
-  });
-
-  if (!transfer) return null;
-
-  return {
-    ...transfer,
-    amount: transfer.amount.toNumber(),
-    fromCategory: transfer.fromCategory
-      ? {
-          ...transfer.fromCategory,
-          amount: transfer.fromCategory.amount.toNumber(),
-        }
-      : null,
-    toCategory: transfer.toCategory
-      ? {
-          ...transfer.toCategory,
-          amount: transfer.toCategory.amount.toNumber(),
-        }
-      : null,
-    fromAllocation: transfer.fromAllocation
-      ? {
-          ...transfer.fromAllocation,
-          amount: transfer.fromAllocation.amount.toNumber(),
-        }
-      : null,
-    toAllocation: transfer.toAllocation
-      ? {
-          ...transfer.toAllocation,
-          amount: transfer.toAllocation.amount.toNumber(),
-        }
-      : null,
-  };
+  revalidatePath('/category');
+  revalidatePath('/allocations');
 }
