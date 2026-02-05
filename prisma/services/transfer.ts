@@ -101,11 +101,17 @@ export async function transferFunds({
       }
     });
 
-    revalidatePath('/');
-    revalidatePath('/designation');
-    revalidatePath('/allocation-groups');
-    revalidatePath('/category');
-    revalidatePath('/allocations');
+    // Revalidate paths (don't let revalidation errors affect the transfer result)
+    try {
+      revalidatePath('/');
+      revalidatePath('/designation');
+      revalidatePath('/allocation-groups');
+      revalidatePath('/category');
+      revalidatePath('/allocations');
+    } catch (revalidateError) {
+      // Log revalidation errors but don't fail the transfer
+      console.error('Error revalidating paths:', revalidateError);
+    }
 
     return undefined;
   } catch (error) {
