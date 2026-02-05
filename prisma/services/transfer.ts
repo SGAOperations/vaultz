@@ -30,10 +30,10 @@ export async function transferFunds({
     }
 
     // Validate that source and destination are of the same type
-    if (
-      (fromCategoryId && !toCategoryId) ||
-      (!fromCategoryId && toCategoryId)
-    ) {
+    const isCategoryTransfer = fromCategoryId && toCategoryId;
+    const isAllocationTransfer = fromAllocationId && toAllocationId;
+
+    if (!isCategoryTransfer && !isAllocationTransfer) {
       return {
         error:
           'Transfers must be between accounts of the same type (category to category or allocation to allocation)',
