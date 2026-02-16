@@ -57,10 +57,7 @@ export async function getMiscAllocations(
   designationId?: string,
 ): Promise<AllocationWithPurchases[]> {
   const allocations = await prisma.allocation.findMany({
-    where: {
-      allocationGroupId: null,
-      ...(designationId && { designationId }),
-    },
+    where: { allocationGroupId: null, ...(designationId && { designationId }) },
     include: {
       purchases: {
         orderBy: [{ purchasedAt: 'desc' }, { createdAt: 'desc' }],
