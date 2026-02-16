@@ -337,7 +337,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
               onSubmit={form.handleSubmit(onSubmit)}
               className="flex flex-col overflow-hidden"
             >
-              <div className="scrollbar-thin flex-1 space-y-8 overflow-y-auto pr-1 pb-6">
+              <div className="flex-1 space-y-8 overflow-y-auto pr-1 pb-6">
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                   <FormField
                     control={form.control}
