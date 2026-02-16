@@ -3,6 +3,7 @@
 ## Commit & Branch Naming Conventions
 
 ### Commits
+
 - **Format**: `#XXX commit message in lowercase imperative mood`
 - **Examples**:
   - `#123 add user authentication flow`
@@ -15,6 +16,7 @@
   - No colon after issue number
 
 ### Branches
+
 - **Format**: `XXX-ticket-name-in-kebab-case`
 - **Examples**:
   - `123-add-user-authentication`
@@ -22,6 +24,7 @@
   - `789-refactor-payment-processing`
 
 ### Pull Requests
+
 - **Format**: `#XXX Ticket Name In Title Case`
 - **Examples**:
   - `#123 Add User Authentication`
@@ -39,14 +42,17 @@
 ## Architecture & Patterns
 
 ### API Layer
+
 - **NEVER use API routes** (`app/api/` directory)
 - **ALWAYS use Server Actions** for data mutations
 - **Use server components** for data fetching with Prisma calls
 - Import Prisma queries from separate service/repository files
 
 ### Component Structure
+
 - Components live in centralized `components/` directory
 - Organize into subdirectories as needed:
+
 ```
   components/
     ├── ui/           # shadcn components
@@ -54,9 +60,11 @@
     ├── layouts/      # layout components
     └── features/     # feature-specific shared components
 ```
+
 - Keep components focused and composable and only add comments when necessary to explain complex logic
 
 ### TypeScript
+
 - Use TypeScript strict mode
 - Define proper types for all props and function parameters
 - Avoid `any` type
@@ -64,18 +72,21 @@
 - Use Prisma-generated types where applicable
 
 ### Server Actions
+
 - Define server actions in separate files (e.g., `prisma/services/user-actions.ts`)
 - Always use `'use server'` directive
 - Include proper error handling and validation
 - Return typed responses
 
 ### Data Access
+
 - All database operations go through Prisma
 - Create service/repository files for complex queries
 - Keep Prisma calls in server components or server actions only
 - Never expose database calls to client components
 
 ### File Organization
+
 ```
 app/
   ├── (routes)/           # route groups
@@ -124,4 +135,3 @@ prisma/
    - Validate all inputs
    - Never expose sensitive data to client
    - Use environment variables for secrets
-  
