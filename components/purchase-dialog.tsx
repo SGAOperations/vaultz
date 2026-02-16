@@ -330,7 +330,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
         {isEditing ? (
           <FormProvider {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col overflow-hidden">
-              <div className="space-y-8 overflow-y-auto pr-2">
+              <div className="flex-1 space-y-8 overflow-y-auto pr-2">
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <FormField
                   control={form.control}
@@ -661,7 +661,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
               </div>
               </div>
 
-              <div className="flex gap-2 pt-4 border-t">
+              <div className="flex flex-shrink-0 gap-2 pt-4 border-t">
                 {isCreateMode ? (
                   <Button
                     type="submit"
