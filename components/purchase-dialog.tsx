@@ -716,7 +716,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
         ) : (
           <>
             {/* Main Purchase Information with prominent badges */}
-            <div className="max-h-[calc(100vh-12rem)] space-y-6 overflow-y-auto">
+            <div className="space-y-6">
               {/* Primary Info - Amount and Description */}
               <div className="flex flex-wrap gap-3">
                 <div className="bg-primary/10 ring-primary/20 flex items-center gap-3 rounded-lg px-4 py-3 ring-1">
@@ -740,7 +740,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                       <p className="text-muted-foreground text-xs">
                         Description
                       </p>
-                      <p className="truncate font-semibold">
+                      <p className="line-clamp-2 font-semibold">
                         {purchase!.description}
                       </p>
                     </div>
