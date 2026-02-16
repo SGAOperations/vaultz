@@ -28,8 +28,10 @@ export default async function CategoryPage({
 
   const users = await getUsers();
 
-  const allocationGroups = await getAllAllocationGroups();
-  const miscAllocations = await getMiscAllocations();
+  const allocationGroups = await getAllAllocationGroups(
+    category.designationId,
+  );
+  const miscAllocations = await getMiscAllocations(category.designationId);
 
   const spent = category.purchases
     .filter((purchase) => !purchase.excludeFromTotal)

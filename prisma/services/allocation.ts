@@ -9,14 +9,16 @@ import { ResponseType } from '@/lib/utils';
 export async function createAllocation({
   name,
   amount,
+  designationId,
   allocationGroupId,
 }: {
   name: string;
   amount: number;
+  designationId: string;
   allocationGroupId?: string;
 }): Promise<ResponseType<Allocation>> {
   const allocation = await prisma.allocation.create({
-    data: { name, amount, allocationGroupId },
+    data: { name, amount, designationId, allocationGroupId },
   });
 
   revalidatePath('/allocation-groups');
@@ -51,9 +53,14 @@ export async function getAllocationById({
   };
 }
 
-export async function getMiscAllocations(): Promise<AllocationWithPurchases[]> {
+export async function getMiscAllocations(
+  designationId?: string,
+): Promise<AllocationWithPurchases[]> {
   const allocations = await prisma.allocation.findMany({
-    where: { allocationGroupId: null },
+    where: {
+      allocationGroupId: null,
+      ...(designationId && { designationId }),
+    },
     include: {
       purchases: {
         orderBy: [{ purchasedAt: 'desc' }, { createdAt: 'desc' }],
