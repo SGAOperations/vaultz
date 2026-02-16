@@ -311,7 +311,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent
-        className={isEditing ? 'w-2/3 sm:max-w-full' : 'sm:max-w-full md:w-1/3'}
+        className={isEditing ? 'w-2/3 sm:max-w-full max-h-[90vh] flex flex-col' : 'sm:max-w-full md:w-1/3'}
       >
         <DialogHeader>
           <div className="flex items-start justify-between gap-4">
@@ -329,8 +329,9 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
 
         {isEditing ? (
           <FormProvider {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col overflow-hidden">
+              <div className="space-y-8 overflow-y-auto pr-2">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <FormField
                   control={form.control}
                   name="userId"
@@ -658,8 +659,9 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                   )}
                 />
               </div>
+              </div>
 
-              <div className="flex gap-2">
+              <div className="flex gap-2 pt-4 border-t">
                 {isCreateMode ? (
                   <Button
                     type="submit"
