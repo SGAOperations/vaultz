@@ -311,7 +311,11 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent
-        className={isEditing ? 'w-2/3 sm:max-w-full' : 'sm:max-w-full md:w-1/3'}
+        className={
+          isEditing
+            ? 'flex max-h-[90vh] w-2/3 flex-col sm:max-w-full'
+            : 'sm:max-w-full md:w-1/3'
+        }
       >
         <DialogHeader>
           <div className="flex items-start justify-between gap-4">
@@ -329,115 +333,167 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
 
         {isEditing ? (
           <FormProvider {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                <FormField
-                  control={form.control}
-                  name="userId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Name</FormLabel>
-                      <FormControl>
-                        <Combobox
-                          data={[
-                            {
-                              items: users.map((v) => ({
-                                value: v.id,
-                                label: `${v.first} ${v.last}`,
-                              })),
-                            },
-                          ]}
-                          {...field}
-                          value={field.value || ''}
-                          name="user"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormInput<FormData>
-                  name="description"
-                  label="Description"
-                  placeholder="Enter a description"
-                />
-                <FormField
-                  control={form.control}
-                  name="categoryId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Spending Category</FormLabel>
-                      <FormControl>
-                        <Combobox
-                          data={Object.entries(
-                            categories.reduce(
-                              (acc, category) => {
-                                const group = category.designationId;
-                                acc[group] = acc[group] || { items: [] };
-                                acc[group].items.push({
-                                  value: category.id,
-                                  label: `${category.name} (SC${category.code})`,
-                                });
-                                return acc;
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="flex flex-col overflow-hidden"
+            >
+              <div className="flex-1 space-y-8 overflow-y-auto pr-1 pb-6">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="userId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Name</FormLabel>
+                        <FormControl>
+                          <Combobox
+                            data={[
+                              {
+                                items: users.map((v) => ({
+                                  value: v.id,
+                                  label: `${v.first} ${v.last}`,
+                                })),
                               },
-                              {} as Record<
-                                string,
-                                { items: { value: string; label: string }[] }
-                              >,
-                            ),
-                          ).map(([designationId, group]) => ({
-                            heading:
-                              categories.find(
-                                (c) => c.designationId === designationId,
-                              )?.designation.name || designationId,
-                            ...group,
-                          }))}
-                          {...field}
-                          name="category"
-                          disabled={categories.length === 1}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                            ]}
+                            {...field}
+                            value={field.value || ''}
+                            name="user"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormInput<FormData>
+                    name="description"
+                    label="Description"
+                    placeholder="Enter a description"
+                  />
+                  <FormField
+                    control={form.control}
+                    name="categoryId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Spending Category</FormLabel>
+                        <FormControl>
+                          <Combobox
+                            data={Object.entries(
+                              categories.reduce(
+                                (acc, category) => {
+                                  const group = category.designationId;
+                                  acc[group] = acc[group] || { items: [] };
+                                  acc[group].items.push({
+                                    value: category.id,
+                                    label: `${category.name} (SC${category.code})`,
+                                  });
+                                  return acc;
+                                },
+                                {} as Record<
+                                  string,
+                                  { items: { value: string; label: string }[] }
+                                >,
+                              ),
+                            ).map(([designationId, group]) => ({
+                              heading:
+                                categories.find(
+                                  (c) => c.designationId === designationId,
+                                )?.designation.name || designationId,
+                              ...group,
+                            }))}
+                            {...field}
+                            name="category"
+                            disabled={categories.length === 1}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="allocationId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <div className="flex gap-2">
+                          <FormLabel>Allocation</FormLabel>
+                          <FormDescription className="text-xs">
+                            Optional
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Combobox
+                            data={[
+                              ...allocationGroups.map((group) => ({
+                                heading: group.name,
+                                items: group.allocations.map((allocation) => ({
+                                  value: allocation.id,
+                                  label: allocation.name,
+                                })),
+                              })),
+                              ...(miscAllocations.length > 0
+                                ? [
+                                    {
+                                      heading: 'Miscellaneous',
+                                      items: miscAllocations.map(
+                                        (allocation) => ({
+                                          value: allocation.id,
+                                          label: allocation.name,
+                                        }),
+                                      ),
+                                    },
+                                  ]
+                                : []),
+                            ]}
+                            {...field}
+                            name="allocation"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="purchasedAt"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Purchase Date</FormLabel>
+                        <FormControl>
+                          <DatePicker
+                            value={
+                              field.value ? new Date(field.value) : new Date()
+                            }
+                            onChange={(val: Date) => field.onChange(val)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormInput<FormData>
+                    name="amount"
+                    label="Amount"
+                    placeholder="$21.45"
+                    currency
+                  />
+                </div>
                 <FormField
                   control={form.control}
-                  name="allocationId"
+                  name="notes"
                   render={({ field }) => (
                     <FormItem>
                       <div className="flex gap-2">
-                        <FormLabel>Allocation</FormLabel>
+                        <FormLabel>Notes</FormLabel>
                         <FormDescription className="text-xs">
                           Optional
                         </FormDescription>
                       </div>
                       <FormControl>
-                        <Combobox
-                          data={[
-                            ...allocationGroups.map((group) => ({
-                              heading: group.name,
-                              items: group.allocations.map((allocation) => ({
-                                value: allocation.id,
-                                label: allocation.name,
-                              })),
-                            })),
-                            ...(miscAllocations.length > 0
-                              ? [
-                                  {
-                                    heading: 'Miscellaneous',
-                                    items: miscAllocations.map(
-                                      (allocation) => ({
-                                        value: allocation.id,
-                                        label: allocation.name,
-                                      }),
-                                    ),
-                                  },
-                                ]
-                              : []),
-                          ]}
+                        <Textarea
+                          placeholder="Add any notes about this purchase..."
+                          className="resize-none"
+                          rows={3}
                           {...field}
-                          name="allocation"
                         />
                       </FormControl>
                       <FormMessage />
@@ -446,220 +502,173 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                 />
                 <FormField
                   control={form.control}
-                  name="purchasedAt"
+                  name="receipts"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Purchase Date</FormLabel>
+                      <div className="flex gap-2">
+                        <FormLabel>Receipts</FormLabel>
+                        <FormDescription className="text-xs">
+                          Optional
+                        </FormDescription>
+                      </div>
                       <FormControl>
-                        <DatePicker
-                          value={
-                            field.value ? new Date(field.value) : new Date()
-                          }
-                          onChange={(val: Date) => field.onChange(val)}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormInput<FormData>
-                  name="amount"
-                  label="Amount"
-                  placeholder="$21.45"
-                  currency
-                />
-              </div>
-              <FormField
-                control={form.control}
-                name="notes"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="flex gap-2">
-                      <FormLabel>Notes</FormLabel>
-                      <FormDescription className="text-xs">
-                        Optional
-                      </FormDescription>
-                    </div>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Add any notes about this purchase..."
-                        className="resize-none"
-                        rows={3}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="receipts"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="flex gap-2">
-                      <FormLabel>Receipts</FormLabel>
-                      <FormDescription className="text-xs">
-                        Optional
-                      </FormDescription>
-                    </div>
-                    <FormControl>
-                      <div className="space-y-2">
-                        {receiptsToDisplay.length > 0 && (
-                          <div className="flex flex-wrap gap-2">
-                            {receiptsToDisplay.map((receiptKey, i) => (
-                              <div
-                                key={receiptKey}
-                                className="bg-muted flex items-center gap-2 rounded px-2 py-1"
-                              >
-                                <a
-                                  href={getFileUrl(receiptKey)}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-sm hover:underline"
+                        <div className="space-y-2">
+                          {receiptsToDisplay.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                              {receiptsToDisplay.map((receiptKey, i) => (
+                                <div
+                                  key={receiptKey}
+                                  className="bg-muted flex items-center gap-2 rounded px-2 py-1"
                                 >
-                                  File {i + 1}
-                                </a>
-                                <button
-                                  type="button"
-                                  onClick={() => removeReceipt(receiptKey)}
-                                  className="hover:bg-accent rounded p-1"
-                                >
-                                  <X className="h-3 w-3" />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                        <UploadDropzone
-                          endpoint="receipts"
-                          config={{ mode: 'auto', cn: twMerge }}
-                          className="border-accent m-0 border p-4"
-                          onClientUploadComplete={(data) => {
-                            if (data.length === 0) return;
+                                  <a
+                                    href={getFileUrl(receiptKey)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-sm hover:underline"
+                                  >
+                                    File {i + 1}
+                                  </a>
+                                  <button
+                                    type="button"
+                                    onClick={() => removeReceipt(receiptKey)}
+                                    className="hover:bg-accent rounded p-1"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          <UploadDropzone
+                            endpoint="receipts"
+                            config={{ mode: 'auto', cn: twMerge }}
+                            className="border-accent m-0 border p-4"
+                            onClientUploadComplete={(data) => {
+                              if (data.length === 0) return;
 
-                            const newReceipts = data.map((d) => d.key);
-                            const currentReceipts = field.value || [];
-                            field.onChange([
-                              ...currentReceipts,
-                              ...newReceipts,
-                            ]);
-                            setReceiptsToDisplay((prev) => [
-                              ...prev,
-                              ...newReceipts,
-                            ]);
-                            setFilesUploaded((prev) => [
-                              ...prev,
-                              ...data.map((d) => d.name),
-                            ]);
-                          }}
-                          onUploadError={(error) => {
-                            if (
-                              error.message ===
-                              'Invalid config: FileSizeMismatch'
-                            ) {
+                              const newReceipts = data.map((d) => d.key);
+                              const currentReceipts = field.value || [];
+                              field.onChange([
+                                ...currentReceipts,
+                                ...newReceipts,
+                              ]);
+                              setReceiptsToDisplay((prev) => [
+                                ...prev,
+                                ...newReceipts,
+                              ]);
+                              setFilesUploaded((prev) => [
+                                ...prev,
+                                ...data.map((d) => d.name),
+                              ]);
+                            }}
+                            onUploadError={(error) => {
+                              if (
+                                error.message ===
+                                'Invalid config: FileSizeMismatch'
+                              ) {
+                                toast.error(
+                                  'File upload failed. Please ensure your file is either an image smaller than 1MB or a PDF smaller than 512KB.',
+                                );
+                                return;
+                              }
                               toast.error(
-                                'File upload failed. Please ensure your file is either an image smaller than 1MB or a PDF smaller than 512KB.',
+                                'There was an error uploading your file. Please contact an administrator for assistance.',
                               );
-                              return;
-                            }
-                            toast.error(
-                              'There was an error uploading your file. Please contact an administrator for assistance.',
-                            );
-                          }}
-                        />
+                            }}
+                          />
+                        </div>
+                      </FormControl>
+                      <div>
+                        {filesUploaded.slice(0, 5).map((f, i) => (
+                          <p className="text-muted-foreground text-sm" key={i}>
+                            {f}
+                          </p>
+                        ))}
+                        {filesUploaded.length > 5 && (
+                          <p className="text-muted-foreground text-sm">
+                            and {filesUploaded.length - 5} more...
+                          </p>
+                        )}
                       </div>
-                    </FormControl>
-                    <div>
-                      {filesUploaded.slice(0, 5).map((f, i) => (
-                        <p className="text-muted-foreground text-sm" key={i}>
-                          {f}
-                        </p>
-                      ))}
-                      {filesUploaded.length > 5 && (
-                        <p className="text-muted-foreground text-sm">
-                          and {filesUploaded.length - 5} more...
-                        </p>
-                      )}
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                <FormField
-                  control={form.control}
-                  name="excludeFromTotal"
-                  render={({ field }) => (
-                    <FormItem>
-                      <div className="flex items-center gap-3">
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value}
-                            onChange={(e) => field.onChange(e.target.checked)}
-                          />
-                        </FormControl>
-                        <FormLabel className="!mt-0 cursor-pointer font-normal">
-                          Exclude from total
-                        </FormLabel>
-                      </div>
-                      <FormDescription className="text-xs">
-                        Exclude from budget calculations
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="expenseReportCreated"
-                  render={({ field }) => (
-                    <FormItem>
-                      <div className="flex items-center gap-3">
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value}
-                            onChange={(e) => field.onChange(e.target.checked)}
-                          />
-                        </FormControl>
-                        <FormLabel className="!mt-0 cursor-pointer font-normal">
-                          Expense report created
-                        </FormLabel>
-                      </div>
-                      <FormDescription className="text-xs">
-                        Report has been filed
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="reimbursed"
-                  render={({ field }) => (
-                    <FormItem>
-                      <div className="flex items-center gap-3">
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value}
-                            onChange={(e) => field.onChange(e.target.checked)}
-                          />
-                        </FormControl>
-                        <FormLabel className="!mt-0 cursor-pointer font-normal">
-                          Reimbursed
-                        </FormLabel>
-                      </div>
-                      <FormDescription className="text-xs">
-                        Payment has been received
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                  <FormField
+                    control={form.control}
+                    name="excludeFromTotal"
+                    render={({ field }) => (
+                      <FormItem>
+                        <div className="flex items-center gap-3">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onChange={(e) => field.onChange(e.target.checked)}
+                            />
+                          </FormControl>
+                          <FormLabel className="!mt-0 cursor-pointer font-normal">
+                            Exclude from total
+                          </FormLabel>
+                        </div>
+                        <FormDescription className="text-xs">
+                          Exclude from budget calculations
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="expenseReportCreated"
+                    render={({ field }) => (
+                      <FormItem>
+                        <div className="flex items-center gap-3">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onChange={(e) => field.onChange(e.target.checked)}
+                            />
+                          </FormControl>
+                          <FormLabel className="!mt-0 cursor-pointer font-normal">
+                            Expense report created
+                          </FormLabel>
+                        </div>
+                        <FormDescription className="text-xs">
+                          Report has been filed
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="reimbursed"
+                    render={({ field }) => (
+                      <FormItem>
+                        <div className="flex items-center gap-3">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onChange={(e) => field.onChange(e.target.checked)}
+                            />
+                          </FormControl>
+                          <FormLabel className="!mt-0 cursor-pointer font-normal">
+                            Reimbursed
+                          </FormLabel>
+                        </div>
+                        <FormDescription className="text-xs">
+                          Payment has been received
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex flex-shrink-0 gap-2 border-t pt-4">
                 {isCreateMode ? (
                   <Button
                     type="submit"
