@@ -10,8 +10,8 @@ DO $$
 DECLARE
     first_designation_id TEXT;
 BEGIN
-    -- Get the first designation ID (ordered by creation/id)
-    SELECT id INTO first_designation_id FROM "Designation" ORDER BY id LIMIT 1;
+    -- Get the first designation ID (ordered by code for predictable results)
+    SELECT id INTO first_designation_id FROM "Designation" ORDER BY code LIMIT 1;
     
     -- Only update if we found a designation
     IF first_designation_id IS NOT NULL THEN

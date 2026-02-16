@@ -20,7 +20,7 @@ export default async function AllocationGroups() {
         title="Allocation Groups"
         description="Organize and manage your budget allocations"
         actions={
-          firstDesignation && (
+          firstDesignation ? (
             <CreateAllocationGroupDialog
               designationId={firstDesignation.id}
               trigger={
@@ -30,11 +30,16 @@ export default async function AllocationGroups() {
                 </Button>
               }
             />
-          )
+          ) : null
         }
       />
 
-      {allocationGroups.length === 0 ? (
+      {!firstDesignation ? (
+        <EmptyState
+          message="No designations found"
+          description="Create a designation first before creating allocation groups"
+        />
+      ) : allocationGroups.length === 0 ? (
         <EmptyState
           message="No allocation groups yet"
           description="Create your first allocation group to organize your budget"
