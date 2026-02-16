@@ -749,7 +749,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                       <p className="text-muted-foreground text-xs">
                         Description
                       </p>
-                      <p className="truncate font-semibold">
+                      <p className="line-clamp-2 font-semibold">
                         {purchase!.description}
                       </p>
                     </div>
