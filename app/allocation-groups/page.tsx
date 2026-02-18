@@ -1,6 +1,7 @@
 import { Plus } from 'lucide-react';
 
 import { getAllAllocationGroups } from '@/prisma/services/allocation-groups';
+import { getAllDesignations } from '@/prisma/services/designation';
 
 import { AllocationGroupCard } from '@/components/allocation-group-card';
 import { CreateAllocationGroupDialog } from '@/components/create-allocation-group-dialog';
@@ -10,6 +11,10 @@ import { Button } from '@/components/ui/button';
 
 export default async function AllocationGroups() {
   const allocationGroups = await getAllAllocationGroups();
+  const designations = await getAllDesignations();
+  // TODO: Temporary behavior - using first designation as default.
+  // In the future, allow user to select which designation when creating allocation groups.
+  const firstDesignation = designations[0];
 
   return (
     <div className="flex w-full flex-col">
@@ -17,14 +22,17 @@ export default async function AllocationGroups() {
         title="Allocation Groups"
         description="Organize and manage your budget allocations"
         actions={
-          <CreateAllocationGroupDialog
-            trigger={
-              <Button className="gap-2 shadow-sm">
-                <Plus className="size-4" />
-                Create Allocation Group
-              </Button>
-            }
-          />
+          firstDesignation ? (
+            <CreateAllocationGroupDialog
+              designationId={firstDesignation.id}
+              trigger={
+                <Button className="gap-2 shadow-sm">
+                  <Plus className="size-4" />
+                  Create Allocation Group
+                </Button>
+              }
+            />
+          ) : null
         }
       />
 

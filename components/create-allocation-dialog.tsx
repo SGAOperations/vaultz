@@ -24,14 +24,16 @@ type FormData = z.infer<typeof schema>;
 
 export function CreateAllocationDialog({
   trigger,
+  designationId,
   allocationGroupId,
 }: {
   trigger: React.ReactNode;
+  designationId: string;
   allocationGroupId?: string;
 }) {
   async function onSubmit(data: FormData): Promise<boolean> {
     const result = await handleError(
-      createAllocation({ ...data, allocationGroupId }),
+      createAllocation({ ...data, designationId, allocationGroupId }),
       {
         toast: {
           loading: 'Creating allocation...',

@@ -8,11 +8,12 @@ import prisma from '@/lib/prisma';
 import { AllocationGroupWithAllocations } from '@/lib/types';
 import { ResponseType } from '@/lib/utils';
 
-export async function getAllAllocationGroups(): Promise<
-  AllocationGroupWithAllocations[]
-> {
+export async function getAllAllocationGroups(
+  designationId?: string,
+): Promise<AllocationGroupWithAllocations[]> {
   return (
     await prisma.allocationGroup.findMany({
+      where: designationId ? { designationId } : undefined,
       include: {
         allocations: {
           include: {
@@ -75,9 +76,10 @@ export async function getAllocationGroup({
 
 export async function createAllocationGroup(data: {
   name: string;
+  designationId: string;
 }): Promise<ResponseType<AllocationGroup>> {
   const allocationGroup = await prisma.allocationGroup.create({
-    data: { name: data.name },
+    data: { name: data.name, designationId: data.designationId },
   });
 
   revalidatePath('/allocation-groups');
