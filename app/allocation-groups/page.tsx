@@ -12,6 +12,8 @@ import { Button } from '@/components/ui/button';
 export default async function AllocationGroups() {
   const allocationGroups = await getAllAllocationGroups();
   const designations = await getAllDesignations();
+  // TODO: Temporary behavior - using first designation as default.
+  // In the future, allow user to select which designation when creating allocation groups.
   const firstDesignation = designations[0];
 
   return (
@@ -34,12 +36,7 @@ export default async function AllocationGroups() {
         }
       />
 
-      {!firstDesignation ? (
-        <EmptyState
-          message="No designations found"
-          description="Create a designation first before creating allocation groups"
-        />
-      ) : allocationGroups.length === 0 ? (
+      {allocationGroups.length === 0 ? (
         <EmptyState
           message="No allocation groups yet"
           description="Create your first allocation group to organize your budget"
