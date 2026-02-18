@@ -11,7 +11,11 @@
     "eslint:check": "eslint . --max-warnings=0",
     "eslint:fix": "eslint . --fix",
     "tsc:check": "tsc --noEmit",
-    "prisma:migrate": "prisma migrate dev"
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:seed": "npx tsx --env-file=.env prisma/seed.ts"
+  },
+  "prisma": {
+    "seed": "npx tsx --env-file=.env prisma/seed.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
