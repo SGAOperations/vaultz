@@ -153,14 +153,19 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
     [purchase, categories],
   );
 
-  const allocationName = useMemo(() => {
-    if (!purchase?.allocationId) return undefined;
-    const allAllocations = [
+  // Get all allocations flattened from groups and misc
+  const allAllocations = useMemo(
+    () => [
       ...allocationGroups.flatMap((g) => g.allocations),
       ...miscAllocations,
-    ];
+    ],
+    [allocationGroups, miscAllocations],
+  );
+
+  const allocationName = useMemo(() => {
+    if (!purchase?.allocationId) return undefined;
     return allAllocations.find((a) => a.id === purchase.allocationId)?.name;
-  }, [purchase, allocationGroups, miscAllocations]);
+  }, [purchase, allAllocations]);
 
   const form = useForm({
     resolver: zodResolver(schema),
@@ -169,7 +174,9 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
       categoryId:
         purchase?.categoryId ||
         (categories.length === 1 ? categories[0].id : ''),
-      allocationId: purchase?.allocationId || '',
+      allocationId:
+        purchase?.allocationId ||
+        (allAllocations.length === 1 ? allAllocations[0].id : ''),
       description: purchase?.description || '',
       amount: purchase?.amount || 0,
       purchasedAt: purchase ? parseDateOnly(purchase.purchasedAt) : new Date(),
