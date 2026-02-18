@@ -17,64 +17,27 @@ async function main() {
   // Create Users
   console.log('Creating users...');
   const users = await Promise.all([
-    prisma.user.create({
-      data: {
-        first: 'John',
-        last: 'Doe',
-      },
-    }),
-    prisma.user.create({
-      data: {
-        first: 'Jane',
-        last: 'Smith',
-      },
-    }),
-    prisma.user.create({
-      data: {
-        first: 'Michael',
-        last: 'Johnson',
-      },
-    }),
-    prisma.user.create({
-      data: {
-        first: 'Emily',
-        last: 'Williams',
-      },
-    }),
-    prisma.user.create({
-      data: {
-        first: 'David',
-        last: 'Brown',
-      },
-    }),
+    prisma.user.create({ data: { first: 'John', last: 'Doe' } }),
+    prisma.user.create({ data: { first: 'Jane', last: 'Smith' } }),
+    prisma.user.create({ data: { first: 'Michael', last: 'Johnson' } }),
+    prisma.user.create({ data: { first: 'Emily', last: 'Williams' } }),
+    prisma.user.create({ data: { first: 'David', last: 'Brown' } }),
   ]);
 
   // Create Designations
   console.log('Creating designations...');
   const designations = await Promise.all([
     prisma.designation.create({
-      data: {
-        code: 'PROJ-001',
-        name: 'Research and Development',
-      },
+      data: { code: 'PROJ-001', name: 'Research and Development' },
     }),
     prisma.designation.create({
-      data: {
-        code: 'PROJ-002',
-        name: 'Marketing Campaign',
-      },
+      data: { code: 'PROJ-002', name: 'Marketing Campaign' },
     }),
     prisma.designation.create({
-      data: {
-        code: 'PROJ-003',
-        name: 'Infrastructure Upgrade',
-      },
+      data: { code: 'PROJ-003', name: 'Infrastructure Upgrade' },
     }),
     prisma.designation.create({
-      data: {
-        code: 'PROJ-004',
-        name: 'Training and Education',
-      },
+      data: { code: 'PROJ-004', name: 'Training and Education' },
     }),
   ]);
 
@@ -181,22 +144,13 @@ async function main() {
   console.log('Creating allocation groups...');
   const allocationGroups = await Promise.all([
     prisma.allocationGroup.create({
-      data: {
-        name: 'Q1 Budget',
-        designationId: designations[0].id,
-      },
+      data: { name: 'Q1 Budget', designationId: designations[0].id },
     }),
     prisma.allocationGroup.create({
-      data: {
-        name: 'Q2 Budget',
-        designationId: designations[0].id,
-      },
+      data: { name: 'Q2 Budget', designationId: designations[0].id },
     }),
     prisma.allocationGroup.create({
-      data: {
-        name: 'Marketing Phase 1',
-        designationId: designations[1].id,
-      },
+      data: { name: 'Marketing Phase 1', designationId: designations[1].id },
     }),
     prisma.allocationGroup.create({
       data: {
