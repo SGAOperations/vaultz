@@ -35,7 +35,7 @@ interface SpendingData {
 
 interface DashboardChartsProps {
   purchasesByMonth: PurchaseData[];
-  spendingByDesignation: SpendingData[];
+  spendingData: SpendingData[];
   spendingChartTitle?: string;
 }
 
@@ -48,7 +48,7 @@ function getComputedColor(variable: string): string {
 
 export function DashboardCharts({
   purchasesByMonth,
-  spendingByDesignation,
+  spendingData,
   spendingChartTitle = 'Spending by Designation',
 }: DashboardChartsProps) {
   const [colors, setColors] = useState({
@@ -139,13 +139,13 @@ export function DashboardCharts({
         </>
       )}
 
-      {spendingByDesignation.length > 0 && (
+      {spendingData.length > 0 && (
         <>
           <SectionHeader title={spendingChartTitle} />
           <Card className="mb-6 p-6">
             <ResponsiveContainer width="100%" height={350}>
               <BarChart
-                data={spendingByDesignation}
+                data={spendingData}
                 margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke={colors.border} />
