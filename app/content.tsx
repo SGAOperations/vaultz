@@ -10,7 +10,11 @@ import {
 
 import { useQuery } from '@tanstack/react-query';
 
-import { getDashboardData } from '@/prisma/services/dashboard';
+import {
+  getDashboardStatsByDesignation,
+  getPurchasesByMonthForDesignation,
+  getSpendingByCategoryForDesignation,
+} from '@/prisma/services/dashboard';
 
 import { cn } from '@/lib/utils';
 
@@ -25,22 +29,43 @@ interface ContentProps {
 }
 
 export function Content({ designationId }: ContentProps) {
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ['dashboard', designationId],
-    queryFn: () => getDashboardData(designationId),
+  const {
+    data: stats,
+    isLoading: statsLoading,
+    isError: statsError,
+  } = useQuery({
+    queryKey: ['dashboard-stats', designationId],
+    queryFn: () => getDashboardStatsByDesignation(designationId),
   });
 
-  if (isLoading) return <PageSkeleton />;
+  const {
+    data: purchasesByMonth,
+    isLoading: purchasesLoading,
+    isError: purchasesError,
+  } = useQuery({
+    queryKey: ['dashboard-purchases', designationId],
+    queryFn: () => getPurchasesByMonthForDesignation(designationId),
+  });
 
-  if (isError || !data)
+  const {
+    data: spendingByCategory,
+    isLoading: spendingLoading,
+    isError: spendingError,
+  } = useQuery({
+    queryKey: ['dashboard-spending', designationId],
+    queryFn: () => getSpendingByCategoryForDesignation(designationId),
+  });
+
+  if (statsLoading || purchasesLoading || spendingLoading)
+    return <PageSkeleton />;
+
+  if (statsError || purchasesError || spendingError || !stats)
     return (
       <EmptyState
         message="Failed to load dashboard data"
         description="Please try again"
       />
     );
-
-  const { stats, purchasesByMonth, spendingByCategory } = data;
 
   return (
     <>
@@ -86,8 +111,8 @@ export function Content({ designationId }: ContentProps) {
 
       {/* Charts */}
       <DashboardCharts
-        purchasesByMonth={purchasesByMonth}
-        spendingData={spendingByCategory}
+        purchasesByMonth={purchasesByMonth!}
+        spendingData={spendingByCategory!}
         spendingChartTitle="Spending by Category"
       />
     </>

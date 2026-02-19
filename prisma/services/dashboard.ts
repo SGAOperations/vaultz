@@ -163,15 +163,6 @@ export async function getSpendingByCategoryForDesignation(
   });
 }
 
-export async function getDashboardData(designationId: string) {
-  const [stats, purchasesByMonth, spendingByCategory] = await Promise.all([
-    getDashboardStatsByDesignation(designationId),
-    getPurchasesByMonthForDesignation(designationId),
-    getSpendingByCategoryForDesignation(designationId),
-  ]);
-  return { stats, purchasesByMonth, spendingByCategory };
-}
-
 export async function getSpendingByDesignation() {
   const designations = await prisma.designation.findMany({
     include: {
