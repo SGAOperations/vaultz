@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -188,6 +188,22 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
     },
   });
   const isSubmitting = form.formState.isSubmitting;
+
+  // Auto-select category/allocation when only one option exists (handles dynamic updates)
+  useEffect(() => {
+    if (!isCreateMode || !open) return;
+
+    const currentCategoryId = form.getValues('categoryId');
+    const currentAllocationId = form.getValues('allocationId');
+
+    // Auto-select category if only one exists and none is selected
+    if (categories.length === 1 && !currentCategoryId)
+      form.setValue('categoryId', categories[0].id);
+
+    // Auto-select allocation if only one exists and none is selected
+    if (allAllocations.length === 1 && !currentAllocationId)
+      form.setValue('allocationId', allAllocations[0].id);
+  }, [isCreateMode, open, categories, allAllocations, form]);
 
   async function onSubmit(data: FormData) {
     if (isCreateMode) {
