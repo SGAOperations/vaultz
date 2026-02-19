@@ -153,19 +153,14 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
     [purchase, categories],
   );
 
-  // Get all allocations flattened from groups and misc
-  const allAllocations = useMemo(
-    () => [
-      ...allocationGroups.flatMap((g) => g.allocations),
-      ...miscAllocations,
-    ],
-    [allocationGroups, miscAllocations],
-  );
+  const allAllocations = [
+    ...allocationGroups.flatMap((g) => g.allocations),
+    ...miscAllocations,
+  ];
 
-  const allocationName = useMemo(() => {
-    if (!purchase?.allocationId) return undefined;
-    return allAllocations.find((a) => a.id === purchase.allocationId)?.name;
-  }, [purchase, allAllocations]);
+  const allocationName = purchase?.allocationId
+    ? allAllocations.find((a) => a.id === purchase.allocationId)?.name
+    : undefined;
 
   const form = useForm({
     resolver: zodResolver(schema),
@@ -189,19 +184,12 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
   });
   const isSubmitting = form.formState.isSubmitting;
 
-  // Auto-select category/allocation when only one option exists (handles dynamic updates)
+  // Auto-select when only one option exists
   useEffect(() => {
     if (!isCreateMode || !open) return;
-
-    const currentCategoryId = form.getValues('categoryId');
-    const currentAllocationId = form.getValues('allocationId');
-
-    // Auto-select category if only one exists and none is selected
-    if (categories.length === 1 && !currentCategoryId)
+    if (categories.length === 1 && !form.getValues('categoryId'))
       form.setValue('categoryId', categories[0].id);
-
-    // Auto-select allocation if only one exists and none is selected
-    if (allAllocations.length === 1 && !currentAllocationId)
+    if (allAllocations.length === 1 && !form.getValues('allocationId'))
       form.setValue('allocationId', allAllocations[0].id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isCreateMode, open, categories, allAllocations]);
