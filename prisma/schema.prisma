@@ -39,7 +39,9 @@ model Category {
     designationId String
     designation   Designation  @relation(fields: [designationId], references: [id])
 
-    purchases Purchase[]
+    purchases     Purchase[]
+    transfersFrom Transfer[] @relation("TransfersFrom")
+    transfersTo   Transfer[] @relation("TransfersTo")
 }
 
 model Purchase {
@@ -83,4 +85,16 @@ model Allocation {
     allocationGroup   AllocationGroup? @relation(fields: [allocationGroupId], references: [id])
 
     purchases Purchase[]
+}
+
+model Transfer {
+    id        String    @id @default(uuid())
+    amount    Decimal
+    createdAt DateTime  @default(now())
+    deletedAt DateTime?
+
+    fromCategoryId String
+    fromCategory   Category @relation("TransfersFrom", fields: [fromCategoryId], references: [id])
+    toCategoryId   String
+    toCategory     Category @relation("TransfersTo", fields: [toCategoryId], references: [id])
 }
