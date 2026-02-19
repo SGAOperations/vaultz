@@ -203,7 +203,8 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
     // Auto-select allocation if only one exists and none is selected
     if (allAllocations.length === 1 && !currentAllocationId)
       form.setValue('allocationId', allAllocations[0].id);
-  }, [isCreateMode, open, categories, allAllocations, form]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isCreateMode, open, categories, allAllocations]);
 
   async function onSubmit(data: FormData) {
     if (isCreateMode) {
