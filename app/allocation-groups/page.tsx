@@ -1,10 +1,9 @@
 'use client';
 
-import { Suspense, useMemo } from 'react';
-
 import { AllocationGroupsList } from '@/app/allocation-groups/list';
 import { AllocationGroupsSkeleton } from '@/app/allocation-groups/skeleton';
 import { useDesignation } from '@/contexts/DesignationContext';
+import { useQuery } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
 
 import { getAllAllocationGroups } from '@/prisma/services/allocation-groups';
@@ -16,10 +15,11 @@ import { Button } from '@/components/ui/button';
 
 export default function AllocationGroups() {
   const { activeDesignation } = useDesignation();
-  const groupsPromise = useMemo(
-    () => getAllAllocationGroups(activeDesignation?.id),
-    [activeDesignation?.id],
-  );
+  const { data: groups = [], isLoading } = useQuery({
+    queryKey: ['allocation-groups', activeDesignation?.id],
+    queryFn: () => getAllAllocationGroups(activeDesignation?.id),
+    enabled: !!activeDesignation,
+  });
 
   return (
     <div className="flex w-full flex-col">
@@ -46,13 +46,10 @@ export default function AllocationGroups() {
           message="No designation selected"
           description="Select a designation to view allocation groups"
         />
+      ) : isLoading ? (
+        <AllocationGroupsSkeleton />
       ) : (
-        <Suspense
-          key={activeDesignation.id}
-          fallback={<AllocationGroupsSkeleton />}
-        >
-          <AllocationGroupsList groupsPromise={groupsPromise} />
-        </Suspense>
+        <AllocationGroupsList groups={groups} />
       )}
     </div>
   );

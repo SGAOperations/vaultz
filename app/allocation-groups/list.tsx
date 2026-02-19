@@ -1,19 +1,15 @@
 'use client';
 
-import { use } from 'react';
-
-import { getAllAllocationGroups } from '@/prisma/services/allocation-groups';
+import { AllocationGroupWithAllocations } from '@/lib/types';
 
 import { AllocationGroupCard } from '@/components/allocation-group-card';
 import { EmptyState } from '@/components/empty-state';
 
 export function AllocationGroupsList({
-  groupsPromise,
+  groups,
 }: {
-  groupsPromise: ReturnType<typeof getAllAllocationGroups>;
+  groups: AllocationGroupWithAllocations[];
 }) {
-  const groups = use(groupsPromise);
-
   if (groups.length === 0)
     return (
       <EmptyState
