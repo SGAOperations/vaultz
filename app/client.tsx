@@ -11,8 +11,8 @@ import { useDesignation } from '@/contexts/DesignationContext';
 import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/page-header';
 
-import { Content } from '@/app/_components/content';
-import { PageSkeleton } from '@/app/_components/skeleton';
+import { Content } from './content';
+import { PageSkeleton } from './skeleton';
 
 type DashboardDataPromise = ReturnType<typeof getDashboardData>;
 

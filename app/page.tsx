@@ -1,4 +1,4 @@
-import { Client } from '@/app/_components/client';
+import { Client } from './client';
 
 export default function Home() {
   return <Client />;
