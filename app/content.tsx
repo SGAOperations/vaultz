@@ -1,7 +1,5 @@
 'use client';
 
-import { use } from 'react';
-
 import {
   BarChart3,
   FolderKanban,
@@ -10,19 +8,39 @@ import {
   Wallet,
 } from 'lucide-react';
 
+import { useQuery } from '@tanstack/react-query';
+
 import { getDashboardData } from '@/prisma/services/dashboard';
 
 import { cn } from '@/lib/utils';
 
 import { DashboardCharts } from '@/components/dashboard-charts';
+import { EmptyState } from '@/components/empty-state';
 import { Card } from '@/components/ui/card';
 
+import { PageSkeleton } from './skeleton';
+
 interface ContentProps {
-  dataPromise: ReturnType<typeof getDashboardData>;
+  designationId: string;
 }
 
-export function Content({ dataPromise }: ContentProps) {
-  const { stats, purchasesByMonth, spendingByCategory } = use(dataPromise);
+export function Content({ designationId }: ContentProps) {
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['dashboard', designationId],
+    queryFn: () => getDashboardData(designationId),
+  });
+
+  if (isLoading) return <PageSkeleton />;
+
+  if (isError || !data)
+    return (
+      <EmptyState
+        message="Failed to load dashboard data"
+        description="Please try again"
+      />
+    );
+
+  const { stats, purchasesByMonth, spendingByCategory } = data;
 
   return (
     <>
