@@ -1,8 +1,7 @@
 'use client';
 
-import { ChevronsUpDown } from 'lucide-react';
-
 import { useDesignation } from '@/contexts/DesignationContext';
+import { ChevronsUpDown } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
