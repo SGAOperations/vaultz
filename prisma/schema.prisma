@@ -55,11 +55,71 @@ model Purchase {
     reimbursed           Boolean  @default(false)
 
     categoryId   String
-    category     Category    @relation(fields: [categoryId], references: [id])
+    category     Category        @relation(fields: [categoryId], references: [id])
     allocationId String?
-    allocation   Allocation? @relation(fields: [allocationId], references: [id])
+    allocation   Allocation?     @relation(fields: [allocationId], references: [id])
     userId       String
-    user         User        @relation(fields: [userId], references: [id])
+    user         User            @relation(fields: [userId], references: [id])
+    processId    String?          @unique
+    process      PurchaseProcess? @relation(fields: [processId], references: [id])
+}
+
+model ProcessTemplate {
+    id          String    @id @default(uuid())
+    name        String
+    description String?
+    createdAt   DateTime  @default(now())
+    updatedAt   DateTime  @updatedAt
+    deletedAt   DateTime?
+
+    steps    ProcessStep[]
+    processes PurchaseProcess[]
+}
+
+model ProcessStep {
+    id          String    @id @default(uuid())
+    name        String
+    description String?
+    order       Int
+    createdAt   DateTime  @default(now())
+    updatedAt   DateTime  @updatedAt
+    deletedAt   DateTime?
+
+    templateId  String
+    template    ProcessTemplate @relation(fields: [templateId], references: [id])
+
+    completions PurchaseStepCompletion[]
+}
+
+model PurchaseProcess {
+    id         String    @id @default(uuid())
+    startedAt  DateTime  @default(now())
+    createdAt  DateTime  @default(now())
+    updatedAt  DateTime  @updatedAt
+    deletedAt  DateTime?
+
+    purchaseId String          @unique
+    templateId String
+    template   ProcessTemplate @relation(fields: [templateId], references: [id])
+
+    purchase    Purchase?
+    completions PurchaseStepCompletion[]
+}
+
+model PurchaseStepCompletion {
+    id                   String    @id @default(uuid())
+    completed            Boolean   @default(false)
+    markedAt             DateTime
+    actualCompletionDate DateTime? @db.Date
+    notes                String?
+    createdAt            DateTime  @default(now())
+    updatedAt            DateTime  @updatedAt
+    deletedAt            DateTime?
+
+    purchaseProcessId String
+    purchaseProcess   PurchaseProcess @relation(fields: [purchaseProcessId], references: [id])
+    stepId            String
+    step              ProcessStep     @relation(fields: [stepId], references: [id])
 }
 
 model AllocationGroup {
