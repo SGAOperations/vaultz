@@ -2,8 +2,8 @@
 
 import { Suspense, useMemo } from 'react';
 
-import { AllocationGroupsList } from '@/app/allocation-groups/_components/allocation-groups-list';
-import { AllocationGroupsSkeleton } from '@/app/allocation-groups/_components/allocation-groups-skeleton';
+import { AllocationGroupsList } from '@/app/allocation-groups/list';
+import { AllocationGroupsSkeleton } from '@/app/allocation-groups/skeleton';
 import { useDesignation } from '@/contexts/DesignationContext';
 import { Plus } from 'lucide-react';
 
