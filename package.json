@@ -12,7 +12,10 @@
     "eslint:fix": "eslint . --fix",
     "tsc:check": "tsc --noEmit",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:seed": "npx tsx --env-file=.env prisma/seed.ts"
+    "prisma:seed": "npx tsx --env-file=.env prisma/seed.ts",
+    "db:start": "docker compose up -d",
+    "db:stop": "docker compose down",
+    "db:reset": "prisma migrate reset"
   },
   "prisma": {
     "seed": "npx tsx --env-file=.env prisma/seed.ts"
