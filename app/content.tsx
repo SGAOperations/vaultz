@@ -22,7 +22,7 @@ import { DashboardCharts } from '@/components/dashboard-charts';
 import { EmptyState } from '@/components/empty-state';
 import { Card } from '@/components/ui/card';
 
-import { PageSkeleton } from './skeleton';
+import { ChartsSkeleton, FinancialSkeleton, StatsSkeleton } from './skeleton';
 
 interface ContentProps {
   designationId: string;
@@ -56,65 +56,70 @@ export function Content({ designationId }: ContentProps) {
     queryFn: () => getSpendingByCategoryForDesignation(designationId),
   });
 
-  if (statsLoading || purchasesLoading || spendingLoading)
-    return <PageSkeleton />;
-
-  if (statsError || purchasesError || spendingError || !stats)
-    return (
-      <EmptyState
-        message="Failed to load dashboard data"
-        description="Please try again"
-      />
-    );
-
   return (
     <>
       {/* Stats Grid */}
-      <div className="mb-6 grid w-full grid-cols-1 gap-3 sm:grid-cols-2">
-        <StatCard
-          icon={FolderKanban}
-          label="Categories"
-          value={stats.totalCategories}
-          iconColor="text-purple-500"
-          bgColor="bg-purple-500/10 dark:bg-purple-500/20"
-        />
-        <StatCard
-          icon={Receipt}
-          label="Total Purchases"
-          value={stats.totalPurchases}
-          iconColor="text-orange-500"
-          bgColor="bg-orange-500/10 dark:bg-orange-500/20"
-        />
-      </div>
+      {statsLoading ? (
+        <StatsSkeleton />
+      ) : statsError ? (
+        <EmptyState message="Failed to load stats" />
+      ) : (
+        <div className="mb-6 grid w-full grid-cols-1 gap-3 sm:grid-cols-2">
+          <StatCard
+            icon={FolderKanban}
+            label="Categories"
+            value={stats!.totalCategories}
+            iconColor="text-purple-500"
+            bgColor="bg-purple-500/10 dark:bg-purple-500/20"
+          />
+          <StatCard
+            icon={Receipt}
+            label="Total Purchases"
+            value={stats!.totalPurchases}
+            iconColor="text-orange-500"
+            bgColor="bg-orange-500/10 dark:bg-orange-500/20"
+          />
+        </div>
+      )}
 
       {/* Financial Overview */}
-      <div className="mb-6 grid w-full grid-cols-1 gap-3 md:grid-cols-3">
-        <FinancialStatCard
-          label="Budget"
-          value={stats.totalBudget}
-          icon={Wallet}
-          variant="total"
-        />
-        <FinancialStatCard
-          label="Spent"
-          value={stats.totalSpent}
-          icon={TrendingUp}
-          variant="spent"
-        />
-        <FinancialStatCard
-          label="Remaining"
-          value={stats.remaining}
-          icon={BarChart3}
-          variant="remaining"
-        />
-      </div>
+      {statsLoading ? (
+        <FinancialSkeleton />
+      ) : statsError ? null : (
+        <div className="mb-6 grid w-full grid-cols-1 gap-3 md:grid-cols-3">
+          <FinancialStatCard
+            label="Budget"
+            value={stats!.totalBudget}
+            icon={Wallet}
+            variant="total"
+          />
+          <FinancialStatCard
+            label="Spent"
+            value={stats!.totalSpent}
+            icon={TrendingUp}
+            variant="spent"
+          />
+          <FinancialStatCard
+            label="Remaining"
+            value={stats!.remaining}
+            icon={BarChart3}
+            variant="remaining"
+          />
+        </div>
+      )}
 
       {/* Charts */}
-      <DashboardCharts
-        purchasesByMonth={purchasesByMonth!}
-        spendingData={spendingByCategory!}
-        spendingChartTitle="Spending by Category"
-      />
+      {purchasesLoading || spendingLoading ? (
+        <ChartsSkeleton />
+      ) : purchasesError || spendingError ? (
+        <EmptyState message="Failed to load charts" />
+      ) : (
+        <DashboardCharts
+          purchasesByMonth={purchasesByMonth!}
+          spendingData={spendingByCategory!}
+          spendingChartTitle="Spending by Category"
+        />
+      )}
     </>
   );
 }

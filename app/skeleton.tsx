@@ -23,20 +23,28 @@ function ChartSkeleton() {
   );
 }
 
-export function PageSkeleton() {
+export function StatsSkeleton() {
+  return (
+    <div className="mb-6 grid w-full grid-cols-1 gap-3 sm:grid-cols-2">
+      <StatCardSkeleton />
+      <StatCardSkeleton />
+    </div>
+  );
+}
+
+export function FinancialSkeleton() {
+  return (
+    <div className="mb-6 grid w-full grid-cols-1 gap-3 md:grid-cols-3">
+      <StatCardSkeleton />
+      <StatCardSkeleton />
+      <StatCardSkeleton />
+    </div>
+  );
+}
+
+export function ChartsSkeleton() {
   return (
     <>
-      <div className="mb-6 grid w-full grid-cols-1 gap-3 sm:grid-cols-2">
-        <StatCardSkeleton />
-        <StatCardSkeleton />
-      </div>
-
-      <div className="mb-6 grid w-full grid-cols-1 gap-3 md:grid-cols-3">
-        <StatCardSkeleton />
-        <StatCardSkeleton />
-        <StatCardSkeleton />
-      </div>
-
       <ChartSkeleton />
       <ChartSkeleton />
     </>
