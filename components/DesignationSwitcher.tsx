@@ -23,7 +23,7 @@ export function DesignationSwitcher() {
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-1.5">
+        <Button variant="outline" size="default" className="gap-1.5">
           <span className="max-w-[120px] truncate">
             {activeDesignation?.name}
           </span>
