@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useMemo } from 'react';
+import { use } from 'react';
 
 import {
   BarChart3,
@@ -18,14 +18,10 @@ import { DashboardCharts } from '@/components/dashboard-charts';
 import { Card } from '@/components/ui/card';
 
 interface ContentProps {
-  designationId: string;
+  dataPromise: ReturnType<typeof getDashboardData>;
 }
 
-export function Content({ designationId }: ContentProps) {
-  const dataPromise = useMemo(
-    () => getDashboardData(designationId),
-    [designationId],
-  );
+export function Content({ dataPromise }: ContentProps) {
   const { stats, purchasesByMonth, spendingByCategory } = use(dataPromise);
 
   return (

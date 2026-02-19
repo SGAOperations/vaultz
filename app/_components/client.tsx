@@ -1,8 +1,10 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useMemo } from 'react';
 
 import { Designation } from '@/prisma/client';
+
+import { getDashboardData } from '@/prisma/services/dashboard';
 
 import { useDesignation } from '@/contexts/DesignationContext';
 
@@ -12,7 +14,14 @@ import { PageHeader } from '@/components/page-header';
 import { Content } from '@/app/_components/content';
 import { PageSkeleton } from '@/app/_components/skeleton';
 
+type DashboardDataPromise = ReturnType<typeof getDashboardData>;
+
 function DesignationDashboard({ designation }: { designation: Designation }) {
+  const dataPromise: DashboardDataPromise = useMemo(
+    () => getDashboardData(designation.id),
+    [designation.id],
+  );
+
   return (
     <div className="flex w-full flex-col">
       <PageHeader
@@ -20,7 +29,7 @@ function DesignationDashboard({ designation }: { designation: Designation }) {
         description={`Dashboard · DN${designation.code}`}
       />
       <Suspense fallback={<PageSkeleton />} key={designation.id}>
-        <Content designationId={designation.id} />
+        <Content dataPromise={dataPromise} />
       </Suspense>
     </div>
   );
