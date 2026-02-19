@@ -1,7 +1,13 @@
-import { Plus } from 'lucide-react';
+'use client';
+
+import { useEffect, useState } from 'react';
+
+import { useDesignation } from '@/contexts/DesignationContext';
+import { Loader2, Plus } from 'lucide-react';
 
 import { getAllAllocationGroups } from '@/prisma/services/allocation-groups';
-import { getAllDesignations } from '@/prisma/services/designation';
+
+import { AllocationGroupWithAllocations } from '@/lib/types';
 
 import { AllocationGroupCard } from '@/components/allocation-group-card';
 import { CreateAllocationGroupDialog } from '@/components/create-allocation-group-dialog';
@@ -9,12 +15,35 @@ import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 
-export default async function AllocationGroups() {
-  const allocationGroups = await getAllAllocationGroups();
-  const designations = await getAllDesignations();
-  // TODO: Temporary behavior - using first designation as default.
-  // In the future, allow user to select which designation when creating allocation groups.
-  const firstDesignation = designations[0];
+export default function AllocationGroups() {
+  const { activeDesignation } = useDesignation();
+  const [allocationGroups, setAllocationGroups] = useState<
+    AllocationGroupWithAllocations[]
+  >([]);
+  const [loadedDesignationId, setLoadedDesignationId] = useState<
+    string | undefined
+  >(undefined);
+  const isLoading = loadedDesignationId !== activeDesignation?.id;
+
+  useEffect(() => {
+    let isCancelled = false;
+    getAllAllocationGroups(activeDesignation?.id)
+      .then((groups) => {
+        if (!isCancelled) {
+          setAllocationGroups(groups);
+          setLoadedDesignationId(activeDesignation?.id);
+        }
+      })
+      .catch(() => {
+        if (!isCancelled) {
+          setAllocationGroups([]);
+          setLoadedDesignationId(activeDesignation?.id);
+        }
+      });
+    return () => {
+      isCancelled = true;
+    };
+  }, [activeDesignation?.id]);
 
   return (
     <div className="flex w-full flex-col">
@@ -22,9 +51,9 @@ export default async function AllocationGroups() {
         title="Allocation Groups"
         description="Organize and manage your budget allocations"
         actions={
-          firstDesignation ? (
+          activeDesignation ? (
             <CreateAllocationGroupDialog
-              designationId={firstDesignation.id}
+              designationId={activeDesignation.id}
               trigger={
                 <Button className="gap-2 shadow-sm">
                   <Plus className="size-4" />
@@ -36,7 +65,16 @@ export default async function AllocationGroups() {
         }
       />
 
-      {allocationGroups.length === 0 ? (
+      {!activeDesignation ? (
+        <EmptyState
+          message="No designation selected"
+          description="Select a designation to view allocation groups"
+        />
+      ) : isLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="text-muted-foreground size-6 animate-spin" />
+        </div>
+      ) : allocationGroups.length === 0 ? (
         <EmptyState
           message="No allocation groups yet"
           description="Create your first allocation group to organize your budget"
