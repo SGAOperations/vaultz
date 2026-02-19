@@ -17,11 +17,11 @@ import { cn } from '@/lib/utils';
 import { DashboardCharts } from '@/components/dashboard-charts';
 import { Card } from '@/components/ui/card';
 
-interface DashboardContentProps {
+interface ContentProps {
   designationId: string;
 }
 
-export function DashboardContent({ designationId }: DashboardContentProps) {
+export function Content({ designationId }: ContentProps) {
   const dataPromise = useMemo(
     () => getDashboardData(designationId),
     [designationId],

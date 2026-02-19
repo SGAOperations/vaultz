@@ -23,7 +23,7 @@ function ChartSkeleton() {
   );
 }
 
-export function DashboardSkeleton() {
+export function PageSkeleton() {
   return (
     <>
       <div className="mb-6 grid w-full grid-cols-1 gap-3 sm:grid-cols-2">

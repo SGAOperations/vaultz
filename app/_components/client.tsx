@@ -6,10 +6,11 @@ import { Designation } from '@/prisma/client';
 
 import { useDesignation } from '@/contexts/DesignationContext';
 
-import { DashboardContent } from '@/components/dashboard-content';
-import { DashboardSkeleton } from '@/components/dashboard-skeleton';
 import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/page-header';
+
+import { Content } from '@/app/_components/content';
+import { PageSkeleton } from '@/app/_components/skeleton';
 
 function DesignationDashboard({ designation }: { designation: Designation }) {
   return (
@@ -18,14 +19,14 @@ function DesignationDashboard({ designation }: { designation: Designation }) {
         title={designation.name}
         description={`Dashboard · DN${designation.code}`}
       />
-      <Suspense fallback={<DashboardSkeleton />} key={designation.id}>
-        <DashboardContent designationId={designation.id} />
+      <Suspense fallback={<PageSkeleton />} key={designation.id}>
+        <Content designationId={designation.id} />
       </Suspense>
     </div>
   );
 }
 
-export function DashboardPage() {
+export function Client() {
   const { activeDesignation } = useDesignation();
 
   if (!activeDesignation)
