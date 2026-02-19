@@ -60,8 +60,8 @@ model Purchase {
     allocation   Allocation?     @relation(fields: [allocationId], references: [id])
     userId       String
     user         User            @relation(fields: [userId], references: [id])
-    processId    String?          @unique
-    process      PurchaseProcess? @relation(fields: [processId], references: [id])
+
+    process PurchaseProcess?
 }
 
 model ProcessTemplate {
@@ -99,10 +99,10 @@ model PurchaseProcess {
     deletedAt  DateTime?
 
     purchaseId String          @unique
+    purchase   Purchase        @relation(fields: [purchaseId], references: [id])
     templateId String
     template   ProcessTemplate @relation(fields: [templateId], references: [id])
 
-    purchase    Purchase?
     completions PurchaseStepCompletion[]
 }
 
@@ -110,7 +110,7 @@ model PurchaseStepCompletion {
     id                   String    @id @default(uuid())
     completed            Boolean   @default(false)
     markedAt             DateTime
-    actualCompletionDate DateTime? @db.Date
+    completionDate DateTime? @db.Date
     notes                String?
     createdAt            DateTime  @default(now())
     updatedAt            DateTime  @updatedAt

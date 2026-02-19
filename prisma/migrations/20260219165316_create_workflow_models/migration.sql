@@ -42,7 +42,7 @@ CREATE TABLE "PurchaseStepCompletion" (
     "id" TEXT NOT NULL,
     "completed" BOOLEAN NOT NULL DEFAULT false,
     "markedAt" TIMESTAMP(3) NOT NULL,
-    "actualCompletionDate" DATE,
+    "completionDate" DATE,
     "notes" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -53,17 +53,8 @@ CREATE TABLE "PurchaseStepCompletion" (
     CONSTRAINT "PurchaseStepCompletion_pkey" PRIMARY KEY ("id")
 );
 
--- AlterTable
-ALTER TABLE "Purchase" ADD COLUMN "processId" TEXT;
-
 -- CreateIndex
 CREATE UNIQUE INDEX "PurchaseProcess_purchaseId_key" ON "PurchaseProcess"("purchaseId");
-
--- CreateIndex
-CREATE UNIQUE INDEX "Purchase_processId_key" ON "Purchase"("processId");
-
--- AddForeignKey
-ALTER TABLE "Purchase" ADD CONSTRAINT "Purchase_processId_fkey" FOREIGN KEY ("processId") REFERENCES "PurchaseProcess"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "PurchaseProcess" ADD CONSTRAINT "PurchaseProcess_purchaseId_fkey" FOREIGN KEY ("purchaseId") REFERENCES "Purchase"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
