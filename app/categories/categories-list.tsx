@@ -18,7 +18,7 @@ import { PageHeader } from '@/components/page-header';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 
-export function CategoriesListSkeleton() {
+function CategoriesSkeleton() {
   return (
     <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
       {Array.from({ length: 4 }).map((_, i) => (
@@ -43,7 +43,7 @@ export function CategoriesListSkeleton() {
   );
 }
 
-function CategoriesContent({
+function CategoriesGrid({
   promise,
   designationName,
 }: {
@@ -146,8 +146,8 @@ export function CategoriesList() {
             : 'Select a designation to view categories'
         }
       />
-      <Suspense fallback={<CategoriesListSkeleton />}>
-        <CategoriesContent
+      <Suspense fallback={<CategoriesSkeleton />}>
+        <CategoriesGrid
           promise={categoriesPromise}
           designationName={activeDesignation?.name}
         />
