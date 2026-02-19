@@ -1,95 +1,149 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+
 import {
   BarChart3,
   FolderKanban,
+  Loader2,
   Receipt,
   TrendingUp,
-  Users,
   Wallet,
 } from 'lucide-react';
 
 import {
-  getDashboardStats,
-  getPurchasesByMonth,
-  getSpendingByDesignation,
+  getDashboardStatsByDesignation,
+  getPurchasesByMonthForDesignation,
+  getSpendingByCategoryForDesignation,
 } from '@/prisma/services/dashboard';
+
+import { useDesignation } from '@/contexts/DesignationContext';
 
 import { cn } from '@/lib/utils';
 
 import { DashboardCharts } from '@/components/dashboard-charts';
+import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/page-header';
 import { Card } from '@/components/ui/card';
 
-export default async function Home() {
-  const stats = await getDashboardStats();
-  const purchasesByMonth = await getPurchasesByMonth();
-  const spendingByDesignation = await getSpendingByDesignation();
+type DashboardStats = Awaited<ReturnType<typeof getDashboardStatsByDesignation>>;
+type PurchasesByMonth = Awaited<
+  ReturnType<typeof getPurchasesByMonthForDesignation>
+>;
+type SpendingByCategory = Awaited<
+  ReturnType<typeof getSpendingByCategoryForDesignation>
+>;
+
+export default function Home() {
+  const { activeDesignation } = useDesignation();
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [purchasesByMonth, setPurchasesByMonth] = useState<PurchasesByMonth>(
+    [],
+  );
+  const [spendingByCategory, setSpendingByCategory] =
+    useState<SpendingByCategory>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!activeDesignation) return;
+
+    setIsLoading(true);
+    setError(null);
+    Promise.all([
+      getDashboardStatsByDesignation(activeDesignation.id),
+      getPurchasesByMonthForDesignation(activeDesignation.id),
+      getSpendingByCategoryForDesignation(activeDesignation.id),
+    ])
+      .then(([statsData, purchasesData, spendingData]) => {
+        setStats(statsData);
+        setPurchasesByMonth(purchasesData);
+        setSpendingByCategory(spendingData);
+      })
+      .catch(() => setError('Failed to load dashboard data. Please try again.'))
+      .finally(() => setIsLoading(false));
+  }, [activeDesignation]);
+
+  if (!activeDesignation) {
+    return (
+      <div className="flex w-full flex-col">
+        <PageHeader
+          title="Dashboard"
+          description="Select a designation to view its overview"
+        />
+        <EmptyState
+          message="No designation selected"
+          description="Create a designation to get started"
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="flex w-full flex-col">
       <PageHeader
-        title="Dashboard"
-        description="Overview of your financial management system"
+        title={activeDesignation.name}
+        description={`Dashboard · DN${activeDesignation.code}`}
       />
 
-      {/* Stats Grid */}
-      <div className="mb-6 grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          icon={FolderKanban}
-          label="Total Designations"
-          value={stats.totalDesignations}
-          iconColor="text-blue-500"
-          bgColor="bg-blue-500/10 dark:bg-blue-500/20"
-        />
-        <StatCard
-          icon={Wallet}
-          label="Total Categories"
-          value={stats.totalCategories}
-          iconColor="text-purple-500"
-          bgColor="bg-purple-500/10 dark:bg-purple-500/20"
-        />
-        <StatCard
-          icon={Receipt}
-          label="Total Purchases"
-          value={stats.totalPurchases}
-          iconColor="text-orange-500"
-          bgColor="bg-orange-500/10 dark:bg-orange-500/20"
-        />
-        <StatCard
-          icon={Users}
-          label="Total Users"
-          value={stats.totalUsers}
-          iconColor="text-green-500"
-          bgColor="bg-green-500/10 dark:bg-green-500/20"
-        />
-      </div>
+      {isLoading ? (
+        <div className="flex h-64 items-center justify-center">
+          <Loader2 className="text-muted-foreground size-8 animate-spin" />
+        </div>
+      ) : error ? (
+        <EmptyState message={error} />
+      ) : (
+        stats && (
+          <>
+            {/* Stats Grid */}
+            <div className="mb-6 grid w-full grid-cols-1 gap-3 sm:grid-cols-2">
+              <StatCard
+                icon={FolderKanban}
+                label="Categories"
+                value={stats.totalCategories}
+                iconColor="text-purple-500"
+                bgColor="bg-purple-500/10 dark:bg-purple-500/20"
+              />
+              <StatCard
+                icon={Receipt}
+                label="Total Purchases"
+                value={stats.totalPurchases}
+                iconColor="text-orange-500"
+                bgColor="bg-orange-500/10 dark:bg-orange-500/20"
+              />
+            </div>
 
-      {/* Financial Overview */}
-      <div className="mb-6 grid w-full grid-cols-1 gap-3 md:grid-cols-3">
-        <FinancialStatCard
-          label="Total Budget"
-          value={stats.totalBudget}
-          icon={Wallet}
-          variant="total"
-        />
-        <FinancialStatCard
-          label="Total Spent"
-          value={stats.totalSpent}
-          icon={TrendingUp}
-          variant="spent"
-        />
-        <FinancialStatCard
-          label="Remaining"
-          value={stats.remaining}
-          icon={BarChart3}
-          variant="remaining"
-        />
-      </div>
+            {/* Financial Overview */}
+            <div className="mb-6 grid w-full grid-cols-1 gap-3 md:grid-cols-3">
+              <FinancialStatCard
+                label="Budget"
+                value={stats.totalBudget}
+                icon={Wallet}
+                variant="total"
+              />
+              <FinancialStatCard
+                label="Spent"
+                value={stats.totalSpent}
+                icon={TrendingUp}
+                variant="spent"
+              />
+              <FinancialStatCard
+                label="Remaining"
+                value={stats.remaining}
+                icon={BarChart3}
+                variant="remaining"
+              />
+            </div>
 
-      {/* Charts */}
-      <DashboardCharts
-        purchasesByMonth={purchasesByMonth}
-        spendingByDesignation={spendingByDesignation}
-      />
+            {/* Charts */}
+            <DashboardCharts
+              purchasesByMonth={purchasesByMonth}
+              spendingByDesignation={spendingByCategory}
+              spendingChartTitle="Spending by Category"
+            />
+          </>
+        )
+      )}
     </div>
   );
 }
