@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -184,16 +184,6 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
   });
   const isSubmitting = form.formState.isSubmitting;
 
-  // Auto-select when only one option exists
-  useEffect(() => {
-    if (!isCreateMode || !open) return;
-    if (categories.length === 1 && !form.getValues('categoryId'))
-      form.setValue('categoryId', categories[0].id);
-    if (allAllocations.length === 1 && !form.getValues('allocationId'))
-      form.setValue('allocationId', allAllocations[0].id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isCreateMode, open, categories, allAllocations]);
-
   async function onSubmit(data: FormData) {
     if (isCreateMode) {
       await handleError(createPurchase(data), {
@@ -288,6 +278,22 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
 
   function handleOpenChange(newOpen: boolean) {
     setOpen(newOpen);
+    if (newOpen && isCreateMode) {
+      // Reset form with updated values when opening in create mode
+      form.reset({
+        userId: '',
+        categoryId: categories.length === 1 ? categories[0].id : '',
+        allocationId: allAllocations.length === 1 ? allAllocations[0].id : '',
+        description: '',
+        amount: 0,
+        purchasedAt: new Date(),
+        receipts: [],
+        excludeFromTotal: false,
+        expenseReportCreated: false,
+        reimbursed: false,
+        notes: '',
+      });
+    }
     if (!newOpen) {
       // Reset state when closing
       setIsEditing(isCreateMode);
