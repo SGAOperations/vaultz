@@ -7,6 +7,7 @@ import { BarChart3, FolderKanban, Home, Menu, Users } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
+import { DesignationSwitcher } from '@/components/DesignationSwitcher';
 import { ModeToggle } from '@/components/theme-provider';
 import { Button } from '@/components/ui/button';
 import {
@@ -77,6 +78,7 @@ export function Header() {
       </nav>
 
       <div className="flex items-center gap-2">
+        <DesignationSwitcher />
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="icon" className="md:hidden">
