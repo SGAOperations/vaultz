@@ -90,7 +90,9 @@ model Allocation {
 model Transfer {
     id        String    @id @default(uuid())
     amount    Decimal
+    notes     String?
     createdAt DateTime  @default(now())
+    updatedAt DateTime  @updatedAt
     deletedAt DateTime?
 
     fromCategoryId String

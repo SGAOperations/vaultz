@@ -2,7 +2,9 @@
 CREATE TABLE "Transfer" (
     "id" TEXT NOT NULL,
     "amount" DECIMAL(65,30) NOT NULL,
+    "notes" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
     "deletedAt" TIMESTAMP(3),
     "fromCategoryId" TEXT NOT NULL,
     "toCategoryId" TEXT NOT NULL,
