@@ -1,5 +1,6 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import {
   BarChart3,
   FolderKanban,
@@ -7,8 +8,6 @@ import {
   TrendingUp,
   Wallet,
 } from 'lucide-react';
-
-import { useQuery } from '@tanstack/react-query';
 
 import {
   getDashboardStatsByDesignation,
