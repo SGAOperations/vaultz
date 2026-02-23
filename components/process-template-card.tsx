@@ -9,7 +9,7 @@ export function ProcessTemplateCard({
 }: {
   template: ProcessTemplateWithStepCount;
 }) {
-  const stepCount = template._count.steps;
+  const stepCount = template.steps;
   const isDeleted = template.deletedAt !== null;
 
   return (

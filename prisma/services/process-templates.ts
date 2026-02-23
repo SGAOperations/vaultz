@@ -11,11 +11,13 @@ import { ResponseType } from '@/lib/utils';
 export async function getAllProcessTemplates(
   activeOnly = false,
 ): Promise<ProcessTemplateWithStepCount[]> {
-  return prisma.processTemplate.findMany({
+  const templates = await prisma.processTemplate.findMany({
     where: activeOnly ? { deletedAt: null } : undefined,
     include: { _count: { select: { steps: { where: { deletedAt: null } } } } },
     orderBy: { createdAt: 'desc' },
   });
+
+  return templates.map(({ _count, ...t }) => ({ ...t, steps: _count.steps }));
 }
 
 export async function createProcessTemplate(data: {

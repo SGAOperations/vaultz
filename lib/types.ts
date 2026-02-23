@@ -46,6 +46,4 @@ export type UserWithPurchasesAndCategory = User & {
   purchases: PurchaseWithUserAndCategory[];
 };
 
-export type ProcessTemplateWithStepCount = ProcessTemplate & {
-  _count: { steps: number };
-};
+export type ProcessTemplateWithStepCount = ProcessTemplate & { steps: number };
