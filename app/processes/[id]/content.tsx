@@ -13,14 +13,16 @@ import {
   Pencil,
   Plus,
   RotateCcw,
-  Save,
   Trash2,
 } from 'lucide-react';
 
 import {
+  addProcessStep,
+  deleteProcessStep,
+  moveProcessStep,
   restoreProcessTemplate,
-  saveProcessSteps,
   softDeleteProcessTemplate,
+  updateProcessStep,
   updateProcessTemplate,
 } from '@/prisma/services/process-templates';
 
@@ -38,12 +40,7 @@ import { FormTextarea } from '@/components/ui/form-textarea';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 
-type LocalStep = {
-  localId: string;
-  id?: string;
-  name: string;
-  description: string;
-};
+type LocalStep = { id: string; name: string; description: string };
 
 const editTemplateSchema = z.object({
   name: z
@@ -55,132 +52,143 @@ const editTemplateSchema = z.object({
 
 type EditTemplateFormData = z.infer<typeof editTemplateSchema>;
 
+function toLocalSteps(t: ProcessTemplateWithSteps): LocalStep[] {
+  return t.steps.map((s) => ({ id: s.id, name: s.name, description: s.description ?? '' }));
+}
+
 export function Content({ template }: { template: ProcessTemplateWithSteps }) {
   const router = useRouter();
 
-  const [steps, setSteps] = useState<LocalStep[]>(
-    template.steps.map((s) => ({
-      localId: s.id,
-      id: s.id,
-      name: s.name,
-      description: s.description ?? '',
-    })),
-  );
-  const [deletedStepIds, setDeletedStepIds] = useState<string[]>([]);
-  const [hasChanges, setHasChanges] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [editingStepLocalId, setEditingStepLocalId] = useState<string | null>(
-    null,
-  );
+  const [steps, setSteps] = useState<LocalStep[]>(toLocalSteps(template));
+  const [isDeleted, setIsDeleted] = useState(!!template.deletedAt);
+  const [editingStepId, setEditingStepId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
   const [newStepName, setNewStepName] = useState('');
   const [newStepDescription, setNewStepDescription] = useState('');
-  const [isDeleted, setIsDeleted] = useState(!!template.deletedAt);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    setSteps(
-      template.steps.map((s) => ({
-        localId: s.id,
-        id: s.id,
-        name: s.name,
-        description: s.description ?? '',
-      })),
-    );
-    setDeletedStepIds([]);
-    setHasChanges(false);
+    setSteps(toLocalSteps(template));
     setIsDeleted(!!template.deletedAt);
   }, [template]);
 
   function startEditing(step: LocalStep) {
-    setEditingStepLocalId(step.localId);
+    setEditingStepId(step.id);
     setEditName(step.name);
     setEditDescription(step.description);
   }
 
   function cancelEditing() {
-    setEditingStepLocalId(null);
+    setEditingStepId(null);
     setEditName('');
     setEditDescription('');
   }
 
-  function saveEditing(localId: string) {
+  async function handleEditStep(stepId: string) {
     if (!editName.trim()) return;
-    setSteps((prev) =>
-      prev.map((s) =>
-        s.localId === localId
-          ? { ...s, name: editName.trim(), description: editDescription.trim() }
-          : s,
+    setIsLoading(true);
+    const prev = [...steps];
+    setSteps((s) =>
+      s.map((step) =>
+        step.id === stepId
+          ? { ...step, name: editName.trim(), description: editDescription.trim() }
+          : step,
       ),
     );
     cancelEditing();
-    setHasChanges(true);
+    try {
+      await handleError(
+        updateProcessStep(stepId, template.id, {
+          name: editName.trim(),
+          description: editDescription.trim() || undefined,
+        }),
+        {
+          toast: {
+            loading: 'Updating step...',
+            success: 'Step updated',
+            error: 'Failed to update step',
+          },
+          onSuccess: () => router.refresh(),
+          onError: () => setSteps(prev),
+        },
+      );
+    } finally {
+      setIsLoading(false);
+    }
   }
 
-  function deleteStep(localId: string) {
-    const step = steps.find((s) => s.localId === localId);
-    if (step?.id) setDeletedStepIds((prev) => [...prev, step.id!]);
-    setSteps((prev) => prev.filter((s) => s.localId !== localId));
-    setHasChanges(true);
-  }
-
-  function moveStep(localId: string, direction: 'up' | 'down') {
-    setSteps((prev) => {
-      const idx = prev.findIndex((s) => s.localId === localId);
-      if (idx === -1) return prev;
-      const newIdx = direction === 'up' ? idx - 1 : idx + 1;
-      if (newIdx < 0 || newIdx >= prev.length) return prev;
-      const newSteps = [...prev];
-      [newSteps[idx], newSteps[newIdx]] = [newSteps[newIdx], newSteps[idx]];
-      return newSteps;
-    });
-    setHasChanges(true);
-  }
-
-  function addStep() {
-    if (!newStepName.trim()) return;
-    setSteps((prev) => [
-      ...prev,
-      {
-        localId: `new-${Date.now()}`,
-        name: newStepName.trim(),
-        description: newStepDescription.trim(),
-      },
-    ]);
-    setNewStepName('');
-    setNewStepDescription('');
-    setShowAddForm(false);
-    setHasChanges(true);
-  }
-
-  async function handleSaveSteps() {
-    setIsSaving(true);
-    await handleError(
-      saveProcessSteps(
-        template.id,
-        steps.map((s, i) => ({
-          id: s.id,
-          name: s.name,
-          description: s.description || undefined,
-          order: i,
-        })),
-        deletedStepIds,
-      ),
-      {
+  async function handleDeleteStep(stepId: string) {
+    setIsLoading(true);
+    const prev = [...steps];
+    setSteps((s) => s.filter((step) => step.id !== stepId));
+    try {
+      await handleError(deleteProcessStep(stepId, template.id), {
         toast: {
-          loading: 'Saving changes...',
-          success: 'Changes saved successfully',
-          error: 'Failed to save changes',
+          loading: 'Deleting step...',
+          success: 'Step deleted',
+          error: 'Failed to delete step',
         },
-        onSuccess: () => {
-          setHasChanges(false);
-          setDeletedStepIds([]);
-          router.refresh();
+        onSuccess: () => router.refresh(),
+        onError: () => setSteps(prev),
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function handleMoveStep(stepId: string, direction: 'up' | 'down') {
+    setIsLoading(true);
+    const prev = [...steps];
+    const idx = steps.findIndex((s) => s.id === stepId);
+    const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (swapIdx >= 0 && swapIdx < steps.length) {
+      const newSteps = [...steps];
+      [newSteps[idx], newSteps[swapIdx]] = [newSteps[swapIdx], newSteps[idx]];
+      setSteps(newSteps);
+    }
+    try {
+      await handleError(moveProcessStep(template.id, stepId, direction), {
+        toast: {
+          loading: 'Moving step...',
+          success: 'Step moved',
+          error: 'Failed to move step',
         },
-      },
-    );
-    setIsSaving(false);
+        onSuccess: () => router.refresh(),
+        onError: () => setSteps(prev),
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function handleAddStep() {
+    if (!newStepName.trim()) return;
+    setIsLoading(true);
+    try {
+      await handleError(
+        addProcessStep(template.id, {
+          name: newStepName.trim(),
+          description: newStepDescription.trim() || undefined,
+        }),
+        {
+          toast: {
+            loading: 'Adding step...',
+            success: 'Step added',
+            error: 'Failed to add step',
+          },
+          onSuccess: () => {
+            setShowAddForm(false);
+            setNewStepName('');
+            setNewStepDescription('');
+            router.refresh();
+          },
+        },
+      );
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   async function handleDeleteTemplate() {
@@ -211,9 +219,7 @@ export function Content({ template }: { template: ProcessTemplateWithSteps }) {
     });
   }
 
-  async function handleEditTemplate(
-    data: EditTemplateFormData,
-  ): Promise<boolean> {
+  async function handleEditTemplate(data: EditTemplateFormData): Promise<boolean> {
     const result = await handleError(
       updateProcessTemplate(template.id, {
         name: data.name,
@@ -225,9 +231,7 @@ export function Content({ template }: { template: ProcessTemplateWithSteps }) {
           success: 'Template updated',
           error: 'Failed to update template',
         },
-        onSuccess: () => {
-          router.refresh();
-        },
+        onSuccess: () => router.refresh(),
       },
     );
     return !isError(result);
@@ -276,11 +280,7 @@ export function Content({ template }: { template: ProcessTemplateWithSteps }) {
               />
             </FormDialog>
             {isDeleted ? (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleRestoreTemplate}
-              >
+              <Button variant="outline" size="sm" onClick={handleRestoreTemplate}>
                 <RotateCcw className="size-4" />
                 Restore
               </Button>
@@ -313,7 +313,7 @@ export function Content({ template }: { template: ProcessTemplateWithSteps }) {
               size="sm"
               variant="outline"
               onClick={() => setShowAddForm(true)}
-              disabled={showAddForm}
+              disabled={showAddForm || isLoading}
             >
               <Plus className="size-4" />
               Add Step
@@ -331,8 +331,8 @@ export function Content({ template }: { template: ProcessTemplateWithSteps }) {
         )}
 
         {steps.map((step, idx) => (
-          <Card key={step.localId} className="p-4">
-            {editingStepLocalId === step.localId ? (
+          <Card key={step.id} className="p-4">
+            {editingStepId === step.id ? (
               <div className="flex flex-col gap-3">
                 <Input
                   value={editName}
@@ -349,12 +349,18 @@ export function Content({ template }: { template: ProcessTemplateWithSteps }) {
                 <div className="flex gap-2">
                   <Button
                     size="sm"
-                    onClick={() => saveEditing(step.localId)}
-                    disabled={!editName.trim()}
+                    onClick={() => handleEditStep(step.id)}
+                    disabled={!editName.trim() || isLoading}
                   >
+                    {isLoading && <Loader2 className="animate-spin" />}
                     Save
                   </Button>
-                  <Button size="sm" variant="outline" onClick={cancelEditing}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={cancelEditing}
+                    disabled={isLoading}
+                  >
                     Cancel
                   </Button>
                 </div>
@@ -368,9 +374,7 @@ export function Content({ template }: { template: ProcessTemplateWithSteps }) {
                   <div>
                     <p className="font-medium">{step.name}</p>
                     {step.description && (
-                      <p className="text-muted-foreground text-sm">
-                        {step.description}
-                      </p>
+                      <p className="text-muted-foreground text-sm">{step.description}</p>
                     )}
                   </div>
                 </div>
@@ -380,8 +384,8 @@ export function Content({ template }: { template: ProcessTemplateWithSteps }) {
                       size="icon"
                       variant="ghost"
                       className="size-8"
-                      onClick={() => moveStep(step.localId, 'up')}
-                      disabled={idx === 0}
+                      onClick={() => handleMoveStep(step.id, 'up')}
+                      disabled={idx === 0 || isLoading}
                     >
                       <ChevronUp className="size-4" />
                     </Button>
@@ -389,8 +393,8 @@ export function Content({ template }: { template: ProcessTemplateWithSteps }) {
                       size="icon"
                       variant="ghost"
                       className="size-8"
-                      onClick={() => moveStep(step.localId, 'down')}
-                      disabled={idx === steps.length - 1}
+                      onClick={() => handleMoveStep(step.id, 'down')}
+                      disabled={idx === steps.length - 1 || isLoading}
                     >
                       <ChevronDown className="size-4" />
                     </Button>
@@ -399,6 +403,7 @@ export function Content({ template }: { template: ProcessTemplateWithSteps }) {
                       variant="ghost"
                       className="size-8"
                       onClick={() => startEditing(step)}
+                      disabled={isLoading}
                     >
                       <Pencil className="size-4" />
                     </Button>
@@ -406,7 +411,8 @@ export function Content({ template }: { template: ProcessTemplateWithSteps }) {
                       size="icon"
                       variant="ghost"
                       className="text-destructive hover:text-destructive size-8"
-                      onClick={() => deleteStep(step.localId)}
+                      onClick={() => handleDeleteStep(step.id)}
+                      disabled={isLoading}
                     >
                       <Trash2 className="size-4" />
                     </Button>
@@ -436,9 +442,10 @@ export function Content({ template }: { template: ProcessTemplateWithSteps }) {
               <div className="flex gap-2">
                 <Button
                   size="sm"
-                  onClick={addStep}
-                  disabled={!newStepName.trim()}
+                  onClick={handleAddStep}
+                  disabled={!newStepName.trim() || isLoading}
                 >
+                  {isLoading && <Loader2 className="animate-spin" />}
                   Add Step
                 </Button>
                 <Button
@@ -449,6 +456,7 @@ export function Content({ template }: { template: ProcessTemplateWithSteps }) {
                     setNewStepName('');
                     setNewStepDescription('');
                   }}
+                  disabled={isLoading}
                 >
                   Cancel
                 </Button>
@@ -457,16 +465,7 @@ export function Content({ template }: { template: ProcessTemplateWithSteps }) {
           </Card>
         )}
       </div>
-
-      {!isDeleted && hasChanges && (
-        <div className="mt-4 flex justify-end">
-          <Button onClick={handleSaveSteps} disabled={isSaving}>
-            {isSaving && <Loader2 className="animate-spin" />}
-            <Save className="size-4" />
-            Save Changes
-          </Button>
-        </div>
-      )}
     </div>
   );
 }
+
