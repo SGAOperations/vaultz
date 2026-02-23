@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 
 import prisma from '@/lib/prisma';
 import { Allocation, AllocationWithPurchases } from '@/lib/types';
-import { ResponseType } from '@/lib/utils';
+import { ErrorType, ResponseType } from '@/lib/utils';
 
 export async function createAllocation({
   name,
@@ -19,20 +19,19 @@ export async function createAllocation({
   allocationGroupId?: string;
   periodId?: string;
 }): Promise<ResponseType<Allocation>> {
-  const resolvedPeriodId =
-    periodId ??
-    (
-      await prisma.period
-        .findFirstOrThrow({
-          where: { deletedAt: null },
-          orderBy: { startDate: 'desc' },
-        })
-        .catch(() => {
-          throw new Error(
-            'No active period found. Please create a period before adding allocations.',
-          );
-        })
-    ).id;
+  let resolvedPeriodId = periodId;
+  if (!resolvedPeriodId) {
+    const period = await prisma.period.findFirst({
+      where: { deletedAt: null },
+      orderBy: { startDate: 'desc' },
+    });
+    if (!period)
+      return {
+        error:
+          'No active period found. Please create a period before adding allocations.',
+      } satisfies ErrorType;
+    resolvedPeriodId = period.id;
+  }
 
   const allocation = await prisma.allocation.create({
     data: {

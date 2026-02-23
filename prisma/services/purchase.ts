@@ -6,7 +6,7 @@ import { Decimal } from '@/prisma/client/runtime/library';
 
 import prisma from '@/lib/prisma';
 import { Purchase, PurchaseWithUser } from '@/lib/types';
-import { ResponseType } from '@/lib/utils';
+import { ErrorType, ResponseType } from '@/lib/utils';
 
 export async function getLatestPurchases(
   limit: number = 10,
@@ -50,20 +50,19 @@ export async function createPurchase({
   notes?: string;
   yearId?: string;
 }): Promise<ResponseType<Purchase>> {
-  const resolvedYearId =
-    yearId ??
-    (
-      await prisma.year
-        .findFirstOrThrow({
-          where: { deletedAt: null },
-          orderBy: { startDate: 'desc' },
-        })
-        .catch(() => {
-          throw new Error(
-            'No active fiscal year found. Please create a year before recording purchases.',
-          );
-        })
-    ).id;
+  let resolvedYearId = yearId;
+  if (!resolvedYearId) {
+    const year = await prisma.year.findFirst({
+      where: { deletedAt: null },
+      orderBy: { startDate: 'desc' },
+    });
+    if (!year)
+      return {
+        error:
+          'No active fiscal year found. Please create a year before recording purchases.',
+      } satisfies ErrorType;
+    resolvedYearId = year.id;
+  }
 
   const purchase = await prisma.purchase.create({
     data: {
