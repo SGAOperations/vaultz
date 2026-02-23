@@ -41,8 +41,8 @@ export default async function DesignationPage({
   const designation = await getDesignation({ id: designationId });
   if (designation === null) notFound();
 
-  const allocationGroups = await getAllAllocationGroups();
-  const miscAllocations = await getMiscAllocations();
+  const allocationGroups = await getAllAllocationGroups(designationId);
+  const miscAllocations = await getMiscAllocations(designationId);
   const categories = await getCategoriesByDesignation({ designationId });
   const users = await getUsers();
 

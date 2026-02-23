@@ -23,7 +23,9 @@ model Designation {
     code String
     name String
 
-    categories Category[]
+    categories       Category[]
+    allocations      Allocation[]
+    allocationGroups AllocationGroup[]
 }
 
 model Category {
@@ -37,7 +39,9 @@ model Category {
     designationId String
     designation   Designation  @relation(fields: [designationId], references: [id])
 
-    purchases Purchase[]
+    purchases     Purchase[]
+    transfersFrom Transfer[] @relation("TransfersFrom")
+    transfersTo   Transfer[] @relation("TransfersTo")
 }
 
 model Purchase {
@@ -53,16 +57,79 @@ model Purchase {
     reimbursed           Boolean  @default(false)
 
     categoryId   String
-    category     Category    @relation(fields: [categoryId], references: [id])
+    category     Category        @relation(fields: [categoryId], references: [id])
     allocationId String?
-    allocation   Allocation? @relation(fields: [allocationId], references: [id])
+    allocation   Allocation?     @relation(fields: [allocationId], references: [id])
     userId       String
-    user         User        @relation(fields: [userId], references: [id])
+    user         User            @relation(fields: [userId], references: [id])
+
+    process PurchaseProcess?
+}
+
+model ProcessTemplate {
+    id          String    @id @default(uuid())
+    name        String
+    description String?
+    createdAt   DateTime  @default(now())
+    updatedAt   DateTime  @updatedAt
+    deletedAt   DateTime?
+
+    steps    ProcessStep[]
+    processes PurchaseProcess[]
+}
+
+model ProcessStep {
+    id          String    @id @default(uuid())
+    name        String
+    description String?
+    order       Int
+    createdAt   DateTime  @default(now())
+    updatedAt   DateTime  @updatedAt
+    deletedAt   DateTime?
+
+    templateId  String
+    template    ProcessTemplate @relation(fields: [templateId], references: [id])
+
+    completions PurchaseStepCompletion[]
+}
+
+model PurchaseProcess {
+    id         String    @id @default(uuid())
+    startedAt  DateTime  @default(now())
+    createdAt  DateTime  @default(now())
+    updatedAt  DateTime  @updatedAt
+    deletedAt  DateTime?
+
+    purchaseId String          @unique
+    purchase   Purchase        @relation(fields: [purchaseId], references: [id])
+    templateId String
+    template   ProcessTemplate @relation(fields: [templateId], references: [id])
+
+    completions PurchaseStepCompletion[]
+}
+
+model PurchaseStepCompletion {
+    id                   String    @id @default(uuid())
+    completed            Boolean   @default(false)
+    markedAt             DateTime
+    completionDate DateTime? @db.Date
+    notes                String?
+    createdAt            DateTime  @default(now())
+    updatedAt            DateTime  @updatedAt
+    deletedAt            DateTime?
+
+    purchaseProcessId String
+    purchaseProcess   PurchaseProcess @relation(fields: [purchaseProcessId], references: [id])
+    stepId            String
+    step              ProcessStep     @relation(fields: [stepId], references: [id])
 }
 
 model AllocationGroup {
     id   String @id @default(uuid())
     name String
+
+    designationId String
+    designation   Designation @relation(fields: [designationId], references: [id])
 
     allocations Allocation[]
 }
@@ -72,8 +139,24 @@ model Allocation {
     name   String
     amount Decimal
 
+    designationId     String
+    designation       Designation      @relation(fields: [designationId], references: [id])
     allocationGroupId String?
     allocationGroup   AllocationGroup? @relation(fields: [allocationGroupId], references: [id])
 
     purchases Purchase[]
+}
+
+model Transfer {
+    id        String    @id @default(uuid())
+    amount    Decimal
+    notes     String?
+    createdAt DateTime  @default(now())
+    updatedAt DateTime  @updatedAt
+    deletedAt DateTime?
+
+    fromCategoryId String
+    fromCategory   Category @relation("TransfersFrom", fields: [fromCategoryId], references: [id])
+    toCategoryId   String
+    toCategory     Category @relation("TransfersTo", fields: [toCategoryId], references: [id])
 }

@@ -8,6 +8,10 @@ import prisma from '@/lib/prisma';
 import { DesignationWithPurchases } from '@/lib/types';
 import { ResponseType } from '@/lib/utils';
 
+export async function getDesignations(): Promise<Designation[]> {
+  return await prisma.designation.findMany({ orderBy: { name: 'asc' } });
+}
+
 export async function getAllDesignations(): Promise<
   DesignationWithPurchases[]
 > {
