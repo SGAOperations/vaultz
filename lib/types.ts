@@ -5,6 +5,7 @@ import {
   Allocation as PrismaAllocation,
   Category as PrismaCategory,
   Purchase as PrismaPurchase,
+  Transfer as PrismaTransfer,
   ProcessTemplate,
   User,
   Year,
@@ -54,5 +55,13 @@ export type UserWithPurchasesAndCategory = User & {
 };
 
 export type YearRecord = Year;
+
+export type Transfer = Omit<PrismaTransfer, 'amount'> & { amount: number };
+
+export type TransferWithCategories = Transfer & {
+  fromCategory: CategoryWithDesignation;
+  toCategory: CategoryWithDesignation;
+  year: Year;
+};
 
 export type ProcessTemplateWithStepCount = ProcessTemplate & { steps: number };

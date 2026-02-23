@@ -124,6 +124,29 @@ export async function getAllCategories(): Promise<CategoryWithDesignation[]> {
   return categories;
 }
 
+export async function getCategoriesWithBudgetInYear(
+  yearId: string,
+): Promise<(CategoryWithDesignation & { categoryYears: CategoryYearRecord[] })[]> {
+  const categories = await prisma.category.findMany({
+    where: {
+      deletedAt: null,
+      categoryYears: { some: { yearId, deletedAt: null } },
+    },
+    include: {
+      designation: true,
+      categoryYears: { where: { yearId, deletedAt: null } },
+    },
+  });
+
+  return categories.map((category) => ({
+    ...category,
+    categoryYears: category.categoryYears.map((cy) => ({
+      ...cy,
+      amount: cy.amount.toNumber(),
+    })),
+  }));
+}
+
 export async function updateCategory({
   id,
   code,
