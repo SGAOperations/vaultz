@@ -59,7 +59,11 @@ export function Content({ designationId }: ContentProps) {
         const spent = category.purchases
           .filter((p) => !p.excludeFromTotal)
           .reduce((acc, p) => acc + p.amount, 0);
-        const remaining = category.amount - spent;
+        const budget = category.categoryYears.reduce(
+          (acc, cy) => acc + cy.amount,
+          0,
+        );
+        const remaining = budget - spent;
 
         return (
           <Link
@@ -99,7 +103,7 @@ export function Content({ designationId }: ContentProps) {
                   <span className="text-sm">
                     <span className="text-muted-foreground">Budget:</span>{' '}
                     <span className="font-semibold">
-                      ${formatNumber(category.amount)}
+                      ${formatNumber(budget)}
                     </span>
                   </span>
                 </div>

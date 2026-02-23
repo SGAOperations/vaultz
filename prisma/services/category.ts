@@ -2,13 +2,12 @@
 
 import { revalidatePath } from 'next/cache';
 
-import { Decimal } from '@/prisma/client/runtime/library';
-
 import prisma from '@/lib/prisma';
 import {
   Category,
   CategoryWithDesignation,
   CategoryWithPurchases,
+  CategoryYearRecord,
 } from '@/lib/types';
 import { ResponseType } from '@/lib/utils';
 
@@ -17,27 +16,19 @@ export async function createCategory({
   code,
   ledgerCode,
   name,
-  amount,
 }: {
   designationId: string;
   code: string;
   ledgerCode: string;
   name: string;
-  amount: number;
 }): Promise<ResponseType<Category>> {
   const category = await prisma.category.create({
-    data: {
-      designationId,
-      code,
-      ledgerCode,
-      name,
-      amount: new Decimal(amount),
-    },
+    data: { designationId, code, ledgerCode, name },
   });
 
   revalidatePath('/designation');
 
-  return { ...category, amount: category.amount.toNumber() };
+  return category;
 }
 
 export async function getCategoryById({
@@ -53,13 +44,17 @@ export async function getCategoryById({
         include: { user: true },
       },
       designation: true,
+      categoryYears: { where: { deletedAt: null } },
     },
   });
   if (!category) return null;
 
   return {
     ...category,
-    amount: category.amount.toNumber(),
+    categoryYears: category.categoryYears.map((cy) => ({
+      ...cy,
+      amount: cy.amount.toNumber(),
+    })),
     purchases: category.purchases.map((purchase) => ({
       ...purchase,
       amount: purchase.amount.toNumber(),
@@ -71,15 +66,23 @@ export async function getCategoriesByDesignation({
   designationId,
 }: {
   designationId: string;
-}): Promise<CategoryWithDesignation[]> {
+}): Promise<
+  (CategoryWithDesignation & { categoryYears: CategoryYearRecord[] })[]
+> {
   const categories = await prisma.category.findMany({
     where: { designationId, deletedAt: null },
-    include: { designation: true },
+    include: {
+      designation: true,
+      categoryYears: { where: { deletedAt: null } },
+    },
   });
 
   return categories.map((category) => ({
     ...category,
-    amount: category.amount.toNumber(),
+    categoryYears: category.categoryYears.map((cy) => ({
+      ...cy,
+      amount: cy.amount.toNumber(),
+    })),
   }));
 }
 
@@ -92,6 +95,7 @@ export async function getCategoriesWithPurchasesByDesignation({
     where: { designationId, deletedAt: null },
     include: {
       designation: true,
+      categoryYears: { where: { deletedAt: null } },
       purchases: {
         orderBy: [{ purchasedAt: 'desc' }, { createdAt: 'desc' }],
         include: { user: true },
@@ -101,7 +105,10 @@ export async function getCategoriesWithPurchasesByDesignation({
 
   return categories.map((category) => ({
     ...category,
-    amount: category.amount.toNumber(),
+    categoryYears: category.categoryYears.map((cy) => ({
+      ...cy,
+      amount: cy.amount.toNumber(),
+    })),
     purchases: category.purchases.map((purchase) => ({
       ...purchase,
       amount: purchase.amount.toNumber(),
@@ -114,10 +121,7 @@ export async function getAllCategories(): Promise<CategoryWithDesignation[]> {
     where: { deletedAt: null },
     include: { designation: true },
   });
-  return categories.map((category) => ({
-    ...category,
-    amount: category.amount.toNumber(),
-  }));
+  return categories;
 }
 
 export async function updateCategory({
@@ -125,23 +129,21 @@ export async function updateCategory({
   code,
   ledgerCode,
   name,
-  amount,
 }: {
   id: string;
   code: string;
   ledgerCode: string;
   name: string;
-  amount: number;
 }): Promise<ResponseType<Category>> {
   const category = await prisma.category.update({
     where: { id },
-    data: { code, ledgerCode, name, amount: new Decimal(amount) },
+    data: { code, ledgerCode, name },
   });
 
   revalidatePath('/category');
   revalidatePath('/designation');
 
-  return { ...category, amount: category.amount.toNumber() };
+  return category;
 }
 
 export async function deleteCategory(id: string): Promise<ResponseType<void>> {
