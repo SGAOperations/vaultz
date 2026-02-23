@@ -31,8 +31,7 @@ export function Content({ designationId }: ContentProps) {
     isError,
   } = useQuery({
     queryKey: ['categories', designationId],
-    queryFn: () =>
-      getCategoriesWithPurchasesByDesignation({ designationId }),
+    queryFn: () => getCategoriesWithPurchasesByDesignation({ designationId }),
   });
 
   if (isLoading)
