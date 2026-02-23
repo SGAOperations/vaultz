@@ -3,8 +3,11 @@
 import Link from 'next/link';
 
 import { useQuery } from '@tanstack/react-query';
+import { BookOpen, ChevronRight, CreditCard, Wallet } from 'lucide-react';
 
 import { getCategoriesByDesignation } from '@/prisma/services/category';
+
+import { formatNumber } from '@/lib/utils';
 
 import { EmptyState } from '@/components/empty-state';
 import { Card } from '@/components/ui/card';
@@ -26,9 +29,9 @@ export function Content({ designationId }: ContentProps) {
 
   if (isLoading)
     return (
-      <div className="flex flex-col gap-2">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-16 w-full rounded-xl" />
+          <Skeleton key={i} className="h-28 w-full rounded-xl" />
         ))}
       </div>
     );
@@ -44,25 +47,50 @@ export function Content({ designationId }: ContentProps) {
     );
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
       {categories.map((category) => (
-        <Link key={category.id} href={`/category/${category.id}`}>
-          <Card className="flex items-center justify-between px-4 py-3 transition-colors hover:bg-muted/50">
-            <div className="flex items-center gap-4">
-              <div className="flex flex-col">
-                <span className="font-medium">{category.name}</span>
-                <span className="text-xs text-muted-foreground">
-                  Code: {category.code} · Ledger: {category.ledgerCode}
+        <Link
+          href={`/category/${category.id}`}
+          key={category.id}
+          className="group"
+        >
+          <Card className="hover:border-primary/30 p-4 transition-all duration-200 hover:shadow-md">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-3">
+                <div className="bg-primary/10 flex size-10 shrink-0 items-center justify-center rounded-lg">
+                  <CreditCard className="text-primary size-5" />
+                </div>
+                <div>
+                  <h3 className="group-hover:text-primary font-semibold transition-colors">
+                    {category.name}
+                  </h3>
+                  <p className="text-muted-foreground font-mono text-sm">
+                    SC{category.code}
+                  </p>
+                </div>
+              </div>
+              <ChevronRight className="text-muted-foreground size-5 shrink-0 transition-transform group-hover:translate-x-0.5" />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <div className="bg-muted flex items-center gap-2 rounded-full px-3 py-1.5">
+                <Wallet className="text-stat-total size-4" />
+                <span className="text-sm">
+                  <span className="text-muted-foreground">Budget:</span>{' '}
+                  <span className="font-semibold">
+                    ${formatNumber(category.amount)}
+                  </span>
+                </span>
+              </div>
+              <div className="bg-muted flex items-center gap-2 rounded-full px-3 py-1.5">
+                <BookOpen className="text-muted-foreground size-4" />
+                <span className="text-sm">
+                  <span className="text-muted-foreground">Ledger:</span>{' '}
+                  <span className="font-mono font-semibold">
+                    {category.ledgerCode}
+                  </span>
                 </span>
               </div>
             </div>
-            <span className="text-sm font-semibold">
-              $
-              {category.amount.toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}
-            </span>
           </Card>
         </Link>
       ))}
