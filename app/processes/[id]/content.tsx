@@ -12,7 +12,6 @@ import {
   Loader2,
   Pencil,
   Plus,
-  RotateCcw,
   Trash2,
 } from 'lucide-react';
 import { FormProvider, useForm } from 'react-hook-form';
@@ -23,7 +22,6 @@ import {
   deleteProcessStep,
   deleteProcessTemplate,
   moveProcessStep,
-  restoreProcessTemplate,
   updateProcessStep,
   updateProcessTemplate,
 } from '@/prisma/services/process-templates';
@@ -58,7 +56,6 @@ function StepCard({
   step,
   idx,
   total,
-  isDeleted,
   isMutating,
   onEdit,
   onDelete,
@@ -67,7 +64,6 @@ function StepCard({
   step: LocalStep;
   idx: number;
   total: number;
-  isDeleted: boolean;
   isMutating: boolean;
   onEdit: (id: string, data: StepFormData) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
@@ -125,8 +121,7 @@ function StepCard({
             )}
           </div>
         </div>
-        {!isDeleted && (
-          <div className="flex shrink-0 gap-1">
+        <div className="flex shrink-0 gap-1">
             <Button
               size="icon"
               variant="ghost"
@@ -164,7 +159,6 @@ function StepCard({
               <Trash2 className="size-4" />
             </Button>
           </div>
-        )}
       </div>
     </Card>
   );
@@ -218,13 +212,11 @@ export function Content({ template }: { template: ProcessTemplateWithSteps }) {
   const [steps, setSteps] = useState<LocalStep[]>(
     template.steps.map((s) => ({ id: s.id, name: s.name, description: s.description ?? '' })),
   );
-  const [isDeleted, setIsDeleted] = useState(!!template.deletedAt);
   const [isMutating, setIsMutating] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
 
   useEffect(() => {
     setSteps(template.steps.map((s) => ({ id: s.id, name: s.name, description: s.description ?? '' })));
-    setIsDeleted(!!template.deletedAt);
   }, [template]);
 
   async function handleEditStep(stepId: string, data: StepFormData) {
@@ -299,14 +291,7 @@ export function Content({ template }: { template: ProcessTemplateWithSteps }) {
   async function handleDeleteTemplate() {
     await handleError(deleteProcessTemplate(template.id), {
       toast: { loading: 'Deleting template...', success: 'Template deleted', error: 'Failed to delete template' },
-      onSuccess: () => { setIsDeleted(true); router.refresh(); },
-    });
-  }
-
-  async function handleRestoreTemplate() {
-    await handleError(restoreProcessTemplate(template.id), {
-      toast: { loading: 'Restoring template...', success: 'Template restored', error: 'Failed to restore template' },
-      onSuccess: () => { setIsDeleted(false); router.refresh(); },
+      onSuccess: () => router.push('/processes'),
     });
   }
 
@@ -337,7 +322,7 @@ export function Content({ template }: { template: ProcessTemplateWithSteps }) {
             <FormDialog
               key={template.updatedAt.toString()}
               trigger={
-                <Button variant="outline" size="sm" disabled={isDeleted}>
+                <Button variant="outline" size="sm">
                   <Pencil className="size-4" />
                   Edit
                 </Button>
@@ -356,46 +341,31 @@ export function Content({ template }: { template: ProcessTemplateWithSteps }) {
                 placeholder="Describe the purpose of this process template..."
               />
             </FormDialog>
-            {isDeleted ? (
-              <Button variant="outline" size="sm" onClick={handleRestoreTemplate}>
-                <RotateCcw className="size-4" />
-                Restore
-              </Button>
-            ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleDeleteTemplate}
-                className="text-destructive hover:text-destructive"
-              >
-                <Trash2 className="size-4" />
-                Delete
-              </Button>
-            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDeleteTemplate}
+              className="text-destructive hover:text-destructive"
+            >
+              <Trash2 className="size-4" />
+              Delete
+            </Button>
           </div>
         }
       />
 
-      {isDeleted && (
-        <div className="bg-destructive/10 border-destructive/30 text-destructive mb-4 rounded-lg border px-4 py-3 text-sm">
-          This template has been deleted. Restore it to make changes.
-        </div>
-      )}
-
       <SectionHeader
         title="Steps"
         actions={
-          !isDeleted && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setShowAddForm(true)}
-              disabled={showAddForm || isMutating}
-            >
-              <Plus className="size-4" />
-              Add Step
-            </Button>
-          )
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setShowAddForm(true)}
+            disabled={showAddForm || isMutating}
+          >
+            <Plus className="size-4" />
+            Add Step
+          </Button>
         }
       />
 
@@ -412,7 +382,6 @@ export function Content({ template }: { template: ProcessTemplateWithSteps }) {
             step={step}
             idx={idx}
             total={steps.length}
-            isDeleted={isDeleted}
             isMutating={isMutating}
             onEdit={handleEditStep}
             onDelete={handleDeleteStep}
@@ -430,5 +399,3 @@ export function Content({ template }: { template: ProcessTemplateWithSteps }) {
     </div>
   );
 }
-
-
