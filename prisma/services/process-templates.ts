@@ -56,13 +56,12 @@ export async function updateProcessTemplate(
     data: { name: data.name, description: data.description || null },
   });
 
-  revalidatePath('/processes');
   revalidatePath(`/processes/${id}`);
 
   return template;
 }
 
-export async function softDeleteProcessTemplate(
+export async function deleteProcessTemplate(
   id: string,
 ): Promise<ResponseType<ProcessTemplate>> {
   const template = await prisma.processTemplate.update({
@@ -70,7 +69,6 @@ export async function softDeleteProcessTemplate(
     data: { deletedAt: new Date() },
   });
 
-  revalidatePath('/processes');
   revalidatePath(`/processes/${id}`);
 
   return template;
@@ -84,7 +82,6 @@ export async function restoreProcessTemplate(
     data: { deletedAt: null },
   });
 
-  revalidatePath('/processes');
   revalidatePath(`/processes/${id}`);
 
   return template;
@@ -114,7 +111,6 @@ export async function addProcessStep(
     return s;
   });
   revalidatePath(`/processes/${templateId}`);
-  revalidatePath('/processes');
   return step;
 }
 
@@ -135,7 +131,6 @@ export async function updateProcessStep(
     return s;
   });
   revalidatePath(`/processes/${templateId}`);
-  revalidatePath('/processes');
   return step;
 }
 
@@ -154,7 +149,6 @@ export async function deleteProcessStep(
     });
   });
   revalidatePath(`/processes/${templateId}`);
-  revalidatePath('/processes');
   return template;
 }
 
@@ -182,6 +176,5 @@ export async function moveProcessStep(
     });
   });
   revalidatePath(`/processes/${templateId}`);
-  revalidatePath('/processes');
   return template;
 }

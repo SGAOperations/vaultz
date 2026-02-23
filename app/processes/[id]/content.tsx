@@ -21,9 +21,9 @@ import { z } from 'zod/v4';
 import {
   addProcessStep,
   deleteProcessStep,
+  deleteProcessTemplate,
   moveProcessStep,
   restoreProcessTemplate,
-  softDeleteProcessTemplate,
   updateProcessStep,
   updateProcessTemplate,
 } from '@/prisma/services/process-templates';
@@ -297,7 +297,7 @@ export function Content({ template }: { template: ProcessTemplateWithSteps }) {
   }
 
   async function handleDeleteTemplate() {
-    await handleError(softDeleteProcessTemplate(template.id), {
+    await handleError(deleteProcessTemplate(template.id), {
       toast: { loading: 'Deleting template...', success: 'Template deleted', error: 'Failed to delete template' },
       onSuccess: () => { setIsDeleted(true); router.refresh(); },
     });
