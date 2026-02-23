@@ -4,6 +4,7 @@ import {
   Allocation as PrismaAllocation,
   Category as PrismaCategory,
   Purchase as PrismaPurchase,
+  ProcessTemplate,
   User,
 } from '@/prisma/client';
 
@@ -44,3 +45,5 @@ export type PurchaseWithUserAndCategory = Purchase & {
 export type UserWithPurchasesAndCategory = User & {
   purchases: PurchaseWithUserAndCategory[];
 };
+
+export type ProcessTemplateWithStepCount = ProcessTemplate & { steps: number };
