@@ -83,6 +83,32 @@ export async function getCategoriesByDesignation({
   }));
 }
 
+export async function getCategoriesWithPurchasesByDesignation({
+  designationId,
+}: {
+  designationId: string;
+}): Promise<CategoryWithPurchases[]> {
+  const categories = await prisma.category.findMany({
+    where: { designationId, deletedAt: null },
+    include: {
+      designation: true,
+      purchases: {
+        orderBy: [{ purchasedAt: 'desc' }, { createdAt: 'desc' }],
+        include: { user: true },
+      },
+    },
+  });
+
+  return categories.map((category) => ({
+    ...category,
+    amount: category.amount.toNumber(),
+    purchases: category.purchases.map((purchase) => ({
+      ...purchase,
+      amount: purchase.amount.toNumber(),
+    })),
+  }));
+}
+
 export async function getAllCategories(): Promise<CategoryWithDesignation[]> {
   const categories = await prisma.category.findMany({
     where: { deletedAt: null },
