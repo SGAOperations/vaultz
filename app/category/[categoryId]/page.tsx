@@ -34,6 +34,7 @@ export default async function CategoryPage({
   const spent = category.purchases
     .filter((purchase) => !purchase.excludeFromTotal)
     .reduce((acc, purchase) => acc + purchase.amount, 0);
+  const budget = category.categoryYears.reduce((acc, cy) => acc + cy.amount, 0);
 
   return (
     <div className="flex w-full flex-col">
@@ -53,7 +54,7 @@ export default async function CategoryPage({
         }
       />
 
-      <StatCards total={category.amount} spent={spent} />
+      <StatCards total={budget} spent={spent} />
 
       <SectionHeader title="Purchases" />
 
