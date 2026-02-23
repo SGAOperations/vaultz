@@ -1,8 +1,7 @@
-import { TrendingDown, TrendingUp, Wallet } from 'lucide-react';
-
 import { AllocationGroupWithAllocations } from '@/lib/types';
-import { cn, formatCurrency, formatNumber } from '@/lib/utils';
+import { cn, formatNumber } from '@/lib/utils';
 
+import { StatCards } from '@/components/stat-card';
 import { Card } from '@/components/ui/card';
 
 interface AllocationGroupsSummaryProps {
@@ -27,67 +26,13 @@ export function AllocationGroupsSummary({
   const isOverBudget = totalRemaining < 0;
 
   return (
-    <Card className="mb-6 p-6">
-      <div className="flex flex-col gap-5">
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-          <div className="flex flex-col gap-1">
-            <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-              Total Allocated
-            </p>
-            <div className="flex items-center gap-2">
-              <div className="bg-stat-total/10 rounded-lg p-2">
-                <Wallet className="text-stat-total size-5" />
-              </div>
-              <p className="text-stat-total text-3xl font-bold tracking-tight">
-                {formatCurrency(totalAllocated)}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-              Total Spent
-            </p>
-            <div className="flex items-center gap-2">
-              <div className="bg-stat-spent/10 rounded-lg p-2">
-                <TrendingDown className="text-stat-spent size-5" />
-              </div>
-              <p className="text-stat-spent text-3xl font-bold tracking-tight">
-                {formatCurrency(totalSpent)}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-              Total Remaining
-            </p>
-            <div className="flex items-center gap-2">
-              <div
-                className={cn(
-                  'rounded-lg p-2',
-                  isOverBudget ? 'bg-destructive/10' : 'bg-stat-remaining/10',
-                )}
-              >
-                <TrendingUp
-                  className={cn(
-                    'size-5',
-                    isOverBudget ? 'text-destructive' : 'text-stat-remaining',
-                  )}
-                />
-              </div>
-              <p
-                className={cn(
-                  'text-3xl font-bold tracking-tight',
-                  isOverBudget ? 'text-destructive' : 'text-stat-remaining',
-                )}
-              >
-                {formatCurrency(totalRemaining)}
-              </p>
-            </div>
-          </div>
-        </div>
-
+    <div className="mb-2 flex flex-col gap-3">
+      <StatCards
+        total={totalAllocated}
+        spent={totalSpent}
+        remaining={totalRemaining}
+      />
+      <Card className="p-4">
         <div className="flex flex-col gap-2">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">
@@ -123,7 +68,7 @@ export function AllocationGroupsSummary({
             />
           </div>
         </div>
-      </div>
-    </Card>
+      </Card>
+    </div>
   );
 }
