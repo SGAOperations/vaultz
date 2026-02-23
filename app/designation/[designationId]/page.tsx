@@ -70,9 +70,7 @@ export default async function DesignationPage({
               allocationGroups={allocationGroups}
               miscAllocations={miscAllocations}
             />
-            {categoriesWithAvailable.length >= 2 && (
-              <TransferDialog categories={categoriesWithAvailable} />
-            )}
+            <TransferDialog categories={categoriesWithAvailable} />
             <CreateCategoryDialog
               designationId={designationId}
               trigger={
