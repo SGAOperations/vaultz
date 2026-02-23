@@ -10,6 +10,24 @@ async function main() {
     return;
   }
 
+  // Create default Year and Period
+  const defaultYear = await prisma.year.create({
+    data: {
+      name: 'Default',
+      startDate: new Date('2000-01-01'),
+      endDate: new Date('2020-01-01'),
+    },
+  });
+
+  const defaultPeriod = await prisma.period.create({
+    data: {
+      name: 'Default Period',
+      startDate: new Date('2000-01-01'),
+      endDate: new Date('2020-01-01'),
+      yearId: defaultYear.id,
+    },
+  });
+
   // Create Users
   const users = await Promise.all([
     prisma.user.create({ data: { first: 'John', last: 'Doe' } }),
@@ -33,7 +51,6 @@ async function main() {
         code: 'SC001',
         ledgerCode: '7001',
         name: 'Office Supplies',
-        amount: 500.0,
         designationId: designations[0].id,
       },
     }),
@@ -42,7 +59,6 @@ async function main() {
         code: 'SC002',
         ledgerCode: '7002',
         name: 'Software Licenses',
-        amount: 1200.0,
         designationId: designations[0].id,
       },
     }),
@@ -51,7 +67,6 @@ async function main() {
         code: 'SC003',
         ledgerCode: '7003',
         name: 'Travel Expenses',
-        amount: 800.0,
         designationId: designations[0].id,
       },
     }),
@@ -60,7 +75,6 @@ async function main() {
         code: 'SC004',
         ledgerCode: '7004',
         name: 'Training Materials',
-        amount: 600.0,
         designationId: designations[0].id,
       },
     }),
@@ -69,7 +83,6 @@ async function main() {
         code: 'SC005',
         ledgerCode: '7005',
         name: 'Equipment',
-        amount: 2000.0,
         designationId: designations[0].id,
       },
     }),
@@ -79,7 +92,6 @@ async function main() {
         code: 'SC006',
         ledgerCode: '7006',
         name: 'Meals and Entertainment',
-        amount: 400.0,
         designationId: designations[1].id,
       },
     }),
@@ -88,7 +100,6 @@ async function main() {
         code: 'SC007',
         ledgerCode: '7007',
         name: 'Transportation',
-        amount: 300.0,
         designationId: designations[1].id,
       },
     }),
@@ -97,8 +108,67 @@ async function main() {
         code: 'SC008',
         ledgerCode: '7008',
         name: 'Miscellaneous',
-        amount: 250.0,
         designationId: designations[1].id,
+      },
+    }),
+  ]);
+
+  // Create CategoryYear records
+  await Promise.all([
+    prisma.categoryYear.create({
+      data: {
+        categoryId: categories[0].id,
+        yearId: defaultYear.id,
+        amount: 500.0,
+      },
+    }),
+    prisma.categoryYear.create({
+      data: {
+        categoryId: categories[1].id,
+        yearId: defaultYear.id,
+        amount: 1200.0,
+      },
+    }),
+    prisma.categoryYear.create({
+      data: {
+        categoryId: categories[2].id,
+        yearId: defaultYear.id,
+        amount: 800.0,
+      },
+    }),
+    prisma.categoryYear.create({
+      data: {
+        categoryId: categories[3].id,
+        yearId: defaultYear.id,
+        amount: 600.0,
+      },
+    }),
+    prisma.categoryYear.create({
+      data: {
+        categoryId: categories[4].id,
+        yearId: defaultYear.id,
+        amount: 2000.0,
+      },
+    }),
+    prisma.categoryYear.create({
+      data: {
+        categoryId: categories[5].id,
+        yearId: defaultYear.id,
+        amount: 400.0,
+      },
+    }),
+    prisma.categoryYear.create({
+      data: {
+        categoryId: categories[6].id,
+        yearId: defaultYear.id,
+        amount: 300.0,
+      },
+    }),
+    prisma.categoryYear.create({
+      data: {
+        categoryId: categories[7].id,
+        yearId: defaultYear.id,
+        amount: 250.0,
       },
     }),
   ]);
@@ -125,6 +195,7 @@ async function main() {
         amount: 500.0,
         designationId: designations[0].id,
         allocationGroupId: allocationGroups[0].id,
+        periodId: defaultPeriod.id,
       },
     }),
     prisma.allocation.create({
@@ -133,6 +204,7 @@ async function main() {
         amount: 600.0,
         designationId: designations[0].id,
         allocationGroupId: allocationGroups[0].id,
+        periodId: defaultPeriod.id,
       },
     }),
     // Allocations for Budget - Sustainability
@@ -142,6 +214,7 @@ async function main() {
         amount: 800.0,
         designationId: designations[0].id,
         allocationGroupId: allocationGroups[1].id,
+        periodId: defaultPeriod.id,
       },
     }),
     prisma.allocation.create({
@@ -150,6 +223,7 @@ async function main() {
         amount: 400.0,
         designationId: designations[0].id,
         allocationGroupId: allocationGroups[1].id,
+        periodId: defaultPeriod.id,
       },
     }),
     // Allocations for Cash - Community Outreach
@@ -159,6 +233,7 @@ async function main() {
         amount: 300.0,
         designationId: designations[1].id,
         allocationGroupId: allocationGroups[2].id,
+        periodId: defaultPeriod.id,
       },
     }),
     prisma.allocation.create({
@@ -167,6 +242,7 @@ async function main() {
         amount: 250.0,
         designationId: designations[1].id,
         allocationGroupId: allocationGroups[2].id,
+        periodId: defaultPeriod.id,
       },
     }),
     // Allocations without groups
@@ -175,6 +251,7 @@ async function main() {
         name: 'General Operations',
         amount: 1000.0,
         designationId: designations[0].id,
+        periodId: defaultPeriod.id,
       },
     }),
     prisma.allocation.create({
@@ -182,6 +259,7 @@ async function main() {
         name: 'Emergency Fund',
         amount: 500.0,
         designationId: designations[1].id,
+        periodId: defaultPeriod.id,
       },
     }),
   ]);
@@ -206,6 +284,7 @@ async function main() {
         categoryId: categories[0].id,
         allocationId: allocations[0].id,
         userId: users[0].id,
+        yearId: defaultYear.id,
       },
     }),
     prisma.purchase.create({
@@ -218,6 +297,7 @@ async function main() {
         categoryId: categories[0].id,
         allocationId: allocations[0].id,
         userId: users[1].id,
+        yearId: defaultYear.id,
       },
     }),
     // Purchases for Software Licenses
@@ -231,6 +311,7 @@ async function main() {
         categoryId: categories[1].id,
         allocationId: allocations[1].id,
         userId: users[2].id,
+        yearId: defaultYear.id,
       },
     }),
     prisma.purchase.create({
@@ -243,6 +324,7 @@ async function main() {
         categoryId: categories[1].id,
         allocationId: allocations[1].id,
         userId: users[0].id,
+        yearId: defaultYear.id,
       },
     }),
     // Purchases for Travel Expenses
@@ -257,6 +339,7 @@ async function main() {
         allocationId: allocations[2].id,
         userId: users[3].id,
         expenseReportCreated: true,
+        yearId: defaultYear.id,
       },
     }),
     prisma.purchase.create({
@@ -269,6 +352,7 @@ async function main() {
         categoryId: categories[2].id,
         userId: users[1].id,
         reimbursed: true,
+        yearId: defaultYear.id,
       },
     }),
     // Purchases for Training Materials
@@ -282,6 +366,7 @@ async function main() {
         categoryId: categories[3].id,
         allocationId: allocations[2].id,
         userId: users[2].id,
+        yearId: defaultYear.id,
       },
     }),
     prisma.purchase.create({
@@ -293,6 +378,7 @@ async function main() {
         receipts: ['receipt-008.pdf'],
         categoryId: categories[3].id,
         userId: users[4].id,
+        yearId: defaultYear.id,
       },
     }),
     // Purchases for Equipment
@@ -306,6 +392,7 @@ async function main() {
         categoryId: categories[4].id,
         allocationId: allocations[3].id,
         userId: users[0].id,
+        yearId: defaultYear.id,
       },
     }),
     prisma.purchase.create({
@@ -318,6 +405,7 @@ async function main() {
         categoryId: categories[4].id,
         allocationId: allocations[3].id,
         userId: users[2].id,
+        yearId: defaultYear.id,
       },
     }),
     // Purchases for Meals and Entertainment
@@ -331,6 +419,7 @@ async function main() {
         categoryId: categories[5].id,
         allocationId: allocations[4].id,
         userId: users[3].id,
+        yearId: defaultYear.id,
       },
     }),
     prisma.purchase.create({
@@ -344,6 +433,7 @@ async function main() {
         allocationId: allocations[4].id,
         userId: users[1].id,
         expenseReportCreated: true,
+        yearId: defaultYear.id,
       },
     }),
     // Purchases for Transportation
@@ -358,6 +448,7 @@ async function main() {
         allocationId: allocations[5].id,
         userId: users[4].id,
         reimbursed: true,
+        yearId: defaultYear.id,
       },
     }),
     prisma.purchase.create({
@@ -369,6 +460,7 @@ async function main() {
         receipts: ['receipt-014.pdf'],
         categoryId: categories[6].id,
         userId: users[2].id,
+        yearId: defaultYear.id,
       },
     }),
     // Purchases for Miscellaneous
@@ -382,6 +474,7 @@ async function main() {
         categoryId: categories[7].id,
         allocationId: allocations[5].id,
         userId: users[0].id,
+        yearId: defaultYear.id,
       },
     }),
     prisma.purchase.create({
@@ -394,6 +487,7 @@ async function main() {
         categoryId: categories[7].id,
         userId: users[3].id,
         excludeFromTotal: true,
+        yearId: defaultYear.id,
       },
     }),
   ]);
