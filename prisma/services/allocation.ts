@@ -11,14 +11,37 @@ export async function createAllocation({
   amount,
   designationId,
   allocationGroupId,
+  periodId,
 }: {
   name: string;
   amount: number;
   designationId: string;
   allocationGroupId?: string;
+  periodId?: string;
 }): Promise<ResponseType<Allocation>> {
+  const resolvedPeriodId =
+    periodId ??
+    (
+      await prisma.period
+        .findFirstOrThrow({
+          where: { deletedAt: null },
+          orderBy: { startDate: 'desc' },
+        })
+        .catch(() => {
+          throw new Error(
+            'No active period found. Please create a period before adding allocations.',
+          );
+        })
+    ).id;
+
   const allocation = await prisma.allocation.create({
-    data: { name, amount, designationId, allocationGroupId },
+    data: {
+      name,
+      amount,
+      designationId,
+      allocationGroupId,
+      periodId: resolvedPeriodId,
+    },
   });
 
   revalidatePath('/allocation-groups');

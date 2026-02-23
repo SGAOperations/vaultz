@@ -35,6 +35,7 @@ export async function createPurchase({
   expenseReportCreated,
   reimbursed,
   notes,
+  yearId,
 }: {
   userId: string;
   categoryId: string;
@@ -47,7 +48,23 @@ export async function createPurchase({
   expenseReportCreated?: boolean;
   reimbursed?: boolean;
   notes?: string;
+  yearId?: string;
 }): Promise<ResponseType<Purchase>> {
+  const resolvedYearId =
+    yearId ??
+    (
+      await prisma.year
+        .findFirstOrThrow({
+          where: { deletedAt: null },
+          orderBy: { startDate: 'desc' },
+        })
+        .catch(() => {
+          throw new Error(
+            'No active fiscal year found. Please create a year before recording purchases.',
+          );
+        })
+    ).id;
+
   const purchase = await prisma.purchase.create({
     data: {
       userId,
@@ -61,6 +78,7 @@ export async function createPurchase({
       expenseReportCreated: expenseReportCreated ?? false,
       reimbursed: reimbursed ?? false,
       notes: notes ?? null,
+      yearId: resolvedYearId,
     },
   });
 
