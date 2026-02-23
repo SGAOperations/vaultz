@@ -67,7 +67,7 @@ export function PurchaseList({
                   ],
                 },
               ]}
-              value={selectedYearId === 'all' ? '' : selectedYearId}
+              value={selectedYearId}
               onChange={handleYearFilterChange}
               name="year filter"
             />

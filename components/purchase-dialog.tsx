@@ -172,6 +172,11 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
     return allAllocations.find((a) => a.id === purchase.allocationId)?.name;
   }, [purchase, allocationGroups, miscAllocations]);
 
+  const purchaseYear = useMemo(
+    () => (purchase ? years.find((y) => y.id === purchase.yearId) : undefined),
+    [purchase, years],
+  );
+
   const form = useForm({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -878,13 +883,13 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                 </div>
 
                 {/* Fiscal Year */}
-                {years.find((y) => y.id === purchase!.yearId) && (
+                {purchaseYear && (
                   <div className="bg-muted flex items-center gap-2 rounded-full px-4 py-2">
                     <Calendar className="text-primary size-4" />
                     <span className="text-sm">
                       <span className="text-muted-foreground">Year:</span>{' '}
                       <span className="font-semibold">
-                        {years.find((y) => y.id === purchase!.yearId)!.name}
+                        {purchaseYear.name}
                         {purchase!.yearId === activeYearId && (
                           <span className="text-muted-foreground ml-1 text-xs">
                             (Active)
