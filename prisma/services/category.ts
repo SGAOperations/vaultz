@@ -166,6 +166,7 @@ export async function getCategoriesWithAvailableAmount({
     where: { designationId, deletedAt: null },
     include: {
       designation: true,
+      categoryYears: { where: { deletedAt: null }, select: { amount: true } },
       purchases: {
         where: { excludeFromTotal: false },
         select: { amount: true },
@@ -176,6 +177,10 @@ export async function getCategoriesWithAvailableAmount({
   });
 
   return categories.map((category) => {
+    const budget = category.categoryYears.reduce(
+      (acc, cy) => acc + cy.amount.toNumber(),
+      0,
+    );
     const spent = category.purchases.reduce(
       (acc, p) => acc + p.amount.toNumber(),
       0,
@@ -190,9 +195,7 @@ export async function getCategoriesWithAvailableAmount({
     );
     return {
       ...category,
-      amount: category.amount.toNumber(),
-      available:
-        category.amount.toNumber() - spent + transfersIn - transfersOut,
+      available: budget - spent + transfersIn - transfersOut,
     };
   });
 }
