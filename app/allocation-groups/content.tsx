@@ -25,8 +25,7 @@ export function Content({ designationId }: ContentProps) {
 
   if (isLoading) return <AllocationGroupsSkeleton />;
 
-  if (isError)
-    return <EmptyState message="Failed to load allocation groups" />;
+  if (isError) return <EmptyState message="Failed to load allocation groups" />;
 
   if (allocationGroups!.length === 0)
     return (

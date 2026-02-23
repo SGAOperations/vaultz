@@ -2,9 +2,8 @@
 
 import { notFound } from 'next/navigation';
 
-import { Plus } from 'lucide-react';
-
 import { useDesignation } from '@/contexts/DesignationContext';
+import { Plus } from 'lucide-react';
 
 import { CreateAllocationGroupDialog } from '@/components/create-allocation-group-dialog';
 import { PageHeader } from '@/components/page-header';
