@@ -4,9 +4,9 @@ import prisma from '@/lib/prisma';
 import { parseDateOnly } from '@/lib/utils';
 
 export async function getDashboardStatsByDesignation(designationId: string) {
-  const [categories, purchases] = await Promise.all([
-    prisma.category.findMany({
-      where: { designationId, deletedAt: null },
+  const [categoryYears, purchases] = await Promise.all([
+    prisma.categoryYear.findMany({
+      where: { category: { designationId, deletedAt: null }, deletedAt: null },
       select: { amount: true },
     }),
     prisma.purchase.findMany({
@@ -15,14 +15,14 @@ export async function getDashboardStatsByDesignation(designationId: string) {
     }),
   ]);
 
-  const totalBudget = categories.reduce(
+  const totalBudget = categoryYears.reduce(
     (sum, c) => sum + c.amount.toNumber(),
     0,
   );
   const totalSpent = purchases.reduce((sum, p) => sum + p.amount.toNumber(), 0);
 
   return {
-    totalCategories: categories.length,
+    totalCategories: categoryYears.length,
     totalPurchases: purchases.length,
     totalBudget,
     totalSpent,
@@ -74,13 +74,16 @@ export async function getSpendingByCategoryForDesignation(
     where: { designationId, deletedAt: null },
     select: {
       name: true,
-      amount: true,
+      categoryYears: { where: { deletedAt: null }, select: { amount: true } },
       purchases: { select: { amount: true } },
     },
   });
 
   return categories.map((category) => {
-    const budget = category.amount.toNumber();
+    const budget = category.categoryYears.reduce(
+      (sum, cy) => sum + cy.amount.toNumber(),
+      0,
+    );
     const spent = category.purchases.reduce(
       (sum, p) => sum + p.amount.toNumber(),
       0,
