@@ -54,6 +54,9 @@ export function AllocationGroupsSkeleton() {
   return (
     <div className="flex w-full flex-col">
       <AllocationGroupsSummarySkeleton />
+      <div className="flex items-center justify-between pt-4 pb-2">
+        <Skeleton className="h-4 w-36" />
+      </div>
       <div className="grid w-full grid-cols-1 gap-4 lg:grid-cols-2">
         <AllocationGroupCardSkeleton />
         <AllocationGroupCardSkeleton />

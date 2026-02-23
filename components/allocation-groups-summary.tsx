@@ -31,7 +31,7 @@ export function AllocationGroupsSummary({
       <div className="flex flex-col gap-5">
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           <div className="flex flex-col gap-1">
-            <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
+            <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
               Total Allocated
             </p>
             <div className="flex items-center gap-2">
@@ -45,7 +45,7 @@ export function AllocationGroupsSummary({
           </div>
 
           <div className="flex flex-col gap-1">
-            <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
+            <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
               Total Spent
             </p>
             <div className="flex items-center gap-2">
@@ -59,16 +59,14 @@ export function AllocationGroupsSummary({
           </div>
 
           <div className="flex flex-col gap-1">
-            <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
+            <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
               Total Remaining
             </p>
             <div className="flex items-center gap-2">
               <div
                 className={cn(
                   'rounded-lg p-2',
-                  isOverBudget
-                    ? 'bg-destructive/10'
-                    : 'bg-stat-remaining/10',
+                  isOverBudget ? 'bg-destructive/10' : 'bg-stat-remaining/10',
                 )}
               >
                 <TrendingUp

@@ -7,6 +7,7 @@ import { getAllAllocationGroups } from '@/prisma/services/allocation-groups';
 import { AllocationGroupCard } from '@/components/allocation-group-card';
 import { AllocationGroupsSummary } from '@/components/allocation-groups-summary';
 import { EmptyState } from '@/components/empty-state';
+import { SectionHeader } from '@/components/section-header';
 
 import { AllocationGroupsSkeleton } from './skeleton';
 
@@ -39,6 +40,7 @@ export function Content({ designationId }: ContentProps) {
   return (
     <div className="flex w-full flex-col">
       <AllocationGroupsSummary allocationGroups={allocationGroups!} />
+      <SectionHeader title="Allocation Groups" />
       <div className="grid w-full grid-cols-1 gap-4 lg:grid-cols-2">
         {allocationGroups!.map((allocationGroup) => (
           <AllocationGroupCard
