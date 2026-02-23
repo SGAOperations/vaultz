@@ -92,7 +92,11 @@ export default async function DesignationPage({
               .filter((v) => v.categoryId === category.id)
               .filter((v) => !v.excludeFromTotal)
               .reduce((acc, purchase) => acc + purchase.amount, 0);
-            const remaining = category.amount - categorySpent;
+            const budget = category.categoryYears.reduce(
+              (acc, cy) => acc + cy.amount,
+              0,
+            );
+            const remaining = budget - categorySpent;
 
             return (
               <Link
@@ -123,7 +127,7 @@ export default async function DesignationPage({
                       <span className="text-sm">
                         <span className="text-muted-foreground">Budget:</span>{' '}
                         <span className="font-semibold">
-                          ${formatNumber(category.amount)}
+                          ${formatNumber(budget)}
                         </span>
                       </span>
                     </div>

@@ -100,10 +100,7 @@ export async function getUserById({
     purchases: user.purchases.map((purchase) => ({
       ...purchase,
       amount: purchase.amount.toNumber(),
-      category: {
-        ...purchase.category,
-        amount: purchase.category.amount.toNumber(),
-      },
+      category: purchase.category,
     })),
   };
 }

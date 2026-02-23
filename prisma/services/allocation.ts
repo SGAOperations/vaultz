@@ -4,21 +4,43 @@ import { revalidatePath } from 'next/cache';
 
 import prisma from '@/lib/prisma';
 import { Allocation, AllocationWithPurchases } from '@/lib/types';
-import { ResponseType } from '@/lib/utils';
+import { ErrorType, ResponseType } from '@/lib/utils';
 
 export async function createAllocation({
   name,
   amount,
   designationId,
   allocationGroupId,
+  periodId,
 }: {
   name: string;
   amount: number;
   designationId: string;
   allocationGroupId?: string;
+  periodId?: string;
 }): Promise<ResponseType<Allocation>> {
+  let resolvedPeriodId = periodId;
+  if (!resolvedPeriodId) {
+    const period = await prisma.period.findFirst({
+      where: { deletedAt: null },
+      orderBy: { startDate: 'desc' },
+    });
+    if (!period)
+      return {
+        error:
+          'No active period found. Please create a period before adding allocations.',
+      } satisfies ErrorType;
+    resolvedPeriodId = period.id;
+  }
+
   const allocation = await prisma.allocation.create({
-    data: { name, amount, designationId, allocationGroupId },
+    data: {
+      name,
+      amount,
+      designationId,
+      allocationGroupId,
+      periodId: resolvedPeriodId,
+    },
   });
 
   revalidatePath('/allocation-groups');
