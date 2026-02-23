@@ -7,6 +7,7 @@ import { Decimal } from '@/prisma/client/runtime/library';
 import prisma from '@/lib/prisma';
 import {
   Category,
+  CategoryWithAvailableAmount,
   CategoryWithDesignation,
   CategoryWithPurchases,
 } from '@/lib/types';
@@ -126,4 +127,44 @@ export async function deleteCategory(id: string): Promise<ResponseType<void>> {
 
   revalidatePath('/category');
   revalidatePath('/designation');
+}
+
+export async function getCategoriesWithAvailableAmount({
+  designationId,
+}: {
+  designationId: string;
+}): Promise<CategoryWithAvailableAmount[]> {
+  const categories = await prisma.category.findMany({
+    where: { designationId, deletedAt: null },
+    include: {
+      designation: true,
+      purchases: {
+        where: { excludeFromTotal: false },
+        select: { amount: true },
+      },
+      transfersTo: { select: { amount: true } },
+      transfersFrom: { select: { amount: true } },
+    },
+  });
+
+  return categories.map((category) => {
+    const spent = category.purchases.reduce(
+      (acc, p) => acc + p.amount.toNumber(),
+      0,
+    );
+    const transfersIn = category.transfersTo.reduce(
+      (acc, t) => acc + t.amount.toNumber(),
+      0,
+    );
+    const transfersOut = category.transfersFrom.reduce(
+      (acc, t) => acc + t.amount.toNumber(),
+      0,
+    );
+    return {
+      ...category,
+      amount: category.amount.toNumber(),
+      available:
+        category.amount.toNumber() - spent + transfersIn - transfersOut,
+    };
+  });
 }

@@ -17,6 +17,10 @@ export type CategoryWithPurchases = CategoryWithDesignation & {
   purchases: PurchaseWithUser[];
 };
 
+export type CategoryWithAvailableAmount = CategoryWithDesignation & {
+  available: number;
+};
+
 export type UserWithPurchases = User & { purchases: Purchase[] };
 
 export type PurchaseWithUser = Purchase & { user: User };
