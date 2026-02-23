@@ -37,7 +37,7 @@ const schema = z
     fromCategoryId: z.string().min(1, 'Please select a from category'),
     toCategoryId: z.string().min(1, 'Please select a to category'),
     amount: z.coerce
-      .number()
+      .number<number>()
       .min(0.01, 'Amount must be greater than $0.00')
       .multipleOf(0.01, 'Must contain at most 2 decimal places'),
     notes: z.string().optional(),
