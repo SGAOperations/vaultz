@@ -13,10 +13,7 @@ import {
 
 import { getMiscAllocations } from '@/prisma/services/allocation';
 import { getAllAllocationGroups } from '@/prisma/services/allocation-groups';
-import {
-  getCategoriesByDesignation,
-  getCategoriesWithAvailableAmount,
-} from '@/prisma/services/category';
+import { getCategoriesByDesignation } from '@/prisma/services/category';
 import { getDesignation } from '@/prisma/services/designation';
 import { getUsers } from '@/prisma/services/user';
 
@@ -29,7 +26,6 @@ import { PurchaseCard } from '@/components/purchase-card';
 import { CreatePurchaseDialog } from '@/components/purchase-dialog';
 import { SectionHeader } from '@/components/section-header';
 import { StatCards } from '@/components/stat-card';
-import { TransferDialog } from '@/components/transfer-dialog';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 
@@ -48,9 +44,6 @@ export default async function DesignationPage({
   const allocationGroups = await getAllAllocationGroups(designationId);
   const miscAllocations = await getMiscAllocations(designationId);
   const categories = await getCategoriesByDesignation({ designationId });
-  const categoriesWithAvailable = await getCategoriesWithAvailableAmount({
-    designationId,
-  });
   const users = await getUsers();
 
   const spent = designation.purchases
@@ -70,7 +63,6 @@ export default async function DesignationPage({
               allocationGroups={allocationGroups}
               miscAllocations={miscAllocations}
             />
-            <TransferDialog categories={categoriesWithAvailable} />
             <CreateCategoryDialog
               designationId={designationId}
               trigger={
