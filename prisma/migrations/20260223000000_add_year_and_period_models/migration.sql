@@ -59,13 +59,13 @@ DECLARE
     default_year_id TEXT := gen_random_uuid()::TEXT;
     default_period_id TEXT := gen_random_uuid()::TEXT;
 BEGIN
-    -- Create default Year (FY2025: Jul 1 2025 - Jun 30 2026)
+    -- Create default Year (Jan 1 2000 - Jan 1 2020)
     INSERT INTO "Year" ("id", "name", "startDate", "endDate", "updatedAt")
-    VALUES (default_year_id, 'FY2025', '2025-07-01', '2026-06-30', CURRENT_TIMESTAMP);
+    VALUES (default_year_id, 'Default', '2000-01-01', '2020-01-01', CURRENT_TIMESTAMP);
 
     -- Create default Period spanning the full year
     INSERT INTO "Period" ("id", "name", "startDate", "endDate", "yearId", "updatedAt")
-    VALUES (default_period_id, 'Default Period', '2025-07-01', '2026-06-30', default_year_id, CURRENT_TIMESTAMP);
+    VALUES (default_period_id, 'Default Period', '2000-01-01', '2020-01-01', default_year_id, CURRENT_TIMESTAMP);
 
     -- Migrate Category.amount to CategoryYear records
     INSERT INTO "CategoryYear" ("id", "amount", "categoryId", "yearId", "updatedAt")

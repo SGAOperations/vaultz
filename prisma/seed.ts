@@ -13,17 +13,17 @@ async function main() {
   // Create default Year and Period
   const defaultYear = await prisma.year.create({
     data: {
-      name: 'FY2025',
-      startDate: new Date('2025-07-01'),
-      endDate: new Date('2026-06-30'),
+      name: 'Default',
+      startDate: new Date('2000-01-01'),
+      endDate: new Date('2020-01-01'),
     },
   });
 
   const defaultPeriod = await prisma.period.create({
     data: {
       name: 'Default Period',
-      startDate: new Date('2025-07-01'),
-      endDate: new Date('2026-06-30'),
+      startDate: new Date('2000-01-01'),
+      endDate: new Date('2020-01-01'),
       yearId: defaultYear.id,
     },
   });
