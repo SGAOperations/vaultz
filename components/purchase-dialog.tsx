@@ -39,6 +39,7 @@ import {
   AllocationGroupWithAllocations,
   CategoryWithDesignation,
   PurchaseWithUser,
+  YearRecord,
 } from '@/lib/types';
 import { UploadDropzone } from '@/lib/uploadthing';
 import {
@@ -77,6 +78,7 @@ const schema = z.object({
   userId: z.string().min(1, 'Please select a user'),
   categoryId: z.string().min(1, 'Please select a category'),
   allocationId: z.string().optional(),
+  yearId: z.string().min(1, 'Please select a year'),
   description: z.string().min(1, 'Please enter a description'),
   amount: z.coerce
     .number<number>()
@@ -108,6 +110,8 @@ type CreatePurchaseProps = {
   categories: CategoryWithDesignation[];
   allocationGroups?: AllocationGroupWithAllocations[];
   miscAllocations?: Allocation[];
+  years: YearRecord[];
+  activeYearId?: string;
 };
 
 // Props for viewing/editing an existing purchase
@@ -119,6 +123,8 @@ type ViewEditPurchaseProps = {
   categories: CategoryWithDesignation[];
   allocationGroups: AllocationGroupWithAllocations[];
   miscAllocations: Allocation[];
+  years: YearRecord[];
+  activeYearId?: string;
 };
 
 type PurchaseDialogProps = CreatePurchaseProps | ViewEditPurchaseProps;
@@ -129,6 +135,8 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
     categories,
     allocationGroups = [],
     miscAllocations = [],
+    years,
+    activeYearId,
   } = props;
 
   const isCreateMode = props.mode === 'create';
@@ -141,6 +149,8 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
   const [receiptsToDisplay, setReceiptsToDisplay] = useState<string[]>(
     purchase?.receipts || [],
   );
+  const [pendingYearId, setPendingYearId] = useState<string | null>(null);
+  const [yearWarningOpen, setYearWarningOpen] = useState(false);
 
   const receiptUrls = purchase?.receipts.map((r) => getFileUrl(r)) || [];
 
@@ -170,6 +180,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
         purchase?.categoryId ||
         (categories.length === 1 ? categories[0].id : ''),
       allocationId: purchase?.allocationId || '',
+      yearId: purchase?.yearId || activeYearId || '',
       description: purchase?.description || '',
       amount: purchase?.amount || 0,
       purchasedAt: purchase ? parseDateOnly(purchase.purchasedAt) : new Date(),
@@ -181,6 +192,45 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
     },
   });
   const isSubmitting = form.formState.isSubmitting;
+
+  function handleYearChange(yearId: string) {
+    if (!yearId || yearId === activeYearId) {
+      form.setValue('yearId', yearId, { shouldValidate: true });
+      return;
+    }
+    const selectedYear = years.find((y) => y.id === yearId);
+    if (!selectedYear) {
+      form.setValue('yearId', yearId, { shouldValidate: true });
+      return;
+    }
+    setPendingYearId(yearId);
+    setYearWarningOpen(true);
+  }
+
+  function confirmYearChange() {
+    if (pendingYearId)
+      form.setValue('yearId', pendingYearId, { shouldValidate: true });
+    setPendingYearId(null);
+    setYearWarningOpen(false);
+  }
+
+  function cancelYearChange() {
+    setPendingYearId(null);
+    setYearWarningOpen(false);
+  }
+
+  const pendingYear = years.find((y) => y.id === pendingYearId);
+  const today = new Date();
+  const yearWarningMessage = (() => {
+    if (!pendingYear) return '';
+    const endDate = parseDateOnly(pendingYear.endDate);
+    const startDate = parseDateOnly(pendingYear.startDate);
+    if (endDate < today)
+      return `Creating purchase for ${pendingYear.name} which ended ${endDate.toLocaleDateString()}`;
+    if (startDate > today)
+      return `Creating purchase for ${pendingYear.name} which starts ${startDate.toLocaleDateString()}`;
+    return '';
+  })();
 
   async function onSubmit(data: FormData) {
     if (isCreateMode) {
@@ -257,6 +307,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
       userId: purchase!.userId,
       categoryId: purchase!.categoryId,
       allocationId: purchase!.allocationId || '',
+      yearId: purchase!.yearId,
       description: purchase!.description,
       amount: purchase!.amount,
       purchasedAt: parseDateOnly(purchase!.purchasedAt),
@@ -308,9 +359,24 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
       : 'See all of the details relevant to this purchase.';
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent
+    <>
+      <Dialog open={yearWarningOpen} onOpenChange={(o) => !o && cancelYearChange()}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Warning: Non-Active Year Selected</DialogTitle>
+            <DialogDescription>{yearWarningMessage}</DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" onClick={cancelYearChange}>
+              Cancel
+            </Button>
+            <Button onClick={confirmYearChange}>Confirm</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
+        <DialogTrigger asChild>{trigger}</DialogTrigger>
+        <DialogContent
         className={
           isEditing
             ? 'flex max-h-[90vh] w-2/3 flex-col sm:max-w-full'
@@ -446,6 +512,34 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                             ]}
                             {...field}
                             name="allocation"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="yearId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Fiscal Year</FormLabel>
+                        <FormControl>
+                          <Combobox
+                            data={[
+                              {
+                                items: years.map((year) => ({
+                                  value: year.id,
+                                  label:
+                                    year.id === activeYearId
+                                      ? `${year.name} (Active)`
+                                      : year.name,
+                                })),
+                              },
+                            ]}
+                            value={field.value || ''}
+                            onChange={handleYearChange}
+                            name="year"
                           />
                         </FormControl>
                         <FormMessage />
@@ -783,6 +877,24 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                   </span>
                 </div>
 
+                {/* Fiscal Year */}
+                {years.find((y) => y.id === purchase!.yearId) && (
+                  <div className="bg-muted flex items-center gap-2 rounded-full px-4 py-2">
+                    <Calendar className="text-primary size-4" />
+                    <span className="text-sm">
+                      <span className="text-muted-foreground">Year:</span>{' '}
+                      <span className="font-semibold">
+                        {years.find((y) => y.id === purchase!.yearId)!.name}
+                        {purchase!.yearId === activeYearId && (
+                          <span className="text-muted-foreground ml-1 text-xs">
+                            (Active)
+                          </span>
+                        )}
+                      </span>
+                    </span>
+                  </div>
+                )}
+
                 {/* Category (optional) */}
                 {categoryName && (
                   <div className="bg-muted flex items-center gap-2 rounded-full px-4 py-2">
@@ -899,6 +1011,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
         )}
       </DialogContent>
     </Dialog>
+    </>
   );
 }
 
@@ -908,6 +1021,8 @@ export function CreatePurchaseDialog(props: {
   categories: CategoryWithDesignation[];
   allocationGroups?: AllocationGroupWithAllocations[];
   miscAllocations?: Allocation[];
+  years: YearRecord[];
+  activeYearId?: string;
 }) {
   return <PurchaseDialog mode="create" {...props} />;
 }

@@ -8,9 +8,10 @@ import { getAllAllocationGroups } from '@/prisma/services/allocation-groups';
 import { getAllCategories } from '@/prisma/services/category';
 import { getUserById, getUsers } from '@/prisma/services/user';
 
-import { EmptyState } from '@/components/empty-state';
+import { getAllYears, getActiveYear } from '@/lib/period-utils';
+
 import { PageHeader } from '@/components/page-header';
-import { PurchaseCard } from '@/components/purchase-card';
+import { PurchaseList } from '@/components/purchase-list';
 import { SectionHeader } from '@/components/section-header';
 import { StatCard } from '@/components/stat-card';
 import { Button } from '@/components/ui/button';
@@ -25,13 +26,15 @@ export default async function UserPage({
 }) {
   const { userId } = await params;
 
-  const [user, users, categories, allocationGroups, miscAllocations] =
+  const [user, users, categories, allocationGroups, miscAllocations, years, activeYear] =
     await Promise.all([
       getUserById({ id: userId }),
       getUsers(),
       getAllCategories(),
       getAllAllocationGroups(),
       getMiscAllocations(),
+      getAllYears(),
+      getActiveYear(),
     ]);
   if (user === null) notFound();
 
@@ -80,25 +83,15 @@ export default async function UserPage({
 
       <SectionHeader title="Purchases" />
 
-      {user.purchases.length === 0 ? (
-        <EmptyState
-          message="No purchases yet"
-          description="This user hasn't made any purchases"
-        />
-      ) : (
-        <div className="flex flex-col gap-2">
-          {user.purchases.map((purchase) => (
-            <PurchaseCard
-              key={purchase.id}
-              purchase={purchase}
-              users={users}
-              categories={categories}
-              allocationGroups={allocationGroups}
-              miscAllocations={miscAllocations}
-            />
-          ))}
-        </div>
-      )}
+      <PurchaseList
+        purchases={user.purchases}
+        users={users}
+        categories={categories}
+        allocationGroups={allocationGroups}
+        miscAllocations={miscAllocations}
+        years={years}
+        activeYearId={activeYear?.id}
+      />
     </div>
   );
 }

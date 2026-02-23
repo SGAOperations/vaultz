@@ -17,13 +17,14 @@ import { getCategoriesByDesignation } from '@/prisma/services/category';
 import { getDesignation } from '@/prisma/services/designation';
 import { getUsers } from '@/prisma/services/user';
 
+import { getAllYears, getActiveYear } from '@/lib/period-utils';
 import { cn, formatNumber } from '@/lib/utils';
 
 import { CreateCategoryDialog } from '@/components/create-category-dialog';
 import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/page-header';
-import { PurchaseCard } from '@/components/purchase-card';
 import { CreatePurchaseDialog } from '@/components/purchase-dialog';
+import { PurchaseList } from '@/components/purchase-list';
 import { SectionHeader } from '@/components/section-header';
 import { StatCards } from '@/components/stat-card';
 import { Button } from '@/components/ui/button';
@@ -45,6 +46,7 @@ export default async function DesignationPage({
   const miscAllocations = await getMiscAllocations(designationId);
   const categories = await getCategoriesByDesignation({ designationId });
   const users = await getUsers();
+  const [years, activeYear] = await Promise.all([getAllYears(), getActiveYear()]);
 
   const spent = designation.purchases
     .filter((purchase) => !purchase.excludeFromTotal)
@@ -62,6 +64,8 @@ export default async function DesignationPage({
               categories={categories}
               allocationGroups={allocationGroups}
               miscAllocations={miscAllocations}
+              years={years}
+              activeYearId={activeYear?.id}
             />
             <CreateCategoryDialog
               designationId={designationId}
@@ -164,25 +168,15 @@ export default async function DesignationPage({
 
       <SectionHeader title="Purchases" />
 
-      {designation.purchases.length === 0 ? (
-        <EmptyState
-          message="No purchases yet"
-          description="Record purchases to track spending in this designation"
-        />
-      ) : (
-        <div className="flex flex-col gap-2">
-          {designation.purchases.map((purchase) => (
-            <PurchaseCard
-              key={purchase.id}
-              purchase={purchase}
-              users={users}
-              categories={categories}
-              allocationGroups={allocationGroups}
-              miscAllocations={miscAllocations}
-            />
-          ))}
-        </div>
-      )}
+      <PurchaseList
+        purchases={designation.purchases}
+        users={users}
+        categories={categories}
+        allocationGroups={allocationGroups}
+        miscAllocations={miscAllocations}
+        years={years}
+        activeYearId={activeYear?.id}
+      />
     </div>
   );
 }

@@ -7,11 +7,13 @@ import { getAllDesignations } from '@/prisma/services/designation';
 import { getLatestPurchases } from '@/prisma/services/purchase';
 import { getUsers } from '@/prisma/services/user';
 
+import { getAllYears, getActiveYear } from '@/lib/period-utils';
+
 import { CreateDesignationDialog } from '@/components/create-designation-dialog';
 import { DesignationCard } from '@/components/designation-card';
 import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/page-header';
-import { PurchaseCard } from '@/components/purchase-card';
+import { PurchaseList } from '@/components/purchase-list';
 import { SectionHeader } from '@/components/section-header';
 import { Button } from '@/components/ui/button';
 
@@ -22,6 +24,7 @@ export default async function DesignationsPage() {
   const categories = await getAllCategories();
   const allocationGroups = await getAllAllocationGroups();
   const miscAllocations = await getMiscAllocations();
+  const [years, activeYear] = await Promise.all([getAllYears(), getActiveYear()]);
 
   return (
     <div className="flex w-full flex-col">
@@ -55,25 +58,15 @@ export default async function DesignationsPage() {
 
       <SectionHeader title="Latest Purchases" />
 
-      {latestPurchases.length === 0 ? (
-        <EmptyState
-          message="No purchases yet"
-          description="Purchases will appear here as they are recorded"
-        />
-      ) : (
-        <div className="flex flex-col gap-2">
-          {latestPurchases.map((purchase) => (
-            <PurchaseCard
-              key={purchase.id}
-              purchase={purchase}
-              users={users}
-              categories={categories}
-              allocationGroups={allocationGroups}
-              miscAllocations={miscAllocations}
-            />
-          ))}
-        </div>
-      )}
+      <PurchaseList
+        purchases={latestPurchases}
+        users={users}
+        categories={categories}
+        allocationGroups={allocationGroups}
+        miscAllocations={miscAllocations}
+        years={years}
+        activeYearId={activeYear?.id}
+      />
     </div>
   );
 }
