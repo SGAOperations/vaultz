@@ -185,6 +185,7 @@ export default async function AllocationGroup({
               categories={categories}
               allocationGroups={[allocationGroup]}
               miscAllocations={miscAllocations}
+              processTemplates={processTemplates}
             />
           ))}
         </div>

@@ -182,6 +182,7 @@ export default async function DesignationPage({
               categories={categories}
               allocationGroups={allocationGroups}
               miscAllocations={miscAllocations}
+              processTemplates={processTemplates}
             />
           ))}
         </div>

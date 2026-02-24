@@ -17,6 +17,7 @@ import {
   Allocation,
   AllocationGroupWithAllocations,
   CategoryWithDesignation,
+  ProcessTemplateWithStepCount,
   PurchaseWithUser,
 } from '@/lib/types';
 import { formatCurrency } from '@/lib/utils';
@@ -38,6 +39,7 @@ export function PurchaseCard({
   categories,
   allocationGroups,
   miscAllocations,
+  processTemplates = [],
   stopPropagation = false,
 }: {
   purchase: PurchaseWithUser;
@@ -45,6 +47,7 @@ export function PurchaseCard({
   categories: CategoryWithDesignation[];
   allocationGroups: AllocationGroupWithAllocations[];
   miscAllocations: Allocation[];
+  processTemplates?: ProcessTemplateWithStepCount[];
   stopPropagation?: boolean;
 }) {
   return (
@@ -138,6 +141,7 @@ export function PurchaseCard({
       categories={categories}
       allocationGroups={allocationGroups}
       miscAllocations={miscAllocations}
+      processTemplates={processTemplates}
     />
   );
 }

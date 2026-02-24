@@ -122,6 +122,7 @@ type ViewEditPurchaseProps = {
   categories: CategoryWithDesignation[];
   allocationGroups: AllocationGroupWithAllocations[];
   miscAllocations: Allocation[];
+  processTemplates?: ProcessTemplateWithStepCount[];
 };
 
 type PurchaseDialogProps = CreatePurchaseProps | ViewEditPurchaseProps;
@@ -134,8 +135,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
     miscAllocations = [],
   } = props;
 
-  const processTemplates =
-    props.mode === 'create' ? (props.processTemplates ?? []) : [];
+  const processTemplates = props.processTemplates ?? [];
 
   const isCreateMode = props.mode === 'create';
   const purchase = isCreateMode ? null : props.purchase;
@@ -211,19 +211,24 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
         },
       );
     } else {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { processTemplateId: _, ...updateData } = data;
-      await handleError(updatePurchase({ id: purchase!.id, ...updateData }), {
-        toast: {
-          loading: 'Updating purchase...',
-          success: 'Purchase updated successfully',
-          error: 'Failed to update purchase',
+      await handleError(
+        updatePurchase({
+          id: purchase!.id,
+          ...data,
+          processTemplateId: data.processTemplateId || undefined,
+        }),
+        {
+          toast: {
+            loading: 'Updating purchase...',
+            success: 'Purchase updated successfully',
+            error: 'Failed to update purchase',
+          },
+          onSuccess: () => {
+            setIsEditing(false);
+            setOpen(false);
+          },
         },
-        onSuccess: () => {
-          setIsEditing(false);
-          setOpen(false);
-        },
-      });
+      );
     }
   }
 
@@ -467,7 +472,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                       </FormItem>
                     )}
                   />
-                  {isCreateMode && processTemplates.length > 0 && (
+                  {processTemplates.length > 0 && (
                     <FormField
                       control={form.control}
                       name="processTemplateId"
@@ -490,7 +495,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                                 },
                               ]}
                               {...field}
-                              name="processTemplate"
+                              name="Process Template"
                             />
                           </FormControl>
                           <FormMessage />
