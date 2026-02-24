@@ -14,6 +14,7 @@ import {
 import { getMiscAllocations } from '@/prisma/services/allocation';
 import { getAllocationGroup } from '@/prisma/services/allocation-groups';
 import { getAllCategories } from '@/prisma/services/category';
+import { getAllProcessTemplates } from '@/prisma/services/process-templates';
 import { getUsers } from '@/prisma/services/user';
 
 import { cn, formatNumber } from '@/lib/utils';
@@ -43,6 +44,7 @@ export default async function AllocationGroup({
   const categories = await getAllCategories();
   const miscAllocations = await getMiscAllocations();
   const users = await getUsers();
+  const processTemplates = await getAllProcessTemplates(true);
 
   const amount = allocationGroup.allocations.reduce(
     (acc, allocation) => acc + allocation.amount,
@@ -68,6 +70,7 @@ export default async function AllocationGroup({
               categories={categories}
               allocationGroups={[allocationGroup]}
               miscAllocations={miscAllocations}
+              processTemplates={processTemplates}
             />
             <CreateAllocationDialog
               trigger={
@@ -173,6 +176,7 @@ export default async function AllocationGroup({
         categories={categories}
         allocationGroups={[allocationGroup]}
         miscAllocations={miscAllocations}
+        processTemplates={processTemplates}
       />
     </div>
   );
