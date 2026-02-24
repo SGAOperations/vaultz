@@ -49,11 +49,13 @@ export function PeriodDialog({
   period,
   years,
   defaultYearId,
+  onCreated,
   children,
 }: {
   period?: Period;
   years: Year[];
   defaultYearId?: string;
+  onCreated?: (periodId: string) => void;
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -117,6 +119,7 @@ export function PeriodDialog({
         form.reset();
         setPendingData(null);
         setOpen(false);
+        if (onCreated) onCreated(result.id);
       }
     }
   }
