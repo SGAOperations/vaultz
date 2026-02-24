@@ -132,6 +132,7 @@ export async function updatePurchase({
   expenseReportCreated,
   reimbursed,
   notes,
+  processTemplateId,
   yearId,
 }: {
   id: string;
@@ -146,6 +147,7 @@ export async function updatePurchase({
   expenseReportCreated?: boolean;
   reimbursed?: boolean;
   notes?: string;
+  processTemplateId?: string;
   yearId?: string;
 }): Promise<ResponseType<Purchase>> {
   if (yearId) {
@@ -158,23 +160,45 @@ export async function updatePurchase({
       } satisfies ErrorType;
   }
 
-  const purchase = await prisma.purchase.update({
-    where: { id },
-    data: {
-      userId,
-      categoryId,
-      description,
-      amount: new Decimal(amount),
-      allocationId: allocationId || null,
-      purchasedAt,
-      receipts,
-      excludeFromTotal: excludeFromTotal ?? false,
-      expenseReportCreated: expenseReportCreated ?? false,
-      reimbursed: reimbursed ?? false,
-      notes: notes ?? null,
-      ...(yearId ? { yearId } : {}),
-    },
-  });
+  const now = new Date();
+  const updateData = {
+    userId,
+    categoryId,
+    description,
+    amount: new Decimal(amount),
+    allocationId: allocationId || null,
+    purchasedAt,
+    receipts,
+    excludeFromTotal: excludeFromTotal ?? false,
+    expenseReportCreated: expenseReportCreated ?? false,
+    reimbursed: reimbursed ?? false,
+    notes: notes ?? null,
+    ...(yearId ? { yearId } : {}),
+  };
+
+  let purchase;
+  if (processTemplateId) {
+    purchase = await prisma.$transaction(async (tx) => {
+      const p = await tx.purchase.update({ where: { id }, data: updateData });
+
+      await tx.purchaseProcess.upsert({
+        where: { purchaseId: id },
+        create: {
+          purchaseId: id,
+          templateId: processTemplateId,
+          startedAt: now,
+        },
+        update: { templateId: processTemplateId, updatedAt: now },
+      });
+
+      return p;
+    });
+  } else {
+    purchase = await prisma.purchase.update({
+      where: { id },
+      data: updateData,
+    });
+  }
 
   revalidatePath('/');
   revalidatePath('/designation');

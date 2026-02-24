@@ -3,11 +3,11 @@ import { notFound } from 'next/navigation';
 
 import { getMiscAllocations } from '@/prisma/services/allocation';
 import { getAllAllocationGroups } from '@/prisma/services/allocation-groups';
-import { getAllProcessTemplates } from '@/prisma/services/process-templates';
 import {
   getCategoriesWithAvailableAmount,
   getCategoryById,
 } from '@/prisma/services/category';
+import { getAllProcessTemplates } from '@/prisma/services/process-templates';
 import { getUsers } from '@/prisma/services/user';
 
 import { CategoryActionsMenu } from '@/components/category-actions-menu';
@@ -74,6 +74,7 @@ export default async function CategoryPage({
         categories={[category]}
         allocationGroups={allocationGroups}
         miscAllocations={miscAllocations}
+        processTemplates={processTemplates}
       />
     </div>
   );

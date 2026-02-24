@@ -66,6 +66,7 @@ export default async function CategoryPage({
         categories={[category]}
         allocationGroups={allocationGroups}
         miscAllocations={miscAllocations}
+        processTemplates={processTemplates}
       />
     </div>
   );
