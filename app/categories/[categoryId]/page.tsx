@@ -7,7 +7,10 @@ import {
   getCategoriesWithAvailableAmount,
   getCategoryById,
 } from '@/prisma/services/category';
+import { getTransfersByCategory } from '@/prisma/services/transfer';
 import { getUsers } from '@/prisma/services/user';
+
+import { getActiveYear, getAllYears } from '@/lib/period-utils';
 
 import { CategoryActionsMenu } from '@/components/category-actions-menu';
 import { EmptyState } from '@/components/empty-state';
@@ -17,6 +20,7 @@ import { CreatePurchaseDialog } from '@/components/purchase-dialog';
 import { SectionHeader } from '@/components/section-header';
 import { StatCards } from '@/components/stat-card';
 import { TransferDialog } from '@/components/transfer-dialog';
+import { TransferList } from '@/components/transfer-list';
 
 export const metadata: Metadata = { title: 'Spending Category' };
 
@@ -30,13 +34,23 @@ export default async function CategoryPage({
   const category = await getCategoryById({ id: categoryId });
   if (category === null) notFound();
 
-  const users = await getUsers();
-
-  const allocationGroups = await getAllAllocationGroups(category.designationId);
-  const miscAllocations = await getMiscAllocations(category.designationId);
-  const categoriesWithAvailable = await getCategoriesWithAvailableAmount({
-    designationId: category.designationId,
-  });
+  const [
+    users,
+    allocationGroups,
+    miscAllocations,
+    categoriesWithAvailable,
+    transfers,
+    years,
+    activeYear,
+  ] = await Promise.all([
+    getUsers(),
+    getAllAllocationGroups(category.designationId),
+    getMiscAllocations(category.designationId),
+    getCategoriesWithAvailableAmount({ designationId: category.designationId }),
+    getTransfersByCategory(categoryId),
+    getAllYears(),
+    getActiveYear(),
+  ]);
 
   const spent = category.purchases
     .filter((purchase) => !purchase.excludeFromTotal)
@@ -56,7 +70,11 @@ export default async function CategoryPage({
               allocationGroups={allocationGroups}
               miscAllocations={miscAllocations}
             />
-            <TransferDialog categories={categoriesWithAvailable} />
+            <TransferDialog
+              categories={categoriesWithAvailable}
+              years={years}
+              activeYearId={activeYear?.id ?? null}
+            />
             <CategoryActionsMenu category={category} />
           </div>
         }
@@ -84,6 +102,21 @@ export default async function CategoryPage({
             />
           ))}
         </div>
+      )}
+
+      <SectionHeader title="Transfers" />
+
+      {transfers.length === 0 ? (
+        <EmptyState
+          message="No transfers yet"
+          description="Transfer funds between categories to see them here"
+        />
+      ) : (
+        <TransferList
+          transfers={transfers}
+          years={years}
+          categoryId={categoryId}
+        />
       )}
     </div>
   );
