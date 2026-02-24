@@ -3,7 +3,15 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-import { FolderKanban, Home, Menu, Tag, Users, Workflow } from 'lucide-react';
+import {
+  CalendarDays,
+  FolderKanban,
+  Home,
+  Menu,
+  Tag,
+  Users,
+  Workflow,
+} from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
@@ -24,6 +32,7 @@ const navItems = [
   { href: '/users', label: 'Users', icon: Users },
   { href: '/allocation-groups', label: 'Allocations', icon: FolderKanban },
   { href: '/processes', label: 'Processes', icon: Workflow },
+  { href: '/periods', label: 'Periods', icon: CalendarDays },
 ];
 
 export function Header() {
