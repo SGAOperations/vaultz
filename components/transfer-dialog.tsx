@@ -13,6 +13,7 @@ import { createTransfer } from '@/prisma/services/transfer';
 import { CategoryWithAvailableAmountAndYears } from '@/lib/types';
 import { formatNumber, handleError, isError } from '@/lib/utils';
 
+import { TransferWarningDialog } from '@/components/transfer-warning-dialog';
 import { Button } from '@/components/ui/button';
 import { Combobox } from '@/components/ui/combobox';
 import {
@@ -60,6 +61,8 @@ export function TransferDialog({
 }) {
   const { years, activeYearId, selectedYear } = useYear();
   const [open, setOpen] = useState(false);
+  const [warningOpen, setWarningOpen] = useState(false);
+  const [pendingData, setPendingData] = useState<FormData | null>(null);
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -92,6 +95,16 @@ export function TransferDialog({
   );
 
   async function handleSubmit(data: FormData) {
+    const from = categories.find((c) => c.id === data.fromCategoryId);
+    if (from && data.amount > from.available) {
+      setPendingData(data);
+      setWarningOpen(true);
+      return;
+    }
+    await performTransfer(data);
+  }
+
+  async function performTransfer(data: FormData) {
     const result = await handleError(createTransfer(data), {
       toast: {
         loading: 'Transferring funds...',
@@ -110,6 +123,14 @@ export function TransferDialog({
       setFromCategoryId('');
       setToCategoryId('');
       setOpen(false);
+    }
+  }
+
+  function handleWarningConfirm() {
+    setWarningOpen(false);
+    if (pendingData) {
+      setPendingData(null);
+      performTransfer(pendingData);
     }
   }
 
@@ -152,163 +173,179 @@ export function TransferDialog({
   }));
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        {trigger ?? (
-          <Button variant="outline" className="gap-2">
-            <ArrowLeftRight className="size-4" />
-            Transfer Funds
-          </Button>
-        )}
-      </DialogTrigger>
-
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Transfer Funds</DialogTitle>
-          <DialogDescription>
-            Move funds between spending categories in this designation.
-          </DialogDescription>
-        </DialogHeader>
-
-        <FormProvider {...form}>
-          <form
-            onSubmit={form.handleSubmit(handleSubmit)}
-            className="space-y-6"
-          >
-            <FormField
-              control={form.control}
-              name="yearId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Year</FormLabel>
-                  <FormControl>
-                    <Combobox
-                      data={[{ items: yearItems }]}
-                      value={field.value || ''}
-                      onChange={(value) => {
-                        field.onChange(value);
-                        handleYearChange(value);
-                      }}
-                      name="year"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {isNonActiveYear && (
-              <div className="flex items-start gap-2 rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-800 dark:border-yellow-800 dark:bg-yellow-950 dark:text-yellow-200">
-                <TriangleAlert className="mt-0.5 size-4 shrink-0" />
-                <p>
-                  You are transferring funds in a non-active year. Please
-                  confirm this is intentional.
-                </p>
-              </div>
-            )}
-
-            <FormField
-              control={form.control}
-              name="fromCategoryId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>From Category</FormLabel>
-                  <FormControl>
-                    <Combobox
-                      data={[{ items: fromCategoryItems }]}
-                      value={field.value || ''}
-                      onChange={(value) => {
-                        field.onChange(value);
-                        setFromCategoryId(value);
-                        setToCategoryId('');
-                        form.setValue('toCategoryId', '');
-                      }}
-                      name="from category"
-                      disabled={!selectedYearId}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="toCategoryId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>To Category</FormLabel>
-                  <FormControl>
-                    <Combobox
-                      data={[{ items: toCategoryItems }]}
-                      value={field.value || ''}
-                      onChange={(value) => {
-                        field.onChange(value);
-                        setToCategoryId(value);
-                      }}
-                      name="to category"
-                      disabled={!fromCategoryId}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormInput<FormData>
-              name="amount"
-              label="Amount"
-              placeholder="$0.00"
-              currency
-            />
-
-            <FormField
-              control={form.control}
-              name="notes"
-              render={({ field }) => (
-                <FormItem>
-                  <div className="flex gap-2">
-                    <FormLabel>Notes</FormLabel>
-                    <span className="text-muted-foreground text-xs">
-                      Optional
-                    </span>
-                  </div>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Add any notes about this transfer..."
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {fromCategory && toCategory && transferAmount > 0 && (
-              <div className="bg-muted rounded-lg p-3 text-sm">
-                <p className="text-muted-foreground mb-1 font-medium">
-                  After transfer:
-                </p>
-                <p>
-                  <span className="font-medium">{fromCategory.name}:</span> $
-                  {formatNumber(fromCategory.available - transferAmount)}{' '}
-                  remaining
-                </p>
-                <p>
-                  <span className="font-medium">{toCategory.name}:</span> $
-                  {formatNumber(toCategory.available + transferAmount)}{' '}
-                  remaining
-                </p>
-              </div>
-            )}
-
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting && <Loader2 className="animate-spin" />}
+    <>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
+        <DialogTrigger asChild>
+          {trigger ?? (
+            <Button variant="outline" className="gap-2">
+              <ArrowLeftRight className="size-4" />
               Transfer Funds
             </Button>
-          </form>
-        </FormProvider>
-      </DialogContent>
-    </Dialog>
+          )}
+        </DialogTrigger>
+
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Transfer Funds</DialogTitle>
+            <DialogDescription>
+              Move funds between spending categories in this designation.
+            </DialogDescription>
+          </DialogHeader>
+
+          <FormProvider {...form}>
+            <form
+              onSubmit={form.handleSubmit(handleSubmit)}
+              className="space-y-6"
+            >
+              <FormField
+                control={form.control}
+                name="yearId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Year</FormLabel>
+                    <FormControl>
+                      <Combobox
+                        data={[{ items: yearItems }]}
+                        value={field.value || ''}
+                        onChange={(value) => {
+                          field.onChange(value);
+                          handleYearChange(value);
+                        }}
+                        name="year"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {isNonActiveYear && (
+                <div className="flex items-start gap-2 rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-800 dark:border-yellow-800 dark:bg-yellow-950 dark:text-yellow-200">
+                  <TriangleAlert className="mt-0.5 size-4 shrink-0" />
+                  <p>
+                    You are transferring funds in a non-active year. Please
+                    confirm this is intentional.
+                  </p>
+                </div>
+              )}
+
+              <FormField
+                control={form.control}
+                name="fromCategoryId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>From Category</FormLabel>
+                    <FormControl>
+                      <Combobox
+                        data={[{ items: fromCategoryItems }]}
+                        value={field.value || ''}
+                        onChange={(value) => {
+                          field.onChange(value);
+                          setFromCategoryId(value);
+                          setToCategoryId('');
+                          form.setValue('toCategoryId', '');
+                        }}
+                        name="from category"
+                        disabled={!selectedYearId}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="toCategoryId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>To Category</FormLabel>
+                    <FormControl>
+                      <Combobox
+                        data={[{ items: toCategoryItems }]}
+                        value={field.value || ''}
+                        onChange={(value) => {
+                          field.onChange(value);
+                          setToCategoryId(value);
+                        }}
+                        name="to category"
+                        disabled={!fromCategoryId}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormInput<FormData>
+                name="amount"
+                label="Amount"
+                placeholder="$0.00"
+                currency
+              />
+
+              <FormField
+                control={form.control}
+                name="notes"
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="flex gap-2">
+                      <FormLabel>Notes</FormLabel>
+                      <span className="text-muted-foreground text-xs">
+                        Optional
+                      </span>
+                    </div>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Add any notes about this transfer..."
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {fromCategory && toCategory && transferAmount > 0 && (
+                <div className="bg-muted rounded-lg p-3 text-sm">
+                  <p className="text-muted-foreground mb-1 font-medium">
+                    After transfer:
+                  </p>
+                  <p>
+                    <span className="font-medium">{fromCategory.name}:</span> $
+                    {formatNumber(fromCategory.available - transferAmount)}{' '}
+                    remaining
+                  </p>
+                  <p>
+                    <span className="font-medium">{toCategory.name}:</span> $
+                    {formatNumber(toCategory.available + transferAmount)}{' '}
+                    remaining
+                  </p>
+                </div>
+              )}
+
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting && <Loader2 className="animate-spin" />}
+                Transfer Funds
+              </Button>
+            </form>
+          </FormProvider>
+        </DialogContent>
+      </Dialog>
+
+      {fromCategory && pendingData && (
+        <TransferWarningDialog
+          open={warningOpen}
+          onOpenChange={(value) => {
+            setWarningOpen(value);
+            if (!value) setPendingData(null);
+          }}
+          categoryName={fromCategory.name}
+          availableAmount={fromCategory.available}
+          transferAmount={pendingData.amount}
+          onConfirm={handleWarningConfirm}
+        />
+      )}
+    </>
   );
 }
