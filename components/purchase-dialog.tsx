@@ -7,6 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Calendar,
   Check,
+  ChevronDown,
   CircleDollarSign,
   Clock,
   DollarSign,
@@ -151,6 +152,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
   );
   const [pendingYearId, setPendingYearId] = useState<string | null>(null);
   const [yearWarningOpen, setYearWarningOpen] = useState(false);
+  const [showYearPicker, setShowYearPicker] = useState(false);
 
   const receiptUrls = purchase?.receipts.map((r) => getFileUrl(r)) || [];
 
@@ -302,11 +304,13 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
       form.reset();
       setFilesUploaded([]);
       setReceiptsToDisplay([]);
+      setShowYearPicker(false);
       return;
     }
 
     setIsEditing(false);
     setConfirmDelete(false);
+    setShowYearPicker(false);
     // Reset form to original values
     form.reset({
       userId: purchase!.userId,
@@ -339,6 +343,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
       form.reset();
       setReceiptsToDisplay(purchase?.receipts || []);
       setFilesUploaded([]);
+      setShowYearPicker(false);
     }
   }
 
@@ -525,34 +530,6 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                   />
                   <FormField
                     control={form.control}
-                    name="yearId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Fiscal Year</FormLabel>
-                        <FormControl>
-                          <Combobox
-                            data={[
-                              {
-                                items: years.map((year) => ({
-                                  value: year.id,
-                                  label:
-                                    year.id === activeYearId
-                                      ? `${year.name} (Active)`
-                                      : year.name,
-                                })),
-                              },
-                            ]}
-                            value={field.value || ''}
-                            onChange={handleYearChange}
-                            name="year"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
                     name="purchasedAt"
                     render={({ field }) => (
                       <FormItem>
@@ -576,6 +553,67 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                     currency
                   />
                 </div>
+                <FormField
+                  control={form.control}
+                  name="yearId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="flex items-center gap-2">
+                        <Calendar className="text-muted-foreground size-3.5" />
+                        <span className="text-muted-foreground text-xs">
+                          Fiscal Year:
+                        </span>
+                        <span className="text-xs font-medium">
+                          {years.find((y) => y.id === field.value)?.name ??
+                            'Not selected'}
+                          {field.value === activeYearId && (
+                            <span className="text-muted-foreground ml-1">
+                              (Active)
+                            </span>
+                          )}
+                        </span>
+                        {years.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => setShowYearPicker((v) => !v)}
+                            className="text-muted-foreground hover:text-foreground flex items-center gap-0.5 text-xs underline-offset-2 hover:underline"
+                          >
+                            change
+                            <ChevronDown
+                              className={`size-3 transition-transform ${showYearPicker ? 'rotate-180' : ''}`}
+                            />
+                          </button>
+                        )}
+                        <FormMessage className="text-xs" />
+                      </div>
+                      {showYearPicker && (
+                        <FormControl>
+                          <div className="mt-1 w-48">
+                            <Combobox
+                              data={[
+                                {
+                                  items: years.map((year) => ({
+                                    value: year.id,
+                                    label:
+                                      year.id === activeYearId
+                                        ? `${year.name} (Active)`
+                                        : year.name,
+                                  })),
+                                },
+                              ]}
+                              value={field.value || ''}
+                              onChange={(val) => {
+                                handleYearChange(val);
+                                setShowYearPicker(false);
+                              }}
+                              name="year"
+                            />
+                          </div>
+                        </FormControl>
+                      )}
+                    </FormItem>
+                  )}
+                />
                 <FormField
                   control={form.control}
                   name="notes"
