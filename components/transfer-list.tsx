@@ -62,9 +62,6 @@ export function TransferList({
               >
                 {isOutgoing ? '-' : '+'}${formatNumber(transfer.amount)}
               </span>
-              <span className="text-muted-foreground text-xs">
-                {transfer.year.name}
-              </span>
             </div>
           </div>
         );
