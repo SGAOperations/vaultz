@@ -118,6 +118,7 @@ export function PurchaseList({
   miscAllocations: Allocation[];
   processTemplates?: ProcessTemplateWithStepCount[];
 }) {
+  'use no memo';
   const { selectedYear } = useYear();
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -257,6 +258,7 @@ export function PurchaseList({
     [],
   );
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data: filteredPurchases,
     columns,
