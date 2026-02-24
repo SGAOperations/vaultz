@@ -24,13 +24,22 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
 
-const schema = z.object({ budgetResetBehavior: z.enum(['RESET', 'ROLLOVER']) });
+const schema = z.object({
+  name: z
+    .string()
+    .min(2, 'Must be at least 2 characters')
+    .max(50, 'Cannot be longer than 50 characters'),
+  code: z.string().regex(/^\d{4}$/, 'Must be exactly 4 digits'),
+  budgetResetBehavior: z.enum(['RESET', 'ROLLOVER']),
+});
 
 type FormData = z.infer<typeof schema>;
 
@@ -55,10 +64,14 @@ const behaviors: {
 
 export function EditDesignationDialog({
   designationId,
+  name,
+  code,
   budgetResetBehavior,
   trigger,
 }: {
   designationId: string;
+  name: string;
+  code: string;
   budgetResetBehavior: BudgetResetBehavior;
   trigger: React.ReactNode;
 }) {
@@ -66,7 +79,7 @@ export function EditDesignationDialog({
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { budgetResetBehavior },
+    defaultValues: { name, code, budgetResetBehavior },
   });
   const isSubmitting = form.formState.isSubmitting;
 
@@ -74,6 +87,8 @@ export function EditDesignationDialog({
     await handleError(
       updateDesignation({
         id: designationId,
+        name: data.name,
+        code: data.code,
         budgetResetBehavior: data.budgetResetBehavior as BudgetResetBehavior,
       }),
       {
@@ -91,7 +106,7 @@ export function EditDesignationDialog({
 
   function handleOpenChange(newOpen: boolean) {
     setOpen(newOpen);
-    if (!newOpen) form.reset({ budgetResetBehavior });
+    if (!newOpen) form.reset({ name, code, budgetResetBehavior });
   }
 
   return (
@@ -102,12 +117,58 @@ export function EditDesignationDialog({
         <DialogHeader>
           <DialogTitle>Edit Designation</DialogTitle>
           <DialogDescription>
-            Configure how unused category budgets are handled at year end.
+            Update the designation details and budget reset behavior.
           </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Budget Designation" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="code"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Code</FormLabel>
+                  <FormControl>
+                    <div className="flex items-center">
+                      <span className="border-input bg-muted text-muted-foreground flex h-9 items-center rounded-l-md border border-r-0 px-3 text-sm">
+                        DN
+                      </span>
+                      <Input
+                        placeholder="XXXX"
+                        className="rounded-l-none"
+                        maxLength={4}
+                        {...field}
+                        onChange={(e) => {
+                          const v = e.target.value.replace(/\D/g, '');
+                          field.onChange(v);
+                        }}
+                      />
+                    </div>
+                  </FormControl>
+                  <FormDescription>
+                    The designation number to be associated with this
+                    designation.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <FormField
               control={form.control}
               name="budgetResetBehavior"

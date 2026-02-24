@@ -26,6 +26,8 @@ export function DesignationCard({ designation }: { designation: Designation }) {
           </div>
           <EditDesignationDialog
             designationId={id}
+            name={name}
+            code={code}
             budgetResetBehavior={budgetResetBehavior}
             trigger={
               <Button variant="outline" size="sm">

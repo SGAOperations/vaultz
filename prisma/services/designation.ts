@@ -112,11 +112,15 @@ export async function getDesignation({
 export async function createDesignation({
   code,
   name,
+  budgetResetBehavior,
 }: {
   code: string;
   name: string;
+  budgetResetBehavior: BudgetResetBehavior;
 }): Promise<ResponseType<Designation>> {
-  const designation = await prisma.designation.create({ data: { code, name } });
+  const designation = await prisma.designation.create({
+    data: { code, name, budgetResetBehavior },
+  });
 
   revalidatePath('/');
   revalidatePath('/designation');
@@ -126,14 +130,18 @@ export async function createDesignation({
 
 export async function updateDesignation({
   id,
+  name,
+  code,
   budgetResetBehavior,
 }: {
   id: string;
+  name: string;
+  code: string;
   budgetResetBehavior: BudgetResetBehavior;
 }): Promise<ResponseType<Designation>> {
   const designation = await prisma.designation.update({
     where: { id },
-    data: { budgetResetBehavior },
+    data: { name, code, budgetResetBehavior },
   });
 
   revalidatePath('/designation');
