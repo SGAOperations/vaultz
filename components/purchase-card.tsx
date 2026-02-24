@@ -21,8 +21,6 @@ import {
 } from '@/lib/types';
 import { formatCurrency } from '@/lib/utils';
 
-import { useYear } from '@/contexts/YearContext';
-
 import { DateTime } from '@/components/date-time';
 import { Card } from '@/components/ui/card';
 import {
@@ -49,8 +47,6 @@ export function PurchaseCard({
   miscAllocations: Allocation[];
   stopPropagation?: boolean;
 }) {
-  const { years, activeYearId } = useYear();
-  const yearName = years.find((y) => y.id === purchase.yearId)?.name;
   return (
     <PurchaseDialog
       trigger={
@@ -69,14 +65,14 @@ export function PurchaseCard({
               </span>
             </div>
 
-            <div className="col-span-2 flex items-center gap-1.5 overflow-hidden">
+            <div className="col-span-3 flex items-center gap-1.5 overflow-hidden">
               <UserIcon className="text-muted-foreground size-4 shrink-0" />
               <span className="text-muted-foreground truncate text-sm">
                 {purchase.user.first} {purchase.user.last}
               </span>
             </div>
 
-            <div className="col-span-2 flex items-center gap-1.5 overflow-hidden">
+            <div className="col-span-3 flex items-center gap-1.5 overflow-hidden">
               <FileText className="text-muted-foreground size-4 shrink-0" />
               <span className="text-muted-foreground truncate text-sm">
                 {purchase.description || 'No description'}
@@ -87,12 +83,6 @@ export function PurchaseCard({
               <Calendar className="text-muted-foreground size-4 shrink-0" />
               <span className="text-muted-foreground text-sm">
                 <DateTime date={purchase.purchasedAt} dateOnly />
-              </span>
-            </div>
-
-            <div className="col-span-2 flex items-center justify-end gap-1.5 overflow-hidden">
-              <span className="text-muted-foreground truncate text-sm">
-                {yearName ?? '—'}
               </span>
             </div>
 
