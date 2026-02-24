@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { FormProvider, useForm } from 'react-hook-form';
+import { FormProvider, useForm, useWatch } from 'react-hook-form';
 
 import { useYear } from '@/contexts/YearContext';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -197,6 +197,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
     },
   });
   const isSubmitting = form.formState.isSubmitting;
+  const watchedYearId = useWatch({ control: form.control, name: 'yearId' });
 
   function handleYearChange(yearId: string) {
     if (!yearId || yearId === activeYearId) {
@@ -766,8 +767,8 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                     >
                       <span className="flex items-center gap-2">
                         Advanced
-                        {form.watch('yearId') !== activeYearId &&
-                          form.watch('yearId') && (
+                        {watchedYearId !== activeYearId &&
+                          watchedYearId && (
                             <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-normal text-amber-600 dark:text-amber-400">
                               Non-active year selected
                             </span>
