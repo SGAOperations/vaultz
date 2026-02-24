@@ -3,12 +3,12 @@ import { notFound } from 'next/navigation';
 
 import { getAllocationById } from '@/prisma/services/allocation';
 import { getAllCategories } from '@/prisma/services/category';
+import { getAllProcessTemplates } from '@/prisma/services/process-templates';
 import { getUsers } from '@/prisma/services/user';
 
-import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/page-header';
-import { PurchaseCard } from '@/components/purchase-card';
 import { CreatePurchaseDialog } from '@/components/purchase-dialog';
+import { PurchaseList } from '@/components/purchase-list';
 import { SectionHeader } from '@/components/section-header';
 import { StatCards } from '@/components/stat-card';
 
@@ -26,6 +26,7 @@ export default async function Allocation({
 
   const categories = await getAllCategories();
   const users = await getUsers();
+  const processTemplates = await getAllProcessTemplates(true);
 
   const spent = allocation.purchases
     .filter((purchase) => !purchase.excludeFromTotal)
@@ -40,6 +41,7 @@ export default async function Allocation({
             users={users}
             categories={categories}
             miscAllocations={[allocation]}
+            processTemplates={processTemplates}
           />
         }
       />
@@ -48,25 +50,14 @@ export default async function Allocation({
 
       <SectionHeader title="Purchases" />
 
-      {allocation.purchases.length === 0 ? (
-        <EmptyState
-          message="No purchases yet"
-          description="Record purchases to track spending in this allocation"
-        />
-      ) : (
-        <div className="flex flex-col gap-2">
-          {allocation.purchases.map((purchase) => (
-            <PurchaseCard
-              key={purchase.id}
-              purchase={purchase}
-              users={users}
-              categories={categories}
-              allocationGroups={[]}
-              miscAllocations={[allocation]}
-            />
-          ))}
-        </div>
-      )}
+      <PurchaseList
+        purchases={allocation.purchases}
+        users={users}
+        categories={categories}
+        allocationGroups={[]}
+        miscAllocations={[allocation]}
+        processTemplates={processTemplates}
+      />
     </div>
   );
 }
