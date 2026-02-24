@@ -71,7 +71,8 @@ export function TransferDialog({
   const isSubmitting = form.formState.isSubmitting;
   const [fromCategoryId, setFromCategoryId] = useState('');
   const [toCategoryId, setToCategoryId] = useState('');
-  const [transferAmount, setTransferAmount] = useState(0);
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const transferAmount = form.watch('amount') ?? 0;
 
   const fromCategory = categories.find((c) => c.id === fromCategoryId);
   const toCategory = categories.find((c) => c.id === toCategoryId);
@@ -89,7 +90,6 @@ export function TransferDialog({
       form.reset();
       setFromCategoryId('');
       setToCategoryId('');
-      setTransferAmount(0);
       setOpen(false);
     }
   }
@@ -184,12 +184,6 @@ export function TransferDialog({
               label="Amount"
               placeholder="$0.00"
               currency
-              onChange={(e) => {
-                const val = parseFloat(
-                  (e.target as HTMLInputElement).value.replace(/^\$/, ''),
-                );
-                setTransferAmount(isNaN(val) ? 0 : val);
-              }}
             />
 
             <FormField
