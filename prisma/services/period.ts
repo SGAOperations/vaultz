@@ -43,7 +43,7 @@ export async function createYear({
 
   const year = await prisma.year.create({ data: { name, startDate, endDate } });
 
-  revalidatePath('/admin/periods');
+  revalidatePath('/periods');
 
   return year;
 }
@@ -75,7 +75,7 @@ export async function updateYear({
     data: { name, startDate, endDate },
   });
 
-  revalidatePath('/admin/periods');
+  revalidatePath('/periods');
 
   return year;
 }
@@ -100,7 +100,7 @@ export async function deleteYear({
     data: { deletedAt: new Date() },
   });
 
-  revalidatePath('/admin/periods');
+  revalidatePath('/periods');
 
   return year;
 }
@@ -130,7 +130,7 @@ export async function createPeriod({
     data: { name, yearId, startDate, endDate },
   });
 
-  revalidatePath('/admin/periods');
+  revalidatePath('/periods');
 
   return period;
 }
@@ -164,7 +164,7 @@ export async function updatePeriod({
     data: { name, yearId, startDate, endDate },
   });
 
-  revalidatePath('/admin/periods');
+  revalidatePath('/periods');
 
   return period;
 }
@@ -186,7 +186,7 @@ export async function deletePeriod({
     data: { deletedAt: new Date() },
   });
 
-  revalidatePath('/admin/periods');
+  revalidatePath('/periods');
 
   return period;
 }

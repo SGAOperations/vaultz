@@ -23,7 +23,7 @@ const navItems = [
   { href: '/users', label: 'Users', icon: Users },
   { href: '/allocation-groups', label: 'Allocations', icon: FolderKanban },
   { href: '/processes', label: 'Processes', icon: Workflow },
-  { href: '/admin/periods', label: 'Periods', icon: CalendarDays },
+  { href: '/periods', label: 'Periods', icon: CalendarDays },
 ];
 
 export function Header() {
