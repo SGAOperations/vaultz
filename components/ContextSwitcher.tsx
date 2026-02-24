@@ -8,6 +8,7 @@ import { useYear } from '@/contexts/YearContext';
 import { ChevronsUpDown } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { Combobox } from '@/components/ui/combobox';
 import {
   Dialog,
   DialogContent,
@@ -57,62 +58,70 @@ export function ContextSwitcher() {
             {designations.length > 0 && (
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-semibold">Designation</label>
-                <select
-                  className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+                <Combobox
+                  name="designation"
                   value={activeDesignation?.id ?? ''}
-                  onChange={(e) => {
-                    const d = designations.find((x) => x.id === e.target.value);
+                  data={[
+                    {
+                      items: designations.map((d) => ({
+                        label: `${d.name} (DN${d.code})`,
+                        value: d.id,
+                      })),
+                    },
+                  ]}
+                  onChange={(value) => {
+                    const d = designations.find((x) => x.id === value);
                     if (d) setDesignation(d);
                   }}
-                >
-                  {designations.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.name} (DN{d.code})
-                    </option>
-                  ))}
-                </select>
+                />
               </div>
             )}
 
             {periods.length > 0 && (
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-semibold">Period</label>
-                <select
-                  className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+                <Combobox
+                  name="period"
                   value={selectedPeriod?.id ?? ''}
-                  onChange={(e) => {
-                    const p = periods.find((x) => x.id === e.target.value);
+                  data={[
+                    {
+                      items: periods.map((p) => ({
+                        label:
+                          p.id === activePeriodId
+                            ? `${p.name} (Active)`
+                            : p.name,
+                        value: p.id,
+                      })),
+                    },
+                  ]}
+                  onChange={(value) => {
+                    const p = periods.find((x) => x.id === value);
                     if (p) setSelectedPeriod(p);
                   }}
-                >
-                  {periods.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                      {p.id === activePeriodId ? ' (Active)' : ''}
-                    </option>
-                  ))}
-                </select>
+                />
               </div>
             )}
 
             {years.length > 0 && (
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-semibold">Fiscal Year</label>
-                <select
-                  className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+                <Combobox
+                  name="fiscal year"
                   value={selectedYear?.id ?? ''}
-                  onChange={(e) => {
-                    const y = years.find((x) => x.id === e.target.value);
+                  data={[
+                    {
+                      items: years.map((y) => ({
+                        label:
+                          y.id === activeYearId ? `${y.name} (Active)` : y.name,
+                        value: y.id,
+                      })),
+                    },
+                  ]}
+                  onChange={(value) => {
+                    const y = years.find((x) => x.id === value);
                     if (y) setSelectedYear(y);
                   }}
-                >
-                  {years.map((y) => (
-                    <option key={y.id} value={y.id}>
-                      {y.name}
-                      {y.id === activeYearId ? ' (Active)' : ''}
-                    </option>
-                  ))}
-                </select>
+                />
               </div>
             )}
           </div>
