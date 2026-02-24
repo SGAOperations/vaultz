@@ -14,11 +14,18 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import {
+  ArrowDown,
+  ArrowUp,
   ArrowUpDown,
+  Calendar,
   Check,
   CircleDollarSign,
+  DollarSign,
   FileCheck,
+  FileText,
   StickyNote,
+  User as UserIcon,
+  X,
 } from 'lucide-react';
 
 import { User } from '@/prisma/client';
@@ -30,7 +37,7 @@ import {
   ProcessTemplateWithStepCount,
   PurchaseWithUser,
 } from '@/lib/types';
-import { formatCurrency, parseDateOnly } from '@/lib/utils';
+import { cn, formatCurrency, parseDateOnly } from '@/lib/utils';
 
 import { DateTime } from '@/components/date-time';
 import { Button } from '@/components/ui/button';
@@ -53,6 +60,49 @@ import {
 import { EmptyState } from './empty-state';
 import { PurchaseDialog } from './purchase-dialog';
 
+type StatusFilter = 'excludeFromTotal' | 'expenseReportCreated' | 'reimbursed';
+
+const STATUS_FILTERS: {
+  key: StatusFilter;
+  label: string;
+  Icon: React.ComponentType<{ className?: string }>;
+}[] = [
+  { key: 'excludeFromTotal', label: 'Excluded', Icon: CircleDollarSign },
+  { key: 'expenseReportCreated', label: 'Report Filed', Icon: FileCheck },
+  { key: 'reimbursed', label: 'Reimbursed', Icon: Check },
+];
+
+function SortHeader({
+  column,
+  label,
+}: {
+  column: {
+    getIsSorted: () => false | 'asc' | 'desc';
+    toggleSorting: (desc: boolean) => void;
+  };
+  label: string;
+}) {
+  const sorted = column.getIsSorted();
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      aria-label={`Sort by ${label}, currently ${sorted || 'unsorted'}`}
+      className={cn('-ml-3', sorted && 'text-foreground')}
+      onClick={() => column.toggleSorting(sorted === 'asc')}
+    >
+      {label}
+      {sorted === 'asc' ? (
+        <ArrowUp className="ml-1 size-3.5" />
+      ) : sorted === 'desc' ? (
+        <ArrowDown className="ml-1 size-3.5" />
+      ) : (
+        <ArrowUpDown className="ml-1 size-3.5 opacity-40" />
+      )}
+    </Button>
+  );
+}
+
 export function PurchaseList({
   purchases,
   users,
@@ -72,8 +122,11 @@ export function PurchaseList({
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState('');
+  const [statusFilters, setStatusFilters] = useState<Set<StatusFilter>>(
+    new Set(),
+  );
 
-  const filteredPurchases = useMemo(
+  const yearFiltered = useMemo(
     () =>
       selectedYear
         ? purchases.filter((p) => p.yearId === selectedYear.id)
@@ -81,83 +134,73 @@ export function PurchaseList({
     [purchases, selectedYear],
   );
 
+  const filteredPurchases = useMemo(() => {
+    if (statusFilters.size === 0) return yearFiltered;
+    return yearFiltered.filter((p) => [...statusFilters].some((key) => p[key]));
+  }, [yearFiltered, statusFilters]);
+
+  const toggleStatusFilter = (key: StatusFilter) => {
+    setStatusFilters((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
   const columns = useMemo<ColumnDef<PurchaseWithUser>[]>(
     () => [
       {
         accessorKey: 'amount',
-        header: ({ column }) => (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="-ml-3"
-            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-          >
-            Amount
-            <ArrowUpDown className="ml-1 size-3.5" />
-          </Button>
-        ),
+        header: ({ column }) => <SortHeader column={column} label="Amount" />,
         cell: ({ row }) => (
-          <span className="font-semibold">
-            {formatCurrency(row.original.amount)}
-          </span>
+          <div className="flex items-center gap-2.5">
+            <div className="bg-primary/10 flex size-8 shrink-0 items-center justify-center rounded-lg">
+              <DollarSign className="text-primary size-4" />
+            </div>
+            <span className="font-semibold">
+              {formatCurrency(row.original.amount)}
+            </span>
+          </div>
         ),
       },
       {
         id: 'user',
         accessorFn: (row) => `${row.user.first} ${row.user.last}`,
-        header: ({ column }) => (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="-ml-3"
-            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-          >
-            User
-            <ArrowUpDown className="ml-1 size-3.5" />
-          </Button>
-        ),
+        header: ({ column }) => <SortHeader column={column} label="User" />,
         cell: ({ getValue }) => (
-          <span className="text-muted-foreground text-sm">
-            {getValue<string>()}
-          </span>
+          <div className="flex items-center gap-1.5">
+            <UserIcon className="text-muted-foreground size-4 shrink-0" />
+            <span className="text-muted-foreground text-sm">
+              {getValue<string>()}
+            </span>
+          </div>
         ),
       },
       {
         accessorKey: 'description',
         header: ({ column }) => (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="-ml-3"
-            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-          >
-            Description
-            <ArrowUpDown className="ml-1 size-3.5" />
-          </Button>
+          <SortHeader column={column} label="Description" />
         ),
         cell: ({ row }) => (
-          <span className="text-muted-foreground max-w-xs truncate text-sm">
-            {row.original.description || 'No description'}
-          </span>
+          <div className="flex min-w-0 items-center gap-1.5">
+            <FileText className="text-muted-foreground size-4 shrink-0" />
+            <span className="text-muted-foreground truncate text-sm">
+              {row.original.description || 'No description'}
+            </span>
+          </div>
         ),
       },
       {
         accessorKey: 'purchasedAt',
-        header: ({ column }) => (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="-ml-3"
-            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-          >
-            Date
-            <ArrowUpDown className="ml-1 size-3.5" />
-          </Button>
-        ),
+        header: ({ column }) => <SortHeader column={column} label="Date" />,
         cell: ({ row }) => (
-          <span className="text-muted-foreground text-sm">
-            <DateTime date={row.original.purchasedAt} dateOnly />
-          </span>
+          <div className="flex items-center gap-1.5">
+            <Calendar className="text-muted-foreground size-4 shrink-0" />
+            <span className="text-muted-foreground text-sm">
+              <DateTime date={row.original.purchasedAt} dateOnly />
+            </span>
+          </div>
         ),
         sortingFn: (a, b) =>
           parseDateOnly(a.original.purchasedAt).getTime() -
@@ -169,8 +212,11 @@ export function PurchaseList({
         cell: ({ row }) => {
           const { excludeFromTotal, expenseReportCreated, reimbursed, notes } =
             row.original;
+          const hasStatus =
+            excludeFromTotal || expenseReportCreated || reimbursed || notes;
+          if (!hasStatus) return null;
           return (
-            <div className="flex items-center gap-1.5">
+            <div className="flex flex-wrap items-center gap-1.5">
               {excludeFromTotal && (
                 <div className="bg-muted flex items-center gap-1 rounded-full px-2 py-0.5">
                   <CircleDollarSign className="size-3" />
@@ -223,7 +269,7 @@ export function PurchaseList({
     getFilteredRowModel: getFilteredRowModel(),
   });
 
-  if (filteredPurchases.length === 0)
+  if (yearFiltered.length === 0)
     return (
       <EmptyState
         message="No purchases yet"
@@ -233,14 +279,50 @@ export function PurchaseList({
 
   return (
     <div className="flex flex-col gap-3">
-      <Input
-        placeholder="Filter purchases..."
-        value={globalFilter}
-        onChange={(e) => setGlobalFilter(e.target.value)}
-        className="max-w-sm"
-      />
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative max-w-sm flex-1">
+          <Input
+            placeholder="Filter purchases..."
+            value={globalFilter}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            className={cn(globalFilter && 'pr-8')}
+          />
+          {globalFilter && (
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Clear filter"
+              className="absolute top-1/2 right-1 size-6 -translate-y-1/2"
+              onClick={() => setGlobalFilter('')}
+            >
+              <X className="size-3.5" />
+            </Button>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {STATUS_FILTERS.map(({ key, label, Icon }) => (
+            <Button
+              key={key}
+              variant={statusFilters.has(key) ? 'default' : 'outline'}
+              size="sm"
+              className="gap-1.5 rounded-full"
+              onClick={() => toggleStatusFilter(key)}
+            >
+              <Icon className="size-3.5" />
+              {label}
+            </Button>
+          ))}
+        </div>
+      </div>
       <div className="rounded-lg border">
-        <Table>
+        <Table className="table-fixed">
+          <colgroup>
+            <col className="w-44" />
+            <col className="w-36" />
+            <col className="w-auto" />
+            <col className="w-32" />
+            <col className="w-52" />
+          </colgroup>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
