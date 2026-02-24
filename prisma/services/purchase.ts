@@ -49,22 +49,18 @@ export async function createPurchase({
   expenseReportCreated?: boolean;
   reimbursed?: boolean;
   notes?: string;
-  yearId?: string;
+  yearId: string;
   processTemplateId?: string;
 }): Promise<ResponseType<Purchase>> {
-  let resolvedYearId = yearId;
-  if (!resolvedYearId) {
-    const year = await prisma.year.findFirst({
-      where: { deletedAt: null },
-      orderBy: { startDate: 'desc' },
-    });
-    if (!year)
-      return {
-        error:
-          'No active fiscal year found. Please create a year before recording purchases.',
-      } satisfies ErrorType;
-    resolvedYearId = year.id;
-  }
+  const year = await prisma.year.findUnique({
+    where: { id: yearId, deletedAt: null },
+  });
+  if (!year)
+    return {
+      error: 'The selected fiscal year does not exist.',
+    } satisfies ErrorType;
+
+  const resolvedYearId = yearId;
 
   const now = new Date();
 
@@ -136,6 +132,7 @@ export async function updatePurchase({
   expenseReportCreated,
   reimbursed,
   notes,
+  yearId,
 }: {
   id: string;
   userId: string;
@@ -149,7 +146,18 @@ export async function updatePurchase({
   expenseReportCreated?: boolean;
   reimbursed?: boolean;
   notes?: string;
+  yearId?: string;
 }): Promise<ResponseType<Purchase>> {
+  if (yearId) {
+    const year = await prisma.year.findUnique({
+      where: { id: yearId, deletedAt: null },
+    });
+    if (!year)
+      return {
+        error: 'The selected fiscal year does not exist.',
+      } satisfies ErrorType;
+  }
+
   const purchase = await prisma.purchase.update({
     where: { id },
     data: {
@@ -164,6 +172,7 @@ export async function updatePurchase({
       expenseReportCreated: expenseReportCreated ?? false,
       reimbursed: reimbursed ?? false,
       notes: notes ?? null,
+      ...(yearId ? { yearId } : {}),
     },
   });
 

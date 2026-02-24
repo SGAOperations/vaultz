@@ -8,6 +8,7 @@ import { FolderKanban, Home, Menu, Tag, Users, Workflow } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 import { DesignationSwitcher } from '@/components/DesignationSwitcher';
+import { YearSwitcher } from '@/components/YearSwitcher';
 import { ModeToggle } from '@/components/theme-provider';
 import { Button } from '@/components/ui/button';
 import {
@@ -79,6 +80,7 @@ export function Header() {
       </nav>
 
       <div className="flex items-center gap-2">
+        <YearSwitcher />
         <DesignationSwitcher />
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
