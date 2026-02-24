@@ -61,6 +61,7 @@ import {
 } from '@/components/ui/dialog';
 
 import { DateTime } from './date-time';
+import { ProcessProgress } from './process-progress';
 import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
 import { Combobox } from './ui/combobox';
@@ -1108,6 +1109,9 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                     </p>
                   </div>
                 )}
+
+                {/* Process Progress */}
+                <ProcessProgress purchaseId={purchase!.id} />
               </div>
 
               <div className="flex gap-2">
