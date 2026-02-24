@@ -8,15 +8,17 @@ import {
   getCategoryById,
 } from '@/prisma/services/category';
 import { getAllProcessTemplates } from '@/prisma/services/process-templates';
+import { getTransfersByCategory } from '@/prisma/services/transfer';
 import { getUsers } from '@/prisma/services/user';
 
 import { CategoryActionsMenu } from '@/components/category-actions-menu';
 import { PageHeader } from '@/components/page-header';
 import { CreatePurchaseDialog } from '@/components/purchase-dialog';
 import { PurchaseList } from '@/components/purchase-list';
-import { SectionHeader } from '@/components/section-header';
 import { StatCards } from '@/components/stat-card';
 import { TransferDialog } from '@/components/transfer-dialog';
+import { TransferList } from '@/components/transfer-list';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export const metadata: Metadata = { title: 'Spending Category' };
 
@@ -30,14 +32,21 @@ export default async function CategoryPage({
   const category = await getCategoryById({ id: categoryId });
   if (category === null) notFound();
 
-  const users = await getUsers();
-
-  const allocationGroups = await getAllAllocationGroups(category.designationId);
-  const miscAllocations = await getMiscAllocations(category.designationId);
-  const processTemplates = await getAllProcessTemplates(true);
-  const categoriesWithAvailable = await getCategoriesWithAvailableAmount({
-    designationId: category.designationId,
-  });
+  const [
+    users,
+    allocationGroups,
+    miscAllocations,
+    processTemplates,
+    categoriesWithAvailable,
+    transfers,
+  ] = await Promise.all([
+    getUsers(),
+    getAllAllocationGroups(category.designationId),
+    getMiscAllocations(category.designationId),
+    getAllProcessTemplates(true),
+    getCategoriesWithAvailableAmount({ designationId: category.designationId }),
+    getTransfersByCategory(categoryId),
+  ]);
 
   const spent = category.purchases
     .filter((purchase) => !purchase.excludeFromTotal)
@@ -66,16 +75,27 @@ export default async function CategoryPage({
 
       <StatCards total={budget} spent={spent} />
 
-      <SectionHeader title="Purchases" />
+      <Tabs defaultValue="purchases" className="mt-4">
+        <TabsList>
+          <TabsTrigger value="purchases">Purchases</TabsTrigger>
+          <TabsTrigger value="transfers">Transfers</TabsTrigger>
+        </TabsList>
 
-      <PurchaseList
-        purchases={category.purchases}
-        users={users}
-        categories={[category]}
-        allocationGroups={allocationGroups}
-        miscAllocations={miscAllocations}
-        processTemplates={processTemplates}
-      />
+        <TabsContent value="purchases">
+          <PurchaseList
+            purchases={category.purchases}
+            users={users}
+            categories={[category]}
+            allocationGroups={allocationGroups}
+            miscAllocations={miscAllocations}
+            processTemplates={processTemplates}
+          />
+        </TabsContent>
+
+        <TabsContent value="transfers">
+          <TransferList transfers={transfers} categoryId={categoryId} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

@@ -3,13 +3,14 @@
 import { useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 
+import { useYear } from '@/contexts/YearContext';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowLeftRight, Loader2 } from 'lucide-react';
+import { ArrowLeftRight, Loader2, TriangleAlert } from 'lucide-react';
 import { z } from 'zod/v4';
 
 import { createTransfer } from '@/prisma/services/transfer';
 
-import { CategoryWithAvailableAmount } from '@/lib/types';
+import { CategoryWithAvailableAmountAndYears } from '@/lib/types';
 import { formatNumber, handleError, isError } from '@/lib/utils';
 
 import { Button } from '@/components/ui/button';
@@ -34,6 +35,7 @@ import { Textarea } from '@/components/ui/textarea';
 
 const schema = z
   .object({
+    yearId: z.string().min(1, 'Please select a year'),
     fromCategoryId: z.string().min(1, 'Please select a from category'),
     toCategoryId: z.string().min(1, 'Please select a to category'),
     amount: z.coerce
@@ -53,14 +55,16 @@ export function TransferDialog({
   categories,
   trigger,
 }: {
-  categories: CategoryWithAvailableAmount[];
+  categories: CategoryWithAvailableAmountAndYears[];
   trigger?: React.ReactNode;
 }) {
+  const { years, activeYearId, selectedYear } = useYear();
   const [open, setOpen] = useState(false);
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
+      yearId: selectedYear?.id ?? '',
       fromCategoryId: '',
       toCategoryId: '',
       amount: 0,
@@ -73,10 +77,19 @@ export function TransferDialog({
   const [toCategoryId, setToCategoryId] = useState('');
   // eslint-disable-next-line react-hooks/incompatible-library
   const transferAmount = form.watch('amount') ?? 0;
+  const selectedYearId = form.watch('yearId') ?? '';
 
-  const fromCategory = categories.find((c) => c.id === fromCategoryId);
-  const toCategory = categories.find((c) => c.id === toCategoryId);
-  const toCategoryOptions = categories.filter((c) => c.id !== fromCategoryId);
+  const isNonActiveYear = !!selectedYearId && selectedYearId !== activeYearId;
+
+  const categoriesForYear = categories.filter((c) =>
+    c.yearIds.includes(selectedYearId),
+  );
+
+  const fromCategory = categoriesForYear.find((c) => c.id === fromCategoryId);
+  const toCategory = categoriesForYear.find((c) => c.id === toCategoryId);
+  const toCategoryOptions = categoriesForYear.filter(
+    (c) => c.id !== fromCategoryId,
+  );
 
   async function handleSubmit(data: FormData) {
     const result = await handleError(createTransfer(data), {
@@ -87,7 +100,13 @@ export function TransferDialog({
       },
     });
     if (!isError(result)) {
-      form.reset();
+      form.reset({
+        yearId: selectedYear?.id ?? '',
+        fromCategoryId: '',
+        toCategoryId: '',
+        amount: 0,
+        notes: '',
+      });
       setFromCategoryId('');
       setToCategoryId('');
       setOpen(false);
@@ -98,7 +117,31 @@ export function TransferDialog({
     setOpen(value);
   }
 
-  const fromCategoryItems = categories.map((c) => ({
+  function handleYearChange(value: string) {
+    form.setValue('yearId', value);
+    const newCategoriesForYear = categories.filter((c) =>
+      c.yearIds.includes(value),
+    );
+    const newFromValid = newCategoriesForYear.some(
+      (c) => c.id === fromCategoryId,
+    );
+    const newToValid = newCategoriesForYear.some((c) => c.id === toCategoryId);
+    if (!newFromValid) {
+      setFromCategoryId('');
+      form.setValue('fromCategoryId', '');
+    }
+    if (!newToValid) {
+      setToCategoryId('');
+      form.setValue('toCategoryId', '');
+    }
+  }
+
+  const yearItems = years.map((y) => ({
+    value: y.id,
+    label: y.id === activeYearId ? `${y.name} (Active)` : y.name,
+  }));
+
+  const fromCategoryItems = categoriesForYear.map((c) => ({
     value: c.id,
     label: `${c.name} (Available: $${formatNumber(c.available)})`,
   }));
@@ -134,6 +177,38 @@ export function TransferDialog({
           >
             <FormField
               control={form.control}
+              name="yearId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Year</FormLabel>
+                  <FormControl>
+                    <Combobox
+                      data={[{ items: yearItems }]}
+                      value={field.value || ''}
+                      onChange={(value) => {
+                        field.onChange(value);
+                        handleYearChange(value);
+                      }}
+                      name="year"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {isNonActiveYear && (
+              <div className="flex items-start gap-2 rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-800 dark:border-yellow-800 dark:bg-yellow-950 dark:text-yellow-200">
+                <TriangleAlert className="mt-0.5 size-4 shrink-0" />
+                <p>
+                  You are transferring funds in a non-active year. Please
+                  confirm this is intentional.
+                </p>
+              </div>
+            )}
+
+            <FormField
+              control={form.control}
               name="fromCategoryId"
               render={({ field }) => (
                 <FormItem>
@@ -149,6 +224,7 @@ export function TransferDialog({
                         form.setValue('toCategoryId', '');
                       }}
                       name="from category"
+                      disabled={!selectedYearId}
                     />
                   </FormControl>
                   <FormMessage />

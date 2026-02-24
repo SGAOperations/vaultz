@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 import prisma from '@/lib/prisma';
 import {
   Category,
-  CategoryWithAvailableAmount,
+  CategoryWithAvailableAmountAndYears,
   CategoryWithDesignation,
   CategoryWithPurchases,
   CategoryYearRecord,
@@ -161,12 +161,15 @@ export async function getCategoriesWithAvailableAmount({
   designationId,
 }: {
   designationId: string;
-}): Promise<CategoryWithAvailableAmount[]> {
+}): Promise<CategoryWithAvailableAmountAndYears[]> {
   const categories = await prisma.category.findMany({
     where: { designationId, deletedAt: null },
     include: {
       designation: true,
-      categoryYears: { where: { deletedAt: null }, select: { amount: true } },
+      categoryYears: {
+        where: { deletedAt: null },
+        select: { amount: true, yearId: true },
+      },
       purchases: {
         where: { excludeFromTotal: false },
         select: { amount: true },
@@ -196,6 +199,7 @@ export async function getCategoriesWithAvailableAmount({
     return {
       ...category,
       available: budget - spent + transfersIn - transfersOut,
+      yearIds: category.categoryYears.map((cy) => cy.yearId),
     };
   });
 }
