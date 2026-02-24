@@ -3,13 +3,14 @@
 import { useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 
+import { useYear } from '@/contexts/YearContext';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowLeftRight, Loader2, TriangleAlert } from 'lucide-react';
 import { z } from 'zod/v4';
 
 import { createTransfer } from '@/prisma/services/transfer';
 
-import { CategoryWithAvailableAmountAndYears, YearRecord } from '@/lib/types';
+import { CategoryWithAvailableAmountAndYears } from '@/lib/types';
 import { formatNumber, handleError, isError } from '@/lib/utils';
 
 import { Button } from '@/components/ui/button';
@@ -52,21 +53,18 @@ type FormData = z.infer<typeof schema>;
 
 export function TransferDialog({
   categories,
-  years,
-  activeYearId,
   trigger,
 }: {
   categories: CategoryWithAvailableAmountAndYears[];
-  years: YearRecord[];
-  activeYearId: string | null;
   trigger?: React.ReactNode;
 }) {
+  const { years, activeYearId, selectedYear } = useYear();
   const [open, setOpen] = useState(false);
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
-      yearId: activeYearId ?? '',
+      yearId: selectedYear?.id ?? '',
       fromCategoryId: '',
       toCategoryId: '',
       amount: 0,
@@ -103,7 +101,7 @@ export function TransferDialog({
     });
     if (!isError(result)) {
       form.reset({
-        yearId: activeYearId ?? '',
+        yearId: selectedYear?.id ?? '',
         fromCategoryId: '',
         toCategoryId: '',
         amount: 0,
@@ -138,7 +136,10 @@ export function TransferDialog({
     }
   }
 
-  const yearItems = years.map((y) => ({ value: y.id, label: y.name }));
+  const yearItems = years.map((y) => ({
+    value: y.id,
+    label: y.id === activeYearId ? `${y.name} (Active)` : y.name,
+  }));
 
   const fromCategoryItems = categoriesForYear.map((c) => ({
     value: c.id,

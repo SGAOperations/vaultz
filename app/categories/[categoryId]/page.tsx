@@ -10,16 +10,14 @@ import {
 import { getTransfersByCategory } from '@/prisma/services/transfer';
 import { getUsers } from '@/prisma/services/user';
 
-import { getActiveYear, getAllYears } from '@/lib/period-utils';
-
 import { CategoryActionsMenu } from '@/components/category-actions-menu';
 import { PageHeader } from '@/components/page-header';
 import { CreatePurchaseDialog } from '@/components/purchase-dialog';
 import { PurchaseList } from '@/components/purchase-list';
-import { SectionHeader } from '@/components/section-header';
 import { StatCards } from '@/components/stat-card';
 import { TransferDialog } from '@/components/transfer-dialog';
 import { TransferList } from '@/components/transfer-list';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export const metadata: Metadata = { title: 'Spending Category' };
 
@@ -39,16 +37,12 @@ export default async function CategoryPage({
     miscAllocations,
     categoriesWithAvailable,
     transfers,
-    years,
-    activeYear,
   ] = await Promise.all([
     getUsers(),
     getAllAllocationGroups(category.designationId),
     getMiscAllocations(category.designationId),
     getCategoriesWithAvailableAmount({ designationId: category.designationId }),
     getTransfersByCategory(categoryId),
-    getAllYears(),
-    getActiveYear(),
   ]);
 
   const spent = category.purchases
@@ -69,11 +63,7 @@ export default async function CategoryPage({
               allocationGroups={allocationGroups}
               miscAllocations={miscAllocations}
             />
-            <TransferDialog
-              categories={categoriesWithAvailable}
-              years={years}
-              activeYearId={activeYear?.id ?? null}
-            />
+            <TransferDialog categories={categoriesWithAvailable} />
             <CategoryActionsMenu category={category} />
           </div>
         }
@@ -81,30 +71,26 @@ export default async function CategoryPage({
 
       <StatCards total={budget} spent={spent} />
 
-      <SectionHeader title="Purchases" />
-      
-      <PurchaseList
-        purchases={category.purchases}
-        users={users}
-        categories={[category]}
-        allocationGroups={allocationGroups}
-        miscAllocations={miscAllocations}
-      />
+      <Tabs defaultValue="purchases" className="mt-4">
+        <TabsList>
+          <TabsTrigger value="purchases">Purchases</TabsTrigger>
+          <TabsTrigger value="transfers">Transfers</TabsTrigger>
+        </TabsList>
 
-      <SectionHeader title="Transfers" />
+        <TabsContent value="purchases">
+          <PurchaseList
+            purchases={category.purchases}
+            users={users}
+            categories={[category]}
+            allocationGroups={allocationGroups}
+            miscAllocations={miscAllocations}
+          />
+        </TabsContent>
 
-      {transfers.length === 0 ? (
-        <EmptyState
-          message="No transfers yet"
-          description="Transfer funds between categories to see them here"
-        />
-      ) : (
-        <TransferList
-          transfers={transfers}
-          years={years}
-          categoryId={categoryId}
-        />
-      )}
+        <TabsContent value="transfers">
+          <TransferList transfers={transfers} categoryId={categoryId} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
