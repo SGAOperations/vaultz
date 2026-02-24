@@ -2,9 +2,9 @@
 
 import { ReactNode } from 'react';
 
-import { Year } from '@/prisma/client';
-
 import { YearProvider } from '@/contexts/YearContext';
+
+import { Year } from '@/prisma/client';
 
 interface YearProviderWrapperProps {
   years: Year[];

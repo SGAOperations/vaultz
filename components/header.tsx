@@ -8,8 +8,8 @@ import { FolderKanban, Home, Menu, Tag, Users, Workflow } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 import { DesignationSwitcher } from '@/components/DesignationSwitcher';
-import { ModeToggle } from '@/components/theme-provider';
 import { YearSwitcher } from '@/components/YearSwitcher';
+import { ModeToggle } from '@/components/theme-provider';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,

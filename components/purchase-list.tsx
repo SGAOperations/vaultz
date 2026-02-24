@@ -1,5 +1,7 @@
 'use client';
 
+import { useYear } from '@/contexts/YearContext';
+
 import { User } from '@/prisma/client';
 
 import {
@@ -8,8 +10,6 @@ import {
   CategoryWithDesignation,
   PurchaseWithUser,
 } from '@/lib/types';
-
-import { useYear } from '@/contexts/YearContext';
 
 import { EmptyState } from './empty-state';
 import { PurchaseCard } from './purchase-card';

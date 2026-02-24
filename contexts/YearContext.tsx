@@ -19,13 +19,19 @@ interface YearProviderProps {
   children: ReactNode;
 }
 
-export function YearProvider({ years, activeYearId, children }: YearProviderProps) {
+export function YearProvider({
+  years,
+  activeYearId,
+  children,
+}: YearProviderProps) {
   const [selectedYear, setSelectedYear] = useState<Year | null>(
     () => years.find((y) => y.id === activeYearId) ?? years[0] ?? null,
   );
 
   return (
-    <YearContext.Provider value={{ years, activeYearId, selectedYear, setSelectedYear }}>
+    <YearContext.Provider
+      value={{ years, activeYearId, selectedYear, setSelectedYear }}
+    >
       {children}
     </YearContext.Provider>
   );

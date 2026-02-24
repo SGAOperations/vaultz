@@ -10,7 +10,7 @@ import { receiptFileRouter } from '@/app/api/uploadthing/core';
 
 import { getDesignations } from '@/prisma/services/designation';
 
-import { getAllYears, getActiveYear } from '@/lib/period-utils';
+import { getActiveYear, getAllYears } from '@/lib/period-utils';
 import { cn } from '@/lib/utils';
 
 import { Header } from '@/components/header';
