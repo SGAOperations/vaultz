@@ -36,6 +36,7 @@ export async function createPurchase({
   reimbursed,
   notes,
   yearId,
+  processTemplateId,
 }: {
   userId: string;
   categoryId: string;
@@ -49,6 +50,7 @@ export async function createPurchase({
   reimbursed?: boolean;
   notes?: string;
   yearId?: string;
+  processTemplateId?: string;
 }): Promise<ResponseType<Purchase>> {
   let resolvedYearId = yearId;
   if (!resolvedYearId) {
@@ -64,22 +66,56 @@ export async function createPurchase({
     resolvedYearId = year.id;
   }
 
-  const purchase = await prisma.purchase.create({
-    data: {
-      userId,
-      categoryId,
-      description,
-      amount: new Decimal(amount),
-      allocationId: allocationId || null,
-      purchasedAt: purchasedAt,
-      receipts,
-      excludeFromTotal: excludeFromTotal ?? false,
-      expenseReportCreated: expenseReportCreated ?? false,
-      reimbursed: reimbursed ?? false,
-      notes: notes ?? null,
-      yearId: resolvedYearId,
-    },
-  });
+  const now = new Date();
+
+  let purchase;
+  if (processTemplateId) {
+    purchase = await prisma.$transaction(async (tx) => {
+      const p = await tx.purchase.create({
+        data: {
+          userId,
+          categoryId,
+          description,
+          amount: new Decimal(amount),
+          allocationId: allocationId || null,
+          purchasedAt: purchasedAt,
+          receipts,
+          excludeFromTotal: excludeFromTotal ?? false,
+          expenseReportCreated: expenseReportCreated ?? false,
+          reimbursed: reimbursed ?? false,
+          notes: notes ?? null,
+          yearId: resolvedYearId,
+        },
+      });
+
+      await tx.purchaseProcess.create({
+        data: {
+          purchaseId: p.id,
+          templateId: processTemplateId,
+          startedAt: now,
+        },
+      });
+
+      return p;
+    });
+  } else {
+    purchase = await prisma.purchase.create({
+      data: {
+        userId,
+        categoryId,
+        description,
+        amount: new Decimal(amount),
+        allocationId: allocationId || null,
+        purchasedAt: purchasedAt,
+        receipts,
+        excludeFromTotal: excludeFromTotal ?? false,
+        expenseReportCreated: expenseReportCreated ?? false,
+        reimbursed: reimbursed ?? false,
+        notes: notes ?? null,
+        yearId: resolvedYearId,
+      },
+    });
+  }
 
   revalidatePath('/');
   revalidatePath('/designation');

@@ -15,6 +15,7 @@ import { getMiscAllocations } from '@/prisma/services/allocation';
 import { getAllAllocationGroups } from '@/prisma/services/allocation-groups';
 import { getCategoriesByDesignation } from '@/prisma/services/category';
 import { getDesignation } from '@/prisma/services/designation';
+import { getAllProcessTemplates } from '@/prisma/services/process-templates';
 import { getUsers } from '@/prisma/services/user';
 
 import { cn, formatNumber } from '@/lib/utils';
@@ -45,6 +46,7 @@ export default async function DesignationPage({
   const miscAllocations = await getMiscAllocations(designationId);
   const categories = await getCategoriesByDesignation({ designationId });
   const users = await getUsers();
+  const processTemplates = await getAllProcessTemplates(true);
 
   const spent = designation.purchases
     .filter((purchase) => !purchase.excludeFromTotal)
@@ -62,6 +64,7 @@ export default async function DesignationPage({
               categories={categories}
               allocationGroups={allocationGroups}
               miscAllocations={miscAllocations}
+              processTemplates={processTemplates}
             />
             <CreateCategoryDialog
               designationId={designationId}
