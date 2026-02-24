@@ -38,7 +38,7 @@ export function TransferWarningDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <AlertTriangle className="size-5 text-destructive" />
+            <AlertTriangle className="text-destructive size-5" />
             Insufficient Funds Warning
           </DialogTitle>
           <DialogDescription>
