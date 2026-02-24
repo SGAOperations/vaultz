@@ -15,9 +15,7 @@ import {
 
 import { cn } from '@/lib/utils';
 
-import { DesignationSwitcher } from '@/components/DesignationSwitcher';
-import { PeriodSwitcher } from '@/components/PeriodSwitcher';
-import { YearSwitcher } from '@/components/YearSwitcher';
+import { ContextSwitcher } from '@/components/ContextSwitcher';
 import { ModeToggle } from '@/components/theme-provider';
 import { Button } from '@/components/ui/button';
 import {
@@ -90,9 +88,7 @@ export function Header() {
       </nav>
 
       <div className="flex items-center gap-2">
-        <PeriodSwitcher />
-        <YearSwitcher />
-        <DesignationSwitcher />
+        <ContextSwitcher />
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="icon" className="md:hidden">
