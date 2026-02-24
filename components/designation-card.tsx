@@ -1,68 +1,67 @@
-import {
-  CreditCard,
-  Percent,
-  RefreshCw,
-  TrendingDown,
-  TrendingUp,
-  Wallet,
-} from 'lucide-react';
+import Link from 'next/link';
 
-import { DesignationWithPurchases } from '@/lib/types';
-import { formatNumber } from '@/lib/utils';
+import { ArrowRight, CreditCard, RefreshCw } from 'lucide-react';
 
-import { LinkCard } from '@/components/link-card';
+import { Designation } from '@/prisma/client';
 
-export function DesignationCard({
-  designation: { id, name, code, purchases, amount, budgetResetBehavior },
-}: {
-  designation: DesignationWithPurchases;
-}) {
-  const spent =
-    purchases.length === 0
-      ? 0
-      : purchases.map((v) => v.amount).reduce((p, c) => p + c);
-  const remaining = amount - spent;
-  const percentRemaining = amount === 0 ? 0 : (remaining / amount) * 100;
+import { EditDesignationDialog } from '@/components/edit-designation-dialog';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
+export function DesignationCard({ designation }: { designation: Designation }) {
+  const { id, name, code, budgetResetBehavior } = designation;
 
   return (
-    <LinkCard
-      href={`/designation/${id}`}
-      icon={CreditCard}
-      title={name}
-      description={`DN${code}`}
-      badges={[
-        {
-          icon: Wallet,
-          iconColor: 'text-stat-total',
-          label: 'Budget',
-          value: `$${formatNumber(amount)}`,
-        },
-        {
-          icon: TrendingDown,
-          iconColor: 'text-stat-spent',
-          label: 'Spent',
-          value: `$${formatNumber(spent)}`,
-        },
-        {
-          icon: TrendingUp,
-          iconColor: 'text-stat-remaining',
-          label: 'Left',
-          value: `$${formatNumber(remaining)}`,
-          valueColor: remaining < 0 ? 'text-destructive' : undefined,
-        },
-        {
-          icon: Percent,
-          iconColor: 'text-info',
-          label: 'Left',
-          value: `${formatNumber(percentRemaining)}%`,
-        },
-        {
-          icon: RefreshCw,
-          iconColor: 'text-muted-foreground',
-          label: 'Year End',
-          value: budgetResetBehavior === 'ROLLOVER' ? 'Rollover' : 'Reset',
-        },
-      ]}
-    />
+    <Card className="gap-2">
+      <CardHeader className="pb-2">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-center gap-3">
+            <div className="bg-primary/10 flex size-10 shrink-0 items-center justify-center rounded-lg">
+              <CreditCard className="text-primary size-5" />
+            </div>
+            <div>
+              <CardTitle>{name}</CardTitle>
+              <p className="text-muted-foreground font-mono text-xs">
+                DN{code}
+              </p>
+            </div>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <EditDesignationDialog
+              designationId={id}
+              budgetResetBehavior={budgetResetBehavior}
+              trigger={
+                <Button variant="outline" size="sm">
+                  Edit
+                </Button>
+              }
+            />
+            <Link href={`/designation/${id}`}>
+              <Button variant="ghost" size="sm" className="gap-1">
+                View
+                <ArrowRight className="size-4" />
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="pt-0">
+        <div
+          className={`flex items-start gap-3 rounded-lg border p-3 ${budgetResetBehavior === 'ROLLOVER' ? 'border-primary/20 bg-primary/5' : 'bg-muted/50'}`}
+        >
+          <RefreshCw className="text-muted-foreground mt-0.5 size-4 shrink-0" />
+          <div>
+            <p className="text-sm font-medium">
+              {budgetResetBehavior === 'ROLLOVER' ? 'Rollover' : 'Reset'}
+            </p>
+            <p className="text-muted-foreground text-xs">
+              {budgetResetBehavior === 'ROLLOVER'
+                ? "Unused funds from previous year added to next year's budgets."
+                : 'Category budgets start fresh each year. Unused funds are not carried forward.'}
+            </p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

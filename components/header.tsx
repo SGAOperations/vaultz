@@ -3,7 +3,15 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-import { CreditCard, FolderKanban, Home, Menu, Tag, Users, Workflow } from 'lucide-react';
+import {
+  CreditCard,
+  FolderKanban,
+  Home,
+  Menu,
+  Tag,
+  Users,
+  Workflow,
+} from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
@@ -19,11 +27,11 @@ import {
 
 const navItems = [
   { href: '/', label: 'Home', icon: Home },
-  { href: '/designation', label: 'Designations', icon: CreditCard },
   { href: '/categories', label: 'Categories', icon: Tag },
   { href: '/users', label: 'Users', icon: Users },
   { href: '/allocation-groups', label: 'Allocations', icon: FolderKanban },
   { href: '/processes', label: 'Processes', icon: Workflow },
+  { href: '/designation', label: 'Designations', icon: CreditCard },
 ];
 
 export function Header() {
