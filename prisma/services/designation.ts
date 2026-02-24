@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 
-import { Designation } from '@/prisma/client';
+import { BudgetResetBehavior, Designation } from '@/prisma/client';
 
 import prisma from '@/lib/prisma';
 import { DesignationWithPurchases } from '@/lib/types';
@@ -112,13 +112,38 @@ export async function getDesignation({
 export async function createDesignation({
   code,
   name,
+  budgetResetBehavior,
 }: {
   code: string;
   name: string;
+  budgetResetBehavior: BudgetResetBehavior;
 }): Promise<ResponseType<Designation>> {
-  const designation = await prisma.designation.create({ data: { code, name } });
+  const designation = await prisma.designation.create({
+    data: { code, name, budgetResetBehavior },
+  });
 
   revalidatePath('/');
+  revalidatePath('/designation');
+
+  return designation;
+}
+
+export async function updateDesignation({
+  id,
+  name,
+  code,
+  budgetResetBehavior,
+}: {
+  id: string;
+  name: string;
+  code: string;
+  budgetResetBehavior: BudgetResetBehavior;
+}): Promise<ResponseType<Designation>> {
+  const designation = await prisma.designation.update({
+    where: { id },
+    data: { name, code, budgetResetBehavior },
+  });
+
   revalidatePath('/designation');
 
   return designation;

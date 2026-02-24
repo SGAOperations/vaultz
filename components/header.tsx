@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 
 import {
   CalendarDays,
+  CreditCard,
   FolderKanban,
   Home,
   Menu,
@@ -31,6 +32,7 @@ const navItems = [
   { href: '/categories', label: 'Categories', icon: Tag },
   { href: '/users', label: 'Users', icon: Users },
   { href: '/allocation-groups', label: 'Allocations', icon: FolderKanban },
+  { href: '/designation', label: 'Designations', icon: CreditCard },
   { href: '/processes', label: 'Processes', icon: Workflow },
   { href: '/periods', label: 'Periods', icon: CalendarDays },
 ];

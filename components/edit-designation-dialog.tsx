@@ -8,9 +8,9 @@ import { Loader2 } from 'lucide-react';
 import { z } from 'zod/v4';
 
 import { BudgetResetBehavior } from '@/prisma/client';
-import { createDesignation } from '@/prisma/services/designation';
+import { updateDesignation } from '@/prisma/services/designation';
 
-import { handleError, isError } from '@/lib/utils';
+import { handleError } from '@/lib/utils';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -62,43 +62,51 @@ const behaviors: {
   },
 ];
 
-export function CreateDesignationDialog({
+export function EditDesignationDialog({
+  designationId,
+  name,
+  code,
+  budgetResetBehavior,
   trigger,
 }: {
+  designationId: string;
+  name: string;
+  code: string;
+  budgetResetBehavior: BudgetResetBehavior;
   trigger: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { name: '', code: '', budgetResetBehavior: 'RESET' },
+    defaultValues: { name, code, budgetResetBehavior },
   });
   const isSubmitting = form.formState.isSubmitting;
 
   async function onSubmit(data: FormData) {
-    const result = await handleError(
-      createDesignation({
+    await handleError(
+      updateDesignation({
+        id: designationId,
         name: data.name,
         code: data.code,
         budgetResetBehavior: data.budgetResetBehavior as BudgetResetBehavior,
       }),
       {
         toast: {
-          loading: 'Creating designation...',
-          success: 'Designation created successfully',
-          error: 'Failed to create designation',
+          loading: 'Updating designation...',
+          success: 'Designation updated successfully',
+          error: 'Failed to update designation',
+        },
+        onSuccess: () => {
+          setOpen(false);
         },
       },
     );
-    if (!isError(result)) {
-      form.reset();
-      setOpen(false);
-    }
   }
 
   function handleOpenChange(newOpen: boolean) {
     setOpen(newOpen);
-    if (!newOpen) form.reset();
+    if (!newOpen) form.reset({ name, code, budgetResetBehavior });
   }
 
   return (
@@ -107,10 +115,9 @@ export function CreateDesignationDialog({
 
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Create Designation</DialogTitle>
+          <DialogTitle>Edit Designation</DialogTitle>
           <DialogDescription>
-            A designation contains multiple spending categories that track
-            purchases.
+            Update the designation details and budget reset behavior.
           </DialogDescription>
         </DialogHeader>
 
@@ -209,7 +216,7 @@ export function CreateDesignationDialog({
               </Button>
               <Button type="submit" className="flex-1" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="animate-spin" />}
-                Create Designation
+                Save Changes
               </Button>
             </div>
           </form>
