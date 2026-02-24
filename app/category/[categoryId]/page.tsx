@@ -6,8 +6,6 @@ import { getAllAllocationGroups } from '@/prisma/services/allocation-groups';
 import { getCategoryById } from '@/prisma/services/category';
 import { getUsers } from '@/prisma/services/user';
 
-import { getAllYears, getActiveYear } from '@/lib/period-utils';
-
 import { CategoryActionsMenu } from '@/components/category-actions-menu';
 import { PageHeader } from '@/components/page-header';
 import { CreatePurchaseDialog } from '@/components/purchase-dialog';
@@ -31,7 +29,6 @@ export default async function CategoryPage({
 
   const allocationGroups = await getAllAllocationGroups(category.designationId);
   const miscAllocations = await getMiscAllocations(category.designationId);
-  const [years, activeYear] = await Promise.all([getAllYears(), getActiveYear()]);
 
   const spent = category.purchases
     .filter((purchase) => !purchase.excludeFromTotal)
@@ -50,8 +47,6 @@ export default async function CategoryPage({
               categories={[category]}
               allocationGroups={allocationGroups}
               miscAllocations={miscAllocations}
-              years={years}
-              activeYearId={activeYear?.id}
             />
             <CategoryActionsMenu category={category} />
           </div>
@@ -68,8 +63,6 @@ export default async function CategoryPage({
         categories={[category]}
         allocationGroups={allocationGroups}
         miscAllocations={miscAllocations}
-        years={years}
-        activeYearId={activeYear?.id}
       />
     </div>
   );

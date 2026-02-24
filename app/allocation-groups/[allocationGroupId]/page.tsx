@@ -16,7 +16,6 @@ import { getAllocationGroup } from '@/prisma/services/allocation-groups';
 import { getAllCategories } from '@/prisma/services/category';
 import { getUsers } from '@/prisma/services/user';
 
-import { getAllYears, getActiveYear } from '@/lib/period-utils';
 import { cn, formatNumber } from '@/lib/utils';
 
 import { CreateAllocationDialog } from '@/components/create-allocation-dialog';
@@ -44,7 +43,6 @@ export default async function AllocationGroup({
   const categories = await getAllCategories();
   const miscAllocations = await getMiscAllocations();
   const users = await getUsers();
-  const [years, activeYear] = await Promise.all([getAllYears(), getActiveYear()]);
 
   const amount = allocationGroup.allocations.reduce(
     (acc, allocation) => acc + allocation.amount,
@@ -70,8 +68,6 @@ export default async function AllocationGroup({
               categories={categories}
               allocationGroups={[allocationGroup]}
               miscAllocations={miscAllocations}
-              years={years}
-              activeYearId={activeYear?.id}
             />
             <CreateAllocationDialog
               trigger={
@@ -177,8 +173,6 @@ export default async function AllocationGroup({
         categories={categories}
         allocationGroups={[allocationGroup]}
         miscAllocations={miscAllocations}
-        years={years}
-        activeYearId={activeYear?.id}
       />
     </div>
   );

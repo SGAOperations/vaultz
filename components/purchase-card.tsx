@@ -18,9 +18,10 @@ import {
   AllocationGroupWithAllocations,
   CategoryWithDesignation,
   PurchaseWithUser,
-  YearRecord,
 } from '@/lib/types';
 import { formatCurrency } from '@/lib/utils';
+
+import { useYear } from '@/contexts/YearContext';
 
 import { DateTime } from '@/components/date-time';
 import { Card } from '@/components/ui/card';
@@ -39,8 +40,6 @@ export function PurchaseCard({
   categories,
   allocationGroups,
   miscAllocations,
-  years,
-  activeYearId,
   stopPropagation = false,
 }: {
   purchase: PurchaseWithUser;
@@ -48,10 +47,9 @@ export function PurchaseCard({
   categories: CategoryWithDesignation[];
   allocationGroups: AllocationGroupWithAllocations[];
   miscAllocations: Allocation[];
-  years: YearRecord[];
-  activeYearId?: string;
   stopPropagation?: boolean;
 }) {
+  const { years, activeYearId } = useYear();
   const yearName = years.find((y) => y.id === purchase.yearId)?.name;
   return (
     <PurchaseDialog
@@ -150,8 +148,6 @@ export function PurchaseCard({
       categories={categories}
       allocationGroups={allocationGroups}
       miscAllocations={miscAllocations}
-      years={years}
-      activeYearId={activeYearId}
     />
   );
 }

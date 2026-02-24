@@ -8,8 +8,6 @@ import { getAllAllocationGroups } from '@/prisma/services/allocation-groups';
 import { getAllCategories } from '@/prisma/services/category';
 import { getUserById, getUsers } from '@/prisma/services/user';
 
-import { getAllYears, getActiveYear } from '@/lib/period-utils';
-
 import { PageHeader } from '@/components/page-header';
 import { PurchaseList } from '@/components/purchase-list';
 import { SectionHeader } from '@/components/section-header';
@@ -26,15 +24,13 @@ export default async function UserPage({
 }) {
   const { userId } = await params;
 
-  const [user, users, categories, allocationGroups, miscAllocations, years, activeYear] =
+  const [user, users, categories, allocationGroups, miscAllocations] =
     await Promise.all([
       getUserById({ id: userId }),
       getUsers(),
       getAllCategories(),
       getAllAllocationGroups(),
       getMiscAllocations(),
-      getAllYears(),
-      getActiveYear(),
     ]);
   if (user === null) notFound();
 
@@ -89,8 +85,6 @@ export default async function UserPage({
         categories={categories}
         allocationGroups={allocationGroups}
         miscAllocations={miscAllocations}
-        years={years}
-        activeYearId={activeYear?.id}
       />
     </div>
   );

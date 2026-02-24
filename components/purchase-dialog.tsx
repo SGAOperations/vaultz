@@ -40,7 +40,6 @@ import {
   AllocationGroupWithAllocations,
   CategoryWithDesignation,
   PurchaseWithUser,
-  YearRecord,
 } from '@/lib/types';
 import { UploadDropzone } from '@/lib/uploadthing';
 import {
@@ -49,6 +48,8 @@ import {
   handleError,
   parseDateOnly,
 } from '@/lib/utils';
+
+import { useYear } from '@/contexts/YearContext';
 
 import {
   Dialog,
@@ -111,8 +112,6 @@ type CreatePurchaseProps = {
   categories: CategoryWithDesignation[];
   allocationGroups?: AllocationGroupWithAllocations[];
   miscAllocations?: Allocation[];
-  years: YearRecord[];
-  activeYearId?: string;
 };
 
 // Props for viewing/editing an existing purchase
@@ -124,8 +123,6 @@ type ViewEditPurchaseProps = {
   categories: CategoryWithDesignation[];
   allocationGroups: AllocationGroupWithAllocations[];
   miscAllocations: Allocation[];
-  years: YearRecord[];
-  activeYearId?: string;
 };
 
 type PurchaseDialogProps = CreatePurchaseProps | ViewEditPurchaseProps;
@@ -136,9 +133,9 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
     categories,
     allocationGroups = [],
     miscAllocations = [],
-    years,
-    activeYearId,
   } = props;
+
+  const { years, activeYearId } = useYear();
 
   const isCreateMode = props.mode === 'create';
   const purchase = isCreateMode ? null : props.purchase;
@@ -1063,8 +1060,6 @@ export function CreatePurchaseDialog(props: {
   categories: CategoryWithDesignation[];
   allocationGroups?: AllocationGroupWithAllocations[];
   miscAllocations?: Allocation[];
-  years: YearRecord[];
-  activeYearId?: string;
 }) {
   return <PurchaseDialog mode="create" {...props} />;
 }
