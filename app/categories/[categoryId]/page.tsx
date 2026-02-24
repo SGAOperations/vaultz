@@ -9,8 +9,8 @@ import { getUsers } from '@/prisma/services/user';
 import { CategoryActionsMenu } from '@/components/category-actions-menu';
 import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/page-header';
-import { PurchaseCard } from '@/components/purchase-card';
 import { CreatePurchaseDialog } from '@/components/purchase-dialog';
+import { PurchaseList } from '@/components/purchase-list';
 import { SectionHeader } from '@/components/section-header';
 import { StatCards } from '@/components/stat-card';
 
@@ -64,18 +64,13 @@ export default async function CategoryPage({
           description="Record purchases to track spending in this category"
         />
       ) : (
-        <div className="flex flex-col gap-2">
-          {category.purchases.map((purchase) => (
-            <PurchaseCard
-              key={purchase.id}
-              purchase={purchase}
-              users={users}
-              categories={[category]}
-              allocationGroups={allocationGroups}
-              miscAllocations={miscAllocations}
-            />
-          ))}
-        </div>
+        <PurchaseList
+          purchases={category.purchases}
+          users={users}
+          categories={[category]}
+          allocationGroups={allocationGroups}
+          miscAllocations={miscAllocations}
+        />
       )}
     </div>
   );

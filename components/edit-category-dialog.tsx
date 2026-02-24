@@ -89,8 +89,8 @@ export function EditCategoryDialog({
       },
       onSuccess: () => {
         setOpen(false);
-        // Navigate to the parent designation page
-        router.push(`/designation/${category.designationId}`);
+        // Navigate to the home page
+        router.push(`/`);
       },
     });
   }
