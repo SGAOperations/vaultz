@@ -140,6 +140,8 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
 
   const processTemplates = props.processTemplates ?? [];
 
+  const { years, activeYearId } = useYear();
+
   const isCreateMode = props.mode === 'create';
   const purchase = isCreateMode ? null : props.purchase;
 
