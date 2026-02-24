@@ -767,12 +767,11 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                     >
                       <span className="flex items-center gap-2">
                         Advanced
-                        {watchedYearId !== activeYearId &&
-                          watchedYearId && (
-                            <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-normal text-amber-600 dark:text-amber-400">
-                              Non-active year selected
-                            </span>
-                          )}
+                        {watchedYearId !== activeYearId && watchedYearId && (
+                          <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-normal text-amber-600 dark:text-amber-400">
+                            Non-active year selected
+                          </span>
+                        )}
                       </span>
                       <ChevronDown
                         className={`size-4 transition-transform duration-200 ${showAdvanced ? 'rotate-180' : ''}`}
