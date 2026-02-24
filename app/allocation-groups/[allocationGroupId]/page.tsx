@@ -21,8 +21,8 @@ import { cn, formatNumber } from '@/lib/utils';
 import { CreateAllocationDialog } from '@/components/create-allocation-dialog';
 import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/page-header';
-import { PurchaseCard } from '@/components/purchase-card';
 import { CreatePurchaseDialog } from '@/components/purchase-dialog';
+import { PurchaseList } from '@/components/purchase-list';
 import { SectionHeader } from '@/components/section-header';
 import { StatCards } from '@/components/stat-card';
 import { Button } from '@/components/ui/button';
@@ -167,25 +167,13 @@ export default async function AllocationGroup({
 
       <SectionHeader title="Purchases" />
 
-      {purchases.length === 0 ? (
-        <EmptyState
-          message="No purchases yet"
-          description="Record purchases to track spending in this group"
-        />
-      ) : (
-        <div className="flex flex-col gap-2">
-          {purchases.map((purchase) => (
-            <PurchaseCard
-              key={purchase.id}
-              purchase={purchase}
-              users={users}
-              categories={categories}
-              allocationGroups={[allocationGroup]}
-              miscAllocations={miscAllocations}
-            />
-          ))}
-        </div>
-      )}
+      <PurchaseList
+        purchases={purchases}
+        users={users}
+        categories={categories}
+        allocationGroups={[allocationGroup]}
+        miscAllocations={miscAllocations}
+      />
     </div>
   );
 }

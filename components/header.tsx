@@ -3,11 +3,20 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-import { FolderKanban, Home, Menu, Tag, Users, Workflow } from 'lucide-react';
+import {
+  CalendarDays,
+  FolderKanban,
+  Home,
+  Menu,
+  Tag,
+  Users,
+  Workflow,
+} from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
 import { DesignationSwitcher } from '@/components/DesignationSwitcher';
+import { YearSwitcher } from '@/components/YearSwitcher';
 import { ModeToggle } from '@/components/theme-provider';
 import { Button } from '@/components/ui/button';
 import {
@@ -23,6 +32,7 @@ const navItems = [
   { href: '/users', label: 'Users', icon: Users },
   { href: '/allocation-groups', label: 'Allocations', icon: FolderKanban },
   { href: '/processes', label: 'Processes', icon: Workflow },
+  { href: '/periods', label: 'Periods', icon: CalendarDays },
 ];
 
 export function Header() {
@@ -79,6 +89,7 @@ export function Header() {
       </nav>
 
       <div className="flex items-center gap-2">
+        <YearSwitcher />
         <DesignationSwitcher />
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
