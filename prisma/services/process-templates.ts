@@ -5,7 +5,10 @@ import { revalidatePath } from 'next/cache';
 import { ProcessStep, ProcessTemplate } from '@/prisma/client';
 
 import prisma from '@/lib/prisma';
-import { ProcessTemplateWithStepCount, ProcessTemplateWithSteps } from '@/lib/types';
+import {
+  ProcessTemplateWithStepCount,
+  ProcessTemplateWithSteps,
+} from '@/lib/types';
 import { ResponseType } from '@/lib/utils';
 
 export async function getAllProcessTemplates(
@@ -39,10 +42,7 @@ export async function getProcessTemplate(
   return prisma.processTemplate.findUnique({
     where: { id },
     include: {
-      steps: {
-        where: { deletedAt: null },
-        orderBy: { order: 'asc' },
-      },
+      steps: { where: { deletedAt: null }, orderBy: { order: 'asc' } },
     },
   });
 }
@@ -151,12 +151,16 @@ export async function moveProcessStep(
   const idx = steps.findIndex((s) => s.id === stepId);
   if (idx === -1) return { error: 'Step not found' };
   const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
-  if (swapIdx < 0 || swapIdx >= steps.length) return { error: 'Cannot move step' };
+  if (swapIdx < 0 || swapIdx >= steps.length)
+    return { error: 'Cannot move step' };
   const newSteps = [...steps];
   [newSteps[idx], newSteps[swapIdx]] = [newSteps[swapIdx], newSteps[idx]];
   const template = await prisma.$transaction(async (tx) => {
     for (let i = 0; i < newSteps.length; i++)
-      await tx.processStep.update({ where: { id: newSteps[i].id }, data: { order: i } });
+      await tx.processStep.update({
+        where: { id: newSteps[i].id },
+        data: { order: i },
+      });
     return tx.processTemplate.update({
       where: { id: templateId },
       data: { updatedAt: new Date() },

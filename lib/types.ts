@@ -58,4 +58,6 @@ export type YearRecord = Year;
 
 export type ProcessTemplateWithStepCount = ProcessTemplate & { steps: number };
 
-export type ProcessTemplateWithSteps = ProcessTemplate & { steps: ProcessStep[] };
+export type ProcessTemplateWithSteps = ProcessTemplate & {
+  steps: ProcessStep[];
+};

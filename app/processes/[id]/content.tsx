@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { FormProvider, useForm } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -14,7 +15,6 @@ import {
   Plus,
   Trash2,
 } from 'lucide-react';
-import { FormProvider, useForm } from 'react-hook-form';
 import { z } from 'zod/v4';
 
 import {
@@ -41,13 +41,19 @@ import { FormTextarea } from '@/components/ui/form-textarea';
 type LocalStep = { id: string; name: string; description: string };
 
 const stepSchema = z.object({
-  name: z.string().min(1, 'Name is required').max(100, 'Cannot be longer than 100 characters'),
+  name: z
+    .string()
+    .min(1, 'Name is required')
+    .max(100, 'Cannot be longer than 100 characters'),
   description: z.string().max(500, 'Cannot be longer than 500 characters'),
 });
 type StepFormData = z.infer<typeof stepSchema>;
 
 const templateSchema = z.object({
-  name: z.string().min(1, 'Name is required').max(100, 'Cannot be longer than 100 characters'),
+  name: z
+    .string()
+    .min(1, 'Name is required')
+    .max(100, 'Cannot be longer than 100 characters'),
   description: z.string().max(500, 'Cannot be longer than 500 characters'),
 });
 type TemplateFormData = z.infer<typeof templateSchema>;
@@ -84,19 +90,35 @@ function StepCard({
     return (
       <Card className="p-4">
         <FormProvider {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-3">
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="flex flex-col gap-3"
+          >
             <FormInput<StepFormData> name="name" label="Name" autoFocus />
-            <FormTextarea<StepFormData> name="description" label="Description" placeholder="Optional" />
+            <FormTextarea<StepFormData>
+              name="description"
+              label="Description"
+              placeholder="Optional"
+            />
             <div className="flex gap-2">
-              <Button type="submit" size="sm" disabled={form.formState.isSubmitting || isMutating}>
-                {form.formState.isSubmitting && <Loader2 className="animate-spin" />}
+              <Button
+                type="submit"
+                size="sm"
+                disabled={form.formState.isSubmitting || isMutating}
+              >
+                {form.formState.isSubmitting && (
+                  <Loader2 className="animate-spin" />
+                )}
                 Save
               </Button>
               <Button
                 type="button"
                 size="sm"
                 variant="outline"
-                onClick={() => { setEditing(false); form.reset(); }}
+                onClick={() => {
+                  setEditing(false);
+                  form.reset();
+                }}
                 disabled={form.formState.isSubmitting}
               >
                 Cancel
@@ -117,48 +139,50 @@ function StepCard({
           <div>
             <p className="font-medium">{step.name}</p>
             {step.description && (
-              <p className="text-muted-foreground text-sm">{step.description}</p>
+              <p className="text-muted-foreground text-sm">
+                {step.description}
+              </p>
             )}
           </div>
         </div>
         <div className="flex shrink-0 gap-1">
-            <Button
-              size="icon"
-              variant="ghost"
-              className="size-8"
-              onClick={() => onMove(step.id, 'up')}
-              disabled={idx === 0 || isMutating}
-            >
-              <ChevronUp className="size-4" />
-            </Button>
-            <Button
-              size="icon"
-              variant="ghost"
-              className="size-8"
-              onClick={() => onMove(step.id, 'down')}
-              disabled={idx === total - 1 || isMutating}
-            >
-              <ChevronDown className="size-4" />
-            </Button>
-            <Button
-              size="icon"
-              variant="ghost"
-              className="size-8"
-              onClick={() => setEditing(true)}
-              disabled={isMutating}
-            >
-              <Pencil className="size-4" />
-            </Button>
-            <Button
-              size="icon"
-              variant="ghost"
-              className="text-destructive hover:text-destructive size-8"
-              onClick={() => onDelete(step.id)}
-              disabled={isMutating}
-            >
-              <Trash2 className="size-4" />
-            </Button>
-          </div>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="size-8"
+            onClick={() => onMove(step.id, 'up')}
+            disabled={idx === 0 || isMutating}
+          >
+            <ChevronUp className="size-4" />
+          </Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="size-8"
+            onClick={() => onMove(step.id, 'down')}
+            disabled={idx === total - 1 || isMutating}
+          >
+            <ChevronDown className="size-4" />
+          </Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="size-8"
+            onClick={() => setEditing(true)}
+            disabled={isMutating}
+          >
+            <Pencil className="size-4" />
+          </Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="text-destructive hover:text-destructive size-8"
+            onClick={() => onDelete(step.id)}
+            disabled={isMutating}
+          >
+            <Trash2 className="size-4" />
+          </Button>
+        </div>
       </div>
     </Card>
   );
@@ -181,13 +205,26 @@ function AddStepCard({
   return (
     <Card className="p-4">
       <FormProvider {...form}>
-        <form onSubmit={form.handleSubmit(onAdd)} className="flex flex-col gap-3">
+        <form
+          onSubmit={form.handleSubmit(onAdd)}
+          className="flex flex-col gap-3"
+        >
           <p className="text-sm font-medium">New Step</p>
           <FormInput<StepFormData> name="name" label="Name" autoFocus />
-          <FormTextarea<StepFormData> name="description" label="Description" placeholder="Optional" />
+          <FormTextarea<StepFormData>
+            name="description"
+            label="Description"
+            placeholder="Optional"
+          />
           <div className="flex gap-2">
-            <Button type="submit" size="sm" disabled={form.formState.isSubmitting || isMutating}>
-              {form.formState.isSubmitting && <Loader2 className="animate-spin" />}
+            <Button
+              type="submit"
+              size="sm"
+              disabled={form.formState.isSubmitting || isMutating}
+            >
+              {form.formState.isSubmitting && (
+                <Loader2 className="animate-spin" />
+              )}
               Add Step
             </Button>
             <Button
@@ -210,24 +247,43 @@ export function Content({ template }: { template: ProcessTemplateWithSteps }) {
   const router = useRouter();
 
   const [steps, setSteps] = useState<LocalStep[]>(
-    template.steps.map((s) => ({ id: s.id, name: s.name, description: s.description ?? '' })),
+    template.steps.map((s) => ({
+      id: s.id,
+      name: s.name,
+      description: s.description ?? '',
+    })),
   );
   const [isMutating, setIsMutating] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
 
   useEffect(() => {
-    setSteps(template.steps.map((s) => ({ id: s.id, name: s.name, description: s.description ?? '' })));
+    setSteps(
+      template.steps.map((s) => ({
+        id: s.id,
+        name: s.name,
+        description: s.description ?? '',
+      })),
+    );
   }, [template]);
 
   async function handleEditStep(stepId: string, data: StepFormData) {
     setIsMutating(true);
     const prev = [...steps];
-    setSteps((s) => s.map((step) => step.id === stepId ? { ...step, ...data } : step));
+    setSteps((s) =>
+      s.map((step) => (step.id === stepId ? { ...step, ...data } : step)),
+    );
     try {
       await handleError(
-        updateProcessStep(stepId, template.id, { name: data.name, description: data.description || undefined }),
+        updateProcessStep(stepId, template.id, {
+          name: data.name,
+          description: data.description || undefined,
+        }),
         {
-          toast: { loading: 'Updating step...', success: 'Step updated', error: 'Failed to update step' },
+          toast: {
+            loading: 'Updating step...',
+            success: 'Step updated',
+            error: 'Failed to update step',
+          },
           onSuccess: () => router.refresh(),
           onError: () => setSteps(prev),
         },
@@ -243,7 +299,11 @@ export function Content({ template }: { template: ProcessTemplateWithSteps }) {
     setSteps((s) => s.filter((step) => step.id !== stepId));
     try {
       await handleError(deleteProcessStep(stepId, template.id), {
-        toast: { loading: 'Deleting step...', success: 'Step deleted', error: 'Failed to delete step' },
+        toast: {
+          loading: 'Deleting step...',
+          success: 'Step deleted',
+          error: 'Failed to delete step',
+        },
         onSuccess: () => router.refresh(),
         onError: () => setSteps(prev),
       });
@@ -264,7 +324,11 @@ export function Content({ template }: { template: ProcessTemplateWithSteps }) {
     }
     try {
       await handleError(moveProcessStep(template.id, stepId, direction), {
-        toast: { loading: 'Moving step...', success: 'Step moved', error: 'Failed to move step' },
+        toast: {
+          loading: 'Moving step...',
+          success: 'Step moved',
+          error: 'Failed to move step',
+        },
         onSuccess: () => router.refresh(),
         onError: () => setSteps(prev),
       });
@@ -277,10 +341,20 @@ export function Content({ template }: { template: ProcessTemplateWithSteps }) {
     setIsMutating(true);
     try {
       await handleError(
-        addProcessStep(template.id, { name: data.name, description: data.description || undefined }),
+        addProcessStep(template.id, {
+          name: data.name,
+          description: data.description || undefined,
+        }),
         {
-          toast: { loading: 'Adding step...', success: 'Step added', error: 'Failed to add step' },
-          onSuccess: () => { setShowAddForm(false); router.refresh(); },
+          toast: {
+            loading: 'Adding step...',
+            success: 'Step added',
+            error: 'Failed to add step',
+          },
+          onSuccess: () => {
+            setShowAddForm(false);
+            router.refresh();
+          },
         },
       );
     } finally {
@@ -290,16 +364,27 @@ export function Content({ template }: { template: ProcessTemplateWithSteps }) {
 
   async function handleDeleteTemplate() {
     await handleError(deleteProcessTemplate(template.id), {
-      toast: { loading: 'Deleting template...', success: 'Template deleted', error: 'Failed to delete template' },
+      toast: {
+        loading: 'Deleting template...',
+        success: 'Template deleted',
+        error: 'Failed to delete template',
+      },
       onSuccess: () => router.push('/processes'),
     });
   }
 
   async function handleEditTemplate(data: TemplateFormData): Promise<boolean> {
     const result = await handleError(
-      updateProcessTemplate(template.id, { name: data.name, description: data.description || undefined }),
+      updateProcessTemplate(template.id, {
+        name: data.name,
+        description: data.description || undefined,
+      }),
       {
-        toast: { loading: 'Updating template...', success: 'Template updated', error: 'Failed to update template' },
+        toast: {
+          loading: 'Updating template...',
+          success: 'Template updated',
+          error: 'Failed to update template',
+        },
         onSuccess: () => router.refresh(),
       },
     );
@@ -330,11 +415,18 @@ export function Content({ template }: { template: ProcessTemplateWithSteps }) {
               title="Edit Template"
               description="Update the template name and description."
               schema={templateSchema}
-              defaultValues={{ name: template.name, description: template.description ?? '' }}
+              defaultValues={{
+                name: template.name,
+                description: template.description ?? '',
+              }}
               onSubmit={handleEditTemplate}
               submitLabel="Save Changes"
             >
-              <FormInput<TemplateFormData> name="name" label="Name" placeholder="Procurement Process" />
+              <FormInput<TemplateFormData>
+                name="name"
+                label="Name"
+                placeholder="Procurement Process"
+              />
               <FormTextarea<TemplateFormData>
                 name="description"
                 label="Description"
