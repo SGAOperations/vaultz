@@ -8,6 +8,10 @@ import prisma from '@/lib/prisma';
 import { DesignationWithPurchases } from '@/lib/types';
 import { ResponseType } from '@/lib/utils';
 
+export async function getDesignations(): Promise<Designation[]> {
+  return await prisma.designation.findMany({ orderBy: { name: 'asc' } });
+}
+
 export async function getAllDesignations(): Promise<
   DesignationWithPurchases[]
 > {
@@ -20,7 +24,10 @@ export async function getAllDesignations(): Promise<
               orderBy: [{ purchasedAt: 'desc' }, { createdAt: 'desc' }],
               include: { user: true },
             },
-            amount: true,
+            categoryYears: {
+              where: { deletedAt: null },
+              select: { amount: true },
+            },
           },
         },
       },
@@ -28,7 +35,12 @@ export async function getAllDesignations(): Promise<
   ).map(({ categories, ...v }) => ({
     ...v,
     amount: categories.reduce(
-      (acc, category) => acc + category.amount.toNumber(),
+      (acc, category) =>
+        acc +
+        category.categoryYears.reduce(
+          (sum, cy) => sum + cy.amount.toNumber(),
+          0,
+        ),
       0,
     ),
     purchases: categories
@@ -60,7 +72,10 @@ export async function getDesignation({
             orderBy: [{ purchasedAt: 'desc' }, { createdAt: 'desc' }],
             include: { user: true },
           },
-          amount: true,
+          categoryYears: {
+            where: { deletedAt: null },
+            select: { amount: true },
+          },
         },
       },
     },
@@ -71,7 +86,12 @@ export async function getDesignation({
   return {
     ...designation,
     amount: designation.categories.reduce(
-      (acc, category) => acc + category.amount.toNumber(),
+      (acc, category) =>
+        acc +
+        category.categoryYears.reduce(
+          (sum, cy) => sum + cy.amount.toNumber(),
+          0,
+        ),
       0,
     ),
     purchases: designation.categories

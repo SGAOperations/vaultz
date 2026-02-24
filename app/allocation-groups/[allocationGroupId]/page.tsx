@@ -76,6 +76,7 @@ export default async function AllocationGroup({
                   Create Allocation
                 </Button>
               }
+              designationId={allocationGroup.designationId}
               allocationGroupId={allocationGroup.id}
             />
           </div>

@@ -20,17 +20,22 @@ type FormData = z.infer<typeof schema>;
 
 export function CreateAllocationGroupDialog({
   trigger,
+  designationId,
 }: {
   trigger: React.ReactNode;
+  designationId: string;
 }) {
   async function onSubmit(data: FormData): Promise<boolean> {
-    const result = await handleError(createAllocationGroup(data), {
-      toast: {
-        loading: 'Creating allocation group...',
-        success: 'Allocation group created successfully',
-        error: 'Failed to create allocation group',
+    const result = await handleError(
+      createAllocationGroup({ ...data, designationId }),
+      {
+        toast: {
+          loading: 'Creating allocation group...',
+          success: 'Allocation group created successfully',
+          error: 'Failed to create allocation group',
+        },
       },
-    });
+    );
     return !isError(result);
   }
 

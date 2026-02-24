@@ -41,8 +41,8 @@ export default async function DesignationPage({
   const designation = await getDesignation({ id: designationId });
   if (designation === null) notFound();
 
-  const allocationGroups = await getAllAllocationGroups();
-  const miscAllocations = await getMiscAllocations();
+  const allocationGroups = await getAllAllocationGroups(designationId);
+  const miscAllocations = await getMiscAllocations(designationId);
   const categories = await getCategoriesByDesignation({ designationId });
   const users = await getUsers();
 
@@ -92,7 +92,11 @@ export default async function DesignationPage({
               .filter((v) => v.categoryId === category.id)
               .filter((v) => !v.excludeFromTotal)
               .reduce((acc, purchase) => acc + purchase.amount, 0);
-            const remaining = category.amount - categorySpent;
+            const budget = category.categoryYears.reduce(
+              (acc, cy) => acc + cy.amount,
+              0,
+            );
+            const remaining = budget - categorySpent;
 
             return (
               <Link
@@ -123,7 +127,7 @@ export default async function DesignationPage({
                       <span className="text-sm">
                         <span className="text-muted-foreground">Budget:</span>{' '}
                         <span className="font-semibold">
-                          ${formatNumber(category.amount)}
+                          ${formatNumber(budget)}
                         </span>
                       </span>
                     </div>

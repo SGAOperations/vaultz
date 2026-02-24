@@ -17,10 +17,6 @@ const schema = z.object({
     .regex(/^\d{3}$/, 'Must be 3 numeric digits'),
   ledgerCode: z.string().length(4, 'Must be exactly 4 characters long'),
   name: z.string().min(1, 'Please enter a category name'),
-  amount: z.coerce
-    .number<number>()
-    .min(0.01, 'Must be at least $0.01')
-    .multipleOf(0.01, 'Must contain at most 2 decimal places'),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -49,13 +45,7 @@ export function CreateCategoryDialog({
       title="Create Spending Category"
       description="Each spending category has a set budget."
       schema={schema}
-      defaultValues={{
-        designationId,
-        code: '',
-        ledgerCode: '',
-        name: '',
-        amount: 0,
-      }}
+      defaultValues={{ designationId, code: '', ledgerCode: '', name: '' }}
       onSubmit={onSubmit}
     >
       <FormInput<FormData> name="name" label="Name" placeholder="Food" />
@@ -70,12 +60,6 @@ export function CreateCategoryDialog({
         label="Ledger Code"
         placeholder="7XXX"
         description="The ledger code to be associated with this category."
-      />
-      <FormInput<FormData>
-        name="amount"
-        label="Amount"
-        placeholder="$21.45"
-        currency
       />
     </FormDialog>
   );

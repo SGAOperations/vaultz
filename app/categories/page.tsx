@@ -8,7 +8,7 @@ import { PageHeader } from '@/components/page-header';
 
 import { Content } from './content';
 
-export default function Home() {
+export default function CategoriesPage() {
   const { activeDesignation } = useDesignation();
 
   if (!activeDesignation) notFound();
@@ -16,8 +16,8 @@ export default function Home() {
   return (
     <div className="flex w-full flex-col">
       <PageHeader
-        title={activeDesignation.name}
-        description={`Dashboard · DN${activeDesignation.code}`}
+        title="Categories"
+        description={`${activeDesignation.name} · DN${activeDesignation.code}`}
       />
       <Content designationId={activeDesignation.id} />
     </div>

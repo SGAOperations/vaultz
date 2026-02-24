@@ -1,19 +1,28 @@
 import {
   AllocationGroup,
+  CategoryYear,
   Designation,
   Allocation as PrismaAllocation,
   Category as PrismaCategory,
   Purchase as PrismaPurchase,
+  ProcessStep,
+  ProcessTemplate,
   User,
+  Year,
 } from '@/prisma/client';
 
 export type Purchase = Omit<PrismaPurchase, 'amount'> & { amount: number };
 
-export type Category = Omit<PrismaCategory, 'amount'> & { amount: number };
+export type Category = PrismaCategory;
+
+export type CategoryYearRecord = Omit<CategoryYear, 'amount'> & {
+  amount: number;
+};
 
 export type CategoryWithDesignation = Category & { designation: Designation };
 
 export type CategoryWithPurchases = CategoryWithDesignation & {
+  categoryYears: CategoryYearRecord[];
   purchases: PurchaseWithUser[];
 };
 
@@ -43,4 +52,12 @@ export type PurchaseWithUserAndCategory = Purchase & {
 
 export type UserWithPurchasesAndCategory = User & {
   purchases: PurchaseWithUserAndCategory[];
+};
+
+export type YearRecord = Year;
+
+export type ProcessTemplateWithStepCount = ProcessTemplate & { steps: number };
+
+export type ProcessTemplateWithSteps = ProcessTemplate & {
+  steps: ProcessStep[];
 };
