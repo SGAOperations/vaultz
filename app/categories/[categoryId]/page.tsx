@@ -7,6 +7,7 @@ import {
   getCategoriesWithAvailableAmount,
   getCategoryById,
 } from '@/prisma/services/category';
+import { getAllProcessTemplates } from '@/prisma/services/process-templates';
 import { getTransfersByCategory } from '@/prisma/services/transfer';
 import { getUsers } from '@/prisma/services/user';
 
@@ -35,12 +36,14 @@ export default async function CategoryPage({
     users,
     allocationGroups,
     miscAllocations,
+    processTemplates,
     categoriesWithAvailable,
     transfers,
   ] = await Promise.all([
     getUsers(),
     getAllAllocationGroups(category.designationId),
     getMiscAllocations(category.designationId),
+    getAllProcessTemplates(true),
     getCategoriesWithAvailableAmount({ designationId: category.designationId }),
     getTransfersByCategory(categoryId),
   ]);
@@ -62,6 +65,7 @@ export default async function CategoryPage({
               categories={[category]}
               allocationGroups={allocationGroups}
               miscAllocations={miscAllocations}
+              processTemplates={processTemplates}
             />
             <TransferDialog categories={categoriesWithAvailable} />
             <CategoryActionsMenu category={category} />
@@ -84,6 +88,7 @@ export default async function CategoryPage({
             categories={[category]}
             allocationGroups={allocationGroups}
             miscAllocations={miscAllocations}
+            processTemplates={processTemplates}
           />
         </TabsContent>
 

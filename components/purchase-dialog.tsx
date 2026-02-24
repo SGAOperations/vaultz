@@ -40,6 +40,7 @@ import {
   Allocation,
   AllocationGroupWithAllocations,
   CategoryWithDesignation,
+  ProcessTemplateWithStepCount,
   PurchaseWithUser,
 } from '@/lib/types';
 import { UploadDropzone } from '@/lib/uploadthing';
@@ -80,6 +81,7 @@ const schema = z.object({
   categoryId: z.string().min(1, 'Please select a category'),
   allocationId: z.string().optional(),
   yearId: z.string().min(1, 'Please select a year'),
+  processTemplateId: z.string().optional(),
   description: z.string().min(1, 'Please enter a description'),
   amount: z.coerce
     .number<number>()
@@ -111,6 +113,7 @@ type CreatePurchaseProps = {
   categories: CategoryWithDesignation[];
   allocationGroups?: AllocationGroupWithAllocations[];
   miscAllocations?: Allocation[];
+  processTemplates?: ProcessTemplateWithStepCount[];
 };
 
 // Props for viewing/editing an existing purchase
@@ -122,6 +125,7 @@ type ViewEditPurchaseProps = {
   categories: CategoryWithDesignation[];
   allocationGroups: AllocationGroupWithAllocations[];
   miscAllocations: Allocation[];
+  processTemplates?: ProcessTemplateWithStepCount[];
 };
 
 type PurchaseDialogProps = CreatePurchaseProps | ViewEditPurchaseProps;
@@ -133,6 +137,8 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
     allocationGroups = [],
     miscAllocations = [],
   } = props;
+
+  const processTemplates = props.processTemplates ?? [];
 
   const { years, activeYearId } = useYear();
 
@@ -186,6 +192,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
         (categories.length === 1 ? categories[0].id : ''),
       allocationId: purchase?.allocationId || '',
       yearId: purchase?.yearId || activeYearId || '',
+      processTemplateId: '',
       description: purchase?.description || '',
       amount: purchase?.amount || 0,
       purchasedAt: purchase ? parseDateOnly(purchase.purchasedAt) : new Date(),
@@ -240,31 +247,44 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
 
   async function onSubmit(data: FormData) {
     if (isCreateMode) {
-      await handleError(createPurchase(data), {
-        toast: {
-          loading: 'Creating purchase...',
-          success: 'Purchase created successfully',
-          error: 'Failed to create purchase',
+      await handleError(
+        createPurchase({
+          ...data,
+          processTemplateId: data.processTemplateId || undefined,
+        }),
+        {
+          toast: {
+            loading: 'Creating purchase...',
+            success: 'Purchase created successfully',
+            error: 'Failed to create purchase',
+          },
+          onSuccess: () => {
+            form.reset();
+            setFilesUploaded([]);
+            setReceiptsToDisplay([]);
+            setOpen(false);
+          },
         },
-        onSuccess: () => {
-          form.reset();
-          setFilesUploaded([]);
-          setReceiptsToDisplay([]);
-          setOpen(false);
-        },
-      });
+      );
     } else {
-      await handleError(updatePurchase({ id: purchase!.id, ...data }), {
-        toast: {
-          loading: 'Updating purchase...',
-          success: 'Purchase updated successfully',
-          error: 'Failed to update purchase',
+      await handleError(
+        updatePurchase({
+          id: purchase!.id,
+          ...data,
+          processTemplateId: data.processTemplateId || undefined,
+        }),
+        {
+          toast: {
+            loading: 'Updating purchase...',
+            success: 'Purchase updated successfully',
+            error: 'Failed to update purchase',
+          },
+          onSuccess: () => {
+            setIsEditing(false);
+            setOpen(false);
+          },
         },
-        onSuccess: () => {
-          setIsEditing(false);
-          setOpen(false);
-        },
-      });
+      );
     }
   }
 
@@ -534,6 +554,37 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                         </FormItem>
                       )}
                     />
+                    {processTemplates.length > 0 && (
+                      <FormField
+                        control={form.control}
+                        name="processTemplateId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <div className="flex gap-2">
+                              <FormLabel>Process Template</FormLabel>
+                              <FormDescription className="text-xs">
+                                Optional
+                              </FormDescription>
+                            </div>
+                            <FormControl>
+                              <Combobox
+                                data={[
+                                  {
+                                    items: processTemplates.map((t) => ({
+                                      value: t.id,
+                                      label: t.name,
+                                    })),
+                                  },
+                                ]}
+                                {...field}
+                                name="Process Template"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
                     <FormField
                       control={form.control}
                       name="purchasedAt"
@@ -1079,6 +1130,7 @@ export function CreatePurchaseDialog(props: {
   categories: CategoryWithDesignation[];
   allocationGroups?: AllocationGroupWithAllocations[];
   miscAllocations?: Allocation[];
+  processTemplates?: ProcessTemplateWithStepCount[];
 }) {
   return <PurchaseDialog mode="create" {...props} />;
 }

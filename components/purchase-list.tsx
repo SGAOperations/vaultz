@@ -8,6 +8,7 @@ import {
   Allocation,
   AllocationGroupWithAllocations,
   CategoryWithDesignation,
+  ProcessTemplateWithStepCount,
   PurchaseWithUser,
 } from '@/lib/types';
 
@@ -20,12 +21,14 @@ export function PurchaseList({
   categories,
   allocationGroups,
   miscAllocations,
+  processTemplates = [],
 }: {
   purchases: PurchaseWithUser[];
   users: User[];
   categories: CategoryWithDesignation[];
   allocationGroups: AllocationGroupWithAllocations[];
   miscAllocations: Allocation[];
+  processTemplates?: ProcessTemplateWithStepCount[];
 }) {
   const { selectedYear } = useYear();
 
@@ -50,6 +53,7 @@ export function PurchaseList({
               categories={categories}
               allocationGroups={allocationGroups}
               miscAllocations={miscAllocations}
+              processTemplates={processTemplates}
             />
           ))}
         </div>
