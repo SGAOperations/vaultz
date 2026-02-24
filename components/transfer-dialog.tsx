@@ -71,7 +71,6 @@ export function TransferDialog({
   const isSubmitting = form.formState.isSubmitting;
   const [fromCategoryId, setFromCategoryId] = useState('');
 
-  const fromCategory = categories.find((c) => c.id === fromCategoryId);
   const toCategoryOptions = categories.filter((c) => c.id !== fromCategoryId);
 
   async function handleSubmit(data: FormData) {
@@ -103,7 +102,7 @@ export function TransferDialog({
 
   const toCategoryItems = toCategoryOptions.map((c) => ({
     value: c.id,
-    label: c.name,
+    label: `${c.name} (Available: $${formatNumber(c.available)})`,
   }));
 
   return (
@@ -148,11 +147,6 @@ export function TransferDialog({
                       name="from category"
                     />
                   </FormControl>
-                  {fromCategory && (
-                    <p className="text-muted-foreground text-sm">
-                      Available: ${formatNumber(fromCategory.available)}
-                    </p>
-                  )}
                   <FormMessage />
                 </FormItem>
               )}
@@ -182,9 +176,6 @@ export function TransferDialog({
               name="amount"
               label="Amount"
               placeholder="$0.00"
-              type="number"
-              min="0.01"
-              step="0.01"
               currency
             />
 
