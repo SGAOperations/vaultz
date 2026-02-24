@@ -65,16 +65,13 @@ export function YearDialog({
 
   async function onSubmit(data: FormData) {
     if (year) {
-      const result = await handleError(
-        updateYear({ ...data, id: year.id }),
-        {
-          toast: {
-            loading: 'Updating year...',
-            success: 'Year updated successfully',
-            error: 'Failed to update year',
-          },
+      const result = await handleError(updateYear({ ...data, id: year.id }), {
+        toast: {
+          loading: 'Updating year...',
+          success: 'Year updated successfully',
+          error: 'Failed to update year',
         },
-      );
+      });
       if (!isError(result)) setOpen(false);
     } else {
       const result = await handleError(createYear(data), {
@@ -106,7 +103,11 @@ export function YearDialog({
 
         <FormProvider {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormInput<FormData> name="name" label="Name" placeholder="FY 2025" />
+            <FormInput<FormData>
+              name="name"
+              label="Name"
+              placeholder="FY 2025"
+            />
 
             <Controller
               control={form.control}

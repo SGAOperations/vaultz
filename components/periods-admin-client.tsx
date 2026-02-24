@@ -10,7 +10,6 @@ import { deletePeriod, deleteYear } from '@/prisma/services/period';
 import { handleError } from '@/lib/utils';
 
 import { PeriodDialog } from '@/components/period-dialog';
-import { YearDialog } from '@/components/year-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -21,6 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { YearDialog } from '@/components/year-dialog';
 
 import { DateTime } from './date-time';
 
@@ -44,13 +44,7 @@ function ActiveBadge() {
   );
 }
 
-function PeriodRow({
-  period,
-  years,
-}: {
-  period: Period;
-  years: Year[];
-}) {
+function PeriodRow({ period, years }: { period: Period; years: Year[] }) {
   const [deleting, setDeleting] = useState(false);
   const active = isActive(period.startDate, period.endDate);
 
@@ -178,7 +172,11 @@ function YearCard({
           )}
 
           <PeriodDialog years={allYears} defaultYearId={year.id}>
-            <Button variant="outline" size="sm" className="mt-2 gap-1.5 self-start">
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-2 gap-1.5 self-start"
+            >
               <Plus className="size-3.5" />
               Add Period
             </Button>
@@ -218,11 +216,7 @@ function YearCard({
   );
 }
 
-export function PeriodsAdminClient({
-  years,
-}: {
-  years: YearWithPeriods[];
-}) {
+export function PeriodsAdminClient({ years }: { years: YearWithPeriods[] }) {
   return (
     <div className="flex flex-col gap-4">
       {years.map((year) => (

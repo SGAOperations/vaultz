@@ -14,10 +14,7 @@ export async function getYearsWithPeriods(): Promise<YearWithPeriods[]> {
     where: { deletedAt: null },
     orderBy: { startDate: 'desc' },
     include: {
-      periods: {
-        where: { deletedAt: null },
-        orderBy: { startDate: 'asc' },
-      },
+      periods: { where: { deletedAt: null }, orderBy: { startDate: 'asc' } },
     },
   });
 }
@@ -88,12 +85,16 @@ export async function deleteYear({
   const purchaseCount = await prisma.purchase.count({ where: { yearId: id } });
 
   if (purchaseCount > 0)
-    return { error: `Cannot delete: ${purchaseCount} purchase(s) are linked to this year` };
+    return {
+      error: `Cannot delete: ${purchaseCount} purchase(s) are linked to this year`,
+    };
 
   const transferCount = await prisma.transfer.count({ where: { yearId: id } });
 
   if (transferCount > 0)
-    return { error: `Cannot delete: ${transferCount} transfer(s) are linked to this year` };
+    return {
+      error: `Cannot delete: ${transferCount} transfer(s) are linked to this year`,
+    };
 
   const year = await prisma.year.update({
     where: { id, deletedAt: null },
@@ -124,7 +125,8 @@ export async function createPeriod({
     },
   });
 
-  if (overlapping) return { error: `Overlaps with period "${overlapping.name}"` };
+  if (overlapping)
+    return { error: `Overlaps with period "${overlapping.name}"` };
 
   const period = await prisma.period.create({
     data: { name, yearId, startDate, endDate },
@@ -157,7 +159,8 @@ export async function updatePeriod({
     },
   });
 
-  if (overlapping) return { error: `Overlaps with period "${overlapping.name}"` };
+  if (overlapping)
+    return { error: `Overlaps with period "${overlapping.name}"` };
 
   const period = await prisma.period.update({
     where: { id, deletedAt: null },
@@ -179,7 +182,9 @@ export async function deletePeriod({
   });
 
   if (allocationCount > 0)
-    return { error: `Cannot delete: ${allocationCount} allocation(s) are linked to this period` };
+    return {
+      error: `Cannot delete: ${allocationCount} allocation(s) are linked to this period`,
+    };
 
   const period = await prisma.period.update({
     where: { id, deletedAt: null },

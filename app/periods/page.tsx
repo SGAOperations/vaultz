@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+
 import { Plus } from 'lucide-react';
 
 import { getYearsWithPeriods } from '@/prisma/services/period';
@@ -6,8 +7,8 @@ import { getYearsWithPeriods } from '@/prisma/services/period';
 import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/page-header';
 import { PeriodsAdminClient } from '@/components/periods-admin-client';
-import { YearDialog } from '@/components/year-dialog';
 import { Button } from '@/components/ui/button';
+import { YearDialog } from '@/components/year-dialog';
 
 export const metadata: Metadata = { title: 'Periods' };
 

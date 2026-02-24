@@ -122,7 +122,10 @@ export function PeriodDialog({
   }
 
   const watchedYearId = useWatch({ control: form.control, name: 'yearId' });
-  const watchedStartDate = useWatch({ control: form.control, name: 'startDate' });
+  const watchedStartDate = useWatch({
+    control: form.control,
+    name: 'startDate',
+  });
   const watchedEndDate = useWatch({ control: form.control, name: 'endDate' });
 
   const selectedYear = years.find((y) => y.id === watchedYearId);
@@ -221,7 +224,7 @@ export function PeriodDialog({
                 watchedEndDate &&
                 getExceedsYear(form.getValues()) && (
                   <p className="text-muted-foreground flex items-center gap-2 text-sm">
-                    <AlertTriangle className="text-amber-500 size-4 shrink-0" />
+                    <AlertTriangle className="size-4 shrink-0 text-amber-500" />
                     These dates extend beyond the selected year&apos;s range.
                     You will be asked to confirm.
                   </p>
@@ -238,12 +241,14 @@ export function PeriodDialog({
 
       <Dialog
         open={pendingData !== null}
-        onOpenChange={(o) => { if (!o) setPendingData(null); }}
+        onOpenChange={(o) => {
+          if (!o) setPendingData(null);
+        }}
       >
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="text-amber-500 size-5" />
+              <AlertTriangle className="size-5 text-amber-500" />
               Period Extends Beyond Year
             </DialogTitle>
             <DialogDescription>
