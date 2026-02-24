@@ -134,10 +134,12 @@ function YearCard({
   }
 
   function handlePeriodCreated(newPeriodId: string) {
-    const sortedPeriods = [...allPeriods].sort(
-      (a, b) =>
-        new Date(b.startDate).getTime() - new Date(a.startDate).getTime(),
-    );
+    const sortedPeriods = [...allPeriods]
+      .filter((p) => p.id !== newPeriodId)
+      .sort(
+        (a, b) =>
+          new Date(b.startDate).getTime() - new Date(a.startDate).getTime(),
+      );
     const previousPeriod = sortedPeriods[0] ?? null;
 
     if (previousPeriod) {
