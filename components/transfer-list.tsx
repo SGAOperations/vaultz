@@ -6,6 +6,7 @@ import { ArrowRight } from 'lucide-react';
 import { TransferWithYear } from '@/lib/types';
 import { formatNumber } from '@/lib/utils';
 
+import { DateTime } from '@/components/date-time';
 import { EmptyState } from '@/components/empty-state';
 
 export function TransferList({
@@ -51,6 +52,9 @@ export function TransferList({
                   {transfer.notes}
                 </p>
               )}
+              <span className="text-muted-foreground text-xs">
+                <DateTime date={transfer.createdAt} />
+              </span>
             </div>
             <div className="flex flex-col items-end gap-1">
               <span
