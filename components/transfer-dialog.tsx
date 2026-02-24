@@ -100,7 +100,7 @@ export function TransferDialog({
 
   const fromCategoryItems = categories.map((c) => ({
     value: c.id,
-    label: `${c.name} (Remaining: $${formatNumber(c.available)})`,
+    label: `${c.name} (Available: $${formatNumber(c.available)})`,
   }));
 
   const toCategoryItems = toCategoryOptions.map((c) => ({
