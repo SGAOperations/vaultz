@@ -1,13 +1,10 @@
 'use client';
 
-import { useState } from 'react';
-
 import { AlertTriangle } from 'lucide-react';
 
 import { formatCurrency } from '@/lib/utils';
 
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -34,27 +31,16 @@ export function TransferWarningDialog({
   transferAmount,
   onConfirm,
 }: TransferWarningDialogProps) {
-  const [confirmed, setConfirmed] = useState(false);
   const deficit = transferAmount - availableAmount;
 
-  function handleOpenChange(value: boolean) {
-    if (!value) setConfirmed(false);
-    onOpenChange(value);
-  }
-
-  function handleConfirm() {
-    setConfirmed(false);
-    onConfirm();
-  }
-
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="size-5 text-amber-500" />
-            <DialogTitle>Insufficient Funds Warning</DialogTitle>
-          </div>
+          <DialogTitle className="flex items-center gap-2">
+            <AlertTriangle className="size-5 text-destructive" />
+            Insufficient Funds Warning
+          </DialogTitle>
           <DialogDescription>
             This transfer exceeds the available amount in{' '}
             <span className="text-foreground font-medium">{categoryName}</span>.
@@ -66,7 +52,7 @@ export function TransferWarningDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-1 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm dark:border-amber-800 dark:bg-amber-950/20">
+        <div className="bg-muted space-y-1 rounded-lg p-3 text-sm">
           <p>
             <span className="text-muted-foreground">Category:</span>{' '}
             <span className="font-medium">{categoryName}</span>
@@ -91,26 +77,11 @@ export function TransferWarningDialog({
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Checkbox
-            id="confirm-overdraft"
-            checked={confirmed}
-            onChange={(e) => setConfirmed(e.target.checked)}
-          />
-          <label htmlFor="confirm-overdraft" className="cursor-pointer text-sm">
-            I understand this will create a negative balance
-          </label>
-        </div>
-
         <DialogFooter>
-          <Button variant="outline" onClick={() => handleOpenChange(false)}>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button
-            className="bg-amber-500 text-white hover:bg-amber-600"
-            disabled={!confirmed}
-            onClick={handleConfirm}
-          >
+          <Button variant="destructive" onClick={onConfirm}>
             Confirm Transfer
           </Button>
         </DialogFooter>
