@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import {
   ChevronRight,
   CreditCard,
+  Pencil,
   Plus,
   TrendingDown,
   TrendingUp,
@@ -20,6 +21,7 @@ import { getUsers } from '@/prisma/services/user';
 import { cn, formatNumber } from '@/lib/utils';
 
 import { CreateCategoryDialog } from '@/components/create-category-dialog';
+import { EditDesignationDialog } from '@/components/edit-designation-dialog';
 import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/page-header';
 import { PurchaseCard } from '@/components/purchase-card';
@@ -57,6 +59,16 @@ export default async function DesignationPage({
         description={`Designation code: DN${designation.code}`}
         actions={
           <div className="flex gap-2">
+            <EditDesignationDialog
+              designationId={designationId}
+              budgetResetBehavior={designation.budgetResetBehavior}
+              trigger={
+                <Button variant="outline" className="gap-2">
+                  <Pencil className="size-4" />
+                  Edit Designation
+                </Button>
+              }
+            />
             <CreatePurchaseDialog
               users={users}
               categories={categories}

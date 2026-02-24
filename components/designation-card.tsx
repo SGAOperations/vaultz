@@ -1,6 +1,7 @@
 import {
   CreditCard,
   Percent,
+  RefreshCw,
   TrendingDown,
   TrendingUp,
   Wallet,
@@ -12,7 +13,7 @@ import { formatNumber } from '@/lib/utils';
 import { LinkCard } from '@/components/link-card';
 
 export function DesignationCard({
-  designation: { id, name, code, purchases, amount },
+  designation: { id, name, code, purchases, amount, budgetResetBehavior },
 }: {
   designation: DesignationWithPurchases;
 }) {
@@ -54,6 +55,12 @@ export function DesignationCard({
           iconColor: 'text-info',
           label: 'Left',
           value: `${formatNumber(percentRemaining)}%`,
+        },
+        {
+          icon: RefreshCw,
+          iconColor: 'text-muted-foreground',
+          label: 'Year End',
+          value: budgetResetBehavior === 'ROLLOVER' ? 'Rollover' : 'Reset',
         },
       ]}
     />
