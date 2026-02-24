@@ -70,7 +70,11 @@ export function TransferDialog({
 
   const isSubmitting = form.formState.isSubmitting;
   const [fromCategoryId, setFromCategoryId] = useState('');
+  const [toCategoryId, setToCategoryId] = useState('');
+  const [transferAmount, setTransferAmount] = useState(0);
 
+  const fromCategory = categories.find((c) => c.id === fromCategoryId);
+  const toCategory = categories.find((c) => c.id === toCategoryId);
   const toCategoryOptions = categories.filter((c) => c.id !== fromCategoryId);
 
   async function handleSubmit(data: FormData) {
@@ -83,26 +87,25 @@ export function TransferDialog({
     });
     if (!isError(result)) {
       form.reset();
+      setFromCategoryId('');
+      setToCategoryId('');
+      setTransferAmount(0);
       setOpen(false);
     }
   }
 
   function handleOpenChange(value: boolean) {
-    if (!value) {
-      form.reset();
-      setFromCategoryId('');
-    }
     setOpen(value);
   }
 
   const fromCategoryItems = categories.map((c) => ({
     value: c.id,
-    label: `${c.name} (Available: $${formatNumber(c.available)})`,
+    label: `${c.name} (Remaining: $${formatNumber(c.available)})`,
   }));
 
   const toCategoryItems = toCategoryOptions.map((c) => ({
     value: c.id,
-    label: `${c.name} (Available: $${formatNumber(c.available)})`,
+    label: `${c.name} (Remaining: $${formatNumber(c.available)})`,
   }));
 
   return (
@@ -142,6 +145,7 @@ export function TransferDialog({
                       onChange={(value) => {
                         field.onChange(value);
                         setFromCategoryId(value);
+                        setToCategoryId('');
                         form.setValue('toCategoryId', '');
                       }}
                       name="from category"
@@ -161,8 +165,11 @@ export function TransferDialog({
                   <FormControl>
                     <Combobox
                       data={[{ items: toCategoryItems }]}
-                      {...field}
                       value={field.value || ''}
+                      onChange={(value) => {
+                        field.onChange(value);
+                        setToCategoryId(value);
+                      }}
                       name="to category"
                       disabled={!fromCategoryId}
                     />
@@ -177,6 +184,12 @@ export function TransferDialog({
               label="Amount"
               placeholder="$0.00"
               currency
+              onChange={(e) => {
+                const val = parseFloat(
+                  (e.target as HTMLInputElement).value.replace(/^\$/, ''),
+                );
+                setTransferAmount(isNaN(val) ? 0 : val);
+              }}
             />
 
             <FormField
@@ -200,6 +213,24 @@ export function TransferDialog({
                 </FormItem>
               )}
             />
+
+            {fromCategory && toCategory && transferAmount > 0 && (
+              <div className="bg-muted rounded-lg p-3 text-sm">
+                <p className="text-muted-foreground mb-1 font-medium">
+                  After transfer:
+                </p>
+                <p>
+                  <span className="font-medium">{fromCategory.name}:</span> $
+                  {formatNumber(fromCategory.available - transferAmount)}{' '}
+                  remaining
+                </p>
+                <p>
+                  <span className="font-medium">{toCategory.name}:</span> $
+                  {formatNumber(toCategory.available + transferAmount)}{' '}
+                  remaining
+                </p>
+              </div>
+            )}
 
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="animate-spin" />}
