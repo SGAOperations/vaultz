@@ -12,7 +12,7 @@ import {
   Wallet,
 } from 'lucide-react';
 
-import { getCategoriesWithPurchasesByDesignation } from '@/prisma/services/category';
+import { getCategoriesWithAvailableAmount } from '@/prisma/services/category';
 
 import { cn, formatNumber } from '@/lib/utils';
 
@@ -31,7 +31,7 @@ export function Content({ designationId }: ContentProps) {
     isError,
   } = useQuery({
     queryKey: ['categories', designationId],
-    queryFn: () => getCategoriesWithPurchasesByDesignation({ designationId }),
+    queryFn: () => getCategoriesWithAvailableAmount({ designationId }),
   });
 
   if (isLoading)
@@ -56,14 +56,7 @@ export function Content({ designationId }: ContentProps) {
   return (
     <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
       {categories.map((category) => {
-        const spent = category.purchases
-          .filter((p) => !p.excludeFromTotal)
-          .reduce((acc, p) => acc + p.amount, 0);
-        const budget = category.categoryYears.reduce(
-          (acc, cy) => acc + cy.amount,
-          0,
-        );
-        const remaining = budget - spent;
+        const { budget, spent, available: remaining } = category;
 
         return (
           <Link
