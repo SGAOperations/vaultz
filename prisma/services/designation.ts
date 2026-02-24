@@ -137,7 +137,6 @@ export async function updateDesignation({
   });
 
   revalidatePath('/designation');
-  revalidatePath(`/designation/${id}`);
 
   return designation;
 }

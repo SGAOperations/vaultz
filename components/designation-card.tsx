@@ -1,6 +1,4 @@
-import Link from 'next/link';
-
-import { ArrowRight, CreditCard, RefreshCw } from 'lucide-react';
+import { CreditCard, RefreshCw } from 'lucide-react';
 
 import { Designation } from '@/prisma/client';
 
@@ -26,23 +24,15 @@ export function DesignationCard({ designation }: { designation: Designation }) {
               </p>
             </div>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <EditDesignationDialog
-              designationId={id}
-              budgetResetBehavior={budgetResetBehavior}
-              trigger={
-                <Button variant="outline" size="sm">
-                  Edit
-                </Button>
-              }
-            />
-            <Link href={`/designation/${id}`}>
-              <Button variant="ghost" size="sm" className="gap-1">
-                View
-                <ArrowRight className="size-4" />
+          <EditDesignationDialog
+            designationId={id}
+            budgetResetBehavior={budgetResetBehavior}
+            trigger={
+              <Button variant="outline" size="sm">
+                Edit
               </Button>
-            </Link>
-          </div>
+            }
+          />
         </div>
       </CardHeader>
       <CardContent className="pt-0">
