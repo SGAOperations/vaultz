@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 
+import { useQueryClient } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2, TrendingUp } from 'lucide-react';
 import { z } from 'zod/v4';
@@ -92,6 +93,7 @@ export function CategoryYearBudgetsDialog({
     name: 'budgets',
   });
 
+  const queryClient = useQueryClient();
   const isSubmitting = form.formState.isSubmitting;
 
   function handleOpenChange(newOpen: boolean) {
@@ -170,6 +172,7 @@ export function CategoryYearBudgetsDialog({
       },
     );
     if (!isError(result)) {
+      await queryClient.invalidateQueries({ queryKey: ['categories-budget'] });
       handleOpenChange(false);
     }
   }

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
+import { useQueryClient } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
 import { z } from 'zod/v4';
@@ -56,6 +57,7 @@ export function CategoryBudgetEditDialog({
   spent,
 }: CategoryBudgetEditDialogProps) {
   const [open, setOpen] = useState(false);
+  const queryClient = useQueryClient();
 
   const form = useForm({
     resolver: zodResolver(schema),
@@ -85,6 +87,7 @@ export function CategoryBudgetEditDialog({
       },
     );
     if (!isError(result)) {
+      await queryClient.invalidateQueries({ queryKey: ['categories-budget'] });
       setOpen(false);
     }
   }
