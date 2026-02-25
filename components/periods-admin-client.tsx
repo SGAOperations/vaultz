@@ -9,6 +9,7 @@ import { deletePeriod, deleteYear } from '@/prisma/services/period';
 
 import { handleError } from '@/lib/utils';
 
+import { CopyAllocationsDialog } from '@/components/copy-allocations-dialog';
 import { PeriodDialog } from '@/components/period-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -104,12 +105,19 @@ function PeriodRow({ period, years }: { period: Period; years: Year[] }) {
 function YearCard({
   year,
   allYears,
+  allPeriods,
 }: {
   year: YearWithPeriods;
   allYears: Year[];
+  allPeriods: Period[];
 }) {
   const [deleting, setDeleting] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [copyDialogState, setCopyDialogState] = useState<{
+    newPeriodId: string;
+    previousPeriodId: string;
+    previousPeriodName: string;
+  } | null>(null);
   const active = isActive(year.startDate, year.endDate);
 
   async function handleDelete() {
@@ -123,6 +131,24 @@ function YearCard({
     });
     setDeleting(false);
     setConfirmOpen(false);
+  }
+
+  function handlePeriodCreated(newPeriodId: string) {
+    const sortedPeriods = [...allPeriods]
+      .filter((p) => p.id !== newPeriodId)
+      .sort(
+        (a, b) =>
+          new Date(b.startDate).getTime() - new Date(a.startDate).getTime(),
+      );
+    const previousPeriod = sortedPeriods[0] ?? null;
+
+    if (previousPeriod) {
+      setCopyDialogState({
+        newPeriodId,
+        previousPeriodId: previousPeriod.id,
+        previousPeriodName: previousPeriod.name,
+      });
+    }
   }
 
   return (
@@ -171,7 +197,11 @@ function YearCard({
             ))
           )}
 
-          <PeriodDialog years={allYears} defaultYearId={year.id}>
+          <PeriodDialog
+            years={allYears}
+            defaultYearId={year.id}
+            onCreated={handlePeriodCreated}
+          >
             <Button
               variant="outline"
               size="sm"
@@ -212,15 +242,38 @@ function YearCard({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {copyDialogState && (
+        <CopyAllocationsDialog
+          open={copyDialogState !== null}
+          onOpenChange={(o) => {
+            if (!o) setCopyDialogState(null);
+          }}
+          newPeriodId={copyDialogState.newPeriodId}
+          previousPeriodId={copyDialogState.previousPeriodId}
+          previousPeriodName={copyDialogState.previousPeriodName}
+        />
+      )}
     </>
   );
 }
 
-export function PeriodsAdminClient({ years }: { years: YearWithPeriods[] }) {
+export function PeriodsAdminClient({
+  years,
+  allPeriods,
+}: {
+  years: YearWithPeriods[];
+  allPeriods: Period[];
+}) {
   return (
     <div className="flex flex-col gap-4">
       {years.map((year) => (
-        <YearCard key={year.id} year={year} allYears={years} />
+        <YearCard
+          key={year.id}
+          year={year}
+          allYears={years}
+          allPeriods={allPeriods}
+        />
       ))}
     </div>
   );

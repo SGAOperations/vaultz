@@ -10,12 +10,14 @@ import { ResponseType } from '@/lib/utils';
 
 export async function getAllAllocationGroups(
   designationId?: string,
+  periodId?: string,
 ): Promise<AllocationGroupWithAllocations[]> {
   return (
     await prisma.allocationGroup.findMany({
       where: designationId ? { designationId } : undefined,
       include: {
         allocations: {
+          where: periodId ? { periodId } : undefined,
           include: {
             purchases: {
               orderBy: [{ purchasedAt: 'desc' }, { createdAt: 'desc' }],
