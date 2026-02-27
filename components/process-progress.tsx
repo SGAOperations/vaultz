@@ -2,11 +2,18 @@
 
 import { useEffect, useState } from 'react';
 
-import { CheckCircle2, Circle, Loader2, SkipForward } from 'lucide-react';
+import {
+  CheckCircle2,
+  Circle,
+  Loader2,
+  SkipForward,
+  Undo2,
+} from 'lucide-react';
 
 import {
   getPurchaseProcess,
   markStepComplete,
+  unmarkStepComplete,
 } from '@/prisma/services/purchase';
 
 import { PurchaseProcessData, PurchaseProcessStep } from '@/lib/types';
@@ -56,7 +63,7 @@ export function ProcessProgress({ purchaseId }: { purchaseId: string }) {
   const [data, setData] = useState<PurchaseProcessData | null | undefined>(
     undefined,
   );
-  const [markingStepId, setMarkingStepId] = useState<string | null>(null);
+  const [mutatingStepId, setMutatingStepId] = useState<string | null>(null);
 
   useEffect(() => {
     getPurchaseProcess(purchaseId).then(setData);
@@ -64,7 +71,7 @@ export function ProcessProgress({ purchaseId }: { purchaseId: string }) {
 
   async function handleMarkComplete(stepId: string) {
     if (!data) return;
-    setMarkingStepId(stepId);
+    setMutatingStepId(stepId);
     const result = await handleError(markStepComplete(data.processId, stepId), {
       toast: {
         loading: 'Marking step complete...',
@@ -93,7 +100,32 @@ export function ProcessProgress({ purchaseId }: { purchaseId: string }) {
       },
     });
     void result;
-    setMarkingStepId(null);
+    setMutatingStepId(null);
+  }
+
+  async function handleUnmark(stepId: string, completionId: string) {
+    if (!data) return;
+    setMutatingStepId(stepId);
+    const result = await handleError(unmarkStepComplete(completionId), {
+      toast: {
+        loading: 'Undoing completion...',
+        success: 'Completion undone',
+        error: 'Failed to undo completion',
+      },
+      onSuccess: () => {
+        setData((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            steps: prev.steps.map((s: PurchaseProcessStep) =>
+              s.id === stepId ? { ...s, completion: null } : s,
+            ),
+          };
+        });
+      },
+    });
+    void result;
+    setMutatingStepId(null);
   }
 
   if (data === undefined)
@@ -147,15 +179,31 @@ export function ProcessProgress({ purchaseId }: { purchaseId: string }) {
               </div>
               <div className="flex shrink-0 items-center gap-2">
                 <StepStatusBadge status={status} />
-                {status === 'pending' && (
+                {status === 'completed' && step.completion && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-muted-foreground h-6 px-2 text-xs"
+                    disabled={mutatingStepId !== null}
+                    onClick={() => handleUnmark(step.id, step.completion!.id)}
+                  >
+                    {mutatingStepId === step.id ? (
+                      <Loader2 className="mr-1 size-3 animate-spin" />
+                    ) : (
+                      <Undo2 className="mr-1 size-3" />
+                    )}
+                    Undo
+                  </Button>
+                )}
+                {(status === 'pending' || status === 'bypassed') && (
                   <Button
                     size="sm"
                     variant="outline"
                     className="h-6 px-2 text-xs"
-                    disabled={markingStepId !== null}
+                    disabled={mutatingStepId !== null}
                     onClick={() => handleMarkComplete(step.id)}
                   >
-                    {markingStepId === step.id && (
+                    {mutatingStepId === step.id && (
                       <Loader2 className="mr-1 size-3 animate-spin" />
                     )}
                     Mark Complete

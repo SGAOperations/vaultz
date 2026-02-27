@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+
 import {
   Calendar,
   Check,
@@ -12,12 +14,14 @@ import {
 } from 'lucide-react';
 
 import { User } from '@/prisma/client';
+import { getPurchaseProcess } from '@/prisma/services/purchase';
 
 import {
   Allocation,
   AllocationGroupWithAllocations,
   CategoryWithDesignation,
   ProcessTemplateWithStepCount,
+  PurchaseProcessData,
   PurchaseWithUser,
 } from '@/lib/types';
 import { formatCurrency } from '@/lib/utils';
@@ -32,6 +36,45 @@ import {
 } from '@/components/ui/tooltip';
 
 import { PurchaseDialog } from './purchase-dialog';
+
+function ProcessCardIndicator({ purchaseId }: { purchaseId: string }) {
+  const [data, setData] = useState<PurchaseProcessData | null | undefined>(
+    undefined,
+  );
+
+  useEffect(() => {
+    getPurchaseProcess(purchaseId)
+      .then(setData)
+      .catch(() => setData(null));
+  }, [purchaseId]);
+
+  if (!data) return null;
+
+  const total = data.steps.length;
+  const completed = data.steps.filter((s) => s.completion !== null).length;
+  const pct = total === 0 ? 0 : Math.round((completed / total) * 100);
+  const nextStep = data.steps.find((s) => s.completion === null);
+
+  return (
+    <div className="mt-2 flex items-center gap-2">
+      <div
+        className="bg-muted flex-1 overflow-hidden rounded-full"
+        style={{ height: '4px' }}
+      >
+        <div
+          className="h-full rounded-full bg-green-500 transition-all"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <span className="text-muted-foreground shrink-0 text-xs">
+        {completed}/{total}
+        {nextStep && (
+          <span className="text-muted-foreground/70"> · {nextStep.name}</span>
+        )}
+      </span>
+    </div>
+  );
+}
 
 export function PurchaseCard({
   purchase,
@@ -134,6 +177,9 @@ export function PurchaseCard({
               )}
             </div>
           )}
+
+          {/* Process Progress Indicator */}
+          <ProcessCardIndicator purchaseId={purchase.id} />
         </Card>
       }
       purchase={purchase}

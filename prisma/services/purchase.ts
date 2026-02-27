@@ -276,3 +276,23 @@ export async function markStepComplete(
 
   return { id: completion.id };
 }
+
+export async function unmarkStepComplete(
+  completionId: string,
+): Promise<ResponseType<{ id: string }>> {
+  const completion = await prisma.purchaseStepCompletion.findUnique({
+    where: { id: completionId },
+  });
+
+  if (!completion || completion.deletedAt)
+    return { error: 'Completion record not found.' };
+
+  await prisma.purchaseStepCompletion.update({
+    where: { id: completionId },
+    data: { deletedAt: new Date() },
+  });
+
+  revalidatePath('/');
+
+  return { id: completionId };
+}

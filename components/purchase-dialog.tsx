@@ -413,7 +413,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
           className={
             isEditing
               ? 'flex max-h-[90vh] w-2/3 flex-col sm:max-w-full'
-              : 'sm:max-w-full md:w-1/3'
+              : 'sm:max-w-full md:w-1/2'
           }
         >
           <DialogHeader>
