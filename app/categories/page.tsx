@@ -1,17 +1,22 @@
 'use client';
 
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import { Plus } from 'lucide-react';
+import { BarChart2, Ellipsis, Plus } from 'lucide-react';
 
 import { useDesignation } from '@/contexts/DesignationContext';
 import { useYear } from '@/contexts/YearContext';
 
 import { CategoryYearBudgetsDialog } from '@/components/category-year-budgets-dialog';
-import { CategoryYearComparison } from '@/components/category-year-comparison';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 import { Content } from './content';
 
@@ -34,41 +39,43 @@ export default function CategoriesPage() {
         title="Categories"
         description={`${activeDesignation.name} · DN${activeDesignation.code}`}
         actions={
-          selectedYear ? (
-            <CategoryYearBudgetsDialog
-              trigger={
-                <Button variant="outline" className="gap-2">
-                  <Plus className="size-4" />
-                  Set {selectedYear.name} Budgets
+          <div className="flex gap-2">
+            {selectedYear && (
+              <CategoryYearBudgetsDialog
+                trigger={
+                  <Button variant="outline" className="gap-2">
+                    <Plus className="size-4" />
+                    Set {selectedYear.name} Budgets
+                  </Button>
+                }
+                designationId={activeDesignation.id}
+                yearId={selectedYear.id}
+                yearName={selectedYear.name}
+                budgetResetBehavior={activeDesignation.budgetResetBehavior}
+                prevYearId={prevYear?.id}
+                prevYearName={prevYear?.name}
+              />
+            )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <Ellipsis className="size-4" />
                 </Button>
-              }
-              designationId={activeDesignation.id}
-              yearId={selectedYear.id}
-              yearName={selectedYear.name}
-              budgetResetBehavior={activeDesignation.budgetResetBehavior}
-              prevYearId={prevYear?.id}
-              prevYearName={prevYear?.name}
-            />
-          ) : undefined
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link href="/categories/comparison">
+                    <BarChart2 className="size-4" />
+                    Year Comparison
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         }
       />
 
-      <Tabs defaultValue="overview">
-        <TabsList>
-          <TabsTrigger value="overview">
-            {selectedYear ? selectedYear.name : 'Overview'}
-          </TabsTrigger>
-          <TabsTrigger value="comparison">Year Comparison</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview">
-          <Content designationId={activeDesignation.id} />
-        </TabsContent>
-
-        <TabsContent value="comparison">
-          <CategoryYearComparison designationId={activeDesignation.id} />
-        </TabsContent>
-      </Tabs>
+      <Content designationId={activeDesignation.id} />
     </div>
   );
 }
