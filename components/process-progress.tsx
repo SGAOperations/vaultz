@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import {
   CheckCircle2,
@@ -25,7 +25,7 @@ import { Button } from './ui/button';
 
 type StepStatus = 'completed' | 'bypassed' | 'pending';
 
-function getStepStatus(
+export function getStepStatus(
   step: PurchaseProcessStep,
   steps: PurchaseProcessStep[],
 ): StepStatus {
@@ -59,15 +59,29 @@ function StepStatusBadge({ status }: { status: StepStatus }) {
   );
 }
 
-export function ProcessProgress({ purchaseId }: { purchaseId: string }) {
+export function ProcessProgress({
+  purchaseId,
+  onDataChange,
+}: {
+  purchaseId: string;
+  onDataChange?: (data: PurchaseProcessData | null) => void;
+}) {
   const [data, setData] = useState<PurchaseProcessData | null | undefined>(
     undefined,
   );
   const [mutatingStepId, setMutatingStepId] = useState<string | null>(null);
 
+  const updateData = useCallback(
+    (next: PurchaseProcessData | null) => {
+      setData(next);
+      if (onDataChange) onDataChange(next);
+    },
+    [onDataChange],
+  );
+
   useEffect(() => {
-    getPurchaseProcess(purchaseId).then(setData);
-  }, [purchaseId]);
+    getPurchaseProcess(purchaseId).then(updateData);
+  }, [purchaseId, updateData]);
 
   async function handleMarkComplete(stepId: string) {
     if (!data) return;
@@ -79,23 +93,20 @@ export function ProcessProgress({ purchaseId }: { purchaseId: string }) {
         error: 'Failed to mark step complete',
       },
       onSuccess: (res) => {
-        setData((prev) => {
-          if (!prev) return prev;
-          return {
-            ...prev,
-            steps: prev.steps.map((s: PurchaseProcessStep) =>
-              s.id === stepId
-                ? {
-                    ...s,
-                    completion: {
-                      id: res.id,
-                      markedAt: new Date(),
-                      completionDate: null,
-                    },
-                  }
-                : s,
-            ),
-          };
+        updateData({
+          ...data,
+          steps: data.steps.map((s: PurchaseProcessStep) =>
+            s.id === stepId
+              ? {
+                  ...s,
+                  completion: {
+                    id: res.id,
+                    markedAt: new Date(),
+                    completionDate: null,
+                  },
+                }
+              : s,
+          ),
         });
       },
     });
@@ -113,14 +124,11 @@ export function ProcessProgress({ purchaseId }: { purchaseId: string }) {
         error: 'Failed to undo completion',
       },
       onSuccess: () => {
-        setData((prev) => {
-          if (!prev) return prev;
-          return {
-            ...prev,
-            steps: prev.steps.map((s: PurchaseProcessStep) =>
-              s.id === stepId ? { ...s, completion: null } : s,
-            ),
-          };
+        updateData({
+          ...data,
+          steps: data.steps.map((s: PurchaseProcessStep) =>
+            s.id === stepId ? { ...s, completion: null } : s,
+          ),
         });
       },
     });

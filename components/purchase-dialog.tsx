@@ -41,6 +41,7 @@ import {
   AllocationGroupWithAllocations,
   CategoryWithDesignation,
   ProcessTemplateWithStepCount,
+  PurchaseProcessData,
   PurchaseWithUser,
 } from '@/lib/types';
 import { UploadDropzone } from '@/lib/uploadthing';
@@ -127,6 +128,7 @@ type ViewEditPurchaseProps = {
   allocationGroups: AllocationGroupWithAllocations[];
   miscAllocations: Allocation[];
   processTemplates?: ProcessTemplateWithStepCount[];
+  onProcessDataChange?: (data: PurchaseProcessData | null) => void;
 };
 
 type PurchaseDialogProps = CreatePurchaseProps | ViewEditPurchaseProps;
@@ -1111,7 +1113,14 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                 )}
 
                 {/* Process Progress */}
-                <ProcessProgress purchaseId={purchase!.id} />
+                <ProcessProgress
+                  purchaseId={purchase!.id}
+                  onDataChange={
+                    !isCreateMode
+                      ? (props as ViewEditPurchaseProps).onProcessDataChange
+                      : undefined
+                  }
+                />
               </div>
 
               <div className="flex gap-2">

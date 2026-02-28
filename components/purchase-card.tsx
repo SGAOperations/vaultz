@@ -35,41 +35,41 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 
+import { getStepStatus } from './process-progress';
 import { PurchaseDialog } from './purchase-dialog';
 
-function ProcessCardIndicator({ purchaseId }: { purchaseId: string }) {
-  const [data, setData] = useState<PurchaseProcessData | null | undefined>(
-    undefined,
-  );
-
-  useEffect(() => {
-    getPurchaseProcess(purchaseId)
-      .then(setData)
-      .catch(() => setData(null));
-  }, [purchaseId]);
-
-  if (!data) return null;
-
+function ProcessCardIndicator({ data }: { data: PurchaseProcessData }) {
   const total = data.steps.length;
-  const completed = data.steps.filter((s) => s.completion !== null).length;
-  const pct = total === 0 ? 0 : Math.round((completed / total) * 100);
-  const nextStep = data.steps.find((s) => s.completion === null);
+  if (total === 0) return null;
+
+  const nextPending = data.steps.find(
+    (s) => s.completion === null && getStepStatus(s, data.steps) !== 'bypassed',
+  );
+  const nextLabel = nextPending?.name;
 
   return (
     <div className="mt-2 flex items-center gap-2">
-      <div
-        className="bg-muted flex-1 overflow-hidden rounded-full"
-        style={{ height: '4px' }}
-      >
-        <div
-          className="h-full rounded-full bg-green-500 transition-all"
-          style={{ width: `${pct}%` }}
-        />
+      <div className="flex flex-1 gap-px overflow-hidden rounded-full">
+        {data.steps.map((step) => {
+          const status = getStepStatus(step, data.steps);
+          return (
+            <div
+              key={step.id}
+              className={`h-1 flex-1 transition-colors ${
+                status === 'completed'
+                  ? 'bg-green-500'
+                  : status === 'bypassed'
+                    ? 'bg-yellow-400'
+                    : 'bg-muted'
+              }`}
+            />
+          );
+        })}
       </div>
       <span className="text-muted-foreground shrink-0 text-xs">
-        {completed}/{total}
-        {nextStep && (
-          <span className="text-muted-foreground/70"> · {nextStep.name}</span>
+        {data.steps.filter((s) => s.completion !== null).length}/{total}
+        {nextLabel && (
+          <span className="text-muted-foreground/70"> · {nextLabel}</span>
         )}
       </span>
     </div>
@@ -93,6 +93,16 @@ export function PurchaseCard({
   processTemplates?: ProcessTemplateWithStepCount[];
   stopPropagation?: boolean;
 }) {
+  const [processData, setProcessData] = useState<
+    PurchaseProcessData | null | undefined
+  >(undefined);
+
+  useEffect(() => {
+    getPurchaseProcess(purchase.id)
+      .then(setProcessData)
+      .catch(() => setProcessData(null));
+  }, [purchase.id]);
+
   return (
     <PurchaseDialog
       trigger={
@@ -179,7 +189,7 @@ export function PurchaseCard({
           )}
 
           {/* Process Progress Indicator */}
-          <ProcessCardIndicator purchaseId={purchase.id} />
+          {processData && <ProcessCardIndicator data={processData} />}
         </Card>
       }
       purchase={purchase}
@@ -188,6 +198,7 @@ export function PurchaseCard({
       allocationGroups={allocationGroups}
       miscAllocations={miscAllocations}
       processTemplates={processTemplates}
+      onProcessDataChange={setProcessData}
     />
   );
 }
