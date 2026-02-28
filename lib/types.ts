@@ -32,7 +32,11 @@ export type CategoryWithAvailableAmount = CategoryWithDesignation & {
 };
 
 export type CategoryWithAvailableAmountAndYears =
-  CategoryWithAvailableAmount & { yearIds: string[] };
+  CategoryWithAvailableAmount & {
+    yearIds: string[];
+    budget: number;
+    spent: number;
+  };
 
 export type UserWithPurchases = User & { purchases: Purchase[] };
 
