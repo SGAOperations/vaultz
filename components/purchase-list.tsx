@@ -303,6 +303,8 @@ export function PurchaseList({
   allocationGroups,
   miscAllocations,
   processTemplates = [],
+  sorting: controlledSorting,
+  onSortingChange: onControlledSortingChange,
 }: {
   purchases: PurchaseWithUser[];
   users: User[];
@@ -310,10 +312,14 @@ export function PurchaseList({
   allocationGroups: AllocationGroupWithAllocations[];
   miscAllocations: Allocation[];
   processTemplates?: ProcessTemplateWithStepCount[];
+  sorting?: SortingState;
+  onSortingChange?: (sorting: SortingState) => void;
 }) {
   'use no memo';
   const { selectedYear } = useYear();
-  const [sorting, setSorting] = useState<SortingState>([]);
+  const [internalSorting, setInternalSorting] = useState<SortingState>(
+    controlledSorting ?? [],
+  );
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState('');
   const [statusFilters, setStatusFilters] = useState<Set<StatusFilter>>(
@@ -509,8 +515,17 @@ export function PurchaseList({
   const table = useReactTable({
     data: filteredPurchases,
     columns,
-    state: { sorting, columnFilters, globalFilter },
-    onSortingChange: setSorting,
+    state: {
+      sorting: controlledSorting ?? internalSorting,
+      columnFilters,
+      globalFilter,
+    },
+    onSortingChange: (updater) => {
+      const current = controlledSorting ?? internalSorting;
+      const next = typeof updater === 'function' ? updater(current) : updater;
+      if (onControlledSortingChange) onControlledSortingChange(next);
+      else setInternalSorting(next);
+    },
     onColumnFiltersChange: setColumnFilters,
     onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
