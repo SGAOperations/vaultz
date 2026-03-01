@@ -27,14 +27,19 @@ export default async function CategoryPage({
   const category = await getCategoryById({ id: categoryId });
   if (category === null) notFound();
 
-  const [users, allocationGroups, miscAllocations, processTemplates, transfers] =
-    await Promise.all([
-      getUsers(),
-      getAllAllocationGroups(category.designationId),
-      getMiscAllocations(category.designationId),
-      getAllProcessTemplates(true),
-      getTransfersByCategory(categoryId),
-    ]);
+  const [
+    users,
+    allocationGroups,
+    miscAllocations,
+    processTemplates,
+    transfers,
+  ] = await Promise.all([
+    getUsers(),
+    getAllAllocationGroups(category.designationId),
+    getMiscAllocations(category.designationId),
+    getAllProcessTemplates(true),
+    getTransfersByCategory(categoryId),
+  ]);
 
   const spent = category.purchases
     .filter((purchase) => !purchase.excludeFromTotal)

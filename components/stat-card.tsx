@@ -120,8 +120,7 @@ export function StatCards({
   transfersOut,
 }: StatCardsProps) {
   const remainingValue = remaining !== undefined ? remaining : total - spent;
-  const showBreakdown =
-    transfersIn !== undefined && transfersOut !== undefined;
+  const showBreakdown = transfersIn !== undefined && transfersOut !== undefined;
 
   if (showBreakdown)
     return (
