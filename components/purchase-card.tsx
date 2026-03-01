@@ -24,7 +24,7 @@ import {
   PurchaseProcessData,
   PurchaseWithUser,
 } from '@/lib/types';
-import { formatCurrency } from '@/lib/utils';
+import { cn, formatCurrency } from '@/lib/utils';
 
 import { DateTime } from '@/components/date-time';
 import { Card } from '@/components/ui/card';
@@ -48,7 +48,7 @@ function ProcessCardIndicator({ data }: { data: PurchaseProcessData }) {
   );
 
   return (
-    <div className="mt-1.5 flex items-center gap-1.5 overflow-hidden">
+    <div className="mt-1 flex items-center gap-1.5 overflow-hidden">
       <div className="flex shrink-0 gap-0.5">
         {data.steps.map((step) => {
           const status = getStepStatus(step, data.steps);
@@ -68,7 +68,13 @@ function ProcessCardIndicator({ data }: { data: PurchaseProcessData }) {
       </div>
       <span className="text-muted-foreground/60 truncate text-xs">
         {completed}/{total}
-        {nextPending && ` · ${nextPending.name}`}
+        {nextPending && (
+          <>
+            {' · '}
+            <span className="text-muted-foreground/40">Next:</span>{' '}
+            {nextPending.name}
+          </>
+        )}
       </span>
     </div>
   );
@@ -101,12 +107,18 @@ export function PurchaseCard({
       .catch(() => setProcessData(null));
   }, [purchase.id]);
 
+  const isIncomplete =
+    !!processData && processData.steps.some((s) => s.completion === null);
+
   return (
     <PurchaseDialog
       trigger={
         <Card
           key={purchase.id}
-          className="hover:border-primary/20 hover:bg-accent/50 cursor-pointer overflow-hidden p-3 transition-all duration-150"
+          className={cn(
+            'hover:border-primary/20 hover:bg-accent/50 cursor-pointer overflow-hidden p-3 transition-all duration-150',
+            isIncomplete && 'border-l-2 border-l-amber-400',
+          )}
           onClick={stopPropagation ? (e) => e.stopPropagation() : undefined}
         >
           <div className="grid grid-cols-12 items-center gap-2">
