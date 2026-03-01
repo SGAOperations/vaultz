@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
-import { getAllocationById } from '@/prisma/services/allocation';
+import { getAllocationByIdWithStats } from '@/prisma/services/allocation';
 import { getAllCategories } from '@/prisma/services/category';
 import { getAllProcessTemplates } from '@/prisma/services/process-templates';
 import { getUsers } from '@/prisma/services/user';
@@ -21,16 +21,12 @@ export default async function Allocation({
 }) {
   const { allocationId } = await params;
 
-  const allocation = await getAllocationById({ id: allocationId });
+  const allocation = await getAllocationByIdWithStats({ id: allocationId });
   if (allocation === null) notFound();
 
   const categories = await getAllCategories();
   const users = await getUsers();
   const processTemplates = await getAllProcessTemplates(true);
-
-  const spent = allocation.purchases
-    .filter((purchase) => !purchase.excludeFromTotal)
-    .reduce((acc, purchase) => acc + purchase.amount, 0);
 
   return (
     <div className="flex w-full flex-col">
@@ -46,7 +42,7 @@ export default async function Allocation({
         }
       />
 
-      <StatCards total={allocation.amount} spent={spent} />
+      <StatCards total={allocation.amount} spent={allocation.spent} />
 
       <SectionHeader title="Purchases" />
 

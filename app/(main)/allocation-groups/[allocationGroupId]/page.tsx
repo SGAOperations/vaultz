@@ -5,14 +5,13 @@ import { notFound } from 'next/navigation';
 import {
   ChevronRight,
   Layers,
-  Plus,
   TrendingDown,
   TrendingUp,
   Wallet,
 } from 'lucide-react';
 
 import { getMiscAllocations } from '@/prisma/services/allocation';
-import { getAllocationGroup } from '@/prisma/services/allocation-groups';
+import { getAllocationGroupWithStats } from '@/prisma/services/allocation-groups';
 import { getAllCategories } from '@/prisma/services/category';
 import { getAllProcessTemplates } from '@/prisma/services/process-templates';
 import { getUsers } from '@/prisma/services/user';
@@ -38,7 +37,9 @@ export default async function AllocationGroup({
 }) {
   const { allocationGroupId } = await params;
 
-  const allocationGroup = await getAllocationGroup({ id: allocationGroupId });
+  const allocationGroup = await getAllocationGroupWithStats({
+    id: allocationGroupId,
+  });
   if (allocationGroup === null) notFound();
 
   const categories = await getAllCategories();
@@ -46,18 +47,9 @@ export default async function AllocationGroup({
   const users = await getUsers();
   const processTemplates = await getAllProcessTemplates(true);
 
-  const amount = allocationGroup.allocations.reduce(
-    (acc, allocation) => acc + allocation.amount,
-    0,
-  );
-
   const purchases = allocationGroup.allocations
     .flatMap((allocation) => allocation.purchases)
     .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-
-  const spent = purchases
-    .filter((purchase) => !purchase.excludeFromTotal)
-    .reduce((acc, purchase) => acc + purchase.amount, 0);
 
   return (
     <div className="flex w-full flex-col">
@@ -75,7 +67,7 @@ export default async function AllocationGroup({
             <CreateAllocationDialog
               trigger={
                 <Button variant="outline" className="gap-2">
-                  <Plus className="size-4" />
+                  <Layers className="size-4" />
                   Create Allocation
                 </Button>
               }
@@ -86,7 +78,10 @@ export default async function AllocationGroup({
         }
       />
 
-      <StatCards total={amount} spent={spent} />
+      <StatCards
+        total={allocationGroup.totalAmount}
+        spent={allocationGroup.totalSpent}
+      />
 
       <SectionHeader title="Allocations" />
 
@@ -97,74 +92,67 @@ export default async function AllocationGroup({
         />
       ) : (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          {allocationGroup.allocations.map((allocation) => {
-            const allocationSpent = allocation.purchases
-              .filter((purchase) => !purchase.excludeFromTotal)
-              .reduce((acc, purchase) => acc + purchase.amount, 0);
-            const remaining = allocation.amount - allocationSpent;
-
-            return (
-              <Link
-                href={`/allocations/${allocation.id}`}
-                key={allocation.id}
-                className="group"
-              >
-                <Card className="hover:border-primary/30 p-4 transition-all duration-200 hover:shadow-md">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-primary/10 flex size-10 shrink-0 items-center justify-center rounded-lg">
-                        <Layers className="text-primary size-5" />
-                      </div>
-                      <div>
-                        <h3 className="group-hover:text-primary font-semibold transition-colors">
-                          {allocation.name}
-                        </h3>
-                        <p className="text-muted-foreground text-sm">
-                          {allocation.purchases.length} purchase
-                          {allocation.purchases.length !== 1 ? 's' : ''}
-                        </p>
-                      </div>
+          {allocationGroup.allocations.map((allocation) => (
+            <Link
+              href={`/allocations/${allocation.id}`}
+              key={allocation.id}
+              className="group"
+            >
+              <Card className="hover:border-primary/30 p-4 transition-all duration-200 hover:shadow-md">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-primary/10 flex size-10 shrink-0 items-center justify-center rounded-lg">
+                      <Layers className="text-primary size-5" />
                     </div>
-                    <ChevronRight className="text-muted-foreground size-5 shrink-0 transition-transform group-hover:translate-x-0.5" />
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <div className="bg-muted flex items-center gap-2 rounded-full px-3 py-1.5">
-                      <Wallet className="text-stat-total size-4" />
-                      <span className="text-sm">
-                        <span className="text-muted-foreground">Budget:</span>{' '}
-                        <span className="font-semibold">
-                          ${formatNumber(allocation.amount)}
-                        </span>
-                      </span>
-                    </div>
-                    <div className="bg-muted flex items-center gap-2 rounded-full px-3 py-1.5">
-                      <TrendingDown className="text-stat-spent size-4" />
-                      <span className="text-sm">
-                        <span className="text-muted-foreground">Spent:</span>{' '}
-                        <span className="font-semibold">
-                          ${formatNumber(allocationSpent)}
-                        </span>
-                      </span>
-                    </div>
-                    <div className="bg-muted flex items-center gap-2 rounded-full px-3 py-1.5">
-                      <TrendingUp className="text-stat-remaining size-4" />
-                      <span className="text-sm">
-                        <span className="text-muted-foreground">Left:</span>{' '}
-                        <span
-                          className={cn(
-                            'font-semibold',
-                            remaining < 0 && 'text-destructive',
-                          )}
-                        >
-                          ${formatNumber(remaining)}
-                        </span>
-                      </span>
+                    <div>
+                      <h3 className="group-hover:text-primary font-semibold transition-colors">
+                        {allocation.name}
+                      </h3>
+                      <p className="text-muted-foreground text-sm">
+                        {allocation.purchases.length} purchase
+                        {allocation.purchases.length !== 1 ? 's' : ''}
+                      </p>
                     </div>
                   </div>
-                </Card>
-              </Link>
-            );
-          })}
+                  <ChevronRight className="text-muted-foreground size-5 shrink-0 transition-transform group-hover:translate-x-0.5" />
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <div className="bg-muted flex items-center gap-2 rounded-full px-3 py-1.5">
+                    <Wallet className="text-stat-total size-4" />
+                    <span className="text-sm">
+                      <span className="text-muted-foreground">Budget:</span>{' '}
+                      <span className="font-semibold">
+                        ${formatNumber(allocation.amount)}
+                      </span>
+                    </span>
+                  </div>
+                  <div className="bg-muted flex items-center gap-2 rounded-full px-3 py-1.5">
+                    <TrendingDown className="text-stat-spent size-4" />
+                    <span className="text-sm">
+                      <span className="text-muted-foreground">Spent:</span>{' '}
+                      <span className="font-semibold">
+                        ${formatNumber(allocation.spent)}
+                      </span>
+                    </span>
+                  </div>
+                  <div className="bg-muted flex items-center gap-2 rounded-full px-3 py-1.5">
+                    <TrendingUp className="text-stat-remaining size-4" />
+                    <span className="text-sm">
+                      <span className="text-muted-foreground">Left:</span>{' '}
+                      <span
+                        className={cn(
+                          'font-semibold',
+                          allocation.remaining < 0 && 'text-destructive',
+                        )}
+                      >
+                        ${formatNumber(allocation.remaining)}
+                      </span>
+                    </span>
+                  </div>
+                </div>
+              </Card>
+            </Link>
+          ))}
         </div>
       )}
 

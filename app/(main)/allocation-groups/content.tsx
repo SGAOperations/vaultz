@@ -1,11 +1,7 @@
 'use client';
 
-import Link from 'next/link';
-import { redirect } from 'next/navigation';
-
 import { usePeriod } from '@/contexts/PeriodContext';
 import { useQuery } from '@tanstack/react-query';
-import { Plus } from 'lucide-react';
 
 import { getAllAllocationGroups } from '@/prisma/services/allocation-groups';
 
@@ -13,7 +9,6 @@ import { AllocationGroupCard } from '@/components/allocation-group-card';
 import { AllocationGroupsSummary } from '@/components/allocation-groups-summary';
 import { EmptyState } from '@/components/empty-state';
 import { SectionHeader } from '@/components/section-header';
-import { Button } from '@/components/ui/button';
 
 import { AllocationGroupsSkeleton } from './skeleton';
 
@@ -22,9 +17,7 @@ interface ContentProps {
 }
 
 export function Content({ designationId }: ContentProps) {
-  const { selectedPeriod, periods } = usePeriod();
-
-  if (periods.length === 0) redirect('/periods');
+  const { selectedPeriod } = usePeriod();
 
   const {
     data: allocationGroups,
@@ -35,22 +28,6 @@ export function Content({ designationId }: ContentProps) {
     queryFn: () =>
       getAllAllocationGroups(designationId, selectedPeriod?.id ?? undefined),
   });
-
-  if (!selectedPeriod)
-    return (
-      <EmptyState
-        message="No period selected"
-        description="Select or create a fiscal period to view and manage allocations"
-        action={
-          <Link href="/periods">
-            <Button size="sm">
-              <Plus className="size-4" />
-              Create Period
-            </Button>
-          </Link>
-        }
-      />
-    );
 
   if (isLoading) return <AllocationGroupsSkeleton />;
 

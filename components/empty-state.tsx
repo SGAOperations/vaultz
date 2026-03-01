@@ -5,6 +5,7 @@ import { Inbox } from 'lucide-react';
 interface EmptyStateProps {
   message: string;
   description?: string;
+  /** Optional action element (e.g., a button or link) rendered below the description to guide the user toward the next step. */
   action?: ReactNode;
 }
 

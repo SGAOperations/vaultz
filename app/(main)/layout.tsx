@@ -18,6 +18,9 @@ export default function MainLayout({
 
   const isSetupPage = SETUP_PATHS.some((p) => pathname.startsWith(p));
 
+  // Guard redirects in order of dependency: designation must exist before year is meaningful.
+  // If both are missing, user will be redirected to /designation first, then /periods after
+  // creating their first designation.
   if (!isSetupPage && designations.length === 0) redirect('/designation');
   if (!isSetupPage && years.length === 0) redirect('/periods');
 

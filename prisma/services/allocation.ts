@@ -3,7 +3,11 @@
 import { revalidatePath } from 'next/cache';
 
 import prisma from '@/lib/prisma';
-import { Allocation, AllocationWithPurchases } from '@/lib/types';
+import {
+  Allocation,
+  AllocationWithPurchases,
+  AllocationWithStats,
+} from '@/lib/types';
 import { ErrorType, ResponseType } from '@/lib/utils';
 
 export async function createAllocation({
@@ -73,6 +77,36 @@ export async function getAllocationById({
       amount: purchase.amount.toNumber(),
     })),
   };
+}
+
+export async function getAllocationByIdWithStats({
+  id,
+}: {
+  id: string;
+}): Promise<AllocationWithStats | null> {
+  const allocation = await prisma.allocation.findUnique({
+    where: { id },
+    include: {
+      purchases: {
+        orderBy: [{ purchasedAt: 'desc' }, { createdAt: 'desc' }],
+        include: { user: true },
+      },
+    },
+  });
+
+  if (allocation === null) return null;
+
+  const purchases = allocation.purchases.map((purchase) => ({
+    ...purchase,
+    amount: purchase.amount.toNumber(),
+  }));
+
+  const amount = allocation.amount.toNumber();
+  const spent = purchases
+    .filter((p) => !p.excludeFromTotal)
+    .reduce((acc, p) => acc + p.amount, 0);
+
+  return { ...allocation, amount, purchases, spent, remaining: amount - spent };
 }
 
 export async function getMiscAllocations(

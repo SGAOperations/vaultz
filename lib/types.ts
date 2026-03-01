@@ -53,8 +53,19 @@ export type AllocationWithPurchases = Allocation & {
   purchases: PurchaseWithUser[];
 };
 
+export type AllocationWithStats = AllocationWithPurchases & {
+  spent: number;
+  remaining: number;
+};
+
 export type AllocationGroupWithAllocations = AllocationGroup & {
   allocations: AllocationWithPurchases[];
+};
+
+export type AllocationGroupWithStats = AllocationGroup & {
+  allocations: AllocationWithStats[];
+  totalAmount: number;
+  totalSpent: number;
 };
 
 export type PurchaseWithUserAndCategory = Purchase & {
