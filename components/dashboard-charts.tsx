@@ -121,7 +121,7 @@ export function DashboardCharts({
                     color: colors.foreground,
                   }}
                   labelStyle={{ color: colors.foreground, fontWeight: 600 }}
-                  formatter={(value: number) => formatCurrency(value)}
+                  formatter={(value) => typeof value === 'number' ? formatCurrency(value) : String(value)}
                 />
                 <Legend wrapperStyle={{ paddingTop: '20px' }} iconType="line" />
                 <Line
@@ -168,7 +168,7 @@ export function DashboardCharts({
                     color: colors.foreground,
                   }}
                   labelStyle={{ color: colors.foreground, fontWeight: 600 }}
-                  formatter={(value: number) => formatCurrency(value)}
+                  formatter={(value) => typeof value === 'number' ? formatCurrency(value) : String(value)}
                 />
                 <Legend wrapperStyle={{ paddingTop: '20px' }} iconType="rect" />
                 <Bar
