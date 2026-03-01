@@ -227,39 +227,6 @@ export function YearDialog({
   async function onResetSubmit(data: ResetBudgetFormData) {
     if (!createdYear || !activeDesignation) return;
 
-    const resolvedBudgets: Array<{ categoryId: string; amount: number }> = [];
-
-    for (const entry of data.entries) {
-      if (entry.categoryId) {
-        resolvedBudgets.push({
-          categoryId: entry.categoryId,
-          amount: entry.amount,
-        });
-      } else {
-        // New category: create it first
-        const catResult = await handleError(
-          createCategory({
-            designationId: activeDesignation.id,
-            name: entry.name,
-            code: entry.code,
-            ledgerCode: entry.ledgerCode,
-          }),
-          {
-            toast: {
-              loading: `Creating "${entry.name}"...`,
-              success: `Category "${entry.name}" created`,
-              error: `Failed to create category "${entry.name}"`,
-            },
-          },
-        );
-        if (isError(catResult)) return;
-        resolvedBudgets.push({
-          categoryId: catResult.id,
-          amount: entry.amount,
-        });
-      }
-    }
-
     const result = await handleError(
       setYearBudgetsForDesignation({
         designationId: activeDesignation.id,
