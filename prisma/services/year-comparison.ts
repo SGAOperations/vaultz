@@ -41,15 +41,11 @@ export async function getYearComparisonData({
   yearIds: string[];
   designationId?: string;
 }): Promise<YearComparisonData> {
-  if (yearIds.length === 0)
-    return { overview: [], categories: [], years: [] };
+  if (yearIds.length === 0) return { overview: [], categories: [], years: [] };
 
   const [categories, years] = await Promise.all([
     prisma.category.findMany({
-      where: {
-        deletedAt: null,
-        ...(designationId ? { designationId } : {}),
-      },
+      where: { deletedAt: null, ...(designationId ? { designationId } : {}) },
       include: {
         designation: true,
         categoryYears: {

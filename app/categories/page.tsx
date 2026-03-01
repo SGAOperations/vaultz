@@ -3,11 +3,11 @@
 import { notFound } from 'next/navigation';
 
 import { useDesignation } from '@/contexts/DesignationContext';
+import { Plus } from 'lucide-react';
 
 import { CreateCategoryDialog } from '@/components/create-category-dialog';
 import { PageHeader } from '@/components/page-header';
-
-import { Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 import { Content } from './content';
 
@@ -32,6 +32,7 @@ export default function CategoriesPage() {
                 </Button>
               }
             />
+          </div>
         }
       />
 
