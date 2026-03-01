@@ -250,6 +250,7 @@ export async function getPurchaseProcess(
             id: completion.id,
             markedAt: completion.markedAt,
             completionDate: completion.completionDate,
+            notes: completion.notes,
           }
         : null,
     };
@@ -266,6 +267,7 @@ export async function getPurchaseProcess(
 export async function markStepComplete(
   purchaseProcessId: string,
   stepId: string,
+  options?: { completionDate?: Date | null; notes?: string | null },
 ): Promise<ResponseType<{ id: string }>> {
   const existing = await prisma.purchaseStepCompletion.findFirst({
     where: { purchaseProcessId, stepId, deletedAt: null },
@@ -274,7 +276,14 @@ export async function markStepComplete(
   if (existing) return { error: 'Step is already marked as complete.' };
 
   const completion = await prisma.purchaseStepCompletion.create({
-    data: { purchaseProcessId, stepId, markedAt: new Date(), completed: true },
+    data: {
+      purchaseProcessId,
+      stepId,
+      markedAt: new Date(),
+      completed: true,
+      completionDate: options?.completionDate ?? null,
+      notes: options?.notes ?? null,
+    },
   });
 
   revalidatePath('/');
@@ -343,6 +352,7 @@ export async function getBatchPurchaseProcessData(
               id: completion.id,
               markedAt: completion.markedAt,
               completionDate: completion.completionDate,
+              notes: completion.notes,
             }
           : null,
       };
