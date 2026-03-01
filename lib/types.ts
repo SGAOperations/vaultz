@@ -89,6 +89,7 @@ export type PurchaseProcessStep = {
     id: string;
     markedAt: Date;
     completionDate: Date | null;
+    notes: string | null;
   } | null;
 };
 
