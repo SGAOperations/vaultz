@@ -549,10 +549,9 @@ export function Content({ template }: { template: ProcessTemplateWithSteps }) {
               Delete Template
             </DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete{' '}
-              <strong>{template.name}</strong>? This process will no longer be
-              available for new purchases. Existing purchases will not be
-              affected.
+              Are you sure you want to delete <strong>{template.name}</strong>?
+              This process will no longer be available for new purchases.
+              Existing purchases will not be affected.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
