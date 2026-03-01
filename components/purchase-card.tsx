@@ -42,35 +42,33 @@ function ProcessCardIndicator({ data }: { data: PurchaseProcessData }) {
   const total = data.steps.length;
   if (total === 0) return null;
 
+  const completed = data.steps.filter((s) => s.completion !== null).length;
   const nextPending = data.steps.find(
     (s) => s.completion === null && getStepStatus(s, data.steps) !== 'bypassed',
   );
-  const nextLabel = nextPending?.name;
 
   return (
-    <div className="mt-2 flex items-center gap-2">
-      <div className="flex flex-1 gap-px overflow-hidden rounded-full">
+    <div className="mt-1.5 flex items-center gap-1.5 overflow-hidden">
+      <div className="flex shrink-0 gap-0.5">
         {data.steps.map((step) => {
           const status = getStepStatus(step, data.steps);
           return (
             <div
               key={step.id}
-              className={`h-1 flex-1 transition-colors ${
+              className={`size-1.5 rounded-full transition-colors ${
                 status === 'completed'
                   ? 'bg-green-500'
                   : status === 'bypassed'
                     ? 'bg-yellow-400'
-                    : 'bg-muted'
+                    : 'bg-muted-foreground/20'
               }`}
             />
           );
         })}
       </div>
-      <span className="text-muted-foreground shrink-0 text-xs">
-        {data.steps.filter((s) => s.completion !== null).length}/{total}
-        {nextLabel && (
-          <span className="text-muted-foreground/70"> · {nextLabel}</span>
-        )}
+      <span className="text-muted-foreground/60 truncate text-xs">
+        {completed}/{total}
+        {nextPending && ` · ${nextPending.name}`}
       </span>
     </div>
   );
