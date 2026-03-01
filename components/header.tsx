@@ -6,10 +6,12 @@ import { usePathname } from 'next/navigation';
 import {
   ArrowRight,
   CalendarDays,
+  ChevronDown,
   CreditCard,
   FolderKanban,
   Home,
   Menu,
+  MoreHorizontal,
   ShoppingCart,
   Tag,
   Users,
@@ -25,16 +27,20 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-const navItems = [
+const topNavItems = [
   { href: '/', label: 'Home', icon: Home },
   { href: '/categories', label: 'Categories', icon: Tag },
+  { href: '/allocation-groups', label: 'Allocations', icon: FolderKanban },
+];
+
+const otherNavItems = [
   { href: '/purchases', label: 'Purchases', icon: ShoppingCart },
   { href: '/transfers', label: 'Transfers', icon: ArrowRight },
   { href: '/users', label: 'Users', icon: Users },
-  { href: '/allocation-groups', label: 'Allocations', icon: FolderKanban },
   { href: '/designation', label: 'Designations', icon: CreditCard },
   { href: '/processes', label: 'Processes', icon: Workflow },
   { href: '/periods', label: 'Periods', icon: CalendarDays },
@@ -69,7 +75,7 @@ export function Header() {
       </Link>
 
       <nav className="hidden items-center gap-1 md:flex">
-        {navItems.map(({ href, label, icon: Icon }) => {
+        {topNavItems.map(({ href, label, icon: Icon }) => {
           let isActive = false;
           if (href === '/') isActive = pathname === '/';
           else isActive = pathname.startsWith(href);
@@ -91,6 +97,41 @@ export function Header() {
             </Link>
           );
         })}
+
+        <DropdownMenu modal={false}>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className={cn(
+                'hover:bg-nav-hover gap-1.5 transition-colors',
+                otherNavItems.some(({ href }) =>
+                  pathname.startsWith(href),
+                ) && 'bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary',
+              )}
+            >
+              <MoreHorizontal className="size-4" />
+              Others
+              <ChevronDown className="size-3" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            {otherNavItems.map(({ href, label, icon: Icon }) => (
+              <DropdownMenuItem key={href} asChild>
+                <Link
+                  href={href}
+                  className={cn(
+                    pathname.startsWith(href) &&
+                      'text-primary font-medium',
+                  )}
+                >
+                  <Icon className="size-4" />
+                  {label}
+                </Link>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </nav>
 
       <div className="flex items-center gap-2">
@@ -103,7 +144,16 @@ export function Header() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            {navItems.map(({ href, label, icon: Icon }) => (
+            {topNavItems.map(({ href, label, icon: Icon }) => (
+              <DropdownMenuItem key={href} asChild>
+                <Link href={href}>
+                  <Icon className="size-4" />
+                  {label}
+                </Link>
+              </DropdownMenuItem>
+            ))}
+            <DropdownMenuSeparator />
+            {otherNavItems.map(({ href, label, icon: Icon }) => (
               <DropdownMenuItem key={href} asChild>
                 <Link href={href}>
                   <Icon className="size-4" />
