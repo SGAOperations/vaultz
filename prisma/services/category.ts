@@ -174,8 +174,8 @@ export async function getCategoriesWithAvailableAmount({
         where: { excludeFromTotal: false },
         select: { amount: true },
       },
-      transfersTo: { select: { amount: true } },
-      transfersFrom: { select: { amount: true } },
+      transfersTo: { where: { deletedAt: null }, select: { amount: true } },
+      transfersFrom: { where: { deletedAt: null }, select: { amount: true } },
     },
   });
 

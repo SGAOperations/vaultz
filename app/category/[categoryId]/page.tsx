@@ -5,6 +5,7 @@ import { getMiscAllocations } from '@/prisma/services/allocation';
 import { getAllAllocationGroups } from '@/prisma/services/allocation-groups';
 import { getCategoryById } from '@/prisma/services/category';
 import { getAllProcessTemplates } from '@/prisma/services/process-templates';
+import { getTransfersByCategory } from '@/prisma/services/transfer';
 import { getUsers } from '@/prisma/services/user';
 
 import { CategoryActionsMenu } from '@/components/category-actions-menu';
@@ -26,16 +27,26 @@ export default async function CategoryPage({
   const category = await getCategoryById({ id: categoryId });
   if (category === null) notFound();
 
-  const users = await getUsers();
-
-  const allocationGroups = await getAllAllocationGroups(category.designationId);
-  const miscAllocations = await getMiscAllocations(category.designationId);
-  const processTemplates = await getAllProcessTemplates(true);
+  const [users, allocationGroups, miscAllocations, processTemplates, transfers] =
+    await Promise.all([
+      getUsers(),
+      getAllAllocationGroups(category.designationId),
+      getMiscAllocations(category.designationId),
+      getAllProcessTemplates(true),
+      getTransfersByCategory(categoryId),
+    ]);
 
   const spent = category.purchases
     .filter((purchase) => !purchase.excludeFromTotal)
     .reduce((acc, purchase) => acc + purchase.amount, 0);
   const budget = category.categoryYears.reduce((acc, cy) => acc + cy.amount, 0);
+  const transfersIn = transfers
+    .filter((t) => t.toCategoryId === categoryId)
+    .reduce((acc, t) => acc + t.amount, 0);
+  const transfersOut = transfers
+    .filter((t) => t.fromCategoryId === categoryId)
+    .reduce((acc, t) => acc + t.amount, 0);
+  const available = budget + transfersIn - transfersOut - spent;
 
   return (
     <div className="flex w-full flex-col">
@@ -56,7 +67,13 @@ export default async function CategoryPage({
         }
       />
 
-      <StatCards total={budget} spent={spent} />
+      <StatCards
+        total={budget}
+        spent={spent}
+        remaining={available}
+        transfersIn={transfersIn}
+        transfersOut={transfersOut}
+      />
 
       <SectionHeader title="Purchases" />
 

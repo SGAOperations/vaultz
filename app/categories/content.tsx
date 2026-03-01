@@ -112,7 +112,7 @@ export function Content({ designationId }: ContentProps) {
                 <div className="bg-muted flex items-center gap-2 rounded-full px-3 py-1.5">
                   <TrendingUp className="text-stat-remaining size-4" />
                   <span className="text-sm">
-                    <span className="text-muted-foreground">Left:</span>{' '}
+                    <span className="text-muted-foreground">Available:</span>{' '}
                     <span
                       className={cn(
                         'font-semibold',

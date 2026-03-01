@@ -1,4 +1,6 @@
 import {
+  ArrowDownToLine,
+  ArrowUpFromLine,
   DollarSign,
   Hash,
   Receipt,
@@ -11,7 +13,14 @@ import { cn, formatNumber } from '@/lib/utils';
 
 import { Card } from '@/components/ui/card';
 
-type StatVariant = 'total' | 'spent' | 'remaining' | 'count' | 'average';
+type StatVariant =
+  | 'total'
+  | 'spent'
+  | 'remaining'
+  | 'count'
+  | 'average'
+  | 'transferIn'
+  | 'transferOut';
 
 interface StatCardProps {
   value: number;
@@ -45,6 +54,16 @@ const variantStyles: Record<
     iconColor: 'text-primary',
   },
   average: { bg: 'bg-muted', icon: Hash, iconColor: 'text-muted-foreground' },
+  transferIn: {
+    bg: 'bg-stat-remaining/10 dark:bg-stat-remaining/20',
+    icon: ArrowDownToLine,
+    iconColor: 'text-stat-remaining',
+  },
+  transferOut: {
+    bg: 'bg-stat-spent/10 dark:bg-stat-spent/20',
+    icon: ArrowUpFromLine,
+    iconColor: 'text-stat-spent',
+  },
 };
 
 export function StatCard({
@@ -89,10 +108,43 @@ interface StatCardsProps {
   total: number;
   spent: number;
   remaining?: number;
+  transfersIn?: number;
+  transfersOut?: number;
 }
 
-export function StatCards({ total, spent, remaining }: StatCardsProps) {
+export function StatCards({
+  total,
+  spent,
+  remaining,
+  transfersIn,
+  transfersOut,
+}: StatCardsProps) {
   const remainingValue = remaining !== undefined ? remaining : total - spent;
+  const showBreakdown =
+    transfersIn !== undefined && transfersOut !== undefined;
+
+  if (showBreakdown)
+    return (
+      <div className="grid w-full grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
+        <StatCard value={total} label="Budgeted" variant="total" />
+        <StatCard
+          value={transfersIn}
+          label="Transfers In"
+          variant="transferIn"
+        />
+        <StatCard
+          value={transfersOut}
+          label="Transfers Out"
+          variant="transferOut"
+        />
+        <StatCard value={spent} label="Purchases" variant="spent" />
+        <StatCard
+          value={remainingValue}
+          label="Available"
+          variant="remaining"
+        />
+      </div>
+    );
 
   return (
     <div className="grid w-full grid-cols-1 gap-3 md:grid-cols-3">
