@@ -5,15 +5,12 @@ import { Controller, FormProvider, useFieldArray, useForm } from 'react-hook-for
 
 import { useQueryClient } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, Plus, Trash2 } from 'lucide-react';
+import { Loader2, Trash2 } from 'lucide-react';
 import { z } from 'zod/v4';
 
 import { Year } from '@/prisma/client';
 import { createYear, updateYear } from '@/prisma/services/period';
-import {
-  createCategory,
-  getCategoriesByDesignation,
-} from '@/prisma/services/category';
+import { getCategoriesByDesignation } from '@/prisma/services/category';
 import {
   getNewYearSuggestions,
   setYearBudgetsForDesignation,
@@ -58,10 +55,8 @@ const yearSchema = z
   });
 
 const resetEntrySchema = z.object({
-  categoryId: z.string(), // empty = new category to create
-  name: z.string().min(1, 'Name is required'),
-  code: z.string(),
-  ledgerCode: z.string(),
+  categoryId: z.string().min(1),
+  name: z.string(),
   amount: z.coerce.number<number>().min(0, 'Must be ≥ 0'),
 });
 
@@ -102,7 +97,7 @@ export function YearDialog({
     defaultValues: { entries: [] as ResetBudgetFormData['entries'] },
   });
 
-  const { fields, replace, append, remove } = useFieldArray({
+  const { fields, replace, remove } = useFieldArray({
     control: resetForm.control,
     name: 'entries',
   });
@@ -137,8 +132,6 @@ export function YearDialog({
         categories.map((c) => ({
           categoryId: c.id,
           name: c.name,
-          code: c.code,
-          ledgerCode: c.ledgerCode,
           amount: 0,
         })),
       );
@@ -236,41 +229,14 @@ export function YearDialog({
   async function onResetSubmit(data: ResetBudgetFormData) {
     if (!createdYear || !activeDesignation) return;
 
-    const resolvedBudgets: Array<{ categoryId: string; amount: number }> = [];
-
-    for (const entry of data.entries) {
-      if (entry.categoryId) {
-        resolvedBudgets.push({
-          categoryId: entry.categoryId,
-          amount: entry.amount,
-        });
-      } else {
-        // New category: create it first
-        const catResult = await handleError(
-          createCategory({
-            designationId: activeDesignation.id,
-            name: entry.name,
-            code: entry.code,
-            ledgerCode: entry.ledgerCode,
-          }),
-          {
-            toast: {
-              loading: `Creating "${entry.name}"...`,
-              success: `Category "${entry.name}" created`,
-              error: `Failed to create category "${entry.name}"`,
-            },
-          },
-        );
-        if (isError(catResult)) return;
-        resolvedBudgets.push({ categoryId: catResult.id, amount: entry.amount });
-      }
-    }
-
     const result = await handleError(
       setYearBudgetsForDesignation({
         designationId: activeDesignation.id,
         yearId: createdYear.id,
-        budgets: resolvedBudgets,
+        budgets: data.entries.map((e) => ({
+          categoryId: e.categoryId,
+          amount: e.amount,
+        })),
       }),
       {
         toast: {
@@ -373,8 +339,9 @@ export function YearDialog({
             <DialogHeader>
               <DialogTitle>Set Budgets — {createdYear?.name}</DialogTitle>
               <DialogDescription>
-                Enter the budget for each category. Remove categories not needed
-                this year, or add new ones.
+                Enter the budget for each category. Remove any categories not
+                needed this year. Additional categories can be added later from
+                the Categories page.
               </DialogDescription>
             </DialogHeader>
 
@@ -390,152 +357,49 @@ export function YearDialog({
                   onSubmit={resetForm.handleSubmit(onResetSubmit)}
                   className="space-y-3 py-2"
                 >
-                  {fields.map((field, index) => {
-                    const isNew = !field.categoryId;
-                    return (
-                      <div key={field.id} className="flex items-start gap-2">
-                        <div className="flex-1">
-                          {isNew ? (
-                            <div className="grid grid-cols-2 gap-2 rounded-lg border p-3">
-                              <FormField
-                                control={resetForm.control}
-                                name={`entries.${index}.name`}
-                                render={({ field: f }) => (
-                                  <FormItem className="col-span-2">
-                                    <FormLabel className="text-xs">
-                                      Name
-                                    </FormLabel>
-                                    <FormControl>
-                                      <Input
-                                        placeholder="Category name"
-                                        {...f}
-                                      />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              <FormField
-                                control={resetForm.control}
-                                name={`entries.${index}.code`}
-                                render={({ field: f }) => (
-                                  <FormItem>
-                                    <FormLabel className="text-xs">
-                                      Code (SC###)
-                                    </FormLabel>
-                                    <FormControl>
-                                      <Input
-                                        placeholder="123"
-                                        maxLength={3}
-                                        {...f}
-                                      />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              <FormField
-                                control={resetForm.control}
-                                name={`entries.${index}.ledgerCode`}
-                                render={({ field: f }) => (
-                                  <FormItem>
-                                    <FormLabel className="text-xs">
-                                      Ledger Code
-                                    </FormLabel>
-                                    <FormControl>
-                                      <Input
-                                        placeholder="7XXX"
-                                        maxLength={4}
-                                        {...f}
-                                      />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              <FormField
-                                control={resetForm.control}
-                                name={`entries.${index}.amount`}
-                                render={({ field: f }) => (
-                                  <FormItem className="col-span-2">
-                                    <FormLabel className="text-xs">
-                                      Budget Amount
-                                    </FormLabel>
-                                    <FormControl>
-                                      <Input
-                                        type="number"
-                                        min={0}
-                                        step="0.01"
-                                        placeholder="0.00"
-                                        {...f}
-                                      />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                            </div>
-                          ) : (
-                            <FormField
-                              control={resetForm.control}
-                              name={`entries.${index}.amount`}
-                              render={({ field: f }) => (
-                                <FormItem>
-                                  <FormLabel className="text-sm">
-                                    {field.name}
-                                  </FormLabel>
-                                  <FormControl>
-                                    <Input
-                                      type="number"
-                                      min={0}
-                                      step="0.01"
-                                      placeholder="0.00"
-                                      {...f}
-                                    />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
+                  {fields.map((field, index) => (
+                    <div key={field.id} className="flex items-start gap-2">
+                      <div className="flex-1">
+                        <FormField
+                          control={resetForm.control}
+                          name={`entries.${index}.amount`}
+                          render={({ field: f }) => (
+                            <FormItem>
+                              <FormLabel className="text-sm">
+                                {field.name}
+                              </FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  min={0}
+                                  step="0.01"
+                                  placeholder="0.00"
+                                  {...f}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
                           )}
-                        </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className={isNew ? 'mt-2 shrink-0' : 'mt-6 shrink-0'}
-                          onClick={() => remove(index)}
-                        >
-                          <Trash2 className="size-4" />
-                        </Button>
+                        />
                       </div>
-                    );
-                  })}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="mt-6 shrink-0"
+                        onClick={() => remove(index)}
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
+                    </div>
+                  ))}
 
                   {fields.length === 0 && (
                     <p className="text-muted-foreground py-2 text-center text-sm">
-                      No categories. Add one below or skip.
+                      All categories removed. You can add categories later from
+                      the Categories page.
                     </p>
                   )}
-
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="gap-1.5"
-                    onClick={() =>
-                      append({
-                        categoryId: '',
-                        name: '',
-                        code: '',
-                        ledgerCode: '',
-                        amount: 0,
-                      })
-                    }
-                  >
-                    <Plus className="size-3.5" />
-                    Add Category
-                  </Button>
 
                   <div className="flex gap-2 pt-2">
                     <Button
