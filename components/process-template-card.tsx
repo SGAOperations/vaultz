@@ -1,4 +1,4 @@
-import { FileText, ListChecks, Trash2 } from 'lucide-react';
+import { FileText, ListChecks, ShoppingCart, Trash2 } from 'lucide-react';
 
 import { ProcessTemplateWithStepCount } from '@/lib/types';
 
@@ -24,6 +24,12 @@ export function ProcessTemplateCard({
           iconColor: 'text-info',
           label: 'Steps',
           value: stepCount.toString(),
+        },
+        {
+          icon: ShoppingCart,
+          iconColor: 'text-muted-foreground',
+          label: 'Purchases',
+          value: template.purchaseCount.toString(),
         },
         ...(isDeleted
           ? [

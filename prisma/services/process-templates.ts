@@ -16,11 +16,22 @@ export async function getAllProcessTemplates(
 ): Promise<ProcessTemplateWithStepCount[]> {
   const templates = await prisma.processTemplate.findMany({
     where: activeOnly ? { deletedAt: null } : undefined,
-    include: { _count: { select: { steps: { where: { deletedAt: null } } } } },
+    include: {
+      _count: {
+        select: {
+          steps: { where: { deletedAt: null } },
+          processes: { where: { deletedAt: null } },
+        },
+      },
+    },
     orderBy: { createdAt: 'desc' },
   });
 
-  return templates.map(({ _count, ...t }) => ({ ...t, steps: _count.steps }));
+  return templates.map(({ _count, ...t }) => ({
+    ...t,
+    steps: _count.steps,
+    purchaseCount: _count.processes,
+  }));
 }
 
 export async function createProcessTemplate(data: {
@@ -39,12 +50,16 @@ export async function createProcessTemplate(data: {
 export async function getProcessTemplate(
   id: string,
 ): Promise<ProcessTemplateWithSteps | null> {
-  return prisma.processTemplate.findUnique({
+  const result = await prisma.processTemplate.findUnique({
     where: { id },
     include: {
       steps: { where: { deletedAt: null }, orderBy: { order: 'asc' } },
+      _count: { select: { processes: { where: { deletedAt: null } } } },
     },
   });
+  if (!result) return null;
+  const { _count, ...t } = result;
+  return { ...t, purchaseCount: _count.processes };
 }
 
 export async function updateProcessTemplate(
@@ -69,6 +84,21 @@ export async function deleteProcessTemplate(
     data: { deletedAt: new Date() },
   });
 
+  revalidatePath('/processes');
+  revalidatePath(`/processes/${id}`);
+
+  return template;
+}
+
+export async function restoreProcessTemplate(
+  id: string,
+): Promise<ResponseType<ProcessTemplate>> {
+  const template = await prisma.processTemplate.update({
+    where: { id },
+    data: { deletedAt: null },
+  });
+
+  revalidatePath('/processes');
   revalidatePath(`/processes/${id}`);
 
   return template;

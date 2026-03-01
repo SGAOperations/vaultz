@@ -75,10 +75,14 @@ export type TransferWithYear = Omit<PrismaTransfer, 'amount'> & {
   toCategory: PrismaCategory;
 };
 
-export type ProcessTemplateWithStepCount = ProcessTemplate & { steps: number };
+export type ProcessTemplateWithStepCount = ProcessTemplate & {
+  steps: number;
+  purchaseCount: number;
+};
 
 export type ProcessTemplateWithSteps = ProcessTemplate & {
   steps: ProcessStep[];
+  purchaseCount: number;
 };
 
 export type PurchaseProcessStep = {

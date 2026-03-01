@@ -13,6 +13,8 @@ import {
   Loader2,
   Pencil,
   Plus,
+  RotateCcw,
+  ShoppingCart,
   Trash2,
 } from 'lucide-react';
 import { z } from 'zod/v4';
@@ -22,6 +24,7 @@ import {
   deleteProcessStep,
   deleteProcessTemplate,
   moveProcessStep,
+  restoreProcessTemplate,
   updateProcessStep,
   updateProcessTemplate,
 } from '@/prisma/services/process-templates';
@@ -34,6 +37,14 @@ import { PageHeader } from '@/components/page-header';
 import { SectionHeader } from '@/components/section-header';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { FormDialog } from '@/components/ui/form-dialog';
 import { FormInput } from '@/components/ui/form-input';
 import { FormTextarea } from '@/components/ui/form-textarea';
@@ -245,6 +256,8 @@ function AddStepCard({
 
 export function Content({ template }: { template: ProcessTemplateWithSteps }) {
   const router = useRouter();
+  const isDeleted = template.deletedAt !== null;
+  const purchaseLabel = `${template.purchaseCount} purchase${template.purchaseCount !== 1 ? 's' : ''}`;
 
   const [steps, setSteps] = useState<LocalStep[]>(
     template.steps.map((s) => ({
@@ -255,6 +268,9 @@ export function Content({ template }: { template: ProcessTemplateWithSteps }) {
   );
   const [isMutating, setIsMutating] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
 
   useEffect(() => {
     setSteps(
@@ -363,14 +379,32 @@ export function Content({ template }: { template: ProcessTemplateWithSteps }) {
   }
 
   async function handleDeleteTemplate() {
+    setIsDeleting(true);
     await handleError(deleteProcessTemplate(template.id), {
       toast: {
         loading: 'Deleting template...',
         success: 'Template deleted',
         error: 'Failed to delete template',
       },
-      onSuccess: () => router.push('/processes'),
+      onSuccess: () => {
+        setConfirmDeleteOpen(false);
+        router.refresh();
+      },
     });
+    setIsDeleting(false);
+  }
+
+  async function handleRestoreTemplate() {
+    setIsRestoring(true);
+    await handleError(restoreProcessTemplate(template.id), {
+      toast: {
+        loading: 'Restoring template...',
+        success: 'Template restored',
+        error: 'Failed to restore template',
+      },
+      onSuccess: () => router.refresh(),
+    });
+    setIsRestoring(false);
   }
 
   async function handleEditTemplate(data: TemplateFormData): Promise<boolean> {
@@ -404,60 +438,88 @@ export function Content({ template }: { template: ProcessTemplateWithSteps }) {
                 Back
               </Button>
             </Link>
-            <FormDialog
-              key={template.updatedAt.toString()}
-              trigger={
-                <Button variant="outline" size="sm">
-                  <Pencil className="size-4" />
-                  Edit
-                </Button>
-              }
-              title="Edit Template"
-              description="Update the template name and description."
-              schema={templateSchema}
-              defaultValues={{
-                name: template.name,
-                description: template.description ?? '',
-              }}
-              onSubmit={handleEditTemplate}
-              submitLabel="Save Changes"
-            >
-              <FormInput<TemplateFormData>
-                name="name"
-                label="Name"
-                placeholder="Procurement Process"
-              />
-              <FormTextarea<TemplateFormData>
-                name="description"
-                label="Description"
-                placeholder="Describe the purpose of this process template..."
-              />
-            </FormDialog>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleDeleteTemplate}
-              className="text-destructive hover:text-destructive"
-            >
-              <Trash2 className="size-4" />
-              Delete
-            </Button>
+            {!isDeleted && (
+              <FormDialog
+                key={template.updatedAt.toString()}
+                trigger={
+                  <Button variant="outline" size="sm">
+                    <Pencil className="size-4" />
+                    Edit
+                  </Button>
+                }
+                title="Edit Template"
+                description="Update the template name and description."
+                schema={templateSchema}
+                defaultValues={{
+                  name: template.name,
+                  description: template.description ?? '',
+                }}
+                onSubmit={handleEditTemplate}
+                submitLabel="Save Changes"
+              >
+                <FormInput<TemplateFormData>
+                  name="name"
+                  label="Name"
+                  placeholder="Procurement Process"
+                />
+                <FormTextarea<TemplateFormData>
+                  name="description"
+                  label="Description"
+                  placeholder="Describe the purpose of this process template..."
+                />
+              </FormDialog>
+            )}
+            {isDeleted ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRestoreTemplate}
+                disabled={isRestoring}
+              >
+                {isRestoring ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <RotateCcw className="size-4" />
+                )}
+                Restore
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setConfirmDeleteOpen(true)}
+                className="text-destructive hover:text-destructive"
+              >
+                <Trash2 className="size-4" />
+                Delete
+              </Button>
+            )}
           </div>
         }
       />
 
+      <div className="text-muted-foreground mb-4 flex items-center gap-2 text-sm">
+        <ShoppingCart className="size-4" />
+        <span>Used by {purchaseLabel}</span>
+        {isDeleted && (
+          <span className="text-destructive ml-2 font-medium">• Deleted</span>
+        )}
+      </div>
+
       <SectionHeader
         title="Steps"
         actions={
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setShowAddForm(true)}
-            disabled={showAddForm || isMutating}
-          >
-            <Plus className="size-4" />
-            Add Step
-          </Button>
+          !isDeleted && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setShowAddForm(true)}
+              disabled={showAddForm || isMutating}
+            >
+              <Plus className="size-4" />
+              Add Step
+            </Button>
+          )
         }
       />
 
@@ -474,13 +536,13 @@ export function Content({ template }: { template: ProcessTemplateWithSteps }) {
             step={step}
             idx={idx}
             total={steps.length}
-            isMutating={isMutating}
+            isMutating={isMutating || isDeleted}
             onEdit={handleEditStep}
             onDelete={handleDeleteStep}
             onMove={handleMoveStep}
           />
         ))}
-        {showAddForm && (
+        {showAddForm && !isDeleted && (
           <AddStepCard
             isMutating={isMutating}
             onAdd={handleAddStep}
@@ -488,6 +550,52 @@ export function Content({ template }: { template: ProcessTemplateWithSteps }) {
           />
         )}
       </div>
+
+      <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Trash2 className="text-destructive size-5" />
+              Delete Template
+            </DialogTitle>
+            <DialogDescription asChild>
+              <div className="flex flex-col gap-2">
+                <p>
+                  Are you sure you want to delete{' '}
+                  <strong>{template.name}</strong>? This will hide it from
+                  purchase creation.
+                </p>
+                <p>
+                  Used by <strong>{purchaseLabel}</strong>.
+                </p>
+                {template.purchaseCount > 0 && (
+                  <p className="text-destructive text-sm">
+                    This template is used by {purchaseLabel}. They will not be
+                    affected.
+                  </p>
+                )}
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setConfirmDeleteOpen(false)}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteTemplate}
+              disabled={isDeleting}
+            >
+              {isDeleting && <Loader2 className="animate-spin" />}
+              Delete Template
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
