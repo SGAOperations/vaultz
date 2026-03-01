@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { useDesignation } from '@/contexts/DesignationContext';
 
 import { PageHeader } from '@/components/page-header';
+import { QuickActionButtons } from '@/components/quick-action-buttons';
 
 import { Content } from './content';
 
@@ -18,6 +19,7 @@ export default function Home() {
       <PageHeader
         title={activeDesignation.name}
         description={`Dashboard · DN${activeDesignation.code}`}
+        actions={<QuickActionButtons designationId={activeDesignation.id} />}
       />
       <Content designationId={activeDesignation.id} />
     </div>
