@@ -69,6 +69,21 @@ export async function deleteProcessTemplate(
     data: { deletedAt: new Date() },
   });
 
+  revalidatePath('/processes');
+  revalidatePath(`/processes/${id}`);
+
+  return template;
+}
+
+export async function restoreProcessTemplate(
+  id: string,
+): Promise<ResponseType<ProcessTemplate>> {
+  const template = await prisma.processTemplate.update({
+    where: { id },
+    data: { deletedAt: null },
+  });
+
+  revalidatePath('/processes');
   revalidatePath(`/processes/${id}`);
 
   return template;
