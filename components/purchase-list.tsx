@@ -1,0 +1,713 @@
+'use client';
+
+import { useEffect, useMemo, useState } from 'react';
+
+import { useYear } from '@/contexts/YearContext';
+import {
+  ColumnDef,
+  ColumnFiltersState,
+  Row,
+  SortingState,
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from '@tanstack/react-table';
+import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  Calendar,
+  Check,
+  ChevronDown,
+  CircleDollarSign,
+  DollarSign,
+  Download,
+  FileCheck,
+  FileText,
+  Loader2,
+  StickyNote,
+  User as UserIcon,
+  X,
+} from 'lucide-react';
+
+import { User } from '@/prisma/client';
+import {
+  getBatchPurchaseProcessData,
+  getPurchaseProcess,
+} from '@/prisma/services/purchase';
+
+import {
+  Allocation,
+  AllocationGroupWithAllocations,
+  CategoryWithDesignation,
+  ProcessTemplateWithStepCount,
+  PurchaseProcessData,
+  PurchaseWithUser,
+} from '@/lib/types';
+import { cn, formatCurrency, parseDateOnly } from '@/lib/utils';
+
+import { DateTime } from '@/components/date-time';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+
+import { EmptyState } from './empty-state';
+import { getStepStatus } from './process-progress';
+import { PurchaseDialog } from './purchase-dialog';
+
+type StatusFilter = 'excludeFromTotal' | 'expenseReportCreated' | 'reimbursed';
+type StepStatusFilter = 'all' | 'completed' | 'in-progress' | 'not-started';
+type TemplateFilter = 'all' | 'none' | string;
+
+const STATUS_FILTERS: {
+  key: StatusFilter;
+  label: string;
+  Icon: React.ComponentType<{ className?: string }>;
+}[] = [
+  { key: 'excludeFromTotal', label: 'Excluded', Icon: CircleDollarSign },
+  { key: 'expenseReportCreated', label: 'Report Filed', Icon: FileCheck },
+  { key: 'reimbursed', label: 'Reimbursed', Icon: Check },
+];
+
+const STEP_STATUS_OPTIONS: { value: StepStatusFilter; label: string }[] = [
+  { value: 'all', label: 'All' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'in-progress', label: 'In Progress' },
+  { value: 'not-started', label: 'Not Started' },
+];
+
+const STEP_STATUS_FILTER_OPTIONS = STEP_STATUS_OPTIONS.filter(
+  (o) => o.value !== 'all',
+);
+
+function getProcessStepStatus(data: PurchaseProcessData): StepStatusFilter {
+  const completedCount = data.steps.filter((s) => s.completion !== null).length;
+  const pendingCount = data.steps.filter(
+    (s) => s.completion === null && getStepStatus(s, data.steps) !== 'bypassed',
+  ).length;
+  if (pendingCount === 0) return 'completed';
+  if (completedCount === 0) return 'not-started';
+  return 'in-progress';
+}
+
+function exportToCsv(
+  purchases: PurchaseWithUser[],
+  processDataMap: Record<string, PurchaseProcessData | null>,
+) {
+  const headers = [
+    'Amount',
+    'User',
+    'Description',
+    'Date',
+    'Template',
+    'Current Step',
+    'Excluded',
+    'Report Filed',
+    'Reimbursed',
+  ];
+
+  const rows = purchases.map((p) => {
+    const proc = processDataMap[p.id];
+    const currentStep = proc?.steps.find(
+      (s) =>
+        s.completion === null && getStepStatus(s, proc.steps) !== 'bypassed',
+    );
+    return [
+      p.amount.toFixed(2),
+      `${p.user.first} ${p.user.last}`,
+      p.description,
+      new Date(p.purchasedAt).toLocaleDateString(),
+      proc?.templateName ?? '',
+      currentStep?.name ?? '',
+      p.excludeFromTotal ? 'Yes' : 'No',
+      p.expenseReportCreated ? 'Yes' : 'No',
+      p.reimbursed ? 'Yes' : 'No',
+    ];
+  });
+
+  const escape = (value: string) => `"${value.replace(/"/g, '""')}"`;
+  const csvContent = [headers, ...rows]
+    .map((row) => row.map((value) => escape(String(value))).join(','))
+    .join('\n');
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'purchases.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function SortHeader({
+  column,
+  label,
+}: {
+  column: {
+    getIsSorted: () => false | 'asc' | 'desc';
+    toggleSorting: (desc: boolean) => void;
+  };
+  label: string;
+}) {
+  const sorted = column.getIsSorted();
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      aria-label={`Sort by ${label}, currently ${sorted || 'unsorted'}`}
+      className={cn('-ml-3', sorted && 'text-foreground')}
+      onClick={() => column.toggleSorting(sorted === 'asc')}
+    >
+      {label}
+      {sorted === 'asc' ? (
+        <ArrowUp className="ml-1 size-3.5" />
+      ) : sorted === 'desc' ? (
+        <ArrowDown className="ml-1 size-3.5" />
+      ) : (
+        <ArrowUpDown className="ml-1 size-3.5 opacity-40" />
+      )}
+    </Button>
+  );
+}
+
+function ProcessCellContent({ data }: { data: PurchaseProcessData }) {
+  const total = data.steps.length;
+  if (total === 0) return null;
+
+  const completed = data.steps.filter((s) => s.completion !== null).length;
+  const nextPending = data.steps.find(
+    (s) => s.completion === null && getStepStatus(s, data.steps) !== 'bypassed',
+  );
+
+  return (
+    <div className="flex flex-col gap-0.5 overflow-hidden">
+      <div className="flex items-center gap-1.5">
+        <span className="text-foreground/80 truncate text-xs font-medium">
+          {data.templateName}
+        </span>
+        <span className="text-muted-foreground/50 shrink-0 text-xs">
+          {completed}/{total}
+        </span>
+      </div>
+      <div className="flex items-center gap-1.5 overflow-hidden">
+        <div className="flex shrink-0 gap-0.5">
+          {data.steps.map((step) => {
+            const status = getStepStatus(step, data.steps);
+            return (
+              <div
+                key={step.id}
+                className={cn('size-1.5 rounded-full transition-colors', {
+                  'bg-green-500': status === 'completed',
+                  'bg-yellow-400': status === 'bypassed',
+                  'bg-muted-foreground/20': status === 'pending',
+                })}
+              />
+            );
+          })}
+        </div>
+        {nextPending && (
+          <span className="text-muted-foreground/60 truncate text-xs">
+            <span className="text-muted-foreground/40">Next:</span>{' '}
+            {nextPending.name}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function PurchaseTableRow({
+  row,
+  users,
+  categories,
+  allocationGroups,
+  miscAllocations,
+  processTemplates,
+}: {
+  row: Row<PurchaseWithUser>;
+  users: User[];
+  categories: CategoryWithDesignation[];
+  allocationGroups: AllocationGroupWithAllocations[];
+  miscAllocations: Allocation[];
+  processTemplates: ProcessTemplateWithStepCount[];
+}) {
+  const [processData, setProcessData] = useState<
+    PurchaseProcessData | null | undefined
+  >(undefined);
+
+  useEffect(() => {
+    getPurchaseProcess(row.original.id)
+      .then(setProcessData)
+      .catch(() => setProcessData(null));
+  }, [row.original.id]);
+
+  const isIncomplete =
+    !!processData && processData.steps.some((s) => s.completion === null);
+
+  return (
+    <PurchaseDialog
+      trigger={
+        <TableRow
+          className={cn(
+            'cursor-pointer',
+            isIncomplete && 'border-l-2 border-l-amber-400',
+          )}
+        >
+          {row.getVisibleCells().map((cell) => (
+            <TableCell key={cell.id}>
+              {flexRender(cell.column.columnDef.cell, cell.getContext())}
+            </TableCell>
+          ))}
+          <TableCell>
+            {processData && <ProcessCellContent data={processData} />}
+          </TableCell>
+        </TableRow>
+      }
+      purchase={row.original}
+      users={users}
+      categories={categories}
+      allocationGroups={allocationGroups}
+      miscAllocations={miscAllocations}
+      processTemplates={processTemplates}
+      onProcessDataChange={setProcessData}
+    />
+  );
+}
+
+export function PurchaseList({
+  purchases,
+  users,
+  categories,
+  allocationGroups,
+  miscAllocations,
+  processTemplates = [],
+  sorting: controlledSorting,
+  onSortingChange: onControlledSortingChange,
+}: {
+  purchases: PurchaseWithUser[];
+  users: User[];
+  categories: CategoryWithDesignation[];
+  allocationGroups: AllocationGroupWithAllocations[];
+  miscAllocations: Allocation[];
+  processTemplates?: ProcessTemplateWithStepCount[];
+  sorting?: SortingState;
+  onSortingChange?: (sorting: SortingState) => void;
+}) {
+  'use no memo';
+  const { selectedYear } = useYear();
+  const [internalSorting, setInternalSorting] = useState<SortingState>(
+    controlledSorting ?? [],
+  );
+
+  useEffect(() => {
+    if (controlledSorting !== undefined) setInternalSorting(controlledSorting);
+  }, [controlledSorting]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [globalFilter, setGlobalFilter] = useState('');
+  const [statusFilters, setStatusFilters] = useState<Set<StatusFilter>>(
+    new Set(),
+  );
+  const [templateFilter, setTemplateFilter] = useState<TemplateFilter>('all');
+  const [stepStatusFilter, setStepStatusFilter] =
+    useState<StepStatusFilter>('all');
+  const [processDataMap, setProcessDataMap] = useState<
+    Record<string, PurchaseProcessData | null>
+  >({});
+  const [processDataLoading, setProcessDataLoading] = useState(false);
+
+  useEffect(() => {
+    if (purchases.length === 0) return;
+    setProcessDataLoading(true);
+    getBatchPurchaseProcessData(purchases.map((p) => p.id))
+      .then((data) => {
+        setProcessDataMap(data);
+        setProcessDataLoading(false);
+      })
+      .catch(() => {
+        console.error('Failed to load process data for filtering');
+        setProcessDataLoading(false);
+      });
+  }, [purchases]);
+
+  const yearFiltered = useMemo(
+    () =>
+      selectedYear
+        ? purchases.filter((p) => p.yearId === selectedYear.id)
+        : purchases,
+    [purchases, selectedYear],
+  );
+
+  const processFiltered = useMemo(() => {
+    if (templateFilter === 'all' && stepStatusFilter === 'all')
+      return yearFiltered;
+    return yearFiltered.filter((p) => {
+      const proc = processDataMap[p.id];
+
+      if (templateFilter === 'none') {
+        if (proc) return false;
+      } else if (templateFilter !== 'all') {
+        if (proc?.templateId !== templateFilter) return false;
+      }
+
+      if (stepStatusFilter !== 'all') {
+        if (!proc) return false;
+        const status = getProcessStepStatus(proc);
+        if (status !== stepStatusFilter) return false;
+      }
+
+      return true;
+    });
+  }, [yearFiltered, processDataMap, templateFilter, stepStatusFilter]);
+
+  const filteredPurchases = useMemo(() => {
+    if (statusFilters.size === 0) return processFiltered;
+    return processFiltered.filter((p) =>
+      [...statusFilters].some((key) => p[key]),
+    );
+  }, [processFiltered, statusFilters]);
+
+  const toggleStatusFilter = (key: StatusFilter) => {
+    setStatusFilters((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
+  const templateFilterLabel = useMemo(() => {
+    if (templateFilter === 'all') return 'All Templates';
+    if (templateFilter === 'none') return 'No Process';
+    return (
+      processTemplates.find((t) => t.id === templateFilter)?.name ??
+      'All Templates'
+    );
+  }, [templateFilter, processTemplates]);
+
+  const columns = useMemo<ColumnDef<PurchaseWithUser>[]>(
+    () => [
+      {
+        accessorKey: 'amount',
+        header: ({ column }) => <SortHeader column={column} label="Amount" />,
+        cell: ({ row }) => (
+          <div className="flex items-center gap-2.5">
+            <div className="bg-primary/10 flex size-8 shrink-0 items-center justify-center rounded-lg">
+              <DollarSign className="text-primary size-4" />
+            </div>
+            <span className="font-semibold">
+              {formatCurrency(row.original.amount)}
+            </span>
+          </div>
+        ),
+      },
+      {
+        id: 'user',
+        accessorFn: (row) => `${row.user.first} ${row.user.last}`,
+        header: ({ column }) => <SortHeader column={column} label="User" />,
+        cell: ({ getValue }) => (
+          <div className="flex items-center gap-1.5">
+            <UserIcon className="text-muted-foreground size-4 shrink-0" />
+            <span className="text-muted-foreground text-sm">
+              {getValue<string>()}
+            </span>
+          </div>
+        ),
+      },
+      {
+        accessorKey: 'description',
+        header: ({ column }) => (
+          <SortHeader column={column} label="Description" />
+        ),
+        cell: ({ row }) => (
+          <div className="flex min-w-0 items-center gap-1.5">
+            <FileText className="text-muted-foreground size-4 shrink-0" />
+            <span className="text-muted-foreground truncate text-sm">
+              {row.original.description || 'No description'}
+            </span>
+          </div>
+        ),
+      },
+      {
+        accessorKey: 'purchasedAt',
+        header: ({ column }) => <SortHeader column={column} label="Date" />,
+        cell: ({ row }) => (
+          <div className="flex items-center gap-1.5">
+            <Calendar className="text-muted-foreground size-4 shrink-0" />
+            <span className="text-muted-foreground text-sm">
+              <DateTime date={row.original.purchasedAt} dateOnly />
+            </span>
+          </div>
+        ),
+        sortingFn: (a, b) =>
+          parseDateOnly(a.original.purchasedAt).getTime() -
+          parseDateOnly(b.original.purchasedAt).getTime(),
+      },
+      {
+        id: 'status',
+        header: 'Status',
+        cell: ({ row }) => {
+          const { excludeFromTotal, expenseReportCreated, reimbursed, notes } =
+            row.original;
+          const hasStatus =
+            excludeFromTotal || expenseReportCreated || reimbursed || notes;
+          if (!hasStatus) return null;
+          return (
+            <div className="flex flex-wrap items-center gap-1.5">
+              {excludeFromTotal && (
+                <div className="bg-muted flex items-center gap-1 rounded-full px-2 py-0.5">
+                  <CircleDollarSign className="size-3" />
+                  <span className="text-xs">Excluded</span>
+                </div>
+              )}
+              {expenseReportCreated && (
+                <div className="bg-muted flex items-center gap-1 rounded-full px-2 py-0.5">
+                  <FileCheck className="size-3" />
+                  <span className="text-xs">Report Filed</span>
+                </div>
+              )}
+              {reimbursed && (
+                <div className="bg-muted flex items-center gap-1 rounded-full px-2 py-0.5">
+                  <Check className="size-3" />
+                  <span className="text-xs">Reimbursed</span>
+                </div>
+              )}
+              {notes && (
+                <TooltipProvider delayDuration={200}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex size-7 items-center justify-center rounded-lg">
+                        <StickyNote className="text-muted-foreground size-3.5" />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="left" className="max-w-sm">
+                      <p className="text-sm whitespace-pre-wrap">{notes}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+            </div>
+          );
+        },
+      },
+    ],
+    [],
+  );
+
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const table = useReactTable({
+    data: filteredPurchases,
+    columns,
+    state: {
+      sorting: controlledSorting ?? internalSorting,
+      columnFilters,
+      globalFilter,
+    },
+    onSortingChange: (updater) => {
+      const current = controlledSorting ?? internalSorting;
+      const next = typeof updater === 'function' ? updater(current) : updater;
+      if (onControlledSortingChange) onControlledSortingChange(next);
+      else setInternalSorting(next);
+    },
+    onColumnFiltersChange: setColumnFilters,
+    onGlobalFilterChange: setGlobalFilter,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+  });
+
+  if (yearFiltered.length === 0)
+    return (
+      <EmptyState
+        message="No purchases yet"
+        description="Record purchases to track spending"
+      />
+    );
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative max-w-sm flex-1">
+          <Input
+            placeholder="Filter purchases..."
+            value={globalFilter}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            className={cn(globalFilter && 'pr-8')}
+          />
+          {globalFilter && (
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Clear filter"
+              className="absolute top-1/2 right-1 size-6 -translate-y-1/2"
+              onClick={() => setGlobalFilter('')}
+            >
+              <X className="size-3.5" />
+            </Button>
+          )}
+        </div>
+
+        {processTemplates.length > 0 && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant={templateFilter !== 'all' ? 'default' : 'outline'}
+                size="sm"
+                className="gap-1.5 rounded-full"
+                disabled={processDataLoading}
+              >
+                {processDataLoading ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : null}
+                {templateFilterLabel}
+                <ChevronDown className="size-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuItem onClick={() => setTemplateFilter('all')}>
+                All Templates
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setTemplateFilter('none')}>
+                No Process
+              </DropdownMenuItem>
+              {processTemplates.length > 0 && <DropdownMenuSeparator />}
+              {processTemplates.map((t) => (
+                <DropdownMenuItem
+                  key={t.id}
+                  onClick={() => setTemplateFilter(t.id)}
+                >
+                  {t.name}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+
+        <div className="flex flex-wrap gap-1.5">
+          {STEP_STATUS_FILTER_OPTIONS.map((opt) => (
+            <Button
+              key={opt.value}
+              variant={stepStatusFilter === opt.value ? 'default' : 'outline'}
+              size="sm"
+              className="gap-1.5 rounded-full"
+              disabled={processDataLoading}
+              onClick={() =>
+                setStepStatusFilter(
+                  stepStatusFilter === opt.value ? 'all' : opt.value,
+                )
+              }
+            >
+              {opt.label}
+            </Button>
+          ))}
+        </div>
+
+        <div className="flex flex-wrap gap-1.5">
+          {STATUS_FILTERS.map(({ key, label, Icon }) => (
+            <Button
+              key={key}
+              variant={statusFilters.has(key) ? 'default' : 'outline'}
+              size="sm"
+              className="gap-1.5 rounded-full"
+              onClick={() => toggleStatusFilter(key)}
+            >
+              <Icon className="size-3.5" />
+              {label}
+            </Button>
+          ))}
+        </div>
+
+        <Button
+          variant="outline"
+          size="sm"
+          className="ml-auto gap-1.5"
+          onClick={() =>
+            exportToCsv(
+              table.getRowModel().rows.map((r) => r.original),
+              processDataMap,
+            )
+          }
+        >
+          <Download className="size-3.5" />
+          Export CSV
+        </Button>
+      </div>
+      <div className="rounded-lg border">
+        <Table className="table-fixed">
+          <colgroup>
+            <col className="w-44" />
+            <col className="w-36" />
+            <col className="w-auto" />
+            <col className="w-32" />
+            <col className="w-44" />
+            <col className="w-52" />
+          </colgroup>
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <TableHead key={header.id}>
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext(),
+                        )}
+                  </TableHead>
+                ))}
+                <TableHead>Process</TableHead>
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows.length === 0 ? (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length + 1}
+                  className="text-muted-foreground h-24 text-center"
+                >
+                  No results found.
+                </TableCell>
+              </TableRow>
+            ) : (
+              table
+                .getRowModel()
+                .rows.map((row) => (
+                  <PurchaseTableRow
+                    key={row.id}
+                    row={row}
+                    users={users}
+                    categories={categories}
+                    allocationGroups={allocationGroups}
+                    miscAllocations={miscAllocations}
+                    processTemplates={processTemplates}
+                  />
+                ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
+}

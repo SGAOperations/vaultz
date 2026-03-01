@@ -8,6 +8,54 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
+enum BudgetResetBehavior {
+    RESET
+    ROLLOVER
+}
+
+model Year {
+    id        String    @id @default(uuid())
+    name      String
+    startDate DateTime  @db.Date
+    endDate   DateTime  @db.Date
+    createdAt DateTime  @default(now())
+    updatedAt DateTime  @updatedAt
+    deletedAt DateTime?
+
+    periods       Period[]
+    categoryYears CategoryYear[]
+    purchases     Purchase[]
+    transfers     Transfer[]
+}
+
+model Period {
+    id        String    @id @default(uuid())
+    name      String
+    startDate DateTime  @db.Date
+    endDate   DateTime  @db.Date
+    createdAt DateTime  @default(now())
+    updatedAt DateTime  @updatedAt
+    deletedAt DateTime?
+
+    yearId String
+    year   Year   @relation(fields: [yearId], references: [id])
+
+    allocations Allocation[]
+}
+
+model CategoryYear {
+    id        String    @id @default(uuid())
+    amount    Decimal
+    createdAt DateTime  @default(now())
+    updatedAt DateTime  @updatedAt
+    deletedAt DateTime?
+
+    categoryId String
+    category   Category @relation(fields: [categoryId], references: [id])
+    yearId     String
+    year       Year     @relation(fields: [yearId], references: [id])
+}
+
 model User {
     id        String    @id @default(uuid())
     first     String
@@ -19,9 +67,10 @@ model User {
 }
 
 model Designation {
-    id   String @id @default(uuid())
-    code String
-    name String
+    id                  String              @id @default(uuid())
+    code                String
+    name                String
+    budgetResetBehavior BudgetResetBehavior @default(RESET)
 
     categories       Category[]
     allocations      Allocation[]
@@ -33,13 +82,15 @@ model Category {
     code       String
     ledgerCode String
     name       String
-    amount     Decimal
     deletedAt  DateTime?
 
     designationId String
-    designation   Designation  @relation(fields: [designationId], references: [id])
+    designation   Designation @relation(fields: [designationId], references: [id])
 
-    purchases Purchase[]
+    categoryYears CategoryYear[]
+    purchases     Purchase[]
+    transfersFrom Transfer[]    @relation("TransfersFrom")
+    transfersTo   Transfer[]    @relation("TransfersTo")
 }
 
 model Purchase {
@@ -55,11 +106,73 @@ model Purchase {
     reimbursed           Boolean  @default(false)
 
     categoryId   String
-    category     Category    @relation(fields: [categoryId], references: [id])
+    category     Category        @relation(fields: [categoryId], references: [id])
     allocationId String?
-    allocation   Allocation? @relation(fields: [allocationId], references: [id])
+    allocation   Allocation?     @relation(fields: [allocationId], references: [id])
     userId       String
-    user         User        @relation(fields: [userId], references: [id])
+    user         User            @relation(fields: [userId], references: [id])
+    yearId       String
+    year         Year            @relation(fields: [yearId], references: [id])
+
+    process PurchaseProcess?
+}
+
+model ProcessTemplate {
+    id          String    @id @default(uuid())
+    name        String
+    description String?
+    createdAt   DateTime  @default(now())
+    updatedAt   DateTime  @updatedAt
+    deletedAt   DateTime?
+
+    steps    ProcessStep[]
+    processes PurchaseProcess[]
+}
+
+model ProcessStep {
+    id          String    @id @default(uuid())
+    name        String
+    description String?
+    order       Int
+    createdAt   DateTime  @default(now())
+    updatedAt   DateTime  @updatedAt
+    deletedAt   DateTime?
+
+    templateId  String
+    template    ProcessTemplate @relation(fields: [templateId], references: [id])
+
+    completions PurchaseStepCompletion[]
+}
+
+model PurchaseProcess {
+    id         String    @id @default(uuid())
+    startedAt  DateTime  @default(now())
+    createdAt  DateTime  @default(now())
+    updatedAt  DateTime  @updatedAt
+    deletedAt  DateTime?
+
+    purchaseId String          @unique
+    purchase   Purchase        @relation(fields: [purchaseId], references: [id])
+    templateId String
+    template   ProcessTemplate @relation(fields: [templateId], references: [id])
+
+    completions PurchaseStepCompletion[]
+}
+
+model PurchaseStepCompletion {
+    id                   String    @id @default(uuid())
+    completed            Boolean   @default(false)
+    markedAt             DateTime
+    completionDate DateTime? @db.Date
+    notes                String?
+    createdAt            DateTime  @default(now())
+    updatedAt            DateTime  @updatedAt
+    deletedAt            DateTime?
+
+    purchaseProcessId String
+    purchaseProcess   PurchaseProcess @relation(fields: [purchaseProcessId], references: [id])
+    stepId            String
+    step              ProcessStep     @relation(fields: [stepId], references: [id])
 }
 
 model AllocationGroup {
@@ -81,6 +194,24 @@ model Allocation {
     designation       Designation      @relation(fields: [designationId], references: [id])
     allocationGroupId String?
     allocationGroup   AllocationGroup? @relation(fields: [allocationGroupId], references: [id])
+    periodId          String
+    period            Period           @relation(fields: [periodId], references: [id])
 
     purchases Purchase[]
+}
+
+model Transfer {
+    id        String    @id @default(uuid())
+    amount    Decimal
+    notes     String?
+    createdAt DateTime  @default(now())
+    updatedAt DateTime  @updatedAt
+    deletedAt DateTime?
+
+    fromCategoryId String
+    fromCategory   Category @relation("TransfersFrom", fields: [fromCategoryId], references: [id])
+    toCategoryId   String
+    toCategory     Category @relation("TransfersTo", fields: [toCategoryId], references: [id])
+    yearId         String
+    year           Year     @relation(fields: [yearId], references: [id])
 }

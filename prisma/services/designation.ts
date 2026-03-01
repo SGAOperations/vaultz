@@ -2,11 +2,15 @@
 
 import { revalidatePath } from 'next/cache';
 
-import { Designation } from '@/prisma/client';
+import { BudgetResetBehavior, Designation } from '@/prisma/client';
 
 import prisma from '@/lib/prisma';
 import { DesignationWithPurchases } from '@/lib/types';
 import { ResponseType } from '@/lib/utils';
+
+export async function getDesignations(): Promise<Designation[]> {
+  return await prisma.designation.findMany({ orderBy: { name: 'asc' } });
+}
 
 export async function getAllDesignations(): Promise<
   DesignationWithPurchases[]
@@ -20,7 +24,10 @@ export async function getAllDesignations(): Promise<
               orderBy: [{ purchasedAt: 'desc' }, { createdAt: 'desc' }],
               include: { user: true },
             },
-            amount: true,
+            categoryYears: {
+              where: { deletedAt: null },
+              select: { amount: true },
+            },
           },
         },
       },
@@ -28,7 +35,12 @@ export async function getAllDesignations(): Promise<
   ).map(({ categories, ...v }) => ({
     ...v,
     amount: categories.reduce(
-      (acc, category) => acc + category.amount.toNumber(),
+      (acc, category) =>
+        acc +
+        category.categoryYears.reduce(
+          (sum, cy) => sum + cy.amount.toNumber(),
+          0,
+        ),
       0,
     ),
     purchases: categories
@@ -60,7 +72,10 @@ export async function getDesignation({
             orderBy: [{ purchasedAt: 'desc' }, { createdAt: 'desc' }],
             include: { user: true },
           },
-          amount: true,
+          categoryYears: {
+            where: { deletedAt: null },
+            select: { amount: true },
+          },
         },
       },
     },
@@ -71,7 +86,12 @@ export async function getDesignation({
   return {
     ...designation,
     amount: designation.categories.reduce(
-      (acc, category) => acc + category.amount.toNumber(),
+      (acc, category) =>
+        acc +
+        category.categoryYears.reduce(
+          (sum, cy) => sum + cy.amount.toNumber(),
+          0,
+        ),
       0,
     ),
     purchases: designation.categories
@@ -92,13 +112,38 @@ export async function getDesignation({
 export async function createDesignation({
   code,
   name,
+  budgetResetBehavior,
 }: {
   code: string;
   name: string;
+  budgetResetBehavior: BudgetResetBehavior;
 }): Promise<ResponseType<Designation>> {
-  const designation = await prisma.designation.create({ data: { code, name } });
+  const designation = await prisma.designation.create({
+    data: { code, name, budgetResetBehavior },
+  });
 
   revalidatePath('/');
+  revalidatePath('/designation');
+
+  return designation;
+}
+
+export async function updateDesignation({
+  id,
+  name,
+  code,
+  budgetResetBehavior,
+}: {
+  id: string;
+  name: string;
+  code: string;
+  budgetResetBehavior: BudgetResetBehavior;
+}): Promise<ResponseType<Designation>> {
+  const designation = await prisma.designation.update({
+    where: { id },
+    data: { name, code, budgetResetBehavior },
+  });
+
   revalidatePath('/designation');
 
   return designation;
