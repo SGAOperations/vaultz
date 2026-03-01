@@ -826,7 +826,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                       <span className="flex items-center gap-2">
                         Advanced
                         {watchedYearId !== activeYearId && watchedYearId && (
-                          <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-normal text-amber-600 dark:text-amber-400">
+                          <span className="bg-warning/15 text-warning rounded-full px-2 py-0.5 text-xs font-normal">
                             Non-active year selected
                           </span>
                         )}

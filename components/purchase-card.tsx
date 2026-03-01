@@ -57,9 +57,9 @@ function ProcessCardIndicator({ data }: { data: PurchaseProcessData }) {
               key={step.id}
               className={`size-1.5 rounded-full transition-colors ${
                 status === 'completed'
-                  ? 'bg-green-500'
+                  ? 'bg-process-step-completed'
                   : status === 'bypassed'
-                    ? 'bg-yellow-400'
+                    ? 'bg-process-step-bypassed'
                     : 'bg-muted-foreground/20'
               }`}
             />
@@ -117,7 +117,7 @@ export function PurchaseCard({
           key={purchase.id}
           className={cn(
             'hover:border-primary/20 hover:bg-accent/50 cursor-pointer overflow-hidden p-3 transition-all duration-150',
-            isIncomplete && 'border-l-2 border-l-amber-400',
+            isIncomplete && 'border-l-incomplete-indicator border-l-2',
           )}
           onClick={stopPropagation ? (e) => e.stopPropagation() : undefined}
         >

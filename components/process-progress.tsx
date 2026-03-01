@@ -39,14 +39,14 @@ export function getStepStatus(
 function StepStatusBadge({ status }: { status: StepStatus }) {
   if (status === 'completed')
     return (
-      <span className="flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
+      <span className="bg-process-step-completed/10 text-process-step-completed flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium">
         <CheckCircle2 className="size-3" />
         Completed
       </span>
     );
   if (status === 'bypassed')
     return (
-      <span className="flex items-center gap-1 rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
+      <span className="bg-process-step-bypassed/10 text-process-step-bypassed flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium">
         <SkipForward className="size-3" />
         Bypassed
       </span>

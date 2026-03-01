@@ -61,7 +61,7 @@ export function TransferList({
                 className={
                   isOutgoing
                     ? 'text-destructive font-semibold'
-                    : 'font-semibold text-green-600 dark:text-green-400'
+                    : 'text-transfer-income font-semibold'
                 }
               >
                 {isOutgoing ? '-' : '+'}${formatNumber(transfer.amount)}

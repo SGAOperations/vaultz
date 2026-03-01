@@ -216,8 +216,8 @@ function ProcessCellContent({ data }: { data: PurchaseProcessData }) {
               <div
                 key={step.id}
                 className={cn('size-1.5 rounded-full transition-colors', {
-                  'bg-green-500': status === 'completed',
-                  'bg-yellow-400': status === 'bypassed',
+                  'bg-process-step-completed': status === 'completed',
+                  'bg-process-step-bypassed': status === 'bypassed',
                   'bg-muted-foreground/20': status === 'pending',
                 })}
               />
@@ -263,7 +263,7 @@ function PurchaseTableRow({
         <TableRow
           className={cn(
             'cursor-pointer',
-            isIncomplete && 'border-l-2 border-l-amber-400',
+            isIncomplete && 'border-l-incomplete-indicator border-l-2',
           )}
         >
           {row.getVisibleCells().map((cell) => (

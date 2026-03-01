@@ -717,7 +717,7 @@ function CategoryRow({
                       yd.utilization > 100 && 'text-destructive',
                       yd.utilization >= 80 &&
                         yd.utilization <= 100 &&
-                        'text-yellow-600 dark:text-yellow-400',
+                        'text-warning',
                     )}
                   >
                     {yd.utilization.toFixed(1)}%
@@ -812,7 +812,7 @@ function CategoryRow({
                               yd.utilization > 100 && 'text-destructive',
                               yd.utilization >= 80 &&
                                 yd.utilization <= 100 &&
-                                'text-yellow-600 dark:text-yellow-400',
+                                'text-warning',
                             )}
                           >
                             {yd.utilization.toFixed(1)}%
@@ -888,9 +888,7 @@ function TotalsRow({
                 className={cn(
                   'text-xs',
                   utilization > 100 && 'text-destructive',
-                  utilization >= 80 &&
-                    utilization <= 100 &&
-                    'text-yellow-600 dark:text-yellow-400',
+                  utilization >= 80 && utilization <= 100 && 'text-warning',
                 )}
               >
                 {utilization.toFixed(1)}%
@@ -921,7 +919,7 @@ function ChangeIndicator({ pct }: { pct: number }) {
     <span
       className={cn(
         'inline-flex items-center gap-0.5 text-xs',
-        isIncrease && 'text-green-600 dark:text-green-400',
+        isIncrease && 'text-transfer-income',
         isDecrease && 'text-destructive',
         !isIncrease && !isDecrease && 'text-muted-foreground',
       )}

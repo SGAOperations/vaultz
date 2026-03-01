@@ -68,15 +68,15 @@ export function Content({ designationId }: ContentProps) {
             icon={FolderKanban}
             label="Categories"
             value={stats!.totalCategories}
-            iconColor="text-purple-500"
-            bgColor="bg-purple-500/10 dark:bg-purple-500/20"
+            iconColor="text-icon-secondary"
+            bgColor="bg-icon-secondary/10"
           />
           <StatCard
             icon={Receipt}
             label="Total Purchases"
             value={stats!.totalPurchases}
-            iconColor="text-orange-500"
-            bgColor="bg-orange-500/10 dark:bg-orange-500/20"
+            iconColor="text-icon-tertiary"
+            bgColor="bg-icon-tertiary/10"
           />
         </div>
       )}
