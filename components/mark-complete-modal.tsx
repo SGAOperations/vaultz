@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { Loader2 } from 'lucide-react';
 
@@ -52,13 +52,6 @@ export function MarkCompleteModal({
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (open) {
-      setCompletionDate(todayDate());
-      setNotes('');
-    }
-  }, [open]);
-
   async function handleConfirm() {
     if (!step) return;
     setIsSubmitting(true);
@@ -75,7 +68,12 @@ export function MarkCompleteModal({
           error: 'Failed to mark step complete',
         },
         onSuccess: (res) => {
-          onComplete({ id: res.id, markedAt, completionDate, notes: notes || null });
+          onComplete({
+            id: res.id,
+            markedAt,
+            completionDate,
+            notes: notes || null,
+          });
           onOpenChange(false);
         },
       },

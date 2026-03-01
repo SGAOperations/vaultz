@@ -71,6 +71,7 @@ export function ProcessProgress({
   );
   const [mutatingStepId, setMutatingStepId] = useState<string | null>(null);
   const [modalStep, setModalStep] = useState<PurchaseProcessStep | null>(null);
+  const [modalKey, setModalKey] = useState(0);
 
   const updateData = useCallback(
     (next: PurchaseProcessData | null) => {
@@ -198,7 +199,10 @@ export function ProcessProgress({
                       variant="outline"
                       className="h-6 px-2 text-xs"
                       disabled={mutatingStepId !== null}
-                      onClick={() => setModalStep(step)}
+                      onClick={() => {
+                        setModalStep(step);
+                        setModalKey((k) => k + 1);
+                      }}
                     >
                       Mark Complete
                     </Button>
@@ -210,6 +214,7 @@ export function ProcessProgress({
         </div>
       </div>
       <MarkCompleteModal
+        key={modalKey}
         step={modalStep}
         purchaseProcessId={data.processId}
         open={modalStep !== null}
