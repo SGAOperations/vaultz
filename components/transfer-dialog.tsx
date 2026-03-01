@@ -226,7 +226,7 @@ export function TransferDialog({
               />
 
               {isNonActiveYear && (
-                <div className="flex items-start gap-2 rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-800 dark:border-yellow-800 dark:bg-yellow-950 dark:text-yellow-200">
+                <div className="border-warning/30 bg-warning/10 text-warning flex items-start gap-2 rounded-lg border p-3 text-sm">
                   <TriangleAlert className="mt-0.5 size-4 shrink-0" />
                   <p>
                     You are transferring funds in a non-active year. Please

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -269,16 +269,6 @@ export function Content({ template }: { template: ProcessTemplateWithSteps }) {
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
-
-  useEffect(() => {
-    setSteps(
-      template.steps.map((s) => ({
-        id: s.id,
-        name: s.name,
-        description: s.description ?? '',
-      })),
-    );
-  }, [template]);
 
   async function handleEditStep(stepId: string, data: StepFormData) {
     setIsMutating(true);

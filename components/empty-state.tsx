@@ -1,11 +1,15 @@
+import { ReactNode } from 'react';
+
 import { Inbox } from 'lucide-react';
 
 interface EmptyStateProps {
   message: string;
   description?: string;
+  /** Optional action element (e.g., a button or link) rendered below the description to guide the user toward the next step. */
+  action?: ReactNode;
 }
 
-export function EmptyState({ message, description }: EmptyStateProps) {
+export function EmptyState({ message, description, action }: EmptyStateProps) {
   return (
     <div className="bg-muted/30 flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed px-6 py-12">
       <div className="bg-muted rounded-full p-3">
@@ -17,6 +21,7 @@ export function EmptyState({ message, description }: EmptyStateProps) {
           <p className="text-muted-foreground/70 mt-1 text-sm">{description}</p>
         )}
       </div>
+      {action}
     </div>
   );
 }

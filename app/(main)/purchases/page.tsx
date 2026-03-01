@@ -1,6 +1,6 @@
 'use client';
 
-import { notFound } from 'next/navigation';
+import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
 import { useDesignation } from '@/contexts/DesignationContext';
@@ -12,7 +12,7 @@ import { Content } from './content';
 export default function PurchasesPage() {
   const { activeDesignation } = useDesignation();
 
-  if (!activeDesignation) notFound();
+  if (!activeDesignation) redirect('/designation');
 
   return (
     <Suspense
