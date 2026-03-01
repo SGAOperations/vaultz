@@ -8,7 +8,6 @@ import { BarChart2, Ellipsis, Plus } from 'lucide-react';
 
 import { CreateCategoryDialog } from '@/components/create-category-dialog';
 import { PageHeader } from '@/components/page-header';
-import { QuickActionButtons } from '@/components/quick-action-buttons';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
