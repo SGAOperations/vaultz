@@ -5,12 +5,15 @@ import { Controller, FormProvider, useFieldArray, useForm } from 'react-hook-for
 
 import { useQueryClient } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, TrendingUp } from 'lucide-react';
+import { Loader2, Plus, Trash2 } from 'lucide-react';
 import { z } from 'zod/v4';
 
 import { Year } from '@/prisma/client';
 import { createYear, updateYear } from '@/prisma/services/period';
-import { getCategoriesByDesignation } from '@/prisma/services/category';
+import {
+  createCategory,
+  getCategoriesByDesignation,
+} from '@/prisma/services/category';
 import {
   getNewYearSuggestions,
   setYearBudgetsForDesignation,
@@ -19,7 +22,7 @@ import {
 import { useDesignation } from '@/contexts/DesignationContext';
 import { useYear } from '@/contexts/YearContext';
 
-import { formatCurrency, handleError, isError, parseDateOnly } from '@/lib/utils';
+import { handleError, isError, parseDateOnly } from '@/lib/utils';
 
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -54,19 +57,20 @@ const yearSchema = z
     path: ['endDate'],
   });
 
-const budgetSchema = z.object({
-  budgets: z.array(
-    z.object({
-      categoryId: z.string(),
-      name: z.string(),
-      amount: z.coerce.number<number>().min(0, 'Must be ≥ 0'),
-    }),
-  ),
+const resetEntrySchema = z.object({
+  categoryId: z.string(), // empty = new category to create
+  name: z.string().min(1, 'Name is required'),
+  code: z.string(),
+  ledgerCode: z.string(),
+  amount: z.coerce.number<number>().min(0, 'Must be ≥ 0'),
+});
+
+const resetBudgetSchema = z.object({
+  entries: z.array(resetEntrySchema),
 });
 
 type YearFormData = z.infer<typeof yearSchema>;
-type BudgetFormData = z.infer<typeof budgetSchema>;
-type RolloverHintData = { prevBudget: number; unused: number };
+type ResetBudgetFormData = z.infer<typeof resetBudgetSchema>;
 
 export function YearDialog({
   year,
@@ -79,9 +83,6 @@ export function YearDialog({
   const [step, setStep] = useState<'year' | 'budgets'>('year');
   const [createdYear, setCreatedYear] = useState<Year | null>(null);
   const [loadingBudgets, setLoadingBudgets] = useState(false);
-  const [rolloverHints, setRolloverHints] = useState<
-    Map<string, RolloverHintData>
-  >(new Map());
 
   const { activeDesignation } = useDesignation();
   const { years } = useYear();
@@ -96,14 +97,14 @@ export function YearDialog({
     },
   });
 
-  const budgetForm = useForm({
-    resolver: zodResolver(budgetSchema),
-    defaultValues: { budgets: [] as BudgetFormData['budgets'] },
+  const resetForm = useForm({
+    resolver: zodResolver(resetBudgetSchema),
+    defaultValues: { entries: [] as ResetBudgetFormData['entries'] },
   });
 
-  const { fields, replace } = useFieldArray({
-    control: budgetForm.control,
-    name: 'budgets',
+  const { fields, replace, append, remove } = useFieldArray({
+    control: resetForm.control,
+    name: 'entries',
   });
 
   function handleOpenChange(newOpen: boolean) {
@@ -111,66 +112,36 @@ export function YearDialog({
     if (!newOpen) {
       setStep('year');
       setCreatedYear(null);
-      setRolloverHints(new Map());
       yearForm.reset({
         name: year?.name ?? '',
         startDate: year ? parseDateOnly(year.startDate) : undefined,
         endDate: year ? parseDateOnly(year.endDate) : undefined,
       });
-      budgetForm.reset({ budgets: [] });
+      resetForm.reset({ entries: [] });
       replace([]);
     }
   }
 
+  // Load categories when the RESET budget step opens
   useEffect(() => {
     if (step !== 'budgets' || !createdYear || !activeDesignation) return;
     let cancelled = false;
 
     async function load() {
       if (!createdYear || !activeDesignation) return;
-      const isRollover = activeDesignation.budgetResetBehavior === 'ROLLOVER';
-      const newYearStart = new Date(createdYear.startDate);
-      const prevYear = [...years]
-        .filter((y) => new Date(y.endDate) < newYearStart)
-        .sort(
-          (a, b) =>
-            new Date(b.endDate).getTime() - new Date(a.endDate).getTime(),
-        )[0];
-
-      if (isRollover && prevYear) {
-        const suggestions = await getNewYearSuggestions({
-          designationId: activeDesignation.id,
-          prevYearId: prevYear.id,
-        });
-        if (cancelled) return;
-        replace(
-          suggestions.map((s) => ({
-            categoryId: s.categoryId,
-            name: s.name,
-            amount: s.suggestedAmount,
-          })),
-        );
-        setRolloverHints(
-          new Map(
-            suggestions.map((s) => [
-              s.categoryId,
-              { prevBudget: s.prevBudget, unused: s.unused },
-            ]),
-          ),
-        );
-      } else {
-        const categories = await getCategoriesByDesignation({
-          designationId: activeDesignation.id,
-        });
-        if (cancelled) return;
-        replace(
-          categories.map((c) => ({
-            categoryId: c.id,
-            name: c.name,
-            amount: 0,
-          })),
-        );
-      }
+      const categories = await getCategoriesByDesignation({
+        designationId: activeDesignation.id,
+      });
+      if (cancelled) return;
+      replace(
+        categories.map((c) => ({
+          categoryId: c.id,
+          name: c.name,
+          code: c.code,
+          ledgerCode: c.ledgerCode,
+          amount: 0,
+        })),
+      );
       if (!cancelled) setLoadingBudgets(false);
     }
 
@@ -178,7 +149,7 @@ export function YearDialog({
     return () => {
       cancelled = true;
     };
-  }, [step, createdYear, activeDesignation, years, replace]);
+  }, [step, createdYear, activeDesignation, replace]);
 
   async function onYearSubmit(data: YearFormData) {
     if (year) {
@@ -190,39 +161,116 @@ export function YearDialog({
         },
       });
       if (!isError(result)) handleOpenChange(false);
-    } else {
-      const result = await handleError(createYear(data), {
-        toast: {
-          loading: 'Creating year...',
-          success: 'Year created successfully',
-          error: 'Failed to create year',
-        },
-      });
-      if (!isError(result)) {
-        yearForm.reset();
-        setCreatedYear(result);
-        if (activeDesignation) {
-          setLoadingBudgets(true);
-          replace([]);
-          setRolloverHints(new Map());
-          setStep('budgets');
-        } else {
-          handleOpenChange(false);
-        }
+      return;
+    }
+
+    const result = await handleError(createYear(data), {
+      toast: {
+        loading: 'Creating year...',
+        success: 'Year created successfully',
+        error: 'Failed to create year',
+      },
+    });
+    if (isError(result)) return;
+
+    yearForm.reset();
+    const newYear = result;
+    setCreatedYear(newYear);
+
+    if (!activeDesignation) {
+      handleOpenChange(false);
+      return;
+    }
+
+    if (activeDesignation.budgetResetBehavior === 'ROLLOVER') {
+      // Automatic: calculate and save budgets without any user input
+      const newYearStart = new Date(newYear.startDate);
+      const prevYear = [...years]
+        .filter((y) => new Date(y.endDate) < newYearStart)
+        .sort(
+          (a, b) =>
+            new Date(b.endDate).getTime() - new Date(a.endDate).getTime(),
+        )[0];
+
+      let budgets: Array<{ categoryId: string; amount: number }>;
+      if (prevYear) {
+        const suggestions = await getNewYearSuggestions({
+          designationId: activeDesignation.id,
+          prevYearId: prevYear.id,
+        });
+        budgets = suggestions.map((s) => ({
+          categoryId: s.categoryId,
+          amount: s.suggestedAmount,
+        }));
+      } else {
+        const categories = await getCategoriesByDesignation({
+          designationId: activeDesignation.id,
+        });
+        budgets = categories.map((c) => ({ categoryId: c.id, amount: 0 }));
       }
+
+      await handleError(
+        setYearBudgetsForDesignation({
+          designationId: activeDesignation.id,
+          yearId: newYear.id,
+          budgets,
+        }),
+        {
+          toast: {
+            loading: 'Rolling over budgets...',
+            success: 'Budgets rolled over automatically',
+            error: 'Failed to roll over budgets',
+          },
+        },
+      );
+      await queryClient.invalidateQueries({ queryKey: ['categories-budget'] });
+      handleOpenChange(false);
+    } else {
+      // RESET: go to budget step
+      setLoadingBudgets(true);
+      replace([]);
+      setStep('budgets');
     }
   }
 
-  async function onBudgetSubmit(data: BudgetFormData) {
+  async function onResetSubmit(data: ResetBudgetFormData) {
     if (!createdYear || !activeDesignation) return;
+
+    const resolvedBudgets: Array<{ categoryId: string; amount: number }> = [];
+
+    for (const entry of data.entries) {
+      if (entry.categoryId) {
+        resolvedBudgets.push({
+          categoryId: entry.categoryId,
+          amount: entry.amount,
+        });
+      } else {
+        // New category: create it first
+        const catResult = await handleError(
+          createCategory({
+            designationId: activeDesignation.id,
+            name: entry.name,
+            code: entry.code,
+            ledgerCode: entry.ledgerCode,
+          }),
+          {
+            toast: {
+              loading: `Creating "${entry.name}"...`,
+              success: `Category "${entry.name}" created`,
+              error: `Failed to create category "${entry.name}"`,
+            },
+          },
+        );
+        if (isError(catResult)) return;
+        resolvedBudgets.push({ categoryId: catResult.id, amount: entry.amount });
+      }
+    }
+
     const result = await handleError(
       setYearBudgetsForDesignation({
         designationId: activeDesignation.id,
         yearId: createdYear.id,
-        budgets: data.budgets.map((b) => ({
-          categoryId: b.categoryId,
-          amount: Number(b.amount),
-        })),
+        budgets: resolvedBudgets,
       }),
       {
         toast: {
@@ -237,17 +285,6 @@ export function YearDialog({
       handleOpenChange(false);
     }
   }
-
-  const isRollover = activeDesignation?.budgetResetBehavior === 'ROLLOVER';
-  const newYearStart = createdYear ? new Date(createdYear.startDate) : null;
-  const prevYear = newYearStart
-    ? [...years]
-        .filter((y) => new Date(y.endDate) < newYearStart)
-        .sort(
-          (a, b) =>
-            new Date(b.endDate).getTime() - new Date(a.endDate).getTime(),
-        )[0]
-    : undefined;
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -336,9 +373,8 @@ export function YearDialog({
             <DialogHeader>
               <DialogTitle>Set Budgets — {createdYear?.name}</DialogTitle>
               <DialogDescription>
-                {isRollover && prevYear
-                  ? `ROLLOVER: suggested amounts include unused budget from ${prevYear.name}.`
-                  : 'Enter the budget for each category for this new year.'}
+                Enter the budget for each category. Remove categories not needed
+                this year, or add new ones.
               </DialogDescription>
             </DialogHeader>
 
@@ -349,53 +385,157 @@ export function YearDialog({
                 ))}
               </div>
             ) : (
-              <Form {...budgetForm}>
+              <Form {...resetForm}>
                 <form
-                  onSubmit={budgetForm.handleSubmit(onBudgetSubmit)}
-                  className="space-y-4 py-2"
+                  onSubmit={resetForm.handleSubmit(onResetSubmit)}
+                  className="space-y-3 py-2"
                 >
                   {fields.map((field, index) => {
-                    const hint = rolloverHints.get(field.categoryId);
+                    const isNew = !field.categoryId;
                     return (
-                      <FormField
-                        key={field.id}
-                        control={budgetForm.control}
-                        name={`budgets.${index}.amount`}
-                        render={({ field: f }) => (
-                          <FormItem>
-                            <div className="flex items-center justify-between">
-                              <FormLabel className="text-sm">
-                                {fields[index].name}
-                              </FormLabel>
-                              {isRollover && hint && (
-                                <span className="text-muted-foreground flex items-center gap-1 text-xs">
-                                  <TrendingUp className="size-3" />
-                                  prev {formatCurrency(hint.prevBudget)} +{' '}
-                                  {formatCurrency(hint.unused)} unused
-                                </span>
-                              )}
-                            </div>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                min={0}
-                                step="0.01"
-                                placeholder="0.00"
-                                {...f}
+                      <div key={field.id} className="flex items-start gap-2">
+                        <div className="flex-1">
+                          {isNew ? (
+                            <div className="grid grid-cols-2 gap-2 rounded-lg border p-3">
+                              <FormField
+                                control={resetForm.control}
+                                name={`entries.${index}.name`}
+                                render={({ field: f }) => (
+                                  <FormItem className="col-span-2">
+                                    <FormLabel className="text-xs">
+                                      Name
+                                    </FormLabel>
+                                    <FormControl>
+                                      <Input
+                                        placeholder="Category name"
+                                        {...f}
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
                               />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                              <FormField
+                                control={resetForm.control}
+                                name={`entries.${index}.code`}
+                                render={({ field: f }) => (
+                                  <FormItem>
+                                    <FormLabel className="text-xs">
+                                      Code (SC###)
+                                    </FormLabel>
+                                    <FormControl>
+                                      <Input
+                                        placeholder="123"
+                                        maxLength={3}
+                                        {...f}
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={resetForm.control}
+                                name={`entries.${index}.ledgerCode`}
+                                render={({ field: f }) => (
+                                  <FormItem>
+                                    <FormLabel className="text-xs">
+                                      Ledger Code
+                                    </FormLabel>
+                                    <FormControl>
+                                      <Input
+                                        placeholder="7XXX"
+                                        maxLength={4}
+                                        {...f}
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={resetForm.control}
+                                name={`entries.${index}.amount`}
+                                render={({ field: f }) => (
+                                  <FormItem className="col-span-2">
+                                    <FormLabel className="text-xs">
+                                      Budget Amount
+                                    </FormLabel>
+                                    <FormControl>
+                                      <Input
+                                        type="number"
+                                        min={0}
+                                        step="0.01"
+                                        placeholder="0.00"
+                                        {...f}
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+                          ) : (
+                            <FormField
+                              control={resetForm.control}
+                              name={`entries.${index}.amount`}
+                              render={({ field: f }) => (
+                                <FormItem>
+                                  <FormLabel className="text-sm">
+                                    {field.name}
+                                  </FormLabel>
+                                  <FormControl>
+                                    <Input
+                                      type="number"
+                                      min={0}
+                                      step="0.01"
+                                      placeholder="0.00"
+                                      {...f}
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          )}
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className={isNew ? 'mt-2 shrink-0' : 'mt-6 shrink-0'}
+                          onClick={() => remove(index)}
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </div>
                     );
                   })}
 
                   {fields.length === 0 && (
-                    <p className="text-muted-foreground py-4 text-center text-sm">
-                      No categories found for this designation.
+                    <p className="text-muted-foreground py-2 text-center text-sm">
+                      No categories. Add one below or skip.
                     </p>
                   )}
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5"
+                    onClick={() =>
+                      append({
+                        categoryId: '',
+                        name: '',
+                        code: '',
+                        ledgerCode: '',
+                        amount: 0,
+                      })
+                    }
+                  >
+                    <Plus className="size-3.5" />
+                    Add Category
+                  </Button>
 
                   <div className="flex gap-2 pt-2">
                     <Button
@@ -403,19 +543,16 @@ export function YearDialog({
                       variant="outline"
                       className="flex-1"
                       onClick={() => handleOpenChange(false)}
-                      disabled={budgetForm.formState.isSubmitting}
+                      disabled={resetForm.formState.isSubmitting}
                     >
                       Skip for Now
                     </Button>
                     <Button
                       type="submit"
                       className="flex-1"
-                      disabled={
-                        budgetForm.formState.isSubmitting ||
-                        fields.length === 0
-                      }
+                      disabled={resetForm.formState.isSubmitting}
                     >
-                      {budgetForm.formState.isSubmitting && (
+                      {resetForm.formState.isSubmitting && (
                         <Loader2 className="animate-spin" />
                       )}
                       Save Budgets
