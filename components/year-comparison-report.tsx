@@ -9,6 +9,7 @@ import {
   ChevronDown,
   ChevronRight,
   Download,
+  Info,
   Minus,
 } from 'lucide-react';
 import {
@@ -18,7 +19,7 @@ import {
   Line,
   LineChart,
   ResponsiveContainer,
-  Tooltip,
+  Tooltip as RechartsTooltip,
   XAxis,
   YAxis,
 } from 'recharts';
@@ -28,14 +29,21 @@ import {
   getYearComparisonData,
 } from '@/prisma/services/year-comparison';
 
+import { getCategoryBudgetsAcrossYears } from '@/prisma/services/category-year';
+
 import { cn, formatCurrency } from '@/lib/utils';
 
 import { EmptyState } from '@/components/empty-state';
 import { SectionHeader } from '@/components/section-header';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface YearOption {
   id: string;
@@ -120,6 +128,15 @@ export function YearComparisonReport({
     enabled: selectedYearIds.length > 0,
   });
 
+  const { data: budgetData } = useQuery({
+    queryKey: ['category-budgets-across-years', selectedDesignationId],
+    queryFn: () =>
+      getCategoryBudgetsAcrossYears({
+        designationId: selectedDesignationId ?? '',
+      }),
+    enabled: !!selectedDesignationId,
+  });
+
   function toggleYear(yearId: string) {
     setSelectedYearIds((prev) =>
       prev.includes(yearId)
@@ -179,6 +196,7 @@ export function YearComparisonReport({
   }
 
   return (
+    <TooltipProvider>
     <div className="flex flex-col gap-4">
       {/* Filters */}
       <Card className="gap-4 p-4">
@@ -187,18 +205,17 @@ export function YearComparisonReport({
             <p className="text-muted-foreground mb-2 text-sm font-medium">
               Fiscal Years
             </p>
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-2">
               {allYears.map((year) => (
-                <label
+                <Button
                   key={year.id}
-                  className="flex cursor-pointer items-center gap-2"
+                  variant={selectedYearIds.includes(year.id) ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => toggleYear(year.id)}
+                  className="h-8 rounded-full px-4 text-xs"
                 >
-                  <Checkbox
-                    checked={selectedYearIds.includes(year.id)}
-                    onChange={() => toggleYear(year.id)}
-                  />
-                  <span className="text-sm">{year.name}</span>
-                </label>
+                  {year.name}
+                </Button>
               ))}
               {allYears.length === 0 && (
                 <p className="text-muted-foreground text-sm">No years found</p>
@@ -289,7 +306,7 @@ export function YearComparisonReport({
                     tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
                     width={50}
                   />
-                  <Tooltip
+                  <RechartsTooltip
                     contentStyle={{
                       backgroundColor: colors.background,
                       border: `1px solid ${colors.border}`,
@@ -334,7 +351,7 @@ export function YearComparisonReport({
                     tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
                     width={50}
                   />
-                  <Tooltip
+                  <RechartsTooltip
                     contentStyle={{
                       backgroundColor: colors.background,
                       border: `1px solid ${colors.border}`,
@@ -383,7 +400,7 @@ export function YearComparisonReport({
                     domain={[0, 100]}
                     width={45}
                   />
-                  <Tooltip
+                  <RechartsTooltip
                     contentStyle={{
                       backgroundColor: colors.background,
                       border: `1px solid ${colors.border}`,
@@ -457,13 +474,23 @@ export function YearComparisonReport({
                           <th
                             className="text-muted-foreground px-4 py-2 text-right text-xs font-normal"
                           >
-                            Util%
+                            Utilization
                           </th>
                           {idx < data.years.length - 1 && (
                             <th
                               className="text-muted-foreground px-4 py-2 text-right text-xs font-normal"
                             >
-                              YoY
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="inline-flex cursor-help items-center gap-1">
+                                    Year-over-Year Change
+                                    <Info className="size-3" />
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  Percentage change in budget compared to the previous year
+                                </TooltipContent>
+                              </Tooltip>
                             </th>
                           )}
                         </Fragment>
@@ -497,7 +524,114 @@ export function YearComparisonReport({
           description="The selected years have no budget or spending records"
         />
       )}
+
+      {/* Budget Comparison Across All Years (mirrors the Categories > Year Comparison page) */}
+      {selectedDesignationId && budgetData && budgetData.years.length > 0 && (
+        <>
+          <SectionHeader title="Budget Comparison Across All Years" />
+          <div className="overflow-x-auto">
+            <Card className="p-0">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-muted-foreground px-4 py-3 text-left font-medium">
+                      Category
+                    </th>
+                    {budgetData.years.map((year) => (
+                      <th
+                        key={year.id}
+                        className="text-muted-foreground px-4 py-3 text-right font-medium"
+                      >
+                        {year.name}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {budgetData.categories.map((category) => (
+                    <tr
+                      key={category.id}
+                      className="hover:bg-muted/30 border-b last:border-0"
+                    >
+                      <td className="px-4 py-3">
+                        <div className="font-medium">{category.name}</div>
+                        <div className="text-muted-foreground font-mono text-xs">
+                          SC{category.code}
+                        </div>
+                      </td>
+                      {category.yearBudgets.map((yb, idx) => {
+                        const prevBudget =
+                          idx > 0 ? category.yearBudgets[idx - 1].amount : null;
+                        const change =
+                          prevBudget !== null && prevBudget > 0
+                            ? ((yb.amount - prevBudget) / prevBudget) * 100
+                            : null;
+                        return (
+                          <td key={yb.yearId} className="px-4 py-3 text-right">
+                            {yb.amount > 0 ? (
+                              <div className="flex flex-col items-end gap-0.5">
+                                <span className="font-semibold">
+                                  {formatCurrency(yb.amount)}
+                                </span>
+                                {change !== null && (
+                                  <ChangeIndicator pct={change} />
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground text-xs">
+                                —
+                              </span>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="bg-muted/30">
+                    <td className="px-4 py-3 font-semibold">Total</td>
+                    {budgetData.years.map((year, idx) => {
+                      const total = budgetData.categories.reduce((acc, cat) => {
+                        const yearBudget = cat.yearBudgets.find(
+                          (b) => b.yearId === year.id,
+                        );
+                        return acc + (yearBudget?.amount ?? 0);
+                      }, 0);
+                      const prevTotal =
+                        idx > 0
+                          ? budgetData.categories.reduce((acc, cat) => {
+                              const prevYearBudget = cat.yearBudgets.find(
+                                (b) =>
+                                  b.yearId === budgetData.years[idx - 1].id,
+                              );
+                              return acc + (prevYearBudget?.amount ?? 0);
+                            }, 0)
+                          : null;
+                      const change =
+                        prevTotal !== null && prevTotal > 0
+                          ? ((total - prevTotal) / prevTotal) * 100
+                          : null;
+                      return (
+                        <td key={year.id} className="px-4 py-3 text-right">
+                          <div className="flex flex-col items-end gap-0.5">
+                            <span className="font-semibold">
+                              {formatCurrency(total)}
+                            </span>
+                            {change !== null && <ChangeIndicator pct={change} />}
+                          </div>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                </tfoot>
+              </table>
+            </Card>
+          </div>
+        </>
+      )}
     </div>
+    </TooltipProvider>
   );
 }
 
