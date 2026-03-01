@@ -17,8 +17,8 @@ import { getCategoriesWithBudgetForYear } from '@/prisma/services/category-year'
 
 import { cn, formatNumber } from '@/lib/utils';
 
-import { EmptyState } from '@/components/empty-state';
 import { EditCategoryDialog } from '@/components/edit-category-dialog';
+import { EmptyState } from '@/components/empty-state';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';

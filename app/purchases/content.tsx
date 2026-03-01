@@ -1,11 +1,11 @@
 'use client';
 
-import { useCallback, useMemo } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useCallback, useMemo } from 'react';
 
 import { useYear } from '@/contexts/YearContext';
-import { SortingState } from '@tanstack/react-table';
 import { useQuery } from '@tanstack/react-query';
+import { SortingState } from '@tanstack/react-table';
 import { ChevronDown, Tag, X } from 'lucide-react';
 
 import { getMiscAllocations } from '@/prisma/services/allocation';
@@ -85,10 +85,7 @@ export function Content({ designationId, designationName }: ContentProps) {
     queryKey: ['purchases', designationId, selectedYear?.id],
     queryFn: () =>
       selectedYear
-        ? getPurchasesByDesignation({
-            designationId,
-            yearId: selectedYear.id,
-          })
+        ? getPurchasesByDesignation({ designationId, yearId: selectedYear.id })
         : Promise.resolve([]),
     enabled: !!selectedYear,
   });

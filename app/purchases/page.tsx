@@ -1,7 +1,7 @@
 'use client';
 
-import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
+import { Suspense } from 'react';
 
 import { useDesignation } from '@/contexts/DesignationContext';
 
