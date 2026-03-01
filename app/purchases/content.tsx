@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 import { useYear } from '@/contexts/YearContext';
@@ -49,29 +49,37 @@ export function Content({ designationId, designationName }: ContentProps) {
     return [{ id: sortField, desc: sortOrder === 'desc' }];
   }, [sortField, sortOrder]);
 
-  const updateParams = (updates: Record<string, string | null>) => {
-    const params = new URLSearchParams(searchParams.toString());
-    for (const [key, value] of Object.entries(updates)) {
-      if (value) params.set(key, value);
-      else params.delete(key);
-    }
-    const query = params.toString();
-    router.replace(query ? `${pathname}?${query}` : pathname);
-  };
+  const updateParams = useCallback(
+    (updates: Record<string, string | null>) => {
+      const params = new URLSearchParams(searchParams.toString());
+      for (const [key, value] of Object.entries(updates)) {
+        if (value) params.set(key, value);
+        else params.delete(key);
+      }
+      const query = params.toString();
+      router.replace(query ? `${pathname}?${query}` : pathname);
+    },
+    [searchParams, router, pathname],
+  );
 
-  const handleCategoryChange = (id: string | null) =>
-    updateParams({ category: id });
+  const handleCategoryChange = useCallback(
+    (id: string | null) => updateParams({ category: id }),
+    [updateParams],
+  );
 
-  const handleSortingChange = (newSorting: SortingState) => {
-    if (newSorting.length === 0) {
-      updateParams({ sort: null, order: null });
-    } else {
-      updateParams({
-        sort: newSorting[0].id,
-        order: newSorting[0].desc ? 'desc' : 'asc',
-      });
-    }
-  };
+  const handleSortingChange = useCallback(
+    (newSorting: SortingState) => {
+      if (newSorting.length === 0) {
+        updateParams({ sort: null, order: null });
+      } else {
+        updateParams({
+          sort: newSorting[0].id,
+          order: newSorting[0].desc ? 'desc' : 'asc',
+        });
+      }
+    },
+    [updateParams],
+  );
 
   const { data: purchases, isLoading: purchasesLoading } = useQuery({
     queryKey: ['purchases', designationId, selectedYear?.id],

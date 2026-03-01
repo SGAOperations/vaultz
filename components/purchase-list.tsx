@@ -320,6 +320,10 @@ export function PurchaseList({
   const [internalSorting, setInternalSorting] = useState<SortingState>(
     controlledSorting ?? [],
   );
+
+  useEffect(() => {
+    if (controlledSorting !== undefined) setInternalSorting(controlledSorting);
+  }, [controlledSorting]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState('');
   const [statusFilters, setStatusFilters] = useState<Set<StatusFilter>>(
