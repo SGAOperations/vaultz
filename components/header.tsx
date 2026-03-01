@@ -1,8 +1,8 @@
 'use client';
 
-import { Fragment } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { Fragment } from 'react';
 
 import {
   ArrowRight,
@@ -92,7 +92,8 @@ export function Header() {
 
       <nav className="hidden items-center gap-1 md:flex">
         {directNavItems.map(({ href, label, icon: Icon }) => {
-          const isActive = href === '/' ? pathname === '/' : pathname.startsWith(href);
+          const isActive =
+            href === '/' ? pathname === '/' : pathname.startsWith(href);
           return (
             <Link key={href} href={href}>
               <Button
