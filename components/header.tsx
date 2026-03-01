@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 
 import {
   CalendarDays,
+  CreditCard,
   FolderKanban,
   Home,
   Menu,
@@ -15,8 +16,7 @@ import {
 
 import { cn } from '@/lib/utils';
 
-import { DesignationSwitcher } from '@/components/DesignationSwitcher';
-import { YearSwitcher } from '@/components/YearSwitcher';
+import { ContextSwitcher } from '@/components/ContextSwitcher';
 import { ModeToggle } from '@/components/theme-provider';
 import { Button } from '@/components/ui/button';
 import {
@@ -31,6 +31,7 @@ const navItems = [
   { href: '/categories', label: 'Categories', icon: Tag },
   { href: '/users', label: 'Users', icon: Users },
   { href: '/allocation-groups', label: 'Allocations', icon: FolderKanban },
+  { href: '/designation', label: 'Designations', icon: CreditCard },
   { href: '/processes', label: 'Processes', icon: Workflow },
   { href: '/periods', label: 'Periods', icon: CalendarDays },
 ];
@@ -89,8 +90,7 @@ export function Header() {
       </nav>
 
       <div className="flex items-center gap-2">
-        <YearSwitcher />
-        <DesignationSwitcher />
+        <ContextSwitcher />
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="icon" className="md:hidden">
