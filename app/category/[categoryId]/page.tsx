@@ -52,6 +52,7 @@ export default async function CategoryPage({
     .filter((t) => t.fromCategoryId === categoryId)
     .reduce((acc, t) => acc + t.amount, 0);
   const available = budget + transfersIn - transfersOut - spent;
+  const adjustedBudget = budget + transfersIn - transfersOut;
 
   return (
     <div className="flex w-full flex-col">
@@ -73,11 +74,9 @@ export default async function CategoryPage({
       />
 
       <StatCards
-        total={budget}
+        total={adjustedBudget}
         spent={spent}
         remaining={available}
-        transfersIn={transfersIn}
-        transfersOut={transfersOut}
       />
 
       <SectionHeader title="Purchases" />

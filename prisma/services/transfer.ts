@@ -75,3 +75,24 @@ export async function getTransfersByCategory(
     amount: amount.toNumber(),
   }));
 }
+
+export async function getTransfersByDesignation(
+  designationId: string,
+): Promise<TransferWithYear[]> {
+  const transfers = await prisma.transfer.findMany({
+    where: {
+      deletedAt: null,
+      OR: [
+        { fromCategory: { designationId } },
+        { toCategory: { designationId } },
+      ],
+    },
+    include: { year: true, fromCategory: true, toCategory: true },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  return transfers.map(({ amount, ...t }) => ({
+    ...t,
+    amount: amount.toNumber(),
+  }));
+}
