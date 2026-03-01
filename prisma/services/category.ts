@@ -174,8 +174,8 @@ export async function getCategoriesWithAvailableAmount({
         where: { excludeFromTotal: false },
         select: { amount: true },
       },
-      transfersTo: { select: { amount: true } },
-      transfersFrom: { select: { amount: true } },
+      transfersTo: { where: { deletedAt: null }, select: { amount: true } },
+      transfersFrom: { where: { deletedAt: null }, select: { amount: true } },
     },
   });
 
@@ -199,7 +199,7 @@ export async function getCategoriesWithAvailableAmount({
     return {
       ...category,
       available: budget - spent + transfersIn - transfersOut,
-      budget,
+      budget: budget + transfersIn - transfersOut,
       spent,
       yearIds: category.categoryYears.map((cy) => cy.yearId),
     };
