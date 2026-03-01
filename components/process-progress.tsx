@@ -205,15 +205,13 @@ export function ProcessProgress({
           })}
         </div>
       </div>
-      {modalStep && (
-        <MarkCompleteModal
-          step={modalStep}
-          purchaseProcessId={data.processId}
-          open={modalStep !== null}
-          onOpenChange={(open) => !open && setModalStep(null)}
-          onComplete={handleModalComplete}
-        />
-      )}
+      <MarkCompleteModal
+        step={modalStep}
+        purchaseProcessId={data.processId}
+        open={modalStep !== null}
+        onOpenChange={(open) => !open && setModalStep(null)}
+        onComplete={handleModalComplete}
+      />
     </>
   );
 }

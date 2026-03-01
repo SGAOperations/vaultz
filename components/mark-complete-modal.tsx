@@ -23,7 +23,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 
 interface MarkCompleteModalProps {
-  step: PurchaseProcessStep;
+  step: PurchaseProcessStep | null;
   purchaseProcessId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -59,6 +59,7 @@ export function MarkCompleteModal({
   }, [open]);
 
   async function handleConfirm() {
+    if (!step) return;
     setIsSubmitting(true);
     const markedAt = new Date();
     const result = await handleError(
@@ -88,7 +89,7 @@ export function MarkCompleteModal({
         <DialogHeader>
           <DialogTitle>Mark Step Complete</DialogTitle>
           <DialogDescription>
-            Mark &quot;{step.name}&quot; as complete.
+            Mark &quot;{step?.name}&quot; as complete.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
