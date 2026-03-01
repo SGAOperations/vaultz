@@ -52,6 +52,13 @@ export default async function CategoryPage({
     .filter((purchase) => !purchase.excludeFromTotal)
     .reduce((acc, purchase) => acc + purchase.amount, 0);
   const budget = category.categoryYears.reduce((acc, cy) => acc + cy.amount, 0);
+  const transfersIn = transfers
+    .filter((t) => t.toCategoryId === categoryId)
+    .reduce((acc, t) => acc + t.amount, 0);
+  const transfersOut = transfers
+    .filter((t) => t.fromCategoryId === categoryId)
+    .reduce((acc, t) => acc + t.amount, 0);
+  const remaining = budget - spent + transfersIn - transfersOut;
 
   return (
     <div className="flex w-full flex-col">
@@ -73,7 +80,7 @@ export default async function CategoryPage({
         }
       />
 
-      <StatCards total={budget} spent={spent} />
+      <StatCards total={budget} spent={spent} remaining={remaining} />
 
       <Tabs defaultValue="purchases" className="mt-4">
         <TabsList>

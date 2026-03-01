@@ -36,7 +36,10 @@ export default async function PeriodsAdminPage() {
           description="Add a fiscal year to get started"
         />
       ) : (
-        <PeriodsAdminClient years={years} />
+        <PeriodsAdminClient
+          years={years}
+          allPeriods={years.flatMap((y) => y.periods)}
+        />
       )}
     </div>
   );

@@ -199,6 +199,8 @@ export async function getCategoriesWithAvailableAmount({
     return {
       ...category,
       available: budget - spent + transfersIn - transfersOut,
+      budget,
+      spent,
       yearIds: category.categoryYears.map((cy) => cy.yearId),
     };
   });
