@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
-import { useQueryClient } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQueryClient } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
 import { z } from 'zod/v4';
 
@@ -73,11 +73,7 @@ export function CategoryBudgetEditDialog({
 
   async function onSubmit(data: FormData) {
     const result = await handleError(
-      updateCategoryYearBudget({
-        categoryId,
-        yearId,
-        amount: data.amount,
-      }),
+      updateCategoryYearBudget({ categoryId, yearId, amount: data.amount }),
       {
         toast: {
           loading: 'Updating budget…',

@@ -74,7 +74,10 @@ export function CategoryYearComparison({
           </thead>
           <tbody>
             {categories.map((category) => (
-              <tr key={category.id} className="hover:bg-muted/30 border-b last:border-0">
+              <tr
+                key={category.id}
+                className="hover:bg-muted/30 border-b last:border-0"
+              >
                 <td className="px-4 py-3">
                   <div className="font-medium">{category.name}</div>
                   <div className="text-muted-foreground font-mono text-xs">
@@ -96,14 +99,10 @@ export function CategoryYearComparison({
                           <span className="font-semibold">
                             {formatCurrency(yb.amount)}
                           </span>
-                          {change !== null && (
-                            <ChangeIndicator pct={change} />
-                          )}
+                          {change !== null && <ChangeIndicator pct={change} />}
                         </div>
                       ) : (
-                        <span className="text-muted-foreground text-xs">
-                          —
-                        </span>
+                        <span className="text-muted-foreground text-xs">—</span>
                       )}
                     </td>
                   );

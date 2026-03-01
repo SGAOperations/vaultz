@@ -43,21 +43,13 @@ export async function getCategoriesWithBudgetForYear({
   const categories = await prisma.category.findMany({
     where: { designationId, deletedAt: null },
     include: {
-      categoryYears: {
-        where: { yearId, deletedAt: null },
-      },
+      categoryYears: { where: { yearId, deletedAt: null } },
       purchases: {
         where: { yearId, excludeFromTotal: false },
         select: { amount: true },
       },
-      transfersTo: {
-        where: { yearId },
-        select: { amount: true },
-      },
-      transfersFrom: {
-        where: { yearId },
-        select: { amount: true },
-      },
+      transfersTo: { where: { yearId }, select: { amount: true } },
+      transfersFrom: { where: { yearId }, select: { amount: true } },
     },
     orderBy: { code: 'asc' },
   });
@@ -216,10 +208,7 @@ export async function setYearBudgetsForDesignation({
 
   if (isPastYear) {
     const purchaseCount = await prisma.purchase.count({
-      where: {
-        yearId,
-        category: { designationId },
-      },
+      where: { yearId, category: { designationId } },
     });
     if (purchaseCount > 0)
       return {

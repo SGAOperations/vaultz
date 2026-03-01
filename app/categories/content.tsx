@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 
+import { useYear } from '@/contexts/YearContext';
 import { useQuery } from '@tanstack/react-query';
 import {
   ChevronRight,
@@ -13,8 +14,6 @@ import {
 } from 'lucide-react';
 
 import { getCategoriesWithBudgetForYear } from '@/prisma/services/category-year';
-
-import { useYear } from '@/contexts/YearContext';
 
 import { cn, formatNumber } from '@/lib/utils';
 

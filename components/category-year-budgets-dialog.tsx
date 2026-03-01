@@ -3,17 +3,17 @@
 import { useEffect, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 
-import { useQueryClient } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQueryClient } from '@tanstack/react-query';
 import { Loader2, TrendingUp } from 'lucide-react';
 import { z } from 'zod/v4';
 
 import { BudgetResetBehavior } from '@/prisma/client';
+import { getCategoriesByDesignation } from '@/prisma/services/category';
 import {
   getNewYearSuggestions,
   setYearBudgetsForDesignation,
 } from '@/prisma/services/category-year';
-import { getCategoriesByDesignation } from '@/prisma/services/category';
 
 import { formatCurrency, handleError, isError } from '@/lib/utils';
 
@@ -42,19 +42,14 @@ const schema = z.object({
     z.object({
       categoryId: z.string(),
       name: z.string(),
-      amount: z.coerce
-        .number<number>()
-        .min(0, 'Must be ≥ 0'),
+      amount: z.coerce.number<number>().min(0, 'Must be ≥ 0'),
     }),
   ),
 });
 
 type FormData = z.infer<typeof schema>;
 
-type RolloverHintData = {
-  prevBudget: number;
-  unused: number;
-};
+type RolloverHintData = { prevBudget: number; unused: number };
 
 interface CategoryYearBudgetsDialogProps {
   trigger: React.ReactNode;

@@ -1,15 +1,21 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Controller, FormProvider, useFieldArray, useForm } from 'react-hook-form';
+import {
+  Controller,
+  FormProvider,
+  useFieldArray,
+  useForm,
+} from 'react-hook-form';
 
-import { useQueryClient } from '@tanstack/react-query';
+import { useDesignation } from '@/contexts/DesignationContext';
+import { useYear } from '@/contexts/YearContext';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQueryClient } from '@tanstack/react-query';
 import { Loader2, Plus, Trash2 } from 'lucide-react';
 import { z } from 'zod/v4';
 
 import { Year } from '@/prisma/client';
-import { createYear, updateYear } from '@/prisma/services/period';
 import {
   createCategory,
   getCategoriesByDesignation,
@@ -18,9 +24,7 @@ import {
   getNewYearSuggestions,
   setYearBudgetsForDesignation,
 } from '@/prisma/services/category-year';
-
-import { useDesignation } from '@/contexts/DesignationContext';
-import { useYear } from '@/contexts/YearContext';
+import { createYear, updateYear } from '@/prisma/services/period';
 
 import { handleError, isError, parseDateOnly } from '@/lib/utils';
 
@@ -65,9 +69,7 @@ const resetEntrySchema = z.object({
   amount: z.coerce.number<number>().min(0, 'Must be ≥ 0'),
 });
 
-const resetBudgetSchema = z.object({
-  entries: z.array(resetEntrySchema),
-});
+const resetBudgetSchema = z.object({ entries: z.array(resetEntrySchema) });
 
 type YearFormData = z.infer<typeof yearSchema>;
 type ResetBudgetFormData = z.infer<typeof resetBudgetSchema>;
@@ -262,7 +264,10 @@ export function YearDialog({
           },
         );
         if (isError(catResult)) return;
-        resolvedBudgets.push({ categoryId: catResult.id, amount: entry.amount });
+        resolvedBudgets.push({
+          categoryId: catResult.id,
+          amount: entry.amount,
+        });
       }
     }
 
