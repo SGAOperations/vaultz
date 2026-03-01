@@ -157,31 +157,8 @@ export function Content({ designationId }: ContentProps) {
                     <span className="text-muted-foreground text-sm">
                       No budget set for {selectedYear.name}
                     </span>
-                  </span>
-                </div>
-                <div className="bg-muted flex items-center gap-2 rounded-full px-3 py-1.5">
-                  <TrendingDown className="text-stat-spent size-4" />
-                  <span className="text-sm">
-                    <span className="text-muted-foreground">Spent:</span>{' '}
-                    <span className="font-semibold">
-                      ${formatNumber(spent)}
-                    </span>
-                  </span>
-                </div>
-                <div className="bg-muted flex items-center gap-2 rounded-full px-3 py-1.5">
-                  <TrendingUp className="text-stat-remaining size-4" />
-                  <span className="text-sm">
-                    <span className="text-muted-foreground">Available:</span>{' '}
-                    <span
-                      className={cn(
-                        'font-semibold',
-                        remaining < 0 && 'text-destructive',
-                      )}
-                    >
-                      ${formatNumber(remaining)}
-                    </span>
-                  </span>
-                </div>
+                  </div>
+                )}
               </div>
             </Card>
           </Link>
