@@ -41,6 +41,7 @@ import {
   AllocationGroupWithAllocations,
   CategoryWithDesignation,
   ProcessTemplateWithStepCount,
+  PurchaseProcessData,
   PurchaseWithUser,
 } from '@/lib/types';
 import { UploadDropzone } from '@/lib/uploadthing';
@@ -61,6 +62,7 @@ import {
 } from '@/components/ui/dialog';
 
 import { DateTime } from './date-time';
+import { ProcessProgress } from './process-progress';
 import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
 import { Combobox } from './ui/combobox';
@@ -126,6 +128,7 @@ type ViewEditPurchaseProps = {
   allocationGroups: AllocationGroupWithAllocations[];
   miscAllocations: Allocation[];
   processTemplates?: ProcessTemplateWithStepCount[];
+  onProcessDataChange?: (data: PurchaseProcessData | null) => void;
 };
 
 type PurchaseDialogProps = CreatePurchaseProps | ViewEditPurchaseProps;
@@ -412,7 +415,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
           className={
             isEditing
               ? 'flex max-h-[90vh] w-2/3 flex-col sm:max-w-full'
-              : 'sm:max-w-full md:w-1/3'
+              : 'sm:max-w-full md:w-1/2'
           }
         >
           <DialogHeader>
@@ -1108,6 +1111,16 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                     </p>
                   </div>
                 )}
+
+                {/* Process Progress */}
+                <ProcessProgress
+                  purchaseId={purchase!.id}
+                  onDataChange={
+                    !isCreateMode
+                      ? (props as ViewEditPurchaseProps).onProcessDataChange
+                      : undefined
+                  }
+                />
               </div>
 
               <div className="flex gap-2">
