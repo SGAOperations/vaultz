@@ -15,5 +15,7 @@ export default async function ProcessTemplatePage({
   const { id } = await params;
   const template = await getProcessTemplate(id);
   if (!template) notFound();
+  // Use updatedAt as key so the component remounts (resetting local step state)
+  // whenever the server confirms a step mutation via router.refresh()
   return <Content key={template.updatedAt.toISOString()} template={template} />;
 }

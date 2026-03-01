@@ -242,7 +242,7 @@ function PurchaseTableRow({
   allocationGroups,
   miscAllocations,
   processTemplates,
-  processData: initialProcessData,
+  processData,
   onProcessDataChange,
 }: {
   row: Row<PurchaseWithUser>;
@@ -254,15 +254,6 @@ function PurchaseTableRow({
   processData: PurchaseProcessData | null | undefined;
   onProcessDataChange: (data: PurchaseProcessData | null) => void;
 }) {
-  const [processData, setProcessData] = useState<
-    PurchaseProcessData | null | undefined
-  >(initialProcessData);
-
-  const handleProcessDataChange = (data: PurchaseProcessData | null) => {
-    setProcessData(data);
-    onProcessDataChange(data);
-  };
-
   const isIncomplete =
     !!processData && processData.steps.some((s) => s.completion === null);
 
@@ -291,7 +282,7 @@ function PurchaseTableRow({
       allocationGroups={allocationGroups}
       miscAllocations={miscAllocations}
       processTemplates={processTemplates}
-      onProcessDataChange={handleProcessDataChange}
+      onProcessDataChange={onProcessDataChange}
     />
   );
 }
