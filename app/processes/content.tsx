@@ -16,7 +16,7 @@ export function Content() {
     isError,
   } = useQuery({
     queryKey: ['process-templates'],
-    queryFn: () => getAllProcessTemplates(),
+    queryFn: () => getAllProcessTemplates(true),
   });
 
   if (isLoading) return <ProcessTemplatesSkeleton />;

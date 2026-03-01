@@ -14,7 +14,6 @@ import {
   Pencil,
   Plus,
   RotateCcw,
-  ShoppingCart,
   Trash2,
 } from 'lucide-react';
 import { z } from 'zod/v4';
@@ -257,7 +256,6 @@ function AddStepCard({
 export function Content({ template }: { template: ProcessTemplateWithSteps }) {
   const router = useRouter();
   const isDeleted = template.deletedAt !== null;
-  const purchaseLabel = `${template.purchaseCount} purchase${template.purchaseCount !== 1 ? 's' : ''}`;
 
   const [steps, setSteps] = useState<LocalStep[]>(
     template.steps.map((s) => ({
@@ -498,14 +496,6 @@ export function Content({ template }: { template: ProcessTemplateWithSteps }) {
         }
       />
 
-      <div className="text-muted-foreground mb-4 flex items-center gap-2 text-sm">
-        <ShoppingCart className="size-4" />
-        <span>Used by {purchaseLabel}</span>
-        {isDeleted && (
-          <span className="text-destructive ml-2 font-medium">• Deleted</span>
-        )}
-      </div>
-
       <SectionHeader
         title="Steps"
         actions={
@@ -558,23 +548,11 @@ export function Content({ template }: { template: ProcessTemplateWithSteps }) {
               <Trash2 className="text-destructive size-5" />
               Delete Template
             </DialogTitle>
-            <DialogDescription asChild>
-              <div className="flex flex-col gap-2">
-                <p>
-                  Are you sure you want to delete{' '}
-                  <strong>{template.name}</strong>? This will hide it from
-                  purchase creation.
-                </p>
-                <p>
-                  Used by <strong>{purchaseLabel}</strong>.
-                </p>
-                {template.purchaseCount > 0 && (
-                  <p className="text-destructive text-sm">
-                    This template is used by {purchaseLabel}. They will not be
-                    affected.
-                  </p>
-                )}
-              </div>
+            <DialogDescription>
+              Are you sure you want to delete{' '}
+              <strong>{template.name}</strong>? This process will no longer be
+              available for new purchases. Existing purchases will not be
+              affected.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

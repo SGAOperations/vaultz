@@ -16,22 +16,11 @@ export async function getAllProcessTemplates(
 ): Promise<ProcessTemplateWithStepCount[]> {
   const templates = await prisma.processTemplate.findMany({
     where: activeOnly ? { deletedAt: null } : undefined,
-    include: {
-      _count: {
-        select: {
-          steps: { where: { deletedAt: null } },
-          processes: { where: { deletedAt: null } },
-        },
-      },
-    },
+    include: { _count: { select: { steps: { where: { deletedAt: null } } } } },
     orderBy: { createdAt: 'desc' },
   });
 
-  return templates.map(({ _count, ...t }) => ({
-    ...t,
-    steps: _count.steps,
-    purchaseCount: _count.processes,
-  }));
+  return templates.map(({ _count, ...t }) => ({ ...t, steps: _count.steps }));
 }
 
 export async function createProcessTemplate(data: {
@@ -50,16 +39,12 @@ export async function createProcessTemplate(data: {
 export async function getProcessTemplate(
   id: string,
 ): Promise<ProcessTemplateWithSteps | null> {
-  const result = await prisma.processTemplate.findUnique({
+  return prisma.processTemplate.findUnique({
     where: { id },
     include: {
       steps: { where: { deletedAt: null }, orderBy: { order: 'asc' } },
-      _count: { select: { processes: { where: { deletedAt: null } } } },
     },
   });
-  if (!result) return null;
-  const { _count, ...t } = result;
-  return { ...t, purchaseCount: _count.processes };
 }
 
 export async function updateProcessTemplate(
