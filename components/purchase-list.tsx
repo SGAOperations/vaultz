@@ -1,11 +1,12 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { useYear } from '@/contexts/YearContext';
 import {
   ColumnDef,
   ColumnFiltersState,
+  Row,
   SortingState,
   flexRender,
   getCoreRowModel,
@@ -29,12 +30,14 @@ import {
 } from 'lucide-react';
 
 import { User } from '@/prisma/client';
+import { getPurchaseProcess } from '@/prisma/services/purchase';
 
 import {
   Allocation,
   AllocationGroupWithAllocations,
   CategoryWithDesignation,
   ProcessTemplateWithStepCount,
+  PurchaseProcessData,
   PurchaseWithUser,
 } from '@/lib/types';
 import { cn, formatCurrency, parseDateOnly } from '@/lib/utils';
@@ -58,6 +61,7 @@ import {
 } from '@/components/ui/tooltip';
 
 import { EmptyState } from './empty-state';
+import { getStepStatus } from './process-progress';
 import { PurchaseDialog } from './purchase-dialog';
 
 type StatusFilter = 'excludeFromTotal' | 'expenseReportCreated' | 'reimbursed';
@@ -100,6 +104,104 @@ function SortHeader({
         <ArrowUpDown className="ml-1 size-3.5 opacity-40" />
       )}
     </Button>
+  );
+}
+
+function ProcessCellContent({ data }: { data: PurchaseProcessData }) {
+  const total = data.steps.length;
+  if (total === 0) return null;
+
+  const completed = data.steps.filter((s) => s.completion !== null).length;
+  const nextPending = data.steps.find(
+    (s) => s.completion === null && getStepStatus(s, data.steps) !== 'bypassed',
+  );
+
+  return (
+    <div className="flex items-center gap-1.5 overflow-hidden">
+      <div className="flex shrink-0 gap-0.5">
+        {data.steps.map((step) => {
+          const status = getStepStatus(step, data.steps);
+          return (
+            <div
+              key={step.id}
+              className={cn('size-1.5 rounded-full transition-colors', {
+                'bg-green-500': status === 'completed',
+                'bg-yellow-400': status === 'bypassed',
+                'bg-muted-foreground/20': status === 'pending',
+              })}
+            />
+          );
+        })}
+      </div>
+      <span className="text-muted-foreground/60 truncate text-xs">
+        {completed}/{total}
+        {nextPending && (
+          <>
+            {' · '}
+            <span className="text-muted-foreground/40">Next:</span>{' '}
+            {nextPending.name}
+          </>
+        )}
+      </span>
+    </div>
+  );
+}
+
+function PurchaseTableRow({
+  row,
+  users,
+  categories,
+  allocationGroups,
+  miscAllocations,
+  processTemplates,
+}: {
+  row: Row<PurchaseWithUser>;
+  users: User[];
+  categories: CategoryWithDesignation[];
+  allocationGroups: AllocationGroupWithAllocations[];
+  miscAllocations: Allocation[];
+  processTemplates: ProcessTemplateWithStepCount[];
+}) {
+  const [processData, setProcessData] = useState<
+    PurchaseProcessData | null | undefined
+  >(undefined);
+
+  useEffect(() => {
+    getPurchaseProcess(row.original.id)
+      .then(setProcessData)
+      .catch(() => setProcessData(null));
+  }, [row.original.id]);
+
+  const isIncomplete =
+    !!processData && processData.steps.some((s) => s.completion === null);
+
+  return (
+    <PurchaseDialog
+      trigger={
+        <TableRow
+          className={cn(
+            'cursor-pointer',
+            isIncomplete && 'border-l-2 border-l-amber-400',
+          )}
+        >
+          {row.getVisibleCells().map((cell) => (
+            <TableCell key={cell.id}>
+              {flexRender(cell.column.columnDef.cell, cell.getContext())}
+            </TableCell>
+          ))}
+          <TableCell>
+            {processData && <ProcessCellContent data={processData} />}
+          </TableCell>
+        </TableRow>
+      }
+      purchase={row.original}
+      users={users}
+      categories={categories}
+      allocationGroups={allocationGroups}
+      miscAllocations={miscAllocations}
+      processTemplates={processTemplates}
+      onProcessDataChange={setProcessData}
+    />
   );
 }
 
@@ -323,6 +425,7 @@ export function PurchaseList({
             <col className="w-36" />
             <col className="w-auto" />
             <col className="w-32" />
+            <col className="w-44" />
             <col className="w-52" />
           </colgroup>
           <TableHeader>
@@ -338,6 +441,7 @@ export function PurchaseList({
                         )}
                   </TableHead>
                 ))}
+                <TableHead>Process</TableHead>
               </TableRow>
             ))}
           </TableHeader>
@@ -345,36 +449,26 @@ export function PurchaseList({
             {table.getRowModel().rows.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={columns.length}
+                  colSpan={columns.length + 1}
                   className="text-muted-foreground h-24 text-center"
                 >
                   No results found.
                 </TableCell>
               </TableRow>
             ) : (
-              table.getRowModel().rows.map((row) => (
-                <PurchaseDialog
-                  key={row.id}
-                  trigger={
-                    <TableRow className="cursor-pointer">
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext(),
-                          )}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  }
-                  purchase={row.original}
-                  users={users}
-                  categories={categories}
-                  allocationGroups={allocationGroups}
-                  miscAllocations={miscAllocations}
-                  processTemplates={processTemplates}
-                />
-              ))
+              table
+                .getRowModel()
+                .rows.map((row) => (
+                  <PurchaseTableRow
+                    key={row.id}
+                    row={row}
+                    users={users}
+                    categories={categories}
+                    allocationGroups={allocationGroups}
+                    miscAllocations={miscAllocations}
+                    processTemplates={processTemplates}
+                  />
+                ))
             )}
           </TableBody>
         </Table>
