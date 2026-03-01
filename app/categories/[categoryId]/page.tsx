@@ -81,11 +81,7 @@ export default async function CategoryPage({
         }
       />
 
-      <StatCards
-        total={adjustedBudget}
-        spent={spent}
-        remaining={remaining}
-      />
+      <StatCards total={adjustedBudget} spent={spent} remaining={remaining} />
 
       <Tabs defaultValue="purchases" className="mt-4">
         <TabsList>

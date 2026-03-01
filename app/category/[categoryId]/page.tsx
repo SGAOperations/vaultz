@@ -73,11 +73,7 @@ export default async function CategoryPage({
         }
       />
 
-      <StatCards
-        total={adjustedBudget}
-        spent={spent}
-        remaining={available}
-      />
+      <StatCards total={adjustedBudget} spent={spent} remaining={available} />
 
       <SectionHeader title="Purchases" />
 
