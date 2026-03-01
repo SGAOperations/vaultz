@@ -88,6 +88,7 @@ export function ProcessProgress({
     id: string;
     markedAt: Date;
     completionDate: Date | null;
+    notes: string | null;
   }) {
     if (!data || !modalStep) return;
     updateData({
@@ -165,6 +166,9 @@ export function ProcessProgress({
                               step.completion.completionDate,
                             ).toLocaleDateString()}
                           </>
+                        )}
+                        {step.completion.notes && (
+                          <> · {step.completion.notes}</>
                         )}
                       </p>
                     )}

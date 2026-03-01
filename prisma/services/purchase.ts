@@ -250,6 +250,7 @@ export async function getPurchaseProcess(
             id: completion.id,
             markedAt: completion.markedAt,
             completionDate: completion.completionDate,
+            notes: completion.notes,
           }
         : null,
     };

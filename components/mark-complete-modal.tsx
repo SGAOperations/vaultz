@@ -31,6 +31,7 @@ interface MarkCompleteModalProps {
     id: string;
     markedAt: Date;
     completionDate: Date | null;
+    notes: string | null;
   }) => void;
 }
 
@@ -74,7 +75,7 @@ export function MarkCompleteModal({
           error: 'Failed to mark step complete',
         },
         onSuccess: (res) => {
-          onComplete({ id: res.id, markedAt, completionDate });
+          onComplete({ id: res.id, markedAt, completionDate, notes: notes || null });
           onOpenChange(false);
         },
       },
