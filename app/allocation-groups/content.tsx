@@ -1,11 +1,14 @@
 'use client';
 
+import { usePeriod } from '@/contexts/PeriodContext';
 import { useQuery } from '@tanstack/react-query';
 
 import { getAllAllocationGroups } from '@/prisma/services/allocation-groups';
 
 import { AllocationGroupCard } from '@/components/allocation-group-card';
+import { AllocationGroupsSummary } from '@/components/allocation-groups-summary';
 import { EmptyState } from '@/components/empty-state';
+import { SectionHeader } from '@/components/section-header';
 
 import { AllocationGroupsSkeleton } from './skeleton';
 
@@ -14,13 +17,16 @@ interface ContentProps {
 }
 
 export function Content({ designationId }: ContentProps) {
+  const { selectedPeriod } = usePeriod();
+
   const {
     data: allocationGroups,
     isLoading,
     isError,
   } = useQuery({
-    queryKey: ['allocation-groups', designationId],
-    queryFn: () => getAllAllocationGroups(designationId),
+    queryKey: ['allocation-groups', designationId, selectedPeriod?.id],
+    queryFn: () =>
+      getAllAllocationGroups(designationId, selectedPeriod?.id ?? undefined),
   });
 
   if (isLoading) return <AllocationGroupsSkeleton />;
@@ -36,13 +42,17 @@ export function Content({ designationId }: ContentProps) {
     );
 
   return (
-    <div className="grid w-full grid-cols-1 gap-4 lg:grid-cols-2">
-      {allocationGroups!.map((allocationGroup) => (
-        <AllocationGroupCard
-          key={allocationGroup.id}
-          allocationGroup={allocationGroup}
-        />
-      ))}
+    <div className="flex w-full flex-col">
+      <AllocationGroupsSummary allocationGroups={allocationGroups!} />
+      <SectionHeader title="Allocation Groups" />
+      <div className="grid w-full grid-cols-1 gap-4 lg:grid-cols-2">
+        {allocationGroups!.map((allocationGroup) => (
+          <AllocationGroupCard
+            key={allocationGroup.id}
+            allocationGroup={allocationGroup}
+          />
+        ))}
+      </div>
     </div>
   );
 }

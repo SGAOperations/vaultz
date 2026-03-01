@@ -3,16 +3,22 @@ import { notFound } from 'next/navigation';
 
 import { getMiscAllocations } from '@/prisma/services/allocation';
 import { getAllAllocationGroups } from '@/prisma/services/allocation-groups';
-import { getCategoryById } from '@/prisma/services/category';
+import {
+  getCategoriesWithAvailableAmount,
+  getCategoryById,
+} from '@/prisma/services/category';
+import { getAllProcessTemplates } from '@/prisma/services/process-templates';
+import { getTransfersByCategory } from '@/prisma/services/transfer';
 import { getUsers } from '@/prisma/services/user';
 
 import { CategoryActionsMenu } from '@/components/category-actions-menu';
-import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/page-header';
-import { PurchaseCard } from '@/components/purchase-card';
 import { CreatePurchaseDialog } from '@/components/purchase-dialog';
-import { SectionHeader } from '@/components/section-header';
+import { PurchaseList } from '@/components/purchase-list';
 import { StatCards } from '@/components/stat-card';
+import { TransferDialog } from '@/components/transfer-dialog';
+import { TransferList } from '@/components/transfer-list';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export const metadata: Metadata = { title: 'Spending Category' };
 
@@ -26,14 +32,33 @@ export default async function CategoryPage({
   const category = await getCategoryById({ id: categoryId });
   if (category === null) notFound();
 
-  const users = await getUsers();
-
-  const allocationGroups = await getAllAllocationGroups(category.designationId);
-  const miscAllocations = await getMiscAllocations(category.designationId);
+  const [
+    users,
+    allocationGroups,
+    miscAllocations,
+    processTemplates,
+    categoriesWithAvailable,
+    transfers,
+  ] = await Promise.all([
+    getUsers(),
+    getAllAllocationGroups(category.designationId),
+    getMiscAllocations(category.designationId),
+    getAllProcessTemplates(true),
+    getCategoriesWithAvailableAmount({ designationId: category.designationId }),
+    getTransfersByCategory(categoryId),
+  ]);
 
   const spent = category.purchases
     .filter((purchase) => !purchase.excludeFromTotal)
     .reduce((acc, purchase) => acc + purchase.amount, 0);
+  const budget = category.categoryYears.reduce((acc, cy) => acc + cy.amount, 0);
+  const transfersIn = transfers
+    .filter((t) => t.toCategoryId === categoryId)
+    .reduce((acc, t) => acc + t.amount, 0);
+  const transfersOut = transfers
+    .filter((t) => t.fromCategoryId === categoryId)
+    .reduce((acc, t) => acc + t.amount, 0);
+  const remaining = budget - spent + transfersIn - transfersOut;
 
   return (
     <div className="flex w-full flex-col">
@@ -47,35 +72,37 @@ export default async function CategoryPage({
               categories={[category]}
               allocationGroups={allocationGroups}
               miscAllocations={miscAllocations}
+              processTemplates={processTemplates}
             />
+            <TransferDialog categories={categoriesWithAvailable} />
             <CategoryActionsMenu category={category} />
           </div>
         }
       />
 
-      <StatCards total={category.amount} spent={spent} />
+      <StatCards total={budget} spent={spent} remaining={remaining} />
 
-      <SectionHeader title="Purchases" />
+      <Tabs defaultValue="purchases" className="mt-4">
+        <TabsList>
+          <TabsTrigger value="purchases">Purchases</TabsTrigger>
+          <TabsTrigger value="transfers">Transfers</TabsTrigger>
+        </TabsList>
 
-      {category.purchases.length === 0 ? (
-        <EmptyState
-          message="No purchases yet"
-          description="Record purchases to track spending in this category"
-        />
-      ) : (
-        <div className="flex flex-col gap-2">
-          {category.purchases.map((purchase) => (
-            <PurchaseCard
-              key={purchase.id}
-              purchase={purchase}
-              users={users}
-              categories={[category]}
-              allocationGroups={allocationGroups}
-              miscAllocations={miscAllocations}
-            />
-          ))}
-        </div>
-      )}
+        <TabsContent value="purchases">
+          <PurchaseList
+            purchases={category.purchases}
+            users={users}
+            categories={[category]}
+            allocationGroups={allocationGroups}
+            miscAllocations={miscAllocations}
+            processTemplates={processTemplates}
+          />
+        </TabsContent>
+
+        <TabsContent value="transfers">
+          <TransferList transfers={transfers} categoryId={categoryId} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
