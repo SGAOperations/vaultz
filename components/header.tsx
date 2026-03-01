@@ -10,6 +10,7 @@ import {
   FolderKanban,
   Home,
   Menu,
+  ShoppingCart,
   Tag,
   Users,
   Workflow,
@@ -30,6 +31,7 @@ import {
 const navItems = [
   { href: '/', label: 'Home', icon: Home },
   { href: '/categories', label: 'Categories', icon: Tag },
+  { href: '/purchases', label: 'Purchases', icon: ShoppingCart },
   { href: '/transfers', label: 'Transfers', icon: ArrowRight },
   { href: '/users', label: 'Users', icon: Users },
   { href: '/allocation-groups', label: 'Allocations', icon: FolderKanban },

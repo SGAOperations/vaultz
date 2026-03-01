@@ -4,10 +4,10 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { useDesignation } from '@/contexts/DesignationContext';
-import { BarChart2, Ellipsis } from 'lucide-react';
+import { BarChart2, Ellipsis, Plus } from 'lucide-react';
 
+import { CreateCategoryDialog } from '@/components/create-category-dialog';
 import { PageHeader } from '@/components/page-header';
-import { QuickActionButtons } from '@/components/quick-action-buttons';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -29,8 +29,16 @@ export default function CategoriesPage() {
         title="Categories"
         description={`${activeDesignation.name} · DN${activeDesignation.code}`}
         actions={
-          <>
-            <QuickActionButtons designationId={activeDesignation.id} />
+          <div className="flex gap-2">
+            <CreateCategoryDialog
+              designationId={activeDesignation.id}
+              trigger={
+                <Button size="sm">
+                  <Plus className="size-4" />
+                  New Category
+                </Button>
+              }
+            />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="icon">
@@ -46,7 +54,7 @@ export default function CategoriesPage() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-          </>
+          </div>
         }
       />
 

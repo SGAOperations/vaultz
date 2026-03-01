@@ -12,6 +12,7 @@ export type CategoryBudgetForYear = {
   code: string;
   ledgerCode: string;
   name: string;
+  designationId: string;
   categoryYearId: string | null;
   budget: number;
   spent: number;
@@ -74,6 +75,7 @@ export async function getCategoriesWithBudgetForYear({
       code: category.code,
       ledgerCode: category.ledgerCode,
       name: category.name,
+      designationId: category.designationId,
       categoryYearId: categoryYear?.id ?? null,
       budget,
       spent,

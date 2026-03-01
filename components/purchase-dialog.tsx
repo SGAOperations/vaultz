@@ -116,6 +116,7 @@ type CreatePurchaseProps = {
   allocationGroups?: AllocationGroupWithAllocations[];
   miscAllocations?: Allocation[];
   processTemplates?: ProcessTemplateWithStepCount[];
+  defaultCategoryId?: string;
 };
 
 // Props for viewing/editing an existing purchase
@@ -142,6 +143,8 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
   } = props;
 
   const processTemplates = props.processTemplates ?? [];
+  const defaultCategoryId =
+    props.mode === 'create' ? (props.defaultCategoryId ?? '') : '';
 
   const { years, activeYearId } = useYear();
 
@@ -192,6 +195,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
       userId: purchase?.userId || '',
       categoryId:
         purchase?.categoryId ||
+        defaultCategoryId ||
         (categories.length === 1 ? categories[0].id : ''),
       allocationId: purchase?.allocationId || '',
       yearId: purchase?.yearId || activeYearId || '',
@@ -1144,6 +1148,7 @@ export function CreatePurchaseDialog(props: {
   allocationGroups?: AllocationGroupWithAllocations[];
   miscAllocations?: Allocation[];
   processTemplates?: ProcessTemplateWithStepCount[];
+  defaultCategoryId?: string;
 }) {
   return <PurchaseDialog mode="create" {...props} />;
 }
