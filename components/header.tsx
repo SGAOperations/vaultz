@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 
 import {
   ArrowRight,
+  BarChart2,
   BookOpen,
   CalendarDays,
   ChevronDown,
@@ -41,12 +42,12 @@ const directNavItems = [
 
 const navDropdowns = [
   {
-    label: 'Ledger',
+    label: 'Logs',
     icon: BookOpen,
     items: [
       { href: '/categories', label: 'Categories', icon: Tag },
-      { href: '/designation', label: 'Designations', icon: CreditCard },
       { href: '/transfers', label: 'Transfers', icon: ArrowRight },
+      { href: '/reports/year-comparison', label: 'Reports', icon: BarChart2 },
     ],
   },
   {
@@ -54,6 +55,7 @@ const navDropdowns = [
     icon: Settings2,
     items: [
       { href: '/users', label: 'Users', icon: Users },
+      { href: '/designation', label: 'Designations', icon: CreditCard },
       { href: '/processes', label: 'Processes', icon: Workflow },
       { href: '/periods', label: 'Periods', icon: CalendarDays },
     ],
