@@ -20,17 +20,23 @@ import {
   ArrowUpDown,
   Calendar,
   Check,
+  ChevronDown,
   CircleDollarSign,
   DollarSign,
+  Download,
   FileCheck,
   FileText,
+  Loader2,
   StickyNote,
   User as UserIcon,
   X,
 } from 'lucide-react';
 
 import { User } from '@/prisma/client';
-import { getPurchaseProcess } from '@/prisma/services/purchase';
+import {
+  getBatchPurchaseProcessData,
+  getPurchaseProcess,
+} from '@/prisma/services/purchase';
 
 import {
   Allocation,
@@ -44,6 +50,13 @@ import { cn, formatCurrency, parseDateOnly } from '@/lib/utils';
 
 import { DateTime } from '@/components/date-time';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import {
   Table,
@@ -65,6 +78,8 @@ import { getStepStatus } from './process-progress';
 import { PurchaseDialog } from './purchase-dialog';
 
 type StatusFilter = 'excludeFromTotal' | 'expenseReportCreated' | 'reimbursed';
+type StepStatusFilter = 'all' | 'completed' | 'in-progress' | 'stuck';
+type TemplateFilter = 'all' | 'none' | string;
 
 const STATUS_FILTERS: {
   key: StatusFilter;
@@ -75,6 +90,76 @@ const STATUS_FILTERS: {
   { key: 'expenseReportCreated', label: 'Report Filed', Icon: FileCheck },
   { key: 'reimbursed', label: 'Reimbursed', Icon: Check },
 ];
+
+const STEP_STATUS_OPTIONS: { value: StepStatusFilter; label: string }[] = [
+  { value: 'all', label: 'All' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'in-progress', label: 'In Progress' },
+  { value: 'stuck', label: 'Stuck' },
+];
+
+const STEP_STATUS_FILTER_OPTIONS = STEP_STATUS_OPTIONS.filter(
+  (o) => o.value !== 'all',
+);
+
+function getProcessStepStatus(data: PurchaseProcessData): StepStatusFilter {
+  const completedCount = data.steps.filter((s) => s.completion !== null).length;
+  const pendingCount = data.steps.filter(
+    (s) => s.completion === null && getStepStatus(s, data.steps) !== 'bypassed',
+  ).length;
+  if (pendingCount === 0) return 'completed';
+  if (completedCount === 0) return 'stuck';
+  return 'in-progress';
+}
+
+function exportToCsv(
+  purchases: PurchaseWithUser[],
+  processDataMap: Record<string, PurchaseProcessData | null>,
+) {
+  const headers = [
+    'Amount',
+    'User',
+    'Description',
+    'Date',
+    'Template',
+    'Current Step',
+    'Excluded',
+    'Report Filed',
+    'Reimbursed',
+  ];
+
+  const rows = purchases.map((p) => {
+    const proc = processDataMap[p.id];
+    const currentStep = proc?.steps.find(
+      (s) =>
+        s.completion === null && getStepStatus(s, proc.steps) !== 'bypassed',
+    );
+    return [
+      p.amount.toFixed(2),
+      `${p.user.first} ${p.user.last}`,
+      p.description,
+      new Date(p.purchasedAt).toLocaleDateString(),
+      proc?.templateName ?? '',
+      currentStep?.name ?? '',
+      p.excludeFromTotal ? 'Yes' : 'No',
+      p.expenseReportCreated ? 'Yes' : 'No',
+      p.reimbursed ? 'Yes' : 'No',
+    ];
+  });
+
+  const escape = (value: string) => `"${value.replace(/"/g, '""')}"`;
+  const csvContent = [headers, ...rows]
+    .map((row) => row.map((value) => escape(String(value))).join(','))
+    .join('\n');
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'purchases.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 function SortHeader({
   column,
@@ -117,32 +202,38 @@ function ProcessCellContent({ data }: { data: PurchaseProcessData }) {
   );
 
   return (
-    <div className="flex items-center gap-1.5 overflow-hidden">
-      <div className="flex shrink-0 gap-0.5">
-        {data.steps.map((step) => {
-          const status = getStepStatus(step, data.steps);
-          return (
-            <div
-              key={step.id}
-              className={cn('size-1.5 rounded-full transition-colors', {
-                'bg-green-500': status === 'completed',
-                'bg-yellow-400': status === 'bypassed',
-                'bg-muted-foreground/20': status === 'pending',
-              })}
-            />
-          );
-        })}
+    <div className="flex flex-col gap-0.5 overflow-hidden">
+      <div className="flex items-center gap-1.5">
+        <span className="text-foreground/80 truncate text-xs font-medium">
+          {data.templateName}
+        </span>
+        <span className="text-muted-foreground/50 shrink-0 text-xs">
+          {completed}/{total}
+        </span>
       </div>
-      <span className="text-muted-foreground/60 truncate text-xs">
-        {completed}/{total}
+      <div className="flex items-center gap-1.5 overflow-hidden">
+        <div className="flex shrink-0 gap-0.5">
+          {data.steps.map((step) => {
+            const status = getStepStatus(step, data.steps);
+            return (
+              <div
+                key={step.id}
+                className={cn('size-1.5 rounded-full transition-colors', {
+                  'bg-green-500': status === 'completed',
+                  'bg-yellow-400': status === 'bypassed',
+                  'bg-muted-foreground/20': status === 'pending',
+                })}
+              />
+            );
+          })}
+        </div>
         {nextPending && (
-          <>
-            {' · '}
+          <span className="text-muted-foreground/60 truncate text-xs">
             <span className="text-muted-foreground/40">Next:</span>{' '}
             {nextPending.name}
-          </>
+          </span>
         )}
-      </span>
+      </div>
     </div>
   );
 }
@@ -228,6 +319,27 @@ export function PurchaseList({
   const [statusFilters, setStatusFilters] = useState<Set<StatusFilter>>(
     new Set(),
   );
+  const [templateFilter, setTemplateFilter] = useState<TemplateFilter>('all');
+  const [stepStatusFilter, setStepStatusFilter] =
+    useState<StepStatusFilter>('all');
+  const [processDataMap, setProcessDataMap] = useState<
+    Record<string, PurchaseProcessData | null>
+  >({});
+  const [processDataLoading, setProcessDataLoading] = useState(false);
+
+  useEffect(() => {
+    if (purchases.length === 0) return;
+    setProcessDataLoading(true);
+    getBatchPurchaseProcessData(purchases.map((p) => p.id))
+      .then((data) => {
+        setProcessDataMap(data);
+        setProcessDataLoading(false);
+      })
+      .catch(() => {
+        console.error('Failed to load process data for filtering');
+        setProcessDataLoading(false);
+      });
+  }, [purchases]);
 
   const yearFiltered = useMemo(
     () =>
@@ -237,10 +349,34 @@ export function PurchaseList({
     [purchases, selectedYear],
   );
 
+  const processFiltered = useMemo(() => {
+    if (templateFilter === 'all' && stepStatusFilter === 'all')
+      return yearFiltered;
+    return yearFiltered.filter((p) => {
+      const proc = processDataMap[p.id];
+
+      if (templateFilter === 'none') {
+        if (proc) return false;
+      } else if (templateFilter !== 'all') {
+        if (proc?.templateId !== templateFilter) return false;
+      }
+
+      if (stepStatusFilter !== 'all') {
+        if (!proc) return false;
+        const status = getProcessStepStatus(proc);
+        if (status !== stepStatusFilter) return false;
+      }
+
+      return true;
+    });
+  }, [yearFiltered, processDataMap, templateFilter, stepStatusFilter]);
+
   const filteredPurchases = useMemo(() => {
-    if (statusFilters.size === 0) return yearFiltered;
-    return yearFiltered.filter((p) => [...statusFilters].some((key) => p[key]));
-  }, [yearFiltered, statusFilters]);
+    if (statusFilters.size === 0) return processFiltered;
+    return processFiltered.filter((p) =>
+      [...statusFilters].some((key) => p[key]),
+    );
+  }, [processFiltered, statusFilters]);
 
   const toggleStatusFilter = (key: StatusFilter) => {
     setStatusFilters((prev) => {
@@ -250,6 +386,15 @@ export function PurchaseList({
       return next;
     });
   };
+
+  const templateFilterLabel = useMemo(() => {
+    if (templateFilter === 'all') return 'All Templates';
+    if (templateFilter === 'none') return 'No Process';
+    return (
+      processTemplates.find((t) => t.id === templateFilter)?.name ??
+      'All Templates'
+    );
+  }, [templateFilter, processTemplates]);
 
   const columns = useMemo<ColumnDef<PurchaseWithUser>[]>(
     () => [
@@ -403,6 +548,62 @@ export function PurchaseList({
             </Button>
           )}
         </div>
+
+        {processTemplates.length > 0 && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant={templateFilter !== 'all' ? 'default' : 'outline'}
+                size="sm"
+                className="gap-1.5 rounded-full"
+                disabled={processDataLoading}
+              >
+                {processDataLoading ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : null}
+                {templateFilterLabel}
+                <ChevronDown className="size-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuItem onClick={() => setTemplateFilter('all')}>
+                All Templates
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setTemplateFilter('none')}>
+                No Process
+              </DropdownMenuItem>
+              {processTemplates.length > 0 && <DropdownMenuSeparator />}
+              {processTemplates.map((t) => (
+                <DropdownMenuItem
+                  key={t.id}
+                  onClick={() => setTemplateFilter(t.id)}
+                >
+                  {t.name}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+
+        <div className="flex flex-wrap gap-1.5">
+          {STEP_STATUS_FILTER_OPTIONS.map((opt) => (
+            <Button
+              key={opt.value}
+              variant={stepStatusFilter === opt.value ? 'default' : 'outline'}
+              size="sm"
+              className="gap-1.5 rounded-full"
+              disabled={processDataLoading}
+              onClick={() =>
+                setStepStatusFilter(
+                  stepStatusFilter === opt.value ? 'all' : opt.value,
+                )
+              }
+            >
+              {opt.label}
+            </Button>
+          ))}
+        </div>
+
         <div className="flex flex-wrap gap-1.5">
           {STATUS_FILTERS.map(({ key, label, Icon }) => (
             <Button
@@ -417,6 +618,21 @@ export function PurchaseList({
             </Button>
           ))}
         </div>
+
+        <Button
+          variant="outline"
+          size="sm"
+          className="ml-auto gap-1.5"
+          onClick={() =>
+            exportToCsv(
+              table.getRowModel().rows.map((r) => r.original),
+              processDataMap,
+            )
+          }
+        >
+          <Download className="size-3.5" />
+          Export CSV
+        </Button>
       </div>
       <div className="rounded-lg border">
         <Table className="table-fixed">

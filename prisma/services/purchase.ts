@@ -255,7 +255,12 @@ export async function getPurchaseProcess(
     };
   });
 
-  return { processId: process.id, templateName: process.template.name, steps };
+  return {
+    processId: process.id,
+    templateId: process.templateId,
+    templateName: process.template.name,
+    steps,
+  };
 }
 
 export async function markStepComplete(
@@ -295,4 +300,62 @@ export async function unmarkStepComplete(
   revalidatePath('/');
 
   return { id: completionId };
+}
+
+export async function getBatchPurchaseProcessData(
+  purchaseIds: string[],
+): Promise<Record<string, PurchaseProcessData | null>> {
+  if (purchaseIds.length === 0) return {};
+
+  const purchases = await prisma.purchase.findMany({
+    where: { id: { in: purchaseIds } },
+    select: {
+      id: true,
+      process: {
+        include: {
+          template: {
+            include: {
+              steps: { where: { deletedAt: null }, orderBy: { order: 'asc' } },
+            },
+          },
+          completions: { where: { deletedAt: null } },
+        },
+      },
+    },
+  });
+
+  const result: Record<string, PurchaseProcessData | null> = {};
+
+  for (const purchase of purchases) {
+    if (!purchase.process) {
+      result[purchase.id] = null;
+      continue;
+    }
+    const { process } = purchase;
+    const steps = process.template.steps.map((step) => {
+      const completion = process.completions.find((c) => c.stepId === step.id);
+      return {
+        id: step.id,
+        name: step.name,
+        order: step.order,
+        completion: completion
+          ? {
+              id: completion.id,
+              markedAt: completion.markedAt,
+              completionDate: completion.completionDate,
+            }
+          : null,
+      };
+    });
+    result[purchase.id] = {
+      processId: process.id,
+      templateId: process.templateId,
+      templateName: process.template.name,
+      steps,
+    };
+  }
+
+  for (const id of purchaseIds) if (!(id in result)) result[id] = null;
+
+  return result;
 }

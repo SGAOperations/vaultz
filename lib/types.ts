@@ -94,6 +94,7 @@ export type PurchaseProcessStep = {
 
 export type PurchaseProcessData = {
   processId: string;
+  templateId: string;
   templateName: string;
   steps: PurchaseProcessStep[];
 };
