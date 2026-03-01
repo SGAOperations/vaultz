@@ -46,7 +46,7 @@ export function EditCategoryDialog({
   category,
   trigger,
 }: {
-  category: Category;
+  category: Pick<Category, 'id' | 'code' | 'ledgerCode' | 'name'>;
   trigger: React.ReactNode;
 }) {
   const router = useRouter();

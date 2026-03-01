@@ -23,6 +23,25 @@ export async function getLatestPurchases(
   }));
 }
 
+export async function getPurchasesByDesignation({
+  designationId,
+  yearId,
+}: {
+  designationId: string;
+  yearId: string;
+}): Promise<PurchaseWithUser[]> {
+  const purchases = await prisma.purchase.findMany({
+    where: { yearId, category: { designationId, deletedAt: null } },
+    orderBy: [{ purchasedAt: 'desc' }, { createdAt: 'desc' }],
+    include: { user: true },
+  });
+
+  return purchases.map(({ amount, ...v }) => ({
+    ...v,
+    amount: amount.toNumber(),
+  }));
+}
+
 export async function createPurchase({
   userId,
   categoryId,
