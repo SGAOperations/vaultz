@@ -89,7 +89,9 @@ function exportToCsv(transfers: TransferWithYear[]) {
   ]);
 
   const csv = [headers, ...rows]
-    .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+    .map((row) =>
+      row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','),
+    )
     .join('\n');
 
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -128,13 +130,18 @@ export function TransferHistory({
         to.setHours(23, 59, 59, 999);
         if (date > to) return false;
       }
-      if (categoryId && t.fromCategoryId !== categoryId && t.toCategoryId !== categoryId)
+      if (
+        categoryId &&
+        t.fromCategoryId !== categoryId &&
+        t.toCategoryId !== categoryId
+      )
         return false;
       return true;
     });
   }, [transfers, fromDate, toDate, categoryId]);
 
-  const hasFilters = fromDate !== undefined || toDate !== undefined || categoryId !== '';
+  const hasFilters =
+    fromDate !== undefined || toDate !== undefined || categoryId !== '';
 
   const columns = useMemo<ColumnDef<TransferWithYear>[]>(
     () => [

@@ -51,7 +51,5 @@ export function Content({ designationId }: ContentProps) {
 
   if (!transfers || !categories) return null;
 
-  return (
-    <TransferHistory transfers={transfers} categories={categories} />
-  );
+  return <TransferHistory transfers={transfers} categories={categories} />;
 }
