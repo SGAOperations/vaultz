@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 
 import {
   ArrowRight,
+  BarChart2,
   CalendarDays,
   ChevronDown,
   CreditCard,
@@ -57,6 +58,10 @@ const navDropdowns = [
       { href: '/periods', label: 'Periods', icon: CalendarDays },
     ],
   },
+  { href: '/designation', label: 'Designations', icon: CreditCard },
+  { href: '/processes', label: 'Processes', icon: Workflow },
+  { href: '/periods', label: 'Periods', icon: CalendarDays },
+  { href: '/reports/year-comparison', label: 'Reports', icon: BarChart2 },
 ];
 
 export function Header() {
