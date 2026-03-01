@@ -1,6 +1,5 @@
 import { getDesignations } from '@/prisma/services/designation';
-
-import { getAllYears } from '@/lib/period-utils';
+import { getAllYears } from '@/prisma/services/period';
 
 import { PageHeader } from '@/components/page-header';
 import { YearComparisonReport } from '@/components/year-comparison-report';

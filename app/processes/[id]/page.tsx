@@ -15,5 +15,5 @@ export default async function ProcessTemplatePage({
   const { id } = await params;
   const template = await getProcessTemplate(id);
   if (!template) notFound();
-  return <Content template={template} />;
+  return <Content key={template.updatedAt.toISOString()} template={template} />;
 }
