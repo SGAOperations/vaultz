@@ -1,5 +1,6 @@
 'use client';
 
+import { usePeriod } from '@/contexts/PeriodContext';
 import { useQuery } from '@tanstack/react-query';
 
 import { getAllAllocationGroups } from '@/prisma/services/allocation-groups';
@@ -16,13 +17,16 @@ interface ContentProps {
 }
 
 export function Content({ designationId }: ContentProps) {
+  const { selectedPeriod } = usePeriod();
+
   const {
     data: allocationGroups,
     isLoading,
     isError,
   } = useQuery({
-    queryKey: ['allocation-groups', designationId],
-    queryFn: () => getAllAllocationGroups(designationId),
+    queryKey: ['allocation-groups', designationId, selectedPeriod?.id],
+    queryFn: () =>
+      getAllAllocationGroups(designationId, selectedPeriod?.id ?? undefined),
   });
 
   if (isLoading) return <AllocationGroupsSkeleton />;

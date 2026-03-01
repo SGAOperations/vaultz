@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { Decimal } from '@/prisma/client/runtime/library';
 
 import prisma from '@/lib/prisma';
-import { Purchase, PurchaseWithUser } from '@/lib/types';
+import { Purchase, PurchaseProcessData, PurchaseWithUser } from '@/lib/types';
 import { ErrorType, ResponseType } from '@/lib/utils';
 
 export async function getLatestPurchases(
@@ -215,4 +215,84 @@ export async function deletePurchase(
   revalidatePath('/designation');
 
   return { ...purchase, amount: purchase.amount.toNumber() };
+}
+
+export async function getPurchaseProcess(
+  purchaseId: string,
+): Promise<PurchaseProcessData | null> {
+  const purchase = await prisma.purchase.findUnique({
+    where: { id: purchaseId },
+    include: {
+      process: {
+        include: {
+          template: {
+            include: {
+              steps: { where: { deletedAt: null }, orderBy: { order: 'asc' } },
+            },
+          },
+          completions: { where: { deletedAt: null }, include: { step: true } },
+        },
+      },
+    },
+  });
+
+  if (!purchase?.process) return null;
+
+  const { process } = purchase;
+  const steps = process.template.steps.map((step) => {
+    const completion = process.completions.find((c) => c.stepId === step.id);
+    return {
+      id: step.id,
+      name: step.name,
+      order: step.order,
+      completion: completion
+        ? {
+            id: completion.id,
+            markedAt: completion.markedAt,
+            completionDate: completion.completionDate,
+          }
+        : null,
+    };
+  });
+
+  return { processId: process.id, templateName: process.template.name, steps };
+}
+
+export async function markStepComplete(
+  purchaseProcessId: string,
+  stepId: string,
+): Promise<ResponseType<{ id: string }>> {
+  const existing = await prisma.purchaseStepCompletion.findFirst({
+    where: { purchaseProcessId, stepId, deletedAt: null },
+  });
+
+  if (existing) return { error: 'Step is already marked as complete.' };
+
+  const completion = await prisma.purchaseStepCompletion.create({
+    data: { purchaseProcessId, stepId, markedAt: new Date(), completed: true },
+  });
+
+  revalidatePath('/');
+
+  return { id: completion.id };
+}
+
+export async function unmarkStepComplete(
+  completionId: string,
+): Promise<ResponseType<{ id: string }>> {
+  const completion = await prisma.purchaseStepCompletion.findUnique({
+    where: { id: completionId },
+  });
+
+  if (!completion || completion.deletedAt)
+    return { error: 'Completion record not found.' };
+
+  await prisma.purchaseStepCompletion.update({
+    where: { id: completionId },
+    data: { deletedAt: new Date() },
+  });
+
+  revalidatePath('/');
+
+  return { id: completionId };
 }

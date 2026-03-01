@@ -32,7 +32,11 @@ export type CategoryWithAvailableAmount = CategoryWithDesignation & {
 };
 
 export type CategoryWithAvailableAmountAndYears =
-  CategoryWithAvailableAmount & { yearIds: string[] };
+  CategoryWithAvailableAmount & {
+    yearIds: string[];
+    budget: number;
+    spent: number;
+  };
 
 export type UserWithPurchases = User & { purchases: Purchase[] };
 
@@ -75,4 +79,21 @@ export type ProcessTemplateWithStepCount = ProcessTemplate & { steps: number };
 
 export type ProcessTemplateWithSteps = ProcessTemplate & {
   steps: ProcessStep[];
+};
+
+export type PurchaseProcessStep = {
+  id: string;
+  name: string;
+  order: number;
+  completion: {
+    id: string;
+    markedAt: Date;
+    completionDate: Date | null;
+  } | null;
+};
+
+export type PurchaseProcessData = {
+  processId: string;
+  templateName: string;
+  steps: PurchaseProcessStep[];
 };

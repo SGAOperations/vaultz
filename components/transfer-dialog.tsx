@@ -1,10 +1,12 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 
 import { useYear } from '@/contexts/YearContext';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQueryClient } from '@tanstack/react-query';
 import { ArrowLeftRight, Loader2, TriangleAlert } from 'lucide-react';
 import { z } from 'zod/v4';
 
@@ -60,6 +62,8 @@ export function TransferDialog({
   trigger?: React.ReactNode;
 }) {
   const { years, activeYearId, selectedYear } = useYear();
+  const router = useRouter();
+  const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [warningOpen, setWarningOpen] = useState(false);
   const [pendingData, setPendingData] = useState<FormData | null>(null);
@@ -123,6 +127,8 @@ export function TransferDialog({
       setFromCategoryId('');
       setToCategoryId('');
       setOpen(false);
+      router.refresh();
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
     }
   }
 

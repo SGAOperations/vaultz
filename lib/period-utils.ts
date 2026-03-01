@@ -50,3 +50,10 @@ export async function getPeriodsForYear(yearId: string): Promise<Period[]> {
     orderBy: { startDate: 'asc' },
   });
 }
+
+export async function getAllPeriods(): Promise<Period[]> {
+  return await prisma.period.findMany({
+    where: { deletedAt: null },
+    orderBy: { startDate: 'desc' },
+  });
+}
