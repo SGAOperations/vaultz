@@ -78,7 +78,7 @@ import { getStepStatus } from './process-progress';
 import { PurchaseDialog } from './purchase-dialog';
 
 type StatusFilter = 'excludeFromTotal' | 'expenseReportCreated' | 'reimbursed';
-type StepStatusFilter = 'all' | 'completed' | 'in-progress' | 'stuck';
+type StepStatusFilter = 'all' | 'completed' | 'in-progress' | 'not-started';
 type TemplateFilter = 'all' | 'none' | string;
 
 const STATUS_FILTERS: {
@@ -95,7 +95,7 @@ const STEP_STATUS_OPTIONS: { value: StepStatusFilter; label: string }[] = [
   { value: 'all', label: 'All' },
   { value: 'completed', label: 'Completed' },
   { value: 'in-progress', label: 'In Progress' },
-  { value: 'stuck', label: 'Stuck' },
+  { value: 'not-started', label: 'Not Started' },
 ];
 
 const STEP_STATUS_FILTER_OPTIONS = STEP_STATUS_OPTIONS.filter(
@@ -108,7 +108,7 @@ function getProcessStepStatus(data: PurchaseProcessData): StepStatusFilter {
     (s) => s.completion === null && getStepStatus(s, data.steps) !== 'bypassed',
   ).length;
   if (pendingCount === 0) return 'completed';
-  if (completedCount === 0) return 'stuck';
+  if (completedCount === 0) return 'not-started';
   return 'in-progress';
 }
 
