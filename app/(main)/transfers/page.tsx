@@ -20,9 +20,11 @@ export default function TransfersPage() {
   if (!selectedDesignation) redirect('/designation');
 
   const { data: categories = [] } = useQuery({
-    queryKey: ['categories-with-available', activeDesignation.id],
+    queryKey: ['categories-with-available', selectedDesignation.id],
     queryFn: () =>
-      getCategoriesWithAvailableAmount({ designationId: activeDesignation.id }),
+      getCategoriesWithAvailableAmount({
+        designationId: selectedDesignation.id,
+      }),
   });
 
   return (
