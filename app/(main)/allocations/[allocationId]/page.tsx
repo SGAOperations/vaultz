@@ -11,6 +11,7 @@ import { CreatePurchaseDialog } from '@/components/purchase-dialog';
 import { PurchaseList } from '@/components/purchase-list';
 import { SectionHeader } from '@/components/section-header';
 import { StatCards } from '@/components/stat-card';
+import { UsageBar } from '@/components/usage-bar';
 
 export const metadata: Metadata = { title: 'Allocation' };
 
@@ -43,7 +44,10 @@ export default async function Allocation({
         }
       />
 
-      <StatCards total={allocation.amount} spent={allocation.spent} />
+      <div className="mb-2 flex flex-col gap-3">
+        <StatCards total={allocation.amount} spent={allocation.spent} />
+        <UsageBar total={allocation.amount} spent={allocation.spent} />
+      </div>
 
       <SectionHeader title="Purchases" />
 
