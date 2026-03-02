@@ -51,8 +51,6 @@ export async function createPurchase({
   purchasedAt,
   receipts,
   excludeFromTotal,
-  expenseReportCreated,
-  reimbursed,
   notes,
   yearId,
   processTemplateId,
@@ -65,8 +63,6 @@ export async function createPurchase({
   purchasedAt: Date;
   receipts?: string[];
   excludeFromTotal?: boolean;
-  expenseReportCreated?: boolean;
-  reimbursed?: boolean;
   notes?: string;
   yearId: string;
   processTemplateId?: string;
@@ -96,8 +92,6 @@ export async function createPurchase({
           purchasedAt: purchasedAt,
           receipts,
           excludeFromTotal: excludeFromTotal ?? false,
-          expenseReportCreated: expenseReportCreated ?? false,
-          reimbursed: reimbursed ?? false,
           notes: notes ?? null,
           yearId: resolvedYearId,
         },
@@ -124,8 +118,6 @@ export async function createPurchase({
         purchasedAt: purchasedAt,
         receipts,
         excludeFromTotal: excludeFromTotal ?? false,
-        expenseReportCreated: expenseReportCreated ?? false,
-        reimbursed: reimbursed ?? false,
         notes: notes ?? null,
         yearId: resolvedYearId,
       },
@@ -148,8 +140,6 @@ export async function updatePurchase({
   purchasedAt,
   receipts,
   excludeFromTotal,
-  expenseReportCreated,
-  reimbursed,
   notes,
   processTemplateId,
   yearId,
@@ -163,8 +153,6 @@ export async function updatePurchase({
   purchasedAt: Date;
   receipts?: string[];
   excludeFromTotal?: boolean;
-  expenseReportCreated?: boolean;
-  reimbursed?: boolean;
   notes?: string;
   processTemplateId?: string;
   yearId?: string;
@@ -189,8 +177,6 @@ export async function updatePurchase({
     purchasedAt,
     receipts,
     excludeFromTotal: excludeFromTotal ?? false,
-    expenseReportCreated: expenseReportCreated ?? false,
-    reimbursed: reimbursed ?? false,
     notes: notes ?? null,
     ...(yearId ? { yearId } : {}),
   };
