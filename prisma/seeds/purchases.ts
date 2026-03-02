@@ -332,7 +332,7 @@ export async function seedPurchases(
         (a) => a.designationId === category.designationId,
       );
 
-      const purchasesPerCategory = randomInt(3, 5);
+      const purchasesPerCategory = randomInt(8, 12);
 
       for (let i = 0; i < purchasesPerCategory; i++) {
         const item = randomPick(data);
