@@ -144,6 +144,7 @@ export async function updateDesignation({
     data: { name, code, budgetResetBehavior },
   });
 
+  revalidatePath('/');
   revalidatePath('/designation');
 
   return designation;

@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, createContext, useContext, useState } from 'react';
+import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 
 import { Designation } from '@/prisma/client';
 
@@ -27,6 +27,16 @@ export function DesignationProvider({
     useState<Designation | null>(() =>
       designations.length > 0 ? designations[0] : null,
     );
+
+  useEffect(() => {
+    setActiveDesignation((prev) => {
+      if (!prev) return designations.length > 0 ? designations[0] : null;
+      return (
+        designations.find((d) => d.id === prev.id) ??
+        (designations.length > 0 ? designations[0] : null)
+      );
+    });
+  }, [designations]);
 
   const setDesignation = (designation: Designation) => {
     setActiveDesignation(designation);
