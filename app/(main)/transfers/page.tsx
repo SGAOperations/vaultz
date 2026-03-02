@@ -33,7 +33,7 @@ export default function TransfersPage() {
           <TransferDialog
             categories={categories}
             trigger={
-              <Button size="sm">
+              <Button>
                 <Plus className="size-4" />
                 New Transfer
               </Button>
