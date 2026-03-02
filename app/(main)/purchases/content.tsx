@@ -132,7 +132,7 @@ export function Content({ designationId, designationName }: ContentProps) {
     <div className="flex w-full flex-col">
       <PageHeader
         title="Purchases"
-        description={designationName}
+        description={selectedYear ? `${designationName} · ${selectedYear.name}` : designationName}
         actions={
           <CreatePurchaseDialog
             users={users ?? []}

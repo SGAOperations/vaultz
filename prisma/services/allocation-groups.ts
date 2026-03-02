@@ -87,6 +87,7 @@ export async function getAllocationGroupWithStats({
   const allocationGroup = await prisma.allocationGroup.findUnique({
     where: { id },
     include: {
+      designation: true,
       allocations: {
         include: {
           purchases: {

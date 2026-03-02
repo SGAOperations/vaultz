@@ -19,7 +19,7 @@ export default async function UserOverview() {
     <div className="flex w-full flex-col">
       <PageHeader
         title="Users"
-        description="Manage team members and track their spending"
+        description="Manage team members and track their spending · Global"
         actions={
           <UserDialog user={undefined}>
             <Button className="gap-2">

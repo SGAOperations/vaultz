@@ -55,6 +55,7 @@ export default async function AllocationGroup({
     <div className="flex w-full flex-col">
       <PageHeader
         title={allocationGroup.name}
+        description={`DN${allocationGroup.designation.code}`}
         actions={
           <div className="flex gap-2">
             <CreatePurchaseDialog

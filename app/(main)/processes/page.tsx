@@ -13,7 +13,7 @@ export default function ProcessesPage() {
     <div className="flex w-full flex-col">
       <PageHeader
         title="Process Templates"
-        description="Manage reusable process templates for tracking purchases"
+        description="Manage reusable process templates for tracking purchases · Global"
         actions={
           <CreateProcessTemplateDialog
             trigger={

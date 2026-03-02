@@ -58,7 +58,7 @@ export default async function CategoryPage({
     <div className="flex w-full flex-col">
       <PageHeader
         title={category.name}
-        description={`Category code: SC${category.code}`}
+        description={`SC${category.code} · DN${category.designation.code}`}
         actions={
           <div className="flex gap-2">
             <CreatePurchaseDialog

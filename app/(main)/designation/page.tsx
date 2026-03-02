@@ -15,7 +15,7 @@ export default async function DesignationsPage() {
     <div className="flex w-full flex-col">
       <PageHeader
         title="Designations"
-        description="Configure your financial designations and their budget behavior"
+        description="Configure your financial designations and their budget behavior · Global"
         actions={
           <CreateDesignationDialog
             trigger={
