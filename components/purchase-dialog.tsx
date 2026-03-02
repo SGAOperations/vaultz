@@ -730,33 +730,6 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                     )}
                   />
 
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                    <FormField
-                      control={form.control}
-                      name="excludeFromTotal"
-                      render={({ field }) => (
-                        <FormItem>
-                          <div className="flex items-center gap-3">
-                            <FormControl>
-                              <Checkbox
-                                checked={field.value}
-                                onChange={(e) =>
-                                  field.onChange(e.target.checked)
-                                }
-                              />
-                            </FormControl>
-                            <FormLabel className="!mt-0 cursor-pointer font-normal">
-                              Exclude from total
-                            </FormLabel>
-                          </div>
-                          <FormDescription className="text-xs">
-                            Exclude from budget calculations
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
 
                   {/* Advanced collapsible — year override */}
                   <div className="border-border rounded-md border">
@@ -779,7 +752,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                     </button>
 
                     {showAdvanced && (
-                      <div className="border-border border-t px-4 py-4">
+                      <div className="border-border border-t px-4 py-4 space-y-4">
                         <FormField
                           control={form.control}
                           name="yearId"
@@ -806,6 +779,29 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                               </FormControl>
                               <FormDescription className="text-xs">
                                 Defaults to the active fiscal year.
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="excludeFromTotal"
+                          render={({ field }) => (
+                            <FormItem>
+                              <div className="flex items-center gap-3">
+                                <FormControl>
+                                  <Checkbox
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
+                                <FormLabel className="!mt-0 cursor-pointer font-normal">
+                                  Exclude from total
+                                </FormLabel>
+                              </div>
+                              <FormDescription className="text-xs">
+                                Exclude from budget calculations
                               </FormDescription>
                               <FormMessage />
                             </FormItem>
