@@ -6,7 +6,7 @@ import { useDesignation } from '@/contexts/DesignationContext';
 import { useQuery } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
 
-import { getCategoriesByDesignation } from '@/prisma/services/category';
+import { getCategoriesWithAvailableAmount } from '@/prisma/services/category';
 
 import { TransferDialog } from '@/components/transfer-dialog';
 import { PageHeader } from '@/components/page-header';
@@ -20,8 +20,8 @@ export default function TransfersPage() {
   if (!activeDesignation) redirect('/designation');
 
   const { data: categories = [] } = useQuery({
-    queryKey: ['categories', activeDesignation.id],
-    queryFn: () => getCategoriesByDesignation({ designationId: activeDesignation.id }),
+    queryKey: ['categories-with-available', activeDesignation.id],
+    queryFn: () => getCategoriesWithAvailableAmount({ designationId: activeDesignation.id }),
   });
 
   return (
