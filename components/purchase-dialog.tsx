@@ -97,8 +97,6 @@ const schema = z.object({
   purchasedAt: z.date('Please select a valid date'),
   receipts: z.array(z.string()).optional(),
   excludeFromTotal: z.boolean().optional(),
-  expenseReportCreated: z.boolean().optional(),
-  reimbursed: z.boolean().optional(),
   notes: z.string().optional(),
 });
 
@@ -203,8 +201,6 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
       purchasedAt: purchase ? parseDateOnly(purchase.purchasedAt) : new Date(),
       receipts: purchase?.receipts || [],
       excludeFromTotal: purchase?.excludeFromTotal || false,
-      expenseReportCreated: purchase?.expenseReportCreated || false,
-      reimbursed: purchase?.reimbursed || false,
       notes: purchase?.notes ?? '',
     },
   });
@@ -346,8 +342,6 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
       purchasedAt: parseDateOnly(purchase!.purchasedAt),
       receipts: purchase!.receipts,
       excludeFromTotal: purchase!.excludeFromTotal,
-      expenseReportCreated: purchase!.expenseReportCreated,
-      reimbursed: purchase!.reimbursed,
       notes: purchase!.notes ?? '',
     });
     setReceiptsToDisplay(purchase!.receipts);
