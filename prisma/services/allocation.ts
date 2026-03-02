@@ -5,8 +5,8 @@ import { revalidatePath } from 'next/cache';
 import prisma from '@/lib/prisma';
 import {
   Allocation,
+  AllocationWithContext,
   AllocationWithPurchases,
-  AllocationWithStats,
 } from '@/lib/types';
 import { ErrorType, ResponseType } from '@/lib/utils';
 
@@ -83,10 +83,12 @@ export async function getAllocationByIdWithStats({
   id,
 }: {
   id: string;
-}): Promise<AllocationWithStats | null> {
+}): Promise<AllocationWithContext | null> {
   const allocation = await prisma.allocation.findUnique({
     where: { id },
     include: {
+      designation: true,
+      period: true,
       purchases: {
         orderBy: [{ purchasedAt: 'desc' }, { createdAt: 'desc' }],
         include: { user: true },

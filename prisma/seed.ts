@@ -10,20 +10,20 @@ async function main() {
     return;
   }
 
-  // Create default Year and Period
+  // Create Year and Period
   const defaultYear = await prisma.year.create({
     data: {
-      name: 'Default',
-      startDate: new Date('2000-01-01'),
-      endDate: new Date('2020-01-01'),
+      name: 'FY 25',
+      startDate: new Date('2025-01-01'),
+      endDate: new Date('2025-12-31'),
     },
   });
 
   const defaultPeriod = await prisma.period.create({
     data: {
-      name: 'Default Period',
-      startDate: new Date('2000-01-01'),
-      endDate: new Date('2020-01-01'),
+      name: 'Fall 2025',
+      startDate: new Date('2025-09-01'),
+      endDate: new Date('2025-12-31'),
       yearId: defaultYear.id,
     },
   });
@@ -39,8 +39,8 @@ async function main() {
 
   // Create Designations
   const designations = await Promise.all([
-    prisma.designation.create({ data: { code: 'DN0001', name: 'Budget' } }),
-    prisma.designation.create({ data: { code: 'DN0002', name: 'Cash' } }),
+    prisma.designation.create({ data: { code: '0001', name: 'Budget' } }),
+    prisma.designation.create({ data: { code: '0002', name: 'Cash' } }),
   ]);
 
   // Create Categories
