@@ -2,7 +2,10 @@
 
 import { ReactNode } from 'react';
 
-import { DesignationProvider, MinimalDesignation } from '@/contexts/DesignationContext';
+import {
+  DesignationProvider,
+  MinimalDesignation,
+} from '@/contexts/DesignationContext';
 
 interface DesignationProviderWrapperProps {
   initialDesignation: MinimalDesignation | null;

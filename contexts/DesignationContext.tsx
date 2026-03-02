@@ -47,7 +47,9 @@ export function DesignationProvider({
   };
 
   return (
-    <DesignationContext.Provider value={{ selectedDesignation, setSelectedDesignation }}>
+    <DesignationContext.Provider
+      value={{ selectedDesignation, setSelectedDesignation }}
+    >
       {children}
     </DesignationContext.Provider>
   );

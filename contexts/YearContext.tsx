@@ -21,10 +21,7 @@ interface YearProviderProps {
   children: ReactNode;
 }
 
-export function YearProvider({
-  initialYear,
-  children,
-}: YearProviderProps) {
+export function YearProvider({ initialYear, children }: YearProviderProps) {
   const queryClient = useQueryClient();
   const [selectedYear, setSelectedYearState] = useState<MinimalYear | null>(
     initialYear,

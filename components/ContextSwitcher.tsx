@@ -9,7 +9,12 @@ import { useQuery } from '@tanstack/react-query';
 import { ChevronsUpDown } from 'lucide-react';
 
 import { getDesignations } from '@/prisma/services/designation';
-import { getActivePeriod, getActiveYear, getAllPeriods, getAllYears } from '@/prisma/services/period';
+import {
+  getActivePeriod,
+  getActiveYear,
+  getAllPeriods,
+  getAllYears,
+} from '@/prisma/services/period';
 
 import { Button } from '@/components/ui/button';
 import { Combobox } from '@/components/ui/combobox';

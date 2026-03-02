@@ -3,8 +3,8 @@
 import { useMemo, useState } from 'react';
 import { FormProvider, useForm, useWatch } from 'react-hook-form';
 
-import { useQuery } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQuery } from '@tanstack/react-query';
 import {
   Calendar,
   Check,
@@ -30,12 +30,12 @@ import { twMerge } from 'tailwind-merge';
 import { z } from 'zod/v4';
 
 import { User } from '@/prisma/client';
+import { getActiveYear, getAllYears } from '@/prisma/services/period';
 import {
   createPurchase,
   deletePurchase,
   updatePurchase,
 } from '@/prisma/services/purchase';
-import { getAllYears, getActiveYear } from '@/prisma/services/period';
 
 import {
   Allocation,

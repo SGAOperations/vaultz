@@ -26,9 +26,8 @@ export function PeriodProvider({
   children,
 }: PeriodProviderProps) {
   const queryClient = useQueryClient();
-  const [selectedPeriod, setSelectedPeriodState] = useState<MinimalPeriod | null>(
-    initialPeriod,
-  );
+  const [selectedPeriod, setSelectedPeriodState] =
+    useState<MinimalPeriod | null>(initialPeriod);
 
   const setSelectedPeriod = (period: MinimalPeriod) => {
     if (selectedPeriod) {
@@ -42,9 +41,7 @@ export function PeriodProvider({
   };
 
   return (
-    <PeriodContext.Provider
-      value={{ selectedPeriod, setSelectedPeriod }}
-    >
+    <PeriodContext.Provider value={{ selectedPeriod, setSelectedPeriod }}>
       {children}
     </PeriodContext.Provider>
   );

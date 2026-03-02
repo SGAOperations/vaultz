@@ -18,9 +18,5 @@ export function YearProviderWrapper({
   initialYear,
   children,
 }: YearProviderWrapperProps) {
-  return (
-    <YearProvider initialYear={initialYear}>
-      {children}
-    </YearProvider>
-  );
+  return <YearProvider initialYear={initialYear}>{children}</YearProvider>;
 }

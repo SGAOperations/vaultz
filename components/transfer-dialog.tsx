@@ -10,8 +10,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeftRight, Loader2, TriangleAlert } from 'lucide-react';
 import { z } from 'zod/v4';
 
+import { getActiveYear, getAllYears } from '@/prisma/services/period';
 import { createTransfer } from '@/prisma/services/transfer';
-import { getAllYears, getActiveYear } from '@/prisma/services/period';
 
 import { CategoryWithAvailableAmountAndYears } from '@/lib/types';
 import { formatNumber, handleError, isError } from '@/lib/utils';

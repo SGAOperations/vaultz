@@ -19,8 +19,6 @@ export function PeriodProviderWrapper({
   children,
 }: PeriodProviderWrapperProps) {
   return (
-    <PeriodProvider initialPeriod={initialPeriod}>
-      {children}
-    </PeriodProvider>
+    <PeriodProvider initialPeriod={initialPeriod}>{children}</PeriodProvider>
   );
 }
