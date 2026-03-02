@@ -2,12 +2,20 @@
 
 import { ReactNode, createContext, useContext, useState } from 'react';
 
-import { Designation } from '@/prisma/client';
+import { useQueryClient } from '@tanstack/react-query';
+
+import { BudgetResetBehavior } from '@/prisma/client';
+
+export interface MinimalDesignation {
+  id: string;
+  name: string;
+  code: string;
+  budgetResetBehavior: BudgetResetBehavior;
+}
 
 interface DesignationContextType {
-  activeDesignation: Designation | null;
-  designations: Designation[];
-  setDesignation: (designation: Designation) => void;
+  selectedDesignation: MinimalDesignation | null;
+  setSelectedDesignation: (designation: MinimalDesignation) => void;
 }
 
 const DesignationContext = createContext<DesignationContextType | undefined>(
@@ -15,26 +23,32 @@ const DesignationContext = createContext<DesignationContextType | undefined>(
 );
 
 interface DesignationProviderProps {
-  designations: Designation[];
+  initialDesignation: MinimalDesignation | null;
   children: ReactNode;
 }
 
 export function DesignationProvider({
-  designations,
+  initialDesignation,
   children,
 }: DesignationProviderProps) {
-  const [activeDesignation, setActiveDesignation] =
-    useState<Designation | null>(() =>
-      designations.length > 0 ? designations[0] : null,
-    );
+  const queryClient = useQueryClient();
+  const [selectedDesignation, setSelectedDesignationState] =
+    useState<MinimalDesignation | null>(initialDesignation);
 
-  const setDesignation = (designation: Designation) => {
-    setActiveDesignation(designation);
+  const setSelectedDesignation = (designation: MinimalDesignation) => {
+    if (selectedDesignation) {
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          Array.isArray(query.queryKey) &&
+          query.queryKey.includes(selectedDesignation.id),
+      });
+    }
+    setSelectedDesignationState(designation);
   };
 
   return (
     <DesignationContext.Provider
-      value={{ activeDesignation, designations, setDesignation }}
+      value={{ selectedDesignation, setSelectedDesignation }}
     >
       {children}
     </DesignationContext.Provider>

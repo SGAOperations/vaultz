@@ -3,8 +3,8 @@
 import { useMemo, useState } from 'react';
 import { FormProvider, useForm, useWatch } from 'react-hook-form';
 
-import { useYear } from '@/contexts/YearContext';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQuery } from '@tanstack/react-query';
 import {
   Calendar,
   Check,
@@ -30,6 +30,7 @@ import { twMerge } from 'tailwind-merge';
 import { z } from 'zod/v4';
 
 import { User } from '@/prisma/client';
+import { getActiveYear, getAllYears } from '@/prisma/services/period';
 import {
   createPurchase,
   deletePurchase,
@@ -146,7 +147,17 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
   const defaultCategoryId =
     props.mode === 'create' ? (props.defaultCategoryId ?? '') : '';
 
-  const { years, activeYearId } = useYear();
+  const { data: years = [] } = useQuery({
+    queryKey: ['years'],
+    queryFn: getAllYears,
+  });
+
+  const { data: activeYear } = useQuery({
+    queryKey: ['active-year'],
+    queryFn: getActiveYear,
+  });
+
+  const activeYearId = activeYear?.id;
 
   const isCreateMode = props.mode === 'create';
   const purchase = isCreateMode ? null : props.purchase;
