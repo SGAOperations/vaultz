@@ -39,8 +39,8 @@ async function main() {
 
   // Create Designations
   const designations = await Promise.all([
-    prisma.designation.create({ data: { code: 'DN0001', name: 'Budget' } }),
-    prisma.designation.create({ data: { code: 'DN0002', name: 'Cash' } }),
+    prisma.designation.create({ data: { code: '0001', name: 'Budget' } }),
+    prisma.designation.create({ data: { code: '0002', name: 'Cash' } }),
   ]);
 
   // Create Categories
