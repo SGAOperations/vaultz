@@ -2,35 +2,51 @@
 
 import { ReactNode, createContext, useContext, useState } from 'react';
 
-import { Period } from '@/prisma/client';
+import { useQueryClient } from '@tanstack/react-query';
+
+interface MinimalPeriod {
+  id: string;
+  name: string;
+}
 
 interface PeriodContextType {
-  periods: Period[];
   activePeriodId: string | undefined;
-  selectedPeriod: Period | null;
-  setSelectedPeriod: (period: Period) => void;
+  selectedPeriod: MinimalPeriod | null;
+  setSelectedPeriod: (period: MinimalPeriod) => void;
 }
 
 const PeriodContext = createContext<PeriodContextType | undefined>(undefined);
 
 interface PeriodProviderProps {
-  periods: Period[];
+  initialPeriod: MinimalPeriod | null;
   activePeriodId: string | undefined;
   children: ReactNode;
 }
 
 export function PeriodProvider({
-  periods,
+  initialPeriod,
   activePeriodId,
   children,
 }: PeriodProviderProps) {
-  const [selectedPeriod, setSelectedPeriod] = useState<Period | null>(
-    () => periods.find((p) => p.id === activePeriodId) ?? periods[0] ?? null,
+  const queryClient = useQueryClient();
+  const [selectedPeriod, setSelectedPeriodState] = useState<MinimalPeriod | null>(
+    initialPeriod,
   );
+
+  const setSelectedPeriod = (period: MinimalPeriod) => {
+    if (selectedPeriod) {
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          Array.isArray(query.queryKey) &&
+          query.queryKey.includes(selectedPeriod.id),
+      });
+    }
+    setSelectedPeriodState(period);
+  };
 
   return (
     <PeriodContext.Provider
-      value={{ periods, activePeriodId, selectedPeriod, setSelectedPeriod }}
+      value={{ activePeriodId, selectedPeriod, setSelectedPeriod }}
     >
       {children}
     </PeriodContext.Provider>

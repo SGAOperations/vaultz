@@ -9,9 +9,8 @@ import {
 } from 'react-hook-form';
 
 import { useDesignation } from '@/contexts/DesignationContext';
-import { useYear } from '@/contexts/YearContext';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Loader2, Trash2 } from 'lucide-react';
 import { z } from 'zod/v4';
 
@@ -21,7 +20,7 @@ import {
   getNewYearSuggestions,
   setYearBudgetsForDesignation,
 } from '@/prisma/services/category-year';
-import { createYear, updateYear } from '@/prisma/services/period';
+import { createYear, getAllYears, updateYear } from '@/prisma/services/period';
 
 import { handleError, isError, parseDateOnly } from '@/lib/utils';
 
@@ -82,8 +81,12 @@ export function YearDialog({
   const [loadingBudgets, setLoadingBudgets] = useState(false);
 
   const { activeDesignation } = useDesignation();
-  const { years } = useYear();
   const queryClient = useQueryClient();
+
+  const { data: years = [] } = useQuery({
+    queryKey: ['years'],
+    queryFn: getAllYears,
+  });
 
   const yearForm = useForm<YearFormData>({
     resolver: zodResolver(yearSchema),
@@ -151,7 +154,10 @@ export function YearDialog({
           error: 'Failed to update year',
         },
       });
-      if (!isError(result)) handleOpenChange(false);
+      if (!isError(result)) {
+        await queryClient.invalidateQueries({ queryKey: ['years'] });
+        handleOpenChange(false);
+      }
       return;
     }
 
@@ -215,6 +221,7 @@ export function YearDialog({
         },
       );
       await queryClient.invalidateQueries({ queryKey: ['categories-budget'] });
+      await queryClient.invalidateQueries({ queryKey: ['years'] });
       handleOpenChange(false);
     } else {
       // RESET: go to budget step
@@ -246,6 +253,7 @@ export function YearDialog({
     );
     if (!isError(result)) {
       await queryClient.invalidateQueries({ queryKey: ['categories-budget'] });
+      await queryClient.invalidateQueries({ queryKey: ['years'] });
       handleOpenChange(false);
     }
   }

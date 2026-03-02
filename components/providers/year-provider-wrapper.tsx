@@ -4,21 +4,24 @@ import { ReactNode } from 'react';
 
 import { YearProvider } from '@/contexts/YearContext';
 
-import { Year } from '@/prisma/client';
+interface MinimalYear {
+  id: string;
+  name: string;
+}
 
 interface YearProviderWrapperProps {
-  years: Year[];
+  initialYear: MinimalYear | null;
   activeYearId: string | undefined;
   children: ReactNode;
 }
 
 export function YearProviderWrapper({
-  years,
+  initialYear,
   activeYearId,
   children,
 }: YearProviderWrapperProps) {
   return (
-    <YearProvider years={years} activeYearId={activeYearId}>
+    <YearProvider initialYear={initialYear} activeYearId={activeYearId}>
       {children}
     </YearProvider>
   );

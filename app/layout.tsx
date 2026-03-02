@@ -45,6 +45,28 @@ export default async function RootLayout({
       getActivePeriod(),
     ]);
 
+  const initialDesignation = designations[0]
+    ? {
+        id: designations[0].id,
+        name: designations[0].name,
+        code: designations[0].code,
+        budgetResetBehavior: designations[0].budgetResetBehavior,
+      }
+    : null;
+
+  const activeYearId = activeYear?.id;
+  const initialYearData = years.find((y) => y.id === activeYearId) ?? years[0] ?? null;
+  const initialYear = initialYearData
+    ? { id: initialYearData.id, name: initialYearData.name }
+    : null;
+
+  const activePeriodId = activePeriod?.id;
+  const initialPeriodData =
+    periods.find((p) => p.id === activePeriodId) ?? periods[0] ?? null;
+  const initialPeriod = initialPeriodData
+    ? { id: initialPeriodData.id, name: initialPeriodData.name }
+    : null;
+
   return (
     <html lang="en">
       <body className={cn('w-full font-sans antialiased', inter.variable)}>
@@ -55,13 +77,16 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <DesignationProviderWrapper designations={designations}>
-            <YearProviderWrapper years={years} activeYearId={activeYear?.id}>
-              <PeriodProviderWrapper
-                periods={periods}
-                activePeriodId={activePeriod?.id}
+          <QueryProvider>
+            <DesignationProviderWrapper initialDesignation={initialDesignation}>
+              <YearProviderWrapper
+                initialYear={initialYear}
+                activeYearId={activeYearId}
               >
-                <QueryProvider>
+                <PeriodProviderWrapper
+                  initialPeriod={initialPeriod}
+                  activePeriodId={activePeriodId}
+                >
                   <main className="mx-auto flex w-full flex-col items-center 2xl:w-4/5">
                     <div className="bg-background sticky top-0 z-50 w-full px-3 pt-3">
                       <Header />
@@ -74,10 +99,10 @@ export default async function RootLayout({
                       classNames: { description: 'line-clamp-2' },
                     }}
                   />
-                </QueryProvider>
-              </PeriodProviderWrapper>
-            </YearProviderWrapper>
-          </DesignationProviderWrapper>
+                </PeriodProviderWrapper>
+              </YearProviderWrapper>
+            </DesignationProviderWrapper>
+          </QueryProvider>
         </ThemeProvider>
       </body>
     </html>

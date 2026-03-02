@@ -16,10 +16,9 @@ import { Content } from './content';
 
 export default function AllocationGroups() {
   const { activeDesignation } = useDesignation();
-  const { periods, selectedPeriod } = usePeriod();
+  const { selectedPeriod } = usePeriod();
 
   if (!activeDesignation) redirect('/designation');
-  if (periods.length === 0) redirect('/periods');
 
   return (
     <div className="flex w-full flex-col">

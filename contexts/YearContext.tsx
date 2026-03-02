@@ -2,36 +2,50 @@
 
 import { ReactNode, createContext, useContext, useState } from 'react';
 
-import { Year } from '@/prisma/client';
+import { useQueryClient } from '@tanstack/react-query';
+
+interface MinimalYear {
+  id: string;
+  name: string;
+}
 
 interface YearContextType {
-  years: Year[];
   activeYearId: string | undefined;
-  selectedYear: Year | null;
-  setSelectedYear: (year: Year) => void;
+  selectedYear: MinimalYear | null;
+  setSelectedYear: (year: MinimalYear) => void;
 }
 
 const YearContext = createContext<YearContextType | undefined>(undefined);
 
 interface YearProviderProps {
-  years: Year[];
+  initialYear: MinimalYear | null;
   activeYearId: string | undefined;
   children: ReactNode;
 }
 
 export function YearProvider({
-  years,
+  initialYear,
   activeYearId,
   children,
 }: YearProviderProps) {
-  const [selectedYear, setSelectedYear] = useState<Year | null>(
-    () => years.find((y) => y.id === activeYearId) ?? years[0] ?? null,
+  const queryClient = useQueryClient();
+  const [selectedYear, setSelectedYearState] = useState<MinimalYear | null>(
+    initialYear,
   );
 
+  const setSelectedYear = (year: MinimalYear) => {
+    if (selectedYear) {
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          Array.isArray(query.queryKey) &&
+          query.queryKey.includes(selectedYear.id),
+      });
+    }
+    setSelectedYearState(year);
+  };
+
   return (
-    <YearContext.Provider
-      value={{ years, activeYearId, selectedYear, setSelectedYear }}
-    >
+    <YearContext.Provider value={{ activeYearId, selectedYear, setSelectedYear }}>
       {children}
     </YearContext.Provider>
   );

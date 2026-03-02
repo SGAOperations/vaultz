@@ -5,7 +5,11 @@ import { useState } from 'react';
 import { useDesignation } from '@/contexts/DesignationContext';
 import { usePeriod } from '@/contexts/PeriodContext';
 import { useYear } from '@/contexts/YearContext';
+import { useQuery } from '@tanstack/react-query';
 import { ChevronsUpDown } from 'lucide-react';
+
+import { getDesignations } from '@/prisma/services/designation';
+import { getAllPeriods, getAllYears } from '@/prisma/services/period';
 
 import { Button } from '@/components/ui/button';
 import { Combobox } from '@/components/ui/combobox';
@@ -18,10 +22,36 @@ import {
 
 export function ContextSwitcher() {
   const [open, setOpen] = useState(false);
-  const { periods, activePeriodId, selectedPeriod, setSelectedPeriod } =
-    usePeriod();
-  const { years, activeYearId, selectedYear, setSelectedYear } = useYear();
-  const { activeDesignation, designations, setDesignation } = useDesignation();
+  const { activePeriodId, selectedPeriod, setSelectedPeriod } = usePeriod();
+  const { activeYearId, selectedYear, setSelectedYear } = useYear();
+  const { activeDesignation, setDesignation } = useDesignation();
+
+  const { data: designations = [] } = useQuery({
+    queryKey: ['designations'],
+    queryFn: getDesignations,
+  });
+
+  const { data: periods = [] } = useQuery({
+    queryKey: ['periods'],
+    queryFn: getAllPeriods,
+  });
+
+  const { data: years = [] } = useQuery({
+    queryKey: ['years'],
+    queryFn: getAllYears,
+  });
+
+  // Use fresh data from query for display, falling back to context state
+  const activeDesignationName =
+    designations.find((d) => d.id === activeDesignation?.id)?.name ??
+    activeDesignation?.name;
+
+  const selectedPeriodName =
+    periods.find((p) => p.id === selectedPeriod?.id)?.name ??
+    selectedPeriod?.name;
+
+  const selectedYearName =
+    years.find((y) => y.id === selectedYear?.id)?.name ?? selectedYear?.name;
 
   if (periods.length === 0 && years.length === 0 && designations.length === 0)
     return null;
@@ -34,15 +64,13 @@ export function ContextSwitcher() {
         className="h-auto gap-2 px-3 py-1.5"
       >
         <div className="flex flex-col items-start text-left">
-          {activeDesignation && (
+          {activeDesignationName && (
             <span className="text-sm leading-tight font-semibold">
-              {activeDesignation.name}
+              {activeDesignationName}
             </span>
           )}
           <span className="text-muted-foreground text-xs leading-tight">
-            {[selectedPeriod?.name, selectedYear?.name]
-              .filter(Boolean)
-              .join(' · ')}
+            {[selectedPeriodName, selectedYearName].filter(Boolean).join(' · ')}
           </span>
         </div>
         <ChevronsUpDown className="text-muted-foreground size-3.5 shrink-0" />
@@ -71,7 +99,13 @@ export function ContextSwitcher() {
                   ]}
                   onChange={(value) => {
                     const d = designations.find((x) => x.id === value);
-                    if (d) setDesignation(d);
+                    if (d)
+                      setDesignation({
+                        id: d.id,
+                        name: d.name,
+                        code: d.code,
+                        budgetResetBehavior: d.budgetResetBehavior,
+                      });
                   }}
                 />
               </div>
@@ -96,7 +130,7 @@ export function ContextSwitcher() {
                   ]}
                   onChange={(value) => {
                     const p = periods.find((x) => x.id === value);
-                    if (p) setSelectedPeriod(p);
+                    if (p) setSelectedPeriod({ id: p.id, name: p.name });
                   }}
                 />
               </div>
@@ -119,7 +153,7 @@ export function ContextSwitcher() {
                   ]}
                   onChange={(value) => {
                     const y = years.find((x) => x.id === value);
-                    if (y) setSelectedYear(y);
+                    if (y) setSelectedYear({ id: y.id, name: y.name });
                   }}
                 />
               </div>

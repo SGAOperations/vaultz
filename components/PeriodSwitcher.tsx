@@ -3,7 +3,10 @@
 import { usePathname } from 'next/navigation';
 
 import { usePeriod } from '@/contexts/PeriodContext';
+import { useQuery } from '@tanstack/react-query';
 import { ChevronsUpDown } from 'lucide-react';
+
+import { getAllPeriods } from '@/prisma/services/period';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -20,8 +23,12 @@ const ALLOCATION_PATHS = ['/allocation-groups', '/allocations'];
 
 export function PeriodSwitcher() {
   const pathname = usePathname();
-  const { periods, activePeriodId, selectedPeriod, setSelectedPeriod } =
-    usePeriod();
+  const { activePeriodId, selectedPeriod, setSelectedPeriod } = usePeriod();
+
+  const { data: periods = [] } = useQuery({
+    queryKey: ['periods'],
+    queryFn: getAllPeriods,
+  });
 
   const isAllocationPage = ALLOCATION_PATHS.some((path) =>
     pathname.startsWith(path),
@@ -46,7 +53,7 @@ export function PeriodSwitcher() {
           value={selectedPeriod?.id ?? ''}
           onValueChange={(value) => {
             const period = periods.find((p) => p.id === value);
-            if (period) setSelectedPeriod(period);
+            if (period) setSelectedPeriod({ id: period.id, name: period.name });
           }}
         >
           {periods.map((period) => (

@@ -1,13 +1,21 @@
 'use client';
 
-import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
+import { ReactNode, createContext, useContext, useState } from 'react';
 
-import { Designation } from '@/prisma/client';
+import { useQueryClient } from '@tanstack/react-query';
+
+import { BudgetResetBehavior } from '@/prisma/client';
+
+export interface MinimalDesignation {
+  id: string;
+  name: string;
+  code: string;
+  budgetResetBehavior: BudgetResetBehavior;
+}
 
 interface DesignationContextType {
-  activeDesignation: Designation | null;
-  designations: Designation[];
-  setDesignation: (designation: Designation) => void;
+  activeDesignation: MinimalDesignation | null;
+  setDesignation: (designation: MinimalDesignation) => void;
 }
 
 const DesignationContext = createContext<DesignationContextType | undefined>(
@@ -15,37 +23,31 @@ const DesignationContext = createContext<DesignationContextType | undefined>(
 );
 
 interface DesignationProviderProps {
-  designations: Designation[];
+  initialDesignation: MinimalDesignation | null;
   children: ReactNode;
 }
 
 export function DesignationProvider({
-  designations,
+  initialDesignation,
   children,
 }: DesignationProviderProps) {
+  const queryClient = useQueryClient();
   const [activeDesignation, setActiveDesignation] =
-    useState<Designation | null>(() =>
-      designations.length > 0 ? designations[0] : null,
-    );
+    useState<MinimalDesignation | null>(initialDesignation);
 
-  useEffect(() => {
-    setActiveDesignation((prev) => {
-      if (!prev) return designations.length > 0 ? designations[0] : null;
-      return (
-        designations.find((d) => d.id === prev.id) ??
-        (designations.length > 0 ? designations[0] : null)
-      );
-    });
-  }, [designations]);
-
-  const setDesignation = (designation: Designation) => {
+  const setDesignation = (designation: MinimalDesignation) => {
+    if (activeDesignation) {
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          Array.isArray(query.queryKey) &&
+          query.queryKey.includes(activeDesignation.id),
+      });
+    }
     setActiveDesignation(designation);
   };
 
   return (
-    <DesignationContext.Provider
-      value={{ activeDesignation, designations, setDesignation }}
-    >
+    <DesignationContext.Provider value={{ activeDesignation, setDesignation }}>
       {children}
     </DesignationContext.Provider>
   );

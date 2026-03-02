@@ -2,21 +2,19 @@
 
 import { ReactNode } from 'react';
 
-import { DesignationProvider } from '@/contexts/DesignationContext';
-
-import { Designation } from '@/prisma/client';
+import { DesignationProvider, MinimalDesignation } from '@/contexts/DesignationContext';
 
 interface DesignationProviderWrapperProps {
-  designations: Designation[];
+  initialDesignation: MinimalDesignation | null;
   children: ReactNode;
 }
 
 export function DesignationProviderWrapper({
-  designations,
+  initialDesignation,
   children,
 }: DesignationProviderWrapperProps) {
   return (
-    <DesignationProvider designations={designations}>
+    <DesignationProvider initialDesignation={initialDesignation}>
       {children}
     </DesignationProvider>
   );
