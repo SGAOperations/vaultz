@@ -10,23 +10,29 @@ async function main() {
     return;
   }
 
-  // Create default Year and Period
-  const defaultYear = await prisma.year.create({
-    data: {
-      name: 'Default',
-      startDate: new Date('2000-01-01'),
-      endDate: new Date('2020-01-01'),
-    },
-  });
+  // Create default Year and Period (migration may have already created these)
+  const defaultYear =
+    (await prisma.year.findFirst({ where: { name: 'Default' } })) ??
+    (await prisma.year.create({
+      data: {
+        name: 'Default',
+        startDate: new Date('2000-01-01'),
+        endDate: new Date('2020-01-01'),
+      },
+    }));
 
-  const defaultPeriod = await prisma.period.create({
-    data: {
-      name: 'Default Period',
-      startDate: new Date('2000-01-01'),
-      endDate: new Date('2020-01-01'),
-      yearId: defaultYear.id,
-    },
-  });
+  const defaultPeriod =
+    (await prisma.period.findFirst({
+      where: { name: 'Default Period', yearId: defaultYear.id },
+    })) ??
+    (await prisma.period.create({
+      data: {
+        name: 'Default Period',
+        startDate: new Date('2000-01-01'),
+        endDate: new Date('2020-01-01'),
+        yearId: defaultYear.id,
+      },
+    }));
 
   // Create Users
   const users = await Promise.all([
