@@ -730,7 +730,6 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                     )}
                   />
 
-
                   {/* Advanced collapsible — year override */}
                   <div className="border-border rounded-md border">
                     <button
@@ -752,7 +751,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                     </button>
 
                     {showAdvanced && (
-                      <div className="border-border border-t px-4 py-4 space-y-4">
+                      <div className="border-border space-y-4 border-t px-4 py-4">
                         <FormField
                           control={form.control}
                           name="yearId"

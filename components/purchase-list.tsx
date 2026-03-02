@@ -80,9 +80,7 @@ const STATUS_FILTERS: {
   key: StatusFilter;
   label: string;
   Icon: React.ComponentType<{ className?: string }>;
-}[] = [
-  { key: 'excludeFromTotal', label: 'Excluded', Icon: CircleDollarSign },
-];
+}[] = [{ key: 'excludeFromTotal', label: 'Excluded', Icon: CircleDollarSign }];
 
 const STEP_STATUS_OPTIONS: { value: StepStatusFilter; label: string }[] = [
   { value: 'all', label: 'All' },
@@ -453,10 +451,8 @@ export function PurchaseList({
         id: 'status',
         header: 'Status',
         cell: ({ row }) => {
-          const { excludeFromTotal, notes } =
-            row.original;
-          const hasStatus =
-            excludeFromTotal || notes;
+          const { excludeFromTotal, notes } = row.original;
+          const hasStatus = excludeFromTotal || notes;
           if (!hasStatus) return null;
           return (
             <div className="flex flex-wrap items-center gap-1.5">
