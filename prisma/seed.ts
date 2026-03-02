@@ -10,46 +10,23 @@ async function main() {
     return;
   }
 
-  // The migration creates a stub 'Default' year on fresh databases. Reuse it with
-  // real seed data, or create fresh if it doesn't exist (e.g. migration was skipped).
-  const migrationYear = await prisma.year.findFirst({ where: { name: 'Default' } });
-  const defaultYear = migrationYear
-    ? await prisma.year.update({
-        where: { id: migrationYear.id },
-        data: {
-          name: 'FY 25',
-          startDate: new Date('2025-01-01'),
-          endDate: new Date('2025-12-31'),
-        },
-      })
-    : await prisma.year.create({
-        data: {
-          name: 'FY 25',
-          startDate: new Date('2025-01-01'),
-          endDate: new Date('2025-12-31'),
-        },
-      });
-
-  const migrationPeriod = await prisma.period.findFirst({
-    where: { yearId: defaultYear.id },
+  // Create Year and Period
+  const defaultYear = await prisma.year.create({
+    data: {
+      name: 'FY 25',
+      startDate: new Date('2025-01-01'),
+      endDate: new Date('2025-12-31'),
+    },
   });
-  const defaultPeriod = migrationPeriod
-    ? await prisma.period.update({
-        where: { id: migrationPeriod.id },
-        data: {
-          name: 'Fall 2025',
-          startDate: new Date('2025-09-01'),
-          endDate: new Date('2025-12-31'),
-        },
-      })
-    : await prisma.period.create({
-        data: {
-          name: 'Fall 2025',
-          startDate: new Date('2025-09-01'),
-          endDate: new Date('2025-12-31'),
-          yearId: defaultYear.id,
-        },
-      });
+
+  const defaultPeriod = await prisma.period.create({
+    data: {
+      name: 'Fall 2025',
+      startDate: new Date('2025-09-01'),
+      endDate: new Date('2025-12-31'),
+      yearId: defaultYear.id,
+    },
+  });
 
   // Create Users
   const users = await Promise.all([
