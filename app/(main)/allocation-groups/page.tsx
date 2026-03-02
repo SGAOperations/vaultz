@@ -25,7 +25,7 @@ export default function AllocationGroups() {
     <div className="flex w-full flex-col">
       <PageHeader
         title="Allocation Groups"
-        description={`Organize and manage your budget allocations · DN${activeDesignation.code}`}
+        description={`Organize and manage your budget allocations · DN${activeDesignation.code}${selectedPeriod ? ` · ${selectedPeriod.name}` : ''}`}
         actions={
           <CreateAllocationGroupDialog
             designationId={activeDesignation.id}

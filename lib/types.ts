@@ -2,6 +2,7 @@ import {
   AllocationGroup,
   CategoryYear,
   Designation,
+  Period,
   Allocation as PrismaAllocation,
   Category as PrismaCategory,
   Purchase as PrismaPurchase,
@@ -58,11 +59,17 @@ export type AllocationWithStats = AllocationWithPurchases & {
   remaining: number;
 };
 
+export type AllocationWithContext = AllocationWithStats & {
+  designation: Designation;
+  period: Period;
+};
+
 export type AllocationGroupWithAllocations = AllocationGroup & {
   allocations: AllocationWithPurchases[];
 };
 
 export type AllocationGroupWithStats = AllocationGroup & {
+  designation: Designation;
   allocations: AllocationWithStats[];
   totalAmount: number;
   totalSpent: number;
