@@ -10,7 +10,6 @@ interface MinimalYear {
 }
 
 interface YearContextType {
-  activeYearId: string | undefined;
   selectedYear: MinimalYear | null;
   setSelectedYear: (year: MinimalYear) => void;
 }
@@ -19,13 +18,11 @@ const YearContext = createContext<YearContextType | undefined>(undefined);
 
 interface YearProviderProps {
   initialYear: MinimalYear | null;
-  activeYearId: string | undefined;
   children: ReactNode;
 }
 
 export function YearProvider({
   initialYear,
-  activeYearId,
   children,
 }: YearProviderProps) {
   const queryClient = useQueryClient();
@@ -45,7 +42,7 @@ export function YearProvider({
   };
 
   return (
-    <YearContext.Provider value={{ activeYearId, selectedYear, setSelectedYear }}>
+    <YearContext.Provider value={{ selectedYear, setSelectedYear }}>
       {children}
     </YearContext.Provider>
   );

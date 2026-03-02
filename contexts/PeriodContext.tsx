@@ -10,7 +10,6 @@ interface MinimalPeriod {
 }
 
 interface PeriodContextType {
-  activePeriodId: string | undefined;
   selectedPeriod: MinimalPeriod | null;
   setSelectedPeriod: (period: MinimalPeriod) => void;
 }
@@ -19,13 +18,11 @@ const PeriodContext = createContext<PeriodContextType | undefined>(undefined);
 
 interface PeriodProviderProps {
   initialPeriod: MinimalPeriod | null;
-  activePeriodId: string | undefined;
   children: ReactNode;
 }
 
 export function PeriodProvider({
   initialPeriod,
-  activePeriodId,
   children,
 }: PeriodProviderProps) {
   const queryClient = useQueryClient();
@@ -46,7 +43,7 @@ export function PeriodProvider({
 
   return (
     <PeriodContext.Provider
-      value={{ activePeriodId, selectedPeriod, setSelectedPeriod }}
+      value={{ selectedPeriod, setSelectedPeriod }}
     >
       {children}
     </PeriodContext.Provider>

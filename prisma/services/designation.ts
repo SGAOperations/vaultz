@@ -12,6 +12,10 @@ export async function getDesignations(): Promise<Designation[]> {
   return await prisma.designation.findMany({ orderBy: { name: 'asc' } });
 }
 
+export async function getFirstDesignation(): Promise<Designation | null> {
+  return await prisma.designation.findFirst({ orderBy: { name: 'asc' } });
+}
+
 export async function getAllDesignations(): Promise<
   DesignationWithPurchases[]
 > {

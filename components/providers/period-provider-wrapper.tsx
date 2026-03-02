@@ -11,17 +11,15 @@ interface MinimalPeriod {
 
 interface PeriodProviderWrapperProps {
   initialPeriod: MinimalPeriod | null;
-  activePeriodId: string | undefined;
   children: ReactNode;
 }
 
 export function PeriodProviderWrapper({
   initialPeriod,
-  activePeriodId,
   children,
 }: PeriodProviderWrapperProps) {
   return (
-    <PeriodProvider initialPeriod={initialPeriod} activePeriodId={activePeriodId}>
+    <PeriodProvider initialPeriod={initialPeriod}>
       {children}
     </PeriodProvider>
   );

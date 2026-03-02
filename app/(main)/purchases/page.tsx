@@ -10,9 +10,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Content } from './content';
 
 export default function PurchasesPage() {
-  const { activeDesignation } = useDesignation();
+  const { selectedDesignation } = useDesignation();
 
-  if (!activeDesignation) redirect('/designation');
+  if (!selectedDesignation) redirect('/designation');
 
   return (
     <Suspense
@@ -24,8 +24,8 @@ export default function PurchasesPage() {
       }
     >
       <Content
-        designationId={activeDesignation.id}
-        designationName={`${activeDesignation.name} · DN${activeDesignation.code}`}
+        designationId={selectedDesignation.id}
+        designationName={`${selectedDesignation.name} · DN${selectedDesignation.code}`}
       />
     </Suspense>
   );

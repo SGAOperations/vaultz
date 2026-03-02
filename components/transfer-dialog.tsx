@@ -11,7 +11,7 @@ import { ArrowLeftRight, Loader2, TriangleAlert } from 'lucide-react';
 import { z } from 'zod/v4';
 
 import { createTransfer } from '@/prisma/services/transfer';
-import { getAllYears } from '@/prisma/services/period';
+import { getAllYears, getActiveYear } from '@/prisma/services/period';
 
 import { CategoryWithAvailableAmountAndYears } from '@/lib/types';
 import { formatNumber, handleError, isError } from '@/lib/utils';
@@ -62,12 +62,19 @@ export function TransferDialog({
   categories: CategoryWithAvailableAmountAndYears[];
   trigger?: React.ReactNode;
 }) {
-  const { activeYearId, selectedYear } = useYear();
+  const { selectedYear } = useYear();
 
   const { data: years = [] } = useQuery({
     queryKey: ['years'],
     queryFn: getAllYears,
   });
+
+  const { data: activeYear } = useQuery({
+    queryKey: ['active-year'],
+    queryFn: getActiveYear,
+  });
+
+  const activeYearId = activeYear?.id;
   const router = useRouter();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);

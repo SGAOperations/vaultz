@@ -6,7 +6,7 @@ import { usePeriod } from '@/contexts/PeriodContext';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronsUpDown } from 'lucide-react';
 
-import { getAllPeriods } from '@/prisma/services/period';
+import { getActivePeriod, getAllPeriods } from '@/prisma/services/period';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -23,11 +23,16 @@ const ALLOCATION_PATHS = ['/allocation-groups', '/allocations'];
 
 export function PeriodSwitcher() {
   const pathname = usePathname();
-  const { activePeriodId, selectedPeriod, setSelectedPeriod } = usePeriod();
+  const { selectedPeriod, setSelectedPeriod } = usePeriod();
 
   const { data: periods = [] } = useQuery({
     queryKey: ['periods'],
     queryFn: getAllPeriods,
+  });
+
+  const { data: activePeriod } = useQuery({
+    queryKey: ['active-period'],
+    queryFn: getActivePeriod,
   });
 
   const isAllocationPage = ALLOCATION_PATHS.some((path) =>
@@ -59,7 +64,7 @@ export function PeriodSwitcher() {
           {periods.map((period) => (
             <DropdownMenuRadioItem key={period.id} value={period.id}>
               {period.name}
-              {period.id === activePeriodId && (
+              {period.id === activePeriod?.id && (
                 <span className="text-muted-foreground ml-1 text-xs">
                   (Active)
                 </span>

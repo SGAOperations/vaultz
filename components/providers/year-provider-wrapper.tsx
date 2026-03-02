@@ -11,17 +11,15 @@ interface MinimalYear {
 
 interface YearProviderWrapperProps {
   initialYear: MinimalYear | null;
-  activeYearId: string | undefined;
   children: ReactNode;
 }
 
 export function YearProviderWrapper({
   initialYear,
-  activeYearId,
   children,
 }: YearProviderWrapperProps) {
   return (
-    <YearProvider initialYear={initialYear} activeYearId={activeYearId}>
+    <YearProvider initialYear={initialYear}>
       {children}
     </YearProvider>
   );

@@ -80,7 +80,7 @@ export function YearDialog({
   const [createdYear, setCreatedYear] = useState<Year | null>(null);
   const [loadingBudgets, setLoadingBudgets] = useState(false);
 
-  const { activeDesignation } = useDesignation();
+  const { selectedDesignation } = useDesignation();
   const queryClient = useQueryClient();
 
   const { data: years = [] } = useQuery({
@@ -124,13 +124,13 @@ export function YearDialog({
 
   // Load categories when the RESET budget step opens
   useEffect(() => {
-    if (step !== 'budgets' || !createdYear || !activeDesignation) return;
+    if (step !== 'budgets' || !createdYear || !selectedDesignation) return;
     let cancelled = false;
 
     async function load() {
-      if (!createdYear || !activeDesignation) return;
+      if (!createdYear || !selectedDesignation) return;
       const categories = await getCategoriesByDesignation({
-        designationId: activeDesignation.id,
+        designationId: selectedDesignation.id,
       });
       if (cancelled) return;
       replace(
@@ -143,7 +143,7 @@ export function YearDialog({
     return () => {
       cancelled = true;
     };
-  }, [step, createdYear, activeDesignation, replace]);
+  }, [step, createdYear, selectedDesignation, replace]);
 
   async function onYearSubmit(data: YearFormData) {
     if (year) {
@@ -174,12 +174,12 @@ export function YearDialog({
     const newYear = result;
     setCreatedYear(newYear);
 
-    if (!activeDesignation) {
+    if (!selectedDesignation) {
       handleOpenChange(false);
       return;
     }
 
-    if (activeDesignation.budgetResetBehavior === 'ROLLOVER') {
+    if (selectedDesignation.budgetResetBehavior === 'ROLLOVER') {
       // Automatic: calculate and save budgets without any user input
       const newYearStart = new Date(newYear.startDate);
       const prevYear = [...years]
@@ -192,7 +192,7 @@ export function YearDialog({
       let budgets: Array<{ categoryId: string; amount: number }>;
       if (prevYear) {
         const suggestions = await getNewYearSuggestions({
-          designationId: activeDesignation.id,
+          designationId: selectedDesignation.id,
           prevYearId: prevYear.id,
         });
         budgets = suggestions.map((s) => ({
@@ -201,14 +201,14 @@ export function YearDialog({
         }));
       } else {
         const categories = await getCategoriesByDesignation({
-          designationId: activeDesignation.id,
+          designationId: selectedDesignation.id,
         });
         budgets = categories.map((c) => ({ categoryId: c.id, amount: 0 }));
       }
 
       await handleError(
         setYearBudgetsForDesignation({
-          designationId: activeDesignation.id,
+          designationId: selectedDesignation.id,
           yearId: newYear.id,
           budgets,
         }),
@@ -232,11 +232,11 @@ export function YearDialog({
   }
 
   async function onResetSubmit(data: ResetBudgetFormData) {
-    if (!createdYear || !activeDesignation) return;
+    if (!createdYear || !selectedDesignation) return;
 
     const result = await handleError(
       setYearBudgetsForDesignation({
-        designationId: activeDesignation.id,
+        designationId: selectedDesignation.id,
         yearId: createdYear.id,
         budgets: data.entries.map((e) => ({
           categoryId: e.categoryId,

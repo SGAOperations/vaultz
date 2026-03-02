@@ -9,17 +9,17 @@ import { PageHeader } from '@/components/page-header';
 import { Content } from './content';
 
 export default function TransfersPage() {
-  const { activeDesignation } = useDesignation();
+  const { selectedDesignation } = useDesignation();
 
-  if (!activeDesignation) redirect('/designation');
+  if (!selectedDesignation) redirect('/designation');
 
   return (
     <div className="flex w-full flex-col">
       <PageHeader
         title="Transfer History"
-        description={`${activeDesignation.name} · DN${activeDesignation.code}`}
+        description={`${selectedDesignation.name} · DN${selectedDesignation.code}`}
       />
-      <Content designationId={activeDesignation.id} />
+      <Content designationId={selectedDesignation.id} />
     </div>
   );
 }

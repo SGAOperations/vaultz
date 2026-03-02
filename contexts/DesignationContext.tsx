@@ -14,8 +14,8 @@ export interface MinimalDesignation {
 }
 
 interface DesignationContextType {
-  activeDesignation: MinimalDesignation | null;
-  setDesignation: (designation: MinimalDesignation) => void;
+  selectedDesignation: MinimalDesignation | null;
+  setSelectedDesignation: (designation: MinimalDesignation) => void;
 }
 
 const DesignationContext = createContext<DesignationContextType | undefined>(
@@ -32,22 +32,22 @@ export function DesignationProvider({
   children,
 }: DesignationProviderProps) {
   const queryClient = useQueryClient();
-  const [activeDesignation, setActiveDesignation] =
+  const [selectedDesignation, setSelectedDesignationState] =
     useState<MinimalDesignation | null>(initialDesignation);
 
-  const setDesignation = (designation: MinimalDesignation) => {
-    if (activeDesignation) {
+  const setSelectedDesignation = (designation: MinimalDesignation) => {
+    if (selectedDesignation) {
       queryClient.invalidateQueries({
         predicate: (query) =>
           Array.isArray(query.queryKey) &&
-          query.queryKey.includes(activeDesignation.id),
+          query.queryKey.includes(selectedDesignation.id),
       });
     }
-    setActiveDesignation(designation);
+    setSelectedDesignationState(designation);
   };
 
   return (
-    <DesignationContext.Provider value={{ activeDesignation, setDesignation }}>
+    <DesignationContext.Provider value={{ selectedDesignation, setSelectedDesignation }}>
       {children}
     </DesignationContext.Provider>
   );
