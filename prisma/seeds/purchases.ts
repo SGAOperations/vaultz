@@ -346,9 +346,9 @@ export async function seedPurchases(
         receiptCounter++;
 
         const boolFlags = {
-          excludeFromTotal: Math.random() < 0.1,
-          expenseReportCreated: Math.random() < 0.3,
-          reimbursed: Math.random() < 0.2,
+          excludeFromTotal: Math.random() < 0.05,
+          expenseReportCreated: Math.random() < 0.05,
+          reimbursed: Math.random() < 0.05,
         };
 
         allPurchases.push(
