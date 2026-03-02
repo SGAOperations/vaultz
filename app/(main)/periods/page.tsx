@@ -19,7 +19,7 @@ export default async function PeriodsAdminPage() {
     <div className="flex w-full flex-col">
       <PageHeader
         title="Years & Periods"
-        description="Manage fiscal years and their sub-periods · Global"
+        description="Manage fiscal years and their sub-periods"
         actions={
           <YearDialog>
             <Button className="gap-2">

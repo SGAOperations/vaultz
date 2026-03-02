@@ -417,7 +417,7 @@ export function Content({ template }: { template: ProcessTemplateWithSteps }) {
     <div className="flex w-full flex-col">
       <PageHeader
         title={template.name}
-        description={template.description ? `${template.description} · Global` : 'Global'}
+        description={template.description ?? undefined}
         actions={
           <div className="flex gap-2">
             <Link href="/processes">

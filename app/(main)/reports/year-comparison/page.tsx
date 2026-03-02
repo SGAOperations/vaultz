@@ -19,7 +19,7 @@ export default async function YearComparisonPage() {
     <div className="flex w-full flex-col">
       <PageHeader
         title="Year-Over-Year Comparison"
-        description="Compare budget trends, spending patterns, and category performance across fiscal years · Global"
+        description="Compare budget trends, spending patterns, and category performance across fiscal years"
       />
       <YearComparisonReport
         allYears={years.map((y) => ({ id: y.id, name: y.name }))}

@@ -51,7 +51,7 @@ export default async function UserPage({
     <div className="flex w-full flex-col">
       <PageHeader
         title={`${user.first} ${user.last}`}
-        description="User profile and purchase history · Global"
+        description="User profile and purchase history"
         actions={
           <UserDialog user={user}>
             <Button variant="outline" className="gap-2">
