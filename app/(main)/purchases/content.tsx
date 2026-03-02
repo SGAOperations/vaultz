@@ -6,7 +6,7 @@ import { useCallback, useMemo } from 'react';
 import { useYear } from '@/contexts/YearContext';
 import { useQuery } from '@tanstack/react-query';
 import { SortingState } from '@tanstack/react-table';
-import { ChevronDown, Tag, X } from 'lucide-react';
+import { ChevronDown, Layers, Tag, Wallet, X } from 'lucide-react';
 
 import { getMiscAllocations } from '@/prisma/services/allocation';
 import { getAllAllocationGroups } from '@/prisma/services/allocation-groups';
@@ -41,6 +41,8 @@ export function Content({ designationId, designationName }: ContentProps) {
   const pathname = usePathname();
 
   const categoryId = searchParams.get('category');
+  const allocationGroupId = searchParams.get('allocationGroup');
+  const allocationId = searchParams.get('allocation');
   const sortField = searchParams.get('sort');
   const sortOrder = searchParams.get('order');
 
@@ -64,6 +66,16 @@ export function Content({ designationId, designationName }: ContentProps) {
 
   const handleCategoryChange = useCallback(
     (id: string | null) => updateParams({ category: id }),
+    [updateParams],
+  );
+
+  const handleAllocationGroupChange = useCallback(
+    (id: string | null) => updateParams({ allocationGroup: id }),
+    [updateParams],
+  );
+
+  const handleAllocationChange = useCallback(
+    (id: string | null) => updateParams({ allocation: id }),
     [updateParams],
   );
 
@@ -117,16 +129,49 @@ export function Content({ designationId, designationName }: ContentProps) {
 
   const filteredPurchases = useMemo(() => {
     if (!purchases) return [];
-    if (!categoryId) return purchases;
-    return purchases.filter((p) => p.categoryId === categoryId);
-  }, [purchases, categoryId]);
+    let result = purchases;
+    if (categoryId) result = result.filter((p) => p.categoryId === categoryId);
+    if (allocationGroupId) {
+      const group = allocationGroups?.find((g) => g.id === allocationGroupId);
+      const allocationIds = new Set(group?.allocations.map((a) => a.id) ?? []);
+      result = result.filter(
+        (p) => p.allocationId != null && allocationIds.has(p.allocationId),
+      );
+    }
+    if (allocationId)
+      result = result.filter((p) => p.allocationId === allocationId);
+    return result;
+  }, [purchases, categoryId, allocationGroupId, allocationId, allocationGroups]);
 
   const selectedCategoryName = useMemo(() => {
     if (!categoryId || !categories) return null;
     return categories.find((c) => c.id === categoryId)?.name ?? null;
   }, [categoryId, categories]);
 
+  const selectedAllocationGroupName = useMemo(() => {
+    if (!allocationGroupId || !allocationGroups) return null;
+    return allocationGroups.find((g) => g.id === allocationGroupId)?.name ?? null;
+  }, [allocationGroupId, allocationGroups]);
+
+  const allAllocations = useMemo(() => {
+    const result: { id: string; name: string }[] = [];
+    for (const group of allocationGroups ?? []) {
+      for (const a of group.allocations) result.push({ id: a.id, name: a.name });
+    }
+    for (const a of miscAllocations ?? []) result.push({ id: a.id, name: a.name });
+    return result;
+  }, [allocationGroups, miscAllocations]);
+
+  const selectedAllocationName = useMemo(() => {
+    if (!allocationId) return null;
+    return allAllocations.find((a) => a.id === allocationId)?.name ?? null;
+  }, [allocationId, allAllocations]);
+
+  const hasActiveFilters = !!(categoryId || allocationGroupId || allocationId);
+
   const categoryFilterLabel = selectedCategoryName ?? 'All Categories';
+  const allocationGroupFilterLabel = selectedAllocationGroupName ?? 'All Groups';
+  const allocationFilterLabel = selectedAllocationName ?? 'All Allocations';
 
   return (
     <div className="flex w-full flex-col">
@@ -194,15 +239,83 @@ export function Content({ designationId, designationName }: ContentProps) {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {categoryId && (
+            {allocationGroups && allocationGroups.length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant={allocationGroupId ? 'default' : 'outline'}
+                    size="sm"
+                    className="gap-1.5 rounded-full"
+                  >
+                    <Layers className="size-3.5" />
+                    {allocationGroupFilterLabel}
+                    <ChevronDown className="size-3.5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  <DropdownMenuItem
+                    onClick={() => handleAllocationGroupChange(null)}
+                  >
+                    All Groups
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  {allocationGroups.map((g) => (
+                    <DropdownMenuItem
+                      key={g.id}
+                      onClick={() => handleAllocationGroupChange(g.id)}
+                    >
+                      {g.name}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+
+            {allAllocations.length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant={allocationId ? 'default' : 'outline'}
+                    size="sm"
+                    className="gap-1.5 rounded-full"
+                  >
+                    <Wallet className="size-3.5" />
+                    {allocationFilterLabel}
+                    <ChevronDown className="size-3.5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  <DropdownMenuItem onClick={() => handleAllocationChange(null)}>
+                    All Allocations
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  {allAllocations.map((a) => (
+                    <DropdownMenuItem
+                      key={a.id}
+                      onClick={() => handleAllocationChange(a.id)}
+                    >
+                      {a.name}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+
+            {hasActiveFilters && (
               <Button
                 variant="ghost"
                 size="sm"
                 className="gap-1 rounded-full"
-                onClick={() => handleCategoryChange(null)}
+                onClick={() =>
+                  updateParams({
+                    category: null,
+                    allocationGroup: null,
+                    allocation: null,
+                  })
+                }
               >
                 <X className="size-3" />
-                Clear filter
+                Clear filters
               </Button>
             )}
           </div>
