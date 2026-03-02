@@ -7,12 +7,10 @@ import { useYear } from '@/contexts/YearContext';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Calendar,
-  Check,
   ChevronDown,
   CircleDollarSign,
   Clock,
   DollarSign,
-  FileCheck,
   FileText,
   FolderOpen,
   Loader2,
@@ -764,56 +762,6 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                         </FormItem>
                       )}
                     />
-                    <FormField
-                      control={form.control}
-                      name="expenseReportCreated"
-                      render={({ field }) => (
-                        <FormItem>
-                          <div className="flex items-center gap-3">
-                            <FormControl>
-                              <Checkbox
-                                checked={field.value}
-                                onChange={(e) =>
-                                  field.onChange(e.target.checked)
-                                }
-                              />
-                            </FormControl>
-                            <FormLabel className="!mt-0 cursor-pointer font-normal">
-                              Expense report created
-                            </FormLabel>
-                          </div>
-                          <FormDescription className="text-xs">
-                            Report has been filed
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="reimbursed"
-                      render={({ field }) => (
-                        <FormItem>
-                          <div className="flex items-center gap-3">
-                            <FormControl>
-                              <Checkbox
-                                checked={field.value}
-                                onChange={(e) =>
-                                  field.onChange(e.target.checked)
-                                }
-                              />
-                            </FormControl>
-                            <FormLabel className="!mt-0 cursor-pointer font-normal">
-                              Reimbursed
-                            </FormLabel>
-                          </div>
-                          <FormDescription className="text-xs">
-                            Payment has been received
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
                   </div>
 
                   {/* Advanced collapsible — year override */}
@@ -1044,31 +992,13 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                 </div>
 
                 {/* Selector Status Indicators */}
-                {(purchase!.excludeFromTotal ||
-                  purchase!.expenseReportCreated ||
-                  purchase!.reimbursed) && (
+                {purchase!.excludeFromTotal && (
                   <div className="flex flex-wrap gap-3">
                     {purchase!.excludeFromTotal && (
                       <div className="bg-muted flex items-center gap-2 rounded-full px-4 py-2">
                         <CircleDollarSign className="text-primary size-4" />
                         <span className="text-sm font-semibold">
                           Excluded from Budget
-                        </span>
-                      </div>
-                    )}
-                    {purchase!.expenseReportCreated && (
-                      <div className="bg-muted flex items-center gap-2 rounded-full px-4 py-2">
-                        <FileCheck className="text-primary size-4" />
-                        <span className="text-sm font-semibold">
-                          Expense Report Created
-                        </span>
-                      </div>
-                    )}
-                    {purchase!.reimbursed && (
-                      <div className="bg-muted flex items-center gap-2 rounded-full px-4 py-2">
-                        <Check className="text-primary size-4" />
-                        <span className="text-sm font-semibold">
-                          Reimbursed
                         </span>
                       </div>
                     )}

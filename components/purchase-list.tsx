@@ -19,12 +19,10 @@ import {
   ArrowUp,
   ArrowUpDown,
   Calendar,
-  Check,
   ChevronDown,
   CircleDollarSign,
   DollarSign,
   Download,
-  FileCheck,
   FileText,
   Loader2,
   StickyNote,
@@ -74,7 +72,7 @@ import { EmptyState } from './empty-state';
 import { getStepStatus } from './process-progress';
 import { PurchaseDialog } from './purchase-dialog';
 
-type StatusFilter = 'excludeFromTotal' | 'expenseReportCreated' | 'reimbursed';
+type StatusFilter = 'excludeFromTotal';
 type StepStatusFilter = 'all' | 'completed' | 'in-progress' | 'not-started';
 type TemplateFilter = 'all' | 'none' | string;
 
@@ -84,8 +82,6 @@ const STATUS_FILTERS: {
   Icon: React.ComponentType<{ className?: string }>;
 }[] = [
   { key: 'excludeFromTotal', label: 'Excluded', Icon: CircleDollarSign },
-  { key: 'expenseReportCreated', label: 'Report Filed', Icon: FileCheck },
-  { key: 'reimbursed', label: 'Reimbursed', Icon: Check },
 ];
 
 const STEP_STATUS_OPTIONS: { value: StepStatusFilter; label: string }[] = [
@@ -121,8 +117,6 @@ function exportToCsv(
     'Template',
     'Current Step',
     'Excluded',
-    'Report Filed',
-    'Reimbursed',
   ];
 
   const rows = purchases.map((p) => {
@@ -139,8 +133,6 @@ function exportToCsv(
       proc?.templateName ?? '',
       currentStep?.name ?? '',
       p.excludeFromTotal ? 'Yes' : 'No',
-      p.expenseReportCreated ? 'Yes' : 'No',
-      p.reimbursed ? 'Yes' : 'No',
     ];
   });
 
@@ -461,10 +453,10 @@ export function PurchaseList({
         id: 'status',
         header: 'Status',
         cell: ({ row }) => {
-          const { excludeFromTotal, expenseReportCreated, reimbursed, notes } =
+          const { excludeFromTotal, notes } =
             row.original;
           const hasStatus =
-            excludeFromTotal || expenseReportCreated || reimbursed || notes;
+            excludeFromTotal || notes;
           if (!hasStatus) return null;
           return (
             <div className="flex flex-wrap items-center gap-1.5">
@@ -472,18 +464,6 @@ export function PurchaseList({
                 <div className="bg-muted flex items-center gap-1 rounded-full px-2 py-0.5">
                   <CircleDollarSign className="size-3" />
                   <span className="text-xs">Excluded</span>
-                </div>
-              )}
-              {expenseReportCreated && (
-                <div className="bg-muted flex items-center gap-1 rounded-full px-2 py-0.5">
-                  <FileCheck className="size-3" />
-                  <span className="text-xs">Report Filed</span>
-                </div>
-              )}
-              {reimbursed && (
-                <div className="bg-muted flex items-center gap-1 rounded-full px-2 py-0.5">
-                  <Check className="size-3" />
-                  <span className="text-xs">Reimbursed</span>
                 </div>
               )}
               {notes && (
