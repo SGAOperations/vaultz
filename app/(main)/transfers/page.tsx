@@ -8,8 +8,8 @@ import { Plus } from 'lucide-react';
 
 import { getCategoriesWithAvailableAmount } from '@/prisma/services/category';
 
-import { TransferDialog } from '@/components/transfer-dialog';
 import { PageHeader } from '@/components/page-header';
+import { TransferDialog } from '@/components/transfer-dialog';
 import { Button } from '@/components/ui/button';
 
 import { Content } from './content';
@@ -21,7 +21,8 @@ export default function TransfersPage() {
 
   const { data: categories = [] } = useQuery({
     queryKey: ['categories-with-available', activeDesignation.id],
-    queryFn: () => getCategoriesWithAvailableAmount({ designationId: activeDesignation.id }),
+    queryFn: () =>
+      getCategoriesWithAvailableAmount({ designationId: activeDesignation.id }),
   });
 
   return (
