@@ -5,6 +5,8 @@ import { seedCategories } from './seeds/categories';
 import { seedCategoryYears } from './seeds/categoryYears';
 import { seedDesignations } from './seeds/designations';
 import { seedPeriods } from './seeds/periods';
+import { seedProcessTemplates } from './seeds/processTemplates';
+import { seedPurchaseProcesses } from './seeds/purchaseProcesses';
 import { seedPurchases } from './seeds/purchases';
 import { seedUsers } from './seeds/users';
 import { seedYears } from './seeds/years';
@@ -32,7 +34,16 @@ async function main() {
     allocationGroups,
     periods,
   );
-  await seedPurchases(prisma, categories, allocations, users, years, periods);
+  const purchases = await seedPurchases(
+    prisma,
+    categories,
+    allocations,
+    users,
+    years,
+    periods,
+  );
+  const processTemplates = await seedProcessTemplates(prisma);
+  await seedPurchaseProcesses(prisma, purchases, processTemplates);
 
   console.log('Database seeding completed successfully.');
 }
