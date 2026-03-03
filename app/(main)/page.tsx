@@ -1,7 +1,5 @@
 'use client';
 
-import { redirect } from 'next/navigation';
-
 import { useDesignation } from '@/contexts/DesignationContext';
 import { useYear } from '@/contexts/YearContext';
 
@@ -14,7 +12,7 @@ export default function Home() {
   const { selectedYear } = useYear();
   const { selectedDesignation } = useDesignation();
 
-  if (!selectedDesignation) redirect('/designation');
+  if (!selectedDesignation) return null;
 
   return (
     <div className="flex w-full flex-col">

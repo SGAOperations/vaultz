@@ -1,7 +1,5 @@
 'use client';
 
-import { redirect } from 'next/navigation';
-
 import { useDesignation } from '@/contexts/DesignationContext';
 import { useQuery } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
@@ -17,7 +15,7 @@ import { Content } from './content';
 export default function TransfersPage() {
   const { selectedDesignation } = useDesignation();
 
-  if (!selectedDesignation) redirect('/designation');
+  if (!selectedDesignation) return null;
 
   const { data: categories = [] } = useQuery({
     queryKey: ['categories-with-available', selectedDesignation.id],
