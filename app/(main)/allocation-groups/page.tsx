@@ -26,15 +26,17 @@ export default function AllocationGroups() {
         title="Allocation Groups"
         description={`Organize and manage your budget allocations · DN${selectedDesignation.code}${selectedPeriod ? ` · ${selectedPeriod.name}` : ''}`}
         actions={
-          <CreateAllocationGroupDialog
-            designationId={selectedDesignation.id}
-            trigger={
-              <Button className="gap-2 shadow-sm">
-                <Plus className="size-4" />
-                Create Allocation Group
-              </Button>
-            }
-          />
+          selectedPeriod && (
+            <CreateAllocationGroupDialog
+              designationId={selectedDesignation.id}
+              trigger={
+                <Button className="gap-2 shadow-sm">
+                  <Plus className="size-4" />
+                  Create Allocation Group
+                </Button>
+              }
+            />
+          )
         }
       />
       {!selectedPeriod ? (
