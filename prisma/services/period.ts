@@ -54,15 +54,6 @@ export async function getPeriodsForYear(yearId: string): Promise<Period[]> {
   });
 }
 
-export async function getPeriodById(
-  id: string,
-): Promise<(Period & { year: Year }) | null> {
-  return await prisma.period.findFirst({
-    where: { id, deletedAt: null },
-    include: { year: true },
-  });
-}
-
 export async function getAllPeriods(): Promise<(Period & { year: Year })[]> {
   return await prisma.period.findMany({
     where: { deletedAt: null },
