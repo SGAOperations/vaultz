@@ -136,7 +136,7 @@ export function ContextGuard() {
               <label className="text-sm font-semibold">Fiscal Year</label>
               <Combobox
                 name="fiscal year"
-                value={selectedYear?.id ?? ''}
+                value=''
                 data={[
                   {
                     items: years.map((year) => ({
