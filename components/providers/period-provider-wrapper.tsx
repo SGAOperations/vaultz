@@ -4,22 +4,21 @@ import { ReactNode } from 'react';
 
 import { PeriodProvider } from '@/contexts/PeriodContext';
 
-import { Period } from '@/prisma/client';
+interface MinimalPeriod {
+  id: string;
+  name: string;
+}
 
 interface PeriodProviderWrapperProps {
-  periods: Period[];
-  activePeriodId: string | undefined;
+  initialPeriod: MinimalPeriod | null;
   children: ReactNode;
 }
 
 export function PeriodProviderWrapper({
-  periods,
-  activePeriodId,
+  initialPeriod,
   children,
 }: PeriodProviderWrapperProps) {
   return (
-    <PeriodProvider periods={periods} activePeriodId={activePeriodId}>
-      {children}
-    </PeriodProvider>
+    <PeriodProvider initialPeriod={initialPeriod}>{children}</PeriodProvider>
   );
 }

@@ -8,13 +8,8 @@ import './globals.css';
 
 import { receiptFileRouter } from '@/app/api/uploadthing/core';
 
-import { getDesignations } from '@/prisma/services/designation';
-import {
-  getActivePeriod,
-  getActiveYear,
-  getAllPeriods,
-  getAllYears,
-} from '@/prisma/services/period';
+import { getFirstDesignation } from '@/prisma/services/designation';
+import { getActivePeriod, getActiveYear } from '@/prisma/services/period';
 
 import { cn } from '@/lib/utils';
 
@@ -36,14 +31,19 @@ export const metadata: Metadata = {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const [designations, years, activeYear, periods, activePeriod] =
-    await Promise.all([
-      getDesignations(),
-      getAllYears(),
-      getActiveYear(),
-      getAllPeriods(),
-      getActivePeriod(),
-    ]);
+  const [firstDesignation, activeYear, activePeriod] = await Promise.all([
+    getFirstDesignation(),
+    getActiveYear(),
+    getActivePeriod(),
+  ]);
+
+  const initialDesignation = firstDesignation;
+  const initialYear = activeYear
+    ? { id: activeYear.id, name: activeYear.name }
+    : null;
+  const initialPeriod = activePeriod
+    ? { id: activePeriod.id, name: activePeriod.name }
+    : null;
 
   return (
     <html lang="en">
@@ -55,13 +55,10 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <DesignationProviderWrapper designations={designations}>
-            <YearProviderWrapper years={years} activeYearId={activeYear?.id}>
-              <PeriodProviderWrapper
-                periods={periods}
-                activePeriodId={activePeriod?.id}
-              >
-                <QueryProvider>
+          <QueryProvider>
+            <DesignationProviderWrapper initialDesignation={initialDesignation}>
+              <YearProviderWrapper initialYear={initialYear}>
+                <PeriodProviderWrapper initialPeriod={initialPeriod}>
                   <main className="mx-auto flex w-full flex-col items-center 2xl:w-4/5">
                     <div className="bg-background sticky top-0 z-50 w-full px-3 pt-3">
                       <Header />
@@ -74,10 +71,10 @@ export default async function RootLayout({
                       classNames: { description: 'line-clamp-2' },
                     }}
                   />
-                </QueryProvider>
-              </PeriodProviderWrapper>
-            </YearProviderWrapper>
-          </DesignationProviderWrapper>
+                </PeriodProviderWrapper>
+              </YearProviderWrapper>
+            </DesignationProviderWrapper>
+          </QueryProvider>
         </ThemeProvider>
       </body>
     </html>

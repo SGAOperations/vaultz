@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Controller, FormProvider, useForm, useWatch } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, Loader2 } from 'lucide-react';
 import { z } from 'zod/v4';
 
@@ -60,6 +61,7 @@ export function PeriodDialog({
 }) {
   const [open, setOpen] = useState(false);
   const [pendingData, setPendingData] = useState<FormData | null>(null);
+  const queryClient = useQueryClient();
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -104,6 +106,7 @@ export function PeriodDialog({
         },
       );
       if (!isError(result)) {
+        await queryClient.invalidateQueries({ queryKey: ['periods'] });
         setPendingData(null);
         setOpen(false);
       }
@@ -116,6 +119,7 @@ export function PeriodDialog({
         },
       });
       if (!isError(result)) {
+        await queryClient.invalidateQueries({ queryKey: ['periods'] });
         form.reset();
         setPendingData(null);
         setOpen(false);

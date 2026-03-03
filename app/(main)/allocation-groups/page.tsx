@@ -15,20 +15,19 @@ import { Button } from '@/components/ui/button';
 import { Content } from './content';
 
 export default function AllocationGroups() {
-  const { activeDesignation } = useDesignation();
-  const { periods, selectedPeriod } = usePeriod();
+  const { selectedDesignation } = useDesignation();
+  const { selectedPeriod } = usePeriod();
 
-  if (!activeDesignation) redirect('/designation');
-  if (periods.length === 0) redirect('/periods');
+  if (!selectedDesignation) redirect('/designation');
 
   return (
     <div className="flex w-full flex-col">
       <PageHeader
         title="Allocation Groups"
-        description={`Organize and manage your budget allocations · DN${activeDesignation.code}${selectedPeriod ? ` · ${selectedPeriod.name}` : ''}`}
+        description={`Organize and manage your budget allocations · DN${selectedDesignation.code}${selectedPeriod ? ` · ${selectedPeriod.name}` : ''}`}
         actions={
           <CreateAllocationGroupDialog
-            designationId={activeDesignation.id}
+            designationId={selectedDesignation.id}
             trigger={
               <Button className="gap-2 shadow-sm">
                 <Plus className="size-4" />
@@ -52,7 +51,7 @@ export default function AllocationGroups() {
           }
         />
       ) : (
-        <Content designationId={activeDesignation.id} />
+        <Content designationId={selectedDesignation.id} />
       )}
     </div>
   );

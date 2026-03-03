@@ -6,10 +6,11 @@ import { FormProvider, useForm } from 'react-hook-form';
 
 import { useYear } from '@/contexts/YearContext';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeftRight, Loader2, TriangleAlert } from 'lucide-react';
 import { z } from 'zod/v4';
 
+import { getActiveYear, getAllYears } from '@/prisma/services/period';
 import { createTransfer } from '@/prisma/services/transfer';
 
 import { CategoryWithAvailableAmountAndYears } from '@/lib/types';
@@ -61,7 +62,19 @@ export function TransferDialog({
   categories: CategoryWithAvailableAmountAndYears[];
   trigger?: React.ReactNode;
 }) {
-  const { years, activeYearId, selectedYear } = useYear();
+  const { selectedYear } = useYear();
+
+  const { data: years = [] } = useQuery({
+    queryKey: ['years'],
+    queryFn: getAllYears,
+  });
+
+  const { data: activeYear } = useQuery({
+    queryKey: ['active-year'],
+    queryFn: getActiveYear,
+  });
+
+  const activeYearId = activeYear?.id;
   const router = useRouter();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);

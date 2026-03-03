@@ -11,19 +11,19 @@ import { QuickActionButtons } from '@/components/quick-action-buttons';
 import { Content } from './content';
 
 export default function Home() {
-  const { activeDesignation } = useDesignation();
   const { selectedYear } = useYear();
+  const { selectedDesignation } = useDesignation();
 
-  if (!activeDesignation) redirect('/designation');
+  if (!selectedDesignation) redirect('/designation');
 
   return (
     <div className="flex w-full flex-col">
       <PageHeader
-        title={activeDesignation.name}
-        description={`Dashboard · DN${activeDesignation.code}${selectedYear ? ` · ${selectedYear.name}` : ''}`}
-        actions={<QuickActionButtons designationId={activeDesignation.id} />}
+        title={selectedDesignation.name}
+        description={`Dashboard · DN${selectedDesignation.code}${selectedYear ? ` · ${selectedYear.name}` : ''}`}
+        actions={<QuickActionButtons designationId={selectedDesignation.id} />}
       />
-      <Content designationId={activeDesignation.id} />
+      <Content designationId={selectedDesignation.id} />
     </div>
   );
 }

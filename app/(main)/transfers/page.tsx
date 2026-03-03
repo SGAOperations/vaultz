@@ -15,21 +15,23 @@ import { Button } from '@/components/ui/button';
 import { Content } from './content';
 
 export default function TransfersPage() {
-  const { activeDesignation } = useDesignation();
+  const { selectedDesignation } = useDesignation();
 
-  if (!activeDesignation) redirect('/designation');
+  if (!selectedDesignation) redirect('/designation');
 
   const { data: categories = [] } = useQuery({
-    queryKey: ['categories-with-available', activeDesignation.id],
+    queryKey: ['categories-with-available', selectedDesignation.id],
     queryFn: () =>
-      getCategoriesWithAvailableAmount({ designationId: activeDesignation.id }),
+      getCategoriesWithAvailableAmount({
+        designationId: selectedDesignation.id,
+      }),
   });
 
   return (
     <div className="flex w-full flex-col">
       <PageHeader
         title="Transfer History"
-        description={`${activeDesignation.name} · DN${activeDesignation.code}`}
+        description={`${selectedDesignation.name} · DN${selectedDesignation.code}`}
         actions={
           <TransferDialog
             categories={categories}
@@ -42,7 +44,7 @@ export default function TransfersPage() {
           />
         }
       />
-      <Content designationId={activeDesignation.id} />
+      <Content designationId={selectedDesignation.id} />
     </div>
   );
 }
