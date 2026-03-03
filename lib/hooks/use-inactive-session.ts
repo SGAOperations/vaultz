@@ -1,11 +1,10 @@
 'use client';
 
+import { usePeriod } from '@/contexts/PeriodContext';
+import { useYear } from '@/contexts/YearContext';
 import { useQuery } from '@tanstack/react-query';
 
 import { getActivePeriod, getActiveYear } from '@/prisma/services/period';
-
-import { usePeriod } from '@/contexts/PeriodContext';
-import { useYear } from '@/contexts/YearContext';
 
 export function useInactiveSession() {
   const { selectedYear } = useYear();
