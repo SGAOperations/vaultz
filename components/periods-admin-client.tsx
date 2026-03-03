@@ -4,10 +4,14 @@ import { useState } from 'react';
 
 import { AlertTriangle, Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
 
+import { useQueryClient } from '@tanstack/react-query';
+
 import { Period, Year } from '@/prisma/client';
 import { deletePeriod, deleteYear } from '@/prisma/services/period';
 
 import { handleError } from '@/lib/utils';
+
+import { useYear } from '@/contexts/YearContext';
 
 import { CopyAllocationsDialog } from '@/components/copy-allocations-dialog';
 import { PeriodDialog } from '@/components/period-dialog';
@@ -119,6 +123,8 @@ function YearCard({
     previousPeriodName: string;
   } | null>(null);
   const active = isActive(year.startDate, year.endDate);
+  const { selectedYear, setSelectedYear } = useYear();
+  const queryClient = useQueryClient();
 
   async function handleDelete() {
     setDeleting(true);
@@ -127,6 +133,14 @@ function YearCard({
         loading: 'Deleting year...',
         success: 'Year deleted',
         error: 'Failed to delete year',
+      },
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['years'] });
+        if (selectedYear?.id === year.id) {
+          const remaining = allYears.filter((y) => y.id !== year.id);
+          const next = remaining[0] ?? null;
+          setSelectedYear(next ? { id: next.id, name: next.name } : null);
+        }
       },
     });
     setDeleting(false);

@@ -11,7 +11,7 @@ interface MinimalYear {
 
 interface YearContextType {
   selectedYear: MinimalYear | null;
-  setSelectedYear: (year: MinimalYear) => void;
+  setSelectedYear: (year: MinimalYear | null) => void;
 }
 
 const YearContext = createContext<YearContextType | undefined>(undefined);
@@ -27,7 +27,7 @@ export function YearProvider({ initialYear, children }: YearProviderProps) {
     initialYear,
   );
 
-  const setSelectedYear = (year: MinimalYear) => {
+  const setSelectedYear = (year: MinimalYear | null) => {
     if (selectedYear) {
       queryClient.invalidateQueries({
         predicate: (query) =>
