@@ -46,6 +46,7 @@ const newSchema = z.object({
     .regex(/^\d{3}$/, 'Must be 3 numeric digits'),
   ledgerCode: z.string().length(4, 'Must be exactly 4 characters long'),
   name: z.string().min(1, 'Please enter a category name'),
+  amount: z.coerce.number<number>().min(0, 'Must be ≥ 0'),
 });
 
 type NewFormData = z.infer<typeof newSchema>;
@@ -69,13 +70,14 @@ export function CreateCategoryDialog({
     { id: string; code: string; ledgerCode: string; name: string }[]
   >([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState('');
+  const [existingAmount, setExistingAmount] = useState('0');
   const [isAddingExisting, setIsAddingExisting] = useState(false);
 
   const queryClient = useQueryClient();
 
   const form = useForm<NewFormData>({
     resolver: zodResolver(newSchema),
-    defaultValues: { designationId, code: '', ledgerCode: '', name: '' },
+    defaultValues: { designationId, code: '', ledgerCode: '', name: '', amount: 0 },
   });
 
   const isSubmitting = form.formState.isSubmitting;
@@ -90,21 +92,32 @@ export function CreateCategoryDialog({
   function handleOpenChange(newOpen: boolean) {
     setOpen(newOpen);
     if (!newOpen) {
-      form.reset({ designationId, code: '', ledgerCode: '', name: '' });
+      form.reset({ designationId, code: '', ledgerCode: '', name: '', amount: 0 });
       setTab('new');
       setSelectedCategoryId('');
+      setExistingAmount('0');
       setExistingCategories([]);
     }
   }
 
   async function onSubmitNew(data: NewFormData) {
-    const result = await handleError(createCategory(data), {
-      toast: {
-        loading: 'Creating spending category...',
-        success: 'Spending category created successfully',
-        error: 'Failed to create spending category',
+    const result = await handleError(
+      createCategory({
+        designationId: data.designationId,
+        code: data.code,
+        ledgerCode: data.ledgerCode,
+        name: data.name,
+        yearId,
+        amount: data.amount,
+      }),
+      {
+        toast: {
+          loading: 'Creating spending category...',
+          success: 'Spending category created successfully',
+          error: 'Failed to create spending category',
+        },
       },
-    });
+    );
     if (!isError(result)) {
       await queryClient.invalidateQueries({ queryKey: ['categories-budget'] });
       handleOpenChange(false);
@@ -115,7 +128,11 @@ export function CreateCategoryDialog({
     if (!yearId || !selectedCategoryId) return;
     setIsAddingExisting(true);
     const result = await handleError(
-      updateCategoryYearBudget({ categoryId: selectedCategoryId, yearId, amount: 0 }),
+      updateCategoryYearBudget({
+        categoryId: selectedCategoryId,
+        yearId,
+        amount: Number(existingAmount) || 0,
+      }),
       {
         toast: {
           loading: 'Adding category to year...',
@@ -154,6 +171,7 @@ export function CreateCategoryDialog({
               <NewCategoryForm
                 form={form}
                 isSubmitting={isSubmitting}
+                yearName={yearName}
                 onSubmit={onSubmitNew}
                 onCancel={() => handleOpenChange(false)}
               />
@@ -161,30 +179,46 @@ export function CreateCategoryDialog({
 
             <TabsContent value="existing">
               <div className="space-y-6">
-                <div className="space-y-2">
-                  <p className="text-muted-foreground text-sm">
-                    Select a category that exists in another year to add it to{' '}
-                    <span className="font-medium">{yearName}</span>.
-                  </p>
-                  <Combobox
-                    name="category"
-                    data={[
-                      {
-                        items: existingCategories.map((c) => ({
-                          value: c.id,
-                          label: `SC${c.code} — ${c.name}`,
-                        })),
-                      },
-                    ]}
-                    value={selectedCategoryId}
-                    onChange={setSelectedCategoryId}
-                    disabled={existingCategories.length === 0}
-                  />
-                  {existingCategories.length === 0 && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
                     <p className="text-muted-foreground text-sm">
-                      All categories are already in {yearName}.
+                      Select a category that exists in another year to add it to{' '}
+                      <span className="font-medium">{yearName}</span>.
                     </p>
-                  )}
+                    <Combobox
+                      name="category"
+                      data={[
+                        {
+                          items: existingCategories.map((c) => ({
+                            value: c.id,
+                            label: `SC${c.code} — ${c.name}`,
+                          })),
+                        },
+                      ]}
+                      value={selectedCategoryId}
+                      onChange={setSelectedCategoryId}
+                      disabled={existingCategories.length === 0}
+                    />
+                    {existingCategories.length === 0 && (
+                      <p className="text-muted-foreground text-sm">
+                        All categories are already in {yearName}.
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">
+                      Budget for {yearName}
+                    </label>
+                    <Input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      placeholder="0.00"
+                      value={existingAmount}
+                      onChange={(e) => setExistingAmount(e.target.value)}
+                      disabled={!selectedCategoryId}
+                    />
+                  </div>
                 </div>
                 <div className="flex gap-2">
                   <Button
@@ -225,11 +259,13 @@ export function CreateCategoryDialog({
 function NewCategoryForm({
   form,
   isSubmitting,
+  yearName,
   onSubmit,
   onCancel,
 }: {
   form: ReturnType<typeof useForm<NewFormData>>;
   isSubmitting: boolean;
+  yearName?: string;
   onSubmit: (data: NewFormData) => Promise<void>;
   onCancel: () => void;
 }) {
@@ -281,6 +317,27 @@ function NewCategoryForm({
             </FormItem>
           )}
         />
+        {yearName && (
+          <FormField
+            control={form.control}
+            name="amount"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Budget for {yearName}</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    placeholder="0.00"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
         <div className="flex gap-2">
           <Button
             type="button"
