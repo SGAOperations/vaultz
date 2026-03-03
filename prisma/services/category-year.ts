@@ -34,6 +34,24 @@ export type CategoryBudgetAcrossYears = {
   yearBudgets: YearBudgetEntry[];
 };
 
+export async function getCategoriesNotInYear({
+  designationId,
+  yearId,
+}: {
+  designationId: string;
+  yearId: string;
+}): Promise<{ id: string; code: string; ledgerCode: string; name: string }[]> {
+  return prisma.category.findMany({
+    where: {
+      designationId,
+      deletedAt: null,
+      categoryYears: { none: { yearId, deletedAt: null } },
+    },
+    select: { id: true, code: true, ledgerCode: true, name: true },
+    orderBy: { code: 'asc' },
+  });
+}
+
 export async function getCategoriesWithBudgetForYear({
   designationId,
   yearId,
@@ -42,7 +60,11 @@ export async function getCategoriesWithBudgetForYear({
   yearId: string;
 }): Promise<CategoryBudgetForYear[]> {
   const categories = await prisma.category.findMany({
-    where: { designationId, deletedAt: null },
+    where: {
+      designationId,
+      deletedAt: null,
+      categoryYears: { some: { yearId, deletedAt: null } },
+    },
     include: {
       categoryYears: { where: { yearId, deletedAt: null } },
       purchases: {
