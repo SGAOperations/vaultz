@@ -54,12 +54,6 @@ export default async function AllocationGroup({
         description={`${allocationGroup.designation.name} · DN${allocationGroup.designation.code}`}
         actions={
           <div className="flex gap-2">
-            <Link href={`/purchases?allocationGroup=${allocationGroupId}`}>
-              <Button variant="outline" className="gap-2">
-                <ShoppingCart className="size-4" />
-                View Purchases
-              </Button>
-            </Link>
             <CreatePurchaseDialog
               users={users}
               categories={categories}
@@ -67,6 +61,12 @@ export default async function AllocationGroup({
               miscAllocations={miscAllocations}
               processTemplates={processTemplates}
             />
+            <Link href={`/purchases?allocationGroup=${allocationGroupId}`}>
+              <Button variant="outline" className="gap-2">
+                <ShoppingCart className="size-4" />
+                View Purchases
+              </Button>
+            </Link>
             <CreateAllocationDialog
               trigger={
                 <Button variant="outline" className="gap-2">
