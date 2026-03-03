@@ -1,4 +1,4 @@
-import { Purchase, PrismaClient, PurchaseProcess } from '../client';
+import { PrismaClient, Purchase, PurchaseProcess } from '../client';
 import { SeededProcessTemplate } from './processTemplates';
 
 function randomPick<T>(arr: T[]): T {
