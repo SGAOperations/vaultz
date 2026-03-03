@@ -76,12 +76,12 @@ export function Content({ designationId, designationName }: ContentProps) {
     queryFn: () => getCategoriesWithAvailableAmount({ designationId }),
   });
 
-  const { data: allocationGroups } = useQuery({
+  const { data: allocationGroups, isLoading: allocationGroupsLoading } = useQuery({
     queryKey: ['allocation-groups', designationId, selectedYear?.id],
     queryFn: () => getAllAllocationGroups(designationId, undefined, selectedYear?.id),
   });
 
-  const { data: miscAllocations } = useQuery({
+  const { data: miscAllocations, isLoading: miscAllocationsLoading } = useQuery({
     queryKey: ['misc-allocations', designationId, selectedYear?.id],
     queryFn: () => getMiscAllocations(designationId, undefined, selectedYear?.id),
   });
@@ -154,13 +154,6 @@ export function Content({ designationId, designationName }: ContentProps) {
           message="No fiscal year selected"
           description="Add a fiscal year in the Periods section to view purchases"
         />
-      ) : purchasesLoading ? (
-        <div className="flex flex-col gap-3">
-          <div className="flex gap-2">
-            <Skeleton className="h-9 w-44" />
-          </div>
-          <Skeleton className="h-64 w-full rounded-lg" />
-        </div>
       ) : (
         <div className="flex flex-col gap-3">
           <div className="flex flex-wrap items-center gap-2">
@@ -194,13 +187,14 @@ export function Content({ designationId, designationName }: ContentProps) {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {allocationGroups && allocationGroups.length > 0 && (
+            {(allocationGroupsLoading || (allocationGroups && allocationGroups.length > 0)) && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant={allocationGroupId ? 'default' : 'outline'}
                     size="sm"
                     className="gap-1.5 rounded-full"
+                    disabled={allocationGroupsLoading}
                   >
                     <Layers className="size-3.5" />
                     {allocationGroupFilterLabel}
@@ -211,8 +205,8 @@ export function Content({ designationId, designationName }: ContentProps) {
                   <DropdownMenuItem onClick={() => setAllocationGroupId(null)}>
                     All Allocation Groups
                   </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  {allocationGroups.map((g) => (
+                  {allocationGroups && allocationGroups.length > 0 && <DropdownMenuSeparator />}
+                  {allocationGroups?.map((g) => (
                     <DropdownMenuItem
                       key={g.id}
                       onClick={() => setAllocationGroupId(g.id)}
@@ -224,13 +218,14 @@ export function Content({ designationId, designationName }: ContentProps) {
               </DropdownMenu>
             )}
 
-            {allAllocations.length > 0 && (
+            {(allocationGroupsLoading || miscAllocationsLoading || allAllocations.length > 0) && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant={allocationId ? 'default' : 'outline'}
                     size="sm"
                     className="gap-1.5 rounded-full"
+                    disabled={miscAllocationsLoading || allocationGroupsLoading}
                   >
                     <Wallet className="size-3.5" />
                     {allocationFilterLabel}
@@ -241,7 +236,7 @@ export function Content({ designationId, designationName }: ContentProps) {
                   <DropdownMenuItem onClick={() => setAllocationId(null)}>
                     All Allocations
                   </DropdownMenuItem>
-                  <DropdownMenuSeparator />
+                  {allAllocations.length > 0 && <DropdownMenuSeparator />}
                   {allAllocations.map((a) => (
                     <DropdownMenuItem
                       key={a.id}
@@ -271,16 +266,20 @@ export function Content({ designationId, designationName }: ContentProps) {
             )}
           </div>
 
-          <PurchaseList
-            purchases={filteredPurchases}
-            users={users ?? []}
-            categories={categories ?? []}
-            allocationGroups={allocationGroups ?? []}
-            miscAllocations={miscAllocations ?? []}
-            processTemplates={processTemplates ?? []}
-            sorting={sorting}
-            onSortingChange={handleSortingChange}
-          />
+          {purchasesLoading ? (
+            <Skeleton className="h-64 w-full rounded-lg" />
+          ) : (
+            <PurchaseList
+              purchases={filteredPurchases}
+              users={users ?? []}
+              categories={categories ?? []}
+              allocationGroups={allocationGroups ?? []}
+              miscAllocations={miscAllocations ?? []}
+              processTemplates={processTemplates ?? []}
+              sorting={sorting}
+              onSortingChange={handleSortingChange}
+            />
+          )}
         </div>
       )}
     </div>
