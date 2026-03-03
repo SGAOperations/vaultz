@@ -43,7 +43,7 @@ export default async function RootLayout({
     ? { id: activeYear.id, name: activeYear.name }
     : null;
   const initialPeriod = activePeriod
-    ? { id: activePeriod.id, name: activePeriod.name }
+    ? { id: activePeriod.id, name: activePeriod.name, yearName: activePeriod.year.name }
     : null;
 
   return (

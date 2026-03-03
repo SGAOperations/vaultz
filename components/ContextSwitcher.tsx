@@ -137,15 +137,15 @@ export function ContextSwitcher() {
                       items: periods.map((p) => ({
                         label:
                           p.id === activePeriod?.id
-                            ? `${p.name} (Active)`
-                            : p.name,
+                            ? `${p.year.name} · ${p.name} (Active)`
+                            : `${p.year.name} · ${p.name}`,
                         value: p.id,
                       })),
                     },
                   ]}
                   onChange={(value) => {
                     const p = periods.find((x) => x.id === value);
-                    if (p) setSelectedPeriod({ id: p.id, name: p.name });
+                    if (p) setSelectedPeriod({ id: p.id, name: p.name, yearName: p.year.name });
                   }}
                 />
               </div>

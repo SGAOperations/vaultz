@@ -88,7 +88,7 @@ export async function getAllocationByIdWithStats({
     where: { id },
     include: {
       designation: true,
-      period: true,
+      period: { include: { year: true } },
       purchases: {
         orderBy: [{ purchasedAt: 'desc' }, { createdAt: 'desc' }],
         include: { user: true },

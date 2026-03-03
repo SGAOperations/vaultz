@@ -33,7 +33,7 @@ export default async function Allocation({
     <div className="flex w-full flex-col">
       <PageHeader
         title={allocation.name}
-        description={`DN${allocation.designation.code} · ${allocation.period.name}`}
+        description={`DN${allocation.designation.code} · ${allocation.period.year.name} · ${allocation.period.name}`}
         actions={
           <CreatePurchaseDialog
             users={users}

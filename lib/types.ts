@@ -61,7 +61,7 @@ export type AllocationWithStats = AllocationWithPurchases & {
 
 export type AllocationWithContext = AllocationWithStats & {
   designation: Designation;
-  period: Period;
+  period: Period & { year: Year };
 };
 
 export type AllocationGroupWithAllocations = AllocationGroup & {
