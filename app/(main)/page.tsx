@@ -12,7 +12,7 @@ export default function Home() {
   const { selectedYear } = useYear();
   const { selectedDesignation } = useDesignation();
 
-  if (!selectedDesignation) return null;
+  if (!selectedDesignation || !selectedYear) return null;
 
   return (
     <div className="flex w-full flex-col">
