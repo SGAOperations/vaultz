@@ -20,6 +20,7 @@ import {
   StickyNote,
   Tag,
   Trash2,
+  TriangleAlert,
   User as UserIcon,
   X,
 } from 'lucide-react';
@@ -422,7 +423,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
           className={
             isEditing
               ? 'flex max-h-[90vh] w-2/3 flex-col sm:max-w-full'
-              : 'sm:max-w-full md:w-1/2'
+              : 'flex max-h-[90vh] flex-col sm:max-w-full md:w-1/2'
           }
         >
           <DialogHeader>
@@ -446,6 +447,17 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                 className="flex flex-col overflow-hidden"
               >
                 <div className="flex-1 space-y-8 overflow-y-auto pr-1 pb-6">
+                  {isCreateMode &&
+                    watchedYearId &&
+                    watchedYearId !== activeYearId && (
+                      <div className="border-warning/30 bg-warning/10 text-warning flex items-start gap-2 rounded-lg border p-3 text-sm">
+                        <TriangleAlert className="mt-0.5 size-4 shrink-0" />
+                        <p>
+                          You are creating a purchase in a non-active fiscal
+                          year. Please confirm this is intentional.
+                        </p>
+                      </div>
+                    )}
                   <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                     <FormField
                       control={form.control}
@@ -879,7 +891,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
           ) : (
             <>
               {/* Main Purchase Information with prominent badges */}
-              <div className="space-y-6">
+              <div className="flex-1 space-y-6 overflow-y-auto pr-1">
                 {/* Primary Info - Amount and Description */}
                 <div className="flex flex-wrap gap-3">
                   <div className="bg-primary/10 ring-primary/20 flex items-center gap-3 rounded-lg px-4 py-3 ring-1">

@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
 
 import { useDesignation } from '@/contexts/DesignationContext';
 import { usePeriod } from '@/contexts/PeriodContext';
@@ -18,7 +17,7 @@ export default function AllocationGroups() {
   const { selectedDesignation } = useDesignation();
   const { selectedPeriod } = usePeriod();
 
-  if (!selectedDesignation) redirect('/designation');
+  if (!selectedDesignation) return null;
 
   return (
     <div className="flex w-full flex-col">
@@ -26,15 +25,17 @@ export default function AllocationGroups() {
         title="Allocation Groups"
         description={`Organize and manage your budget allocations · DN${selectedDesignation.code}${selectedPeriod ? ` · ${selectedPeriod.name}` : ''}`}
         actions={
-          <CreateAllocationGroupDialog
-            designationId={selectedDesignation.id}
-            trigger={
-              <Button className="gap-2 shadow-sm">
-                <Plus className="size-4" />
-                Create Allocation Group
-              </Button>
-            }
-          />
+          selectedPeriod && (
+            <CreateAllocationGroupDialog
+              designationId={selectedDesignation.id}
+              trigger={
+                <Button className="gap-2 shadow-sm">
+                  <Plus className="size-4" />
+                  Create Allocation Group
+                </Button>
+              }
+            />
+          )
         }
       />
       {!selectedPeriod ? (

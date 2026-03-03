@@ -6,15 +6,12 @@ import { useDesignation } from '@/contexts/DesignationContext';
 import { usePeriod } from '@/contexts/PeriodContext';
 import { useYear } from '@/contexts/YearContext';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronsUpDown } from 'lucide-react';
+import { ChevronsUpDown, TriangleAlert } from 'lucide-react';
 
 import { getDesignations } from '@/prisma/services/designation';
-import {
-  getActivePeriod,
-  getActiveYear,
-  getAllPeriods,
-  getAllYears,
-} from '@/prisma/services/period';
+import { getAllPeriods, getAllYears } from '@/prisma/services/period';
+
+import { useInactiveSession } from '@/lib/hooks/use-inactive-session';
 
 import { Button } from '@/components/ui/button';
 import { Combobox } from '@/components/ui/combobox';
@@ -46,15 +43,7 @@ export function ContextSwitcher() {
     queryFn: getAllYears,
   });
 
-  const { data: activeYear } = useQuery({
-    queryKey: ['active-year'],
-    queryFn: getActiveYear,
-  });
-
-  const { data: activePeriod } = useQuery({
-    queryKey: ['active-period'],
-    queryFn: getActivePeriod,
-  });
+  const { isInactiveSession, activeYear, activePeriod } = useInactiveSession();
 
   // Use fresh data from query for display, falling back to context state
   const selectedDesignationName =
@@ -88,7 +77,11 @@ export function ContextSwitcher() {
             {[selectedYearName, selectedPeriodName].filter(Boolean).join(' · ')}
           </span>
         </div>
-        <ChevronsUpDown className="text-muted-foreground size-3.5 shrink-0" />
+        {isInactiveSession ? (
+          <TriangleAlert className="text-warning size-3.5 shrink-0" />
+        ) : (
+          <ChevronsUpDown className="text-muted-foreground size-3.5 shrink-0" />
+        )}
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
