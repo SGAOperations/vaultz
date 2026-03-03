@@ -114,12 +114,14 @@ export async function getAllocationByIdWithStats({
 export async function getMiscAllocations(
   designationId?: string,
   periodId?: string,
+  yearId?: string,
 ): Promise<AllocationWithPurchases[]> {
   const allocations = await prisma.allocation.findMany({
     where: {
       allocationGroupId: null,
       ...(designationId && { designationId }),
       ...(periodId && { periodId }),
+      ...(yearId && { period: { yearId } }),
     },
     include: {
       purchases: {

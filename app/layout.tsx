@@ -1,6 +1,7 @@
 import { NextSSRPlugin } from '@uploadthing/react/next-ssr-plugin';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
+import { NuqsAdapter } from 'nuqs/adapters/next/app';
 
 import { extractRouterConfig } from 'uploadthing/server';
 
@@ -56,24 +57,28 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
           <QueryProvider>
-            <DesignationProviderWrapper initialDesignation={initialDesignation}>
-              <YearProviderWrapper initialYear={initialYear}>
-                <PeriodProviderWrapper initialPeriod={initialPeriod}>
-                  <main className="mx-auto flex w-full flex-col items-center 2xl:w-4/5">
-                    <div className="bg-background sticky top-0 z-50 w-full px-3 pt-3">
-                      <Header />
-                    </div>
-                    <div className="w-full px-3 pb-3">{children}</div>
-                  </main>
-                  <Toaster
-                    richColors
-                    toastOptions={{
-                      classNames: { description: 'line-clamp-2' },
-                    }}
-                  />
-                </PeriodProviderWrapper>
-              </YearProviderWrapper>
-            </DesignationProviderWrapper>
+            <NuqsAdapter>
+              <DesignationProviderWrapper
+                initialDesignation={initialDesignation}
+              >
+                <YearProviderWrapper initialYear={initialYear}>
+                  <PeriodProviderWrapper initialPeriod={initialPeriod}>
+                    <main className="mx-auto flex w-full flex-col items-center 2xl:w-4/5">
+                      <div className="bg-background sticky top-0 z-50 w-full px-3 pt-3">
+                        <Header />
+                      </div>
+                      <div className="w-full px-3 pb-3">{children}</div>
+                    </main>
+                    <Toaster
+                      richColors
+                      toastOptions={{
+                        classNames: { description: 'line-clamp-2' },
+                      }}
+                    />
+                  </PeriodProviderWrapper>
+                </YearProviderWrapper>
+              </DesignationProviderWrapper>
+            </NuqsAdapter>
           </QueryProvider>
         </ThemeProvider>
       </body>

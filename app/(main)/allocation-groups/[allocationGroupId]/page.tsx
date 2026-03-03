@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import {
   ChevronRight,
   Layers,
+  ShoppingCart,
   TrendingDown,
   TrendingUp,
   Wallet,
@@ -22,7 +23,6 @@ import { CreateAllocationDialog } from '@/components/create-allocation-dialog';
 import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/page-header';
 import { CreatePurchaseDialog } from '@/components/purchase-dialog';
-import { PurchaseList } from '@/components/purchase-list';
 import { SectionHeader } from '@/components/section-header';
 import { StatCards } from '@/components/stat-card';
 import { Button } from '@/components/ui/button';
@@ -48,10 +48,6 @@ export default async function AllocationGroup({
   const users = await getUsers();
   const processTemplates = await getAllProcessTemplates(true);
 
-  const purchases = allocationGroup.allocations
-    .flatMap((allocation) => allocation.purchases)
-    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-
   return (
     <div className="flex w-full flex-col">
       <PageHeader
@@ -66,6 +62,12 @@ export default async function AllocationGroup({
               miscAllocations={miscAllocations}
               processTemplates={processTemplates}
             />
+            <Link href={`/purchases?allocationGroup=${allocationGroupId}`}>
+              <Button variant="outline" className="gap-2">
+                <ShoppingCart className="size-4" />
+                View Purchases
+              </Button>
+            </Link>
             <CreateAllocationDialog
               trigger={
                 <Button variant="outline" className="gap-2">
@@ -163,17 +165,6 @@ export default async function AllocationGroup({
           ))}
         </div>
       )}
-
-      <SectionHeader title="Purchases" />
-
-      <PurchaseList
-        purchases={purchases}
-        users={users}
-        categories={categories}
-        allocationGroups={[allocationGroup]}
-        miscAllocations={miscAllocations}
-        processTemplates={processTemplates}
-      />
     </div>
   );
 }
