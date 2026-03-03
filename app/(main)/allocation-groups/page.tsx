@@ -8,7 +8,7 @@ import { usePeriod } from '@/contexts/PeriodContext';
 import { useQuery } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
 
-import { getAllPeriods } from '@/prisma/services/period';
+import { getPeriodById } from '@/prisma/services/period';
 
 import { CreateAllocationGroupDialog } from '@/components/create-allocation-group-dialog';
 import { EmptyState } from '@/components/empty-state';
@@ -20,14 +20,13 @@ import { Content } from './content';
 export default function AllocationGroups() {
   const { selectedDesignation } = useDesignation();
   const { selectedPeriod } = usePeriod();
-  const { data: periods = [] } = useQuery({
-    queryKey: ['periods'],
-    queryFn: getAllPeriods,
+  const { data: selectedPeriodData } = useQuery({
+    queryKey: ['period', selectedPeriod?.id],
+    queryFn: () => (selectedPeriod?.id ? getPeriodById(selectedPeriod.id) : null),
+    enabled: !!selectedPeriod,
   });
 
-  const selectedPeriodYear = selectedPeriod
-    ? periods.find((p) => p.id === selectedPeriod.id)?.year.name
-    : null;
+  const selectedPeriodYear = selectedPeriodData?.year.name;
 
   if (!selectedDesignation) redirect('/designation');
 
