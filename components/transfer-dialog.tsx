@@ -325,41 +325,45 @@ export function TransferDialog({
                 )}
               />
 
-              {fromCategory && toCategory && (
-                <div className="bg-muted rounded-lg p-4 text-sm">
-                  <div className="flex items-center gap-3">
-                    <div className="min-w-0 flex-1 text-center">
-                      <p
-                        className={cn(
-                          'text-base font-semibold',
+              <div className="bg-muted rounded-lg p-4 text-sm">
+                <div className="flex items-center gap-3">
+                  <div className="min-w-0 flex-1 text-center">
+                    <p
+                      className={cn(
+                        'text-base font-semibold',
+                        fromCategory &&
                           fromCategory.available - transferAmount < 0 &&
-                            'text-destructive',
-                        )}
-                      >
-                        {formatCurrency(fromCategory.available - transferAmount)}
-                      </p>
-                      <p className="text-muted-foreground truncate text-xs">
-                        {fromCategory.name}
-                      </p>
-                    </div>
-                    <ArrowRight className="text-muted-foreground size-5 shrink-0" />
-                    <div className="min-w-0 flex-1 text-center">
-                      <p
-                        className={cn(
-                          'text-base font-semibold',
+                          'text-destructive',
+                      )}
+                    >
+                      {fromCategory
+                        ? formatCurrency(fromCategory.available - transferAmount)
+                        : '—'}
+                    </p>
+                    <p className="text-muted-foreground truncate text-xs">
+                      {fromCategory ? fromCategory.name : 'From'}
+                    </p>
+                  </div>
+                  <ArrowRight className="text-muted-foreground size-5 shrink-0" />
+                  <div className="min-w-0 flex-1 text-center">
+                    <p
+                      className={cn(
+                        'text-base font-semibold',
+                        toCategory &&
                           toCategory.available + transferAmount < 0 &&
-                            'text-destructive',
-                        )}
-                      >
-                        {formatCurrency(toCategory.available + transferAmount)}
-                      </p>
-                      <p className="text-muted-foreground truncate text-xs">
-                        {toCategory.name}
-                      </p>
-                    </div>
+                          'text-destructive',
+                      )}
+                    >
+                      {toCategory
+                        ? formatCurrency(toCategory.available + transferAmount)
+                        : '—'}
+                    </p>
+                    <p className="text-muted-foreground truncate text-xs">
+                      {toCategory ? toCategory.name : 'To'}
+                    </p>
                   </div>
                 </div>
-              )}
+              </div>
 
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="animate-spin" />}
