@@ -38,7 +38,8 @@ export function Content({ designationId, designationName }: ContentProps) {
   const { selectedYear } = useYear();
 
   const [categoryId, setCategoryId] = useQueryState('category');
-  const [allocationGroupId, setAllocationGroupId] = useQueryState('allocationGroup');
+  const [allocationGroupId, setAllocationGroupId] =
+    useQueryState('allocationGroup');
   const [allocationId, setAllocationId] = useQueryState('allocation');
   const [sortField, setSortField] = useQueryState('sort');
   const [sortOrder, setSortOrder] = useQueryState('order');
@@ -76,15 +77,20 @@ export function Content({ designationId, designationName }: ContentProps) {
     queryFn: () => getCategoriesWithAvailableAmount({ designationId }),
   });
 
-  const { data: allocationGroups, isLoading: allocationGroupsLoading } = useQuery({
-    queryKey: ['allocation-groups', designationId, selectedYear?.id],
-    queryFn: () => getAllAllocationGroups(designationId, undefined, selectedYear?.id),
-  });
+  const { data: allocationGroups, isLoading: allocationGroupsLoading } =
+    useQuery({
+      queryKey: ['allocation-groups', designationId, selectedYear?.id],
+      queryFn: () =>
+        getAllAllocationGroups(designationId, undefined, selectedYear?.id),
+    });
 
-  const { data: miscAllocations, isLoading: miscAllocationsLoading } = useQuery({
-    queryKey: ['misc-allocations', designationId, selectedYear?.id],
-    queryFn: () => getMiscAllocations(designationId, undefined, selectedYear?.id),
-  });
+  const { data: miscAllocations, isLoading: miscAllocationsLoading } = useQuery(
+    {
+      queryKey: ['misc-allocations', designationId, selectedYear?.id],
+      queryFn: () =>
+        getMiscAllocations(designationId, undefined, selectedYear?.id),
+    },
+  );
 
   const { data: processTemplates } = useQuery({
     queryKey: ['process-templates'],
@@ -117,14 +123,22 @@ export function Content({ designationId, designationName }: ContentProps) {
           (p.allocationId != null && groupAllocationIds.has(p.allocationId))) &&
         (!allocationId || p.allocationId === allocationId),
     );
-  }, [purchases, categoryId, allocationGroupId, allocationId, allocationGroups]);
+  }, [
+    purchases,
+    categoryId,
+    allocationGroupId,
+    allocationId,
+    allocationGroups,
+  ]);
 
   const categoryFilterLabel =
     categories?.find((c) => c.id === categoryId)?.name ?? 'All Categories';
   const allocationGroupFilterLabel =
-    allocationGroups?.find((g) => g.id === allocationGroupId)?.name ?? 'All Allocation Groups';
+    allocationGroups?.find((g) => g.id === allocationGroupId)?.name ??
+    'All Allocation Groups';
   const allocationFilterLabel =
-    allAllocations.find((a) => a.id === allocationId)?.name ?? 'All Allocations';
+    allAllocations.find((a) => a.id === allocationId)?.name ??
+    'All Allocations';
 
   const hasActiveFilters = !!(categoryId || allocationGroupId || allocationId);
 
@@ -187,7 +201,8 @@ export function Content({ designationId, designationName }: ContentProps) {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {(allocationGroupsLoading || (allocationGroups && allocationGroups.length > 0)) && (
+            {(allocationGroupsLoading ||
+              (allocationGroups && allocationGroups.length > 0)) && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -205,7 +220,9 @@ export function Content({ designationId, designationName }: ContentProps) {
                   <DropdownMenuItem onClick={() => setAllocationGroupId(null)}>
                     All Allocation Groups
                   </DropdownMenuItem>
-                  {allocationGroups && allocationGroups.length > 0 && <DropdownMenuSeparator />}
+                  {allocationGroups && allocationGroups.length > 0 && (
+                    <DropdownMenuSeparator />
+                  )}
                   {allocationGroups?.map((g) => (
                     <DropdownMenuItem
                       key={g.id}
@@ -218,7 +235,9 @@ export function Content({ designationId, designationName }: ContentProps) {
               </DropdownMenu>
             )}
 
-            {(allocationGroupsLoading || miscAllocationsLoading || allAllocations.length > 0) && (
+            {(allocationGroupsLoading ||
+              miscAllocationsLoading ||
+              allAllocations.length > 0) && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button

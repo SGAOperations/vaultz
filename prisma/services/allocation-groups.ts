@@ -21,7 +21,11 @@ export async function getAllAllocationGroups(
       where: designationId ? { designationId } : undefined,
       include: {
         allocations: {
-          where: periodId ? { periodId } : yearId ? { period: { yearId } } : undefined,
+          where: periodId
+            ? { periodId }
+            : yearId
+              ? { period: { yearId } }
+              : undefined,
           include: {
             purchases: {
               orderBy: [{ purchasedAt: 'desc' }, { createdAt: 'desc' }],

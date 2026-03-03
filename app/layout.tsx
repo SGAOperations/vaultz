@@ -58,7 +58,9 @@ export default async function RootLayout({
         >
           <QueryProvider>
             <NuqsAdapter>
-              <DesignationProviderWrapper initialDesignation={initialDesignation}>
+              <DesignationProviderWrapper
+                initialDesignation={initialDesignation}
+              >
                 <YearProviderWrapper initialYear={initialYear}>
                   <PeriodProviderWrapper initialPeriod={initialPeriod}>
                     <main className="mx-auto flex w-full flex-col items-center 2xl:w-4/5">
