@@ -7,7 +7,12 @@ import { FormProvider, useForm } from 'react-hook-form';
 import { useYear } from '@/contexts/YearContext';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeftRight, ArrowRight, Loader2, TriangleAlert } from 'lucide-react';
+import {
+  ArrowLeftRight,
+  ArrowRight,
+  Loader2,
+  TriangleAlert,
+} from 'lucide-react';
 import { z } from 'zod/v4';
 
 import { getActiveYear, getAllYears } from '@/prisma/services/period';
@@ -337,7 +342,9 @@ export function TransferDialog({
                       )}
                     >
                       {fromCategory
-                        ? formatCurrency(fromCategory.available - transferAmount)
+                        ? formatCurrency(
+                            fromCategory.available - transferAmount,
+                          )
                         : '—'}
                     </p>
                     <p className="text-muted-foreground truncate text-xs">
