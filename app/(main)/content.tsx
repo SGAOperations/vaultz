@@ -1,5 +1,6 @@
 'use client';
 
+import { useYear } from '@/contexts/YearContext';
 import { useQuery } from '@tanstack/react-query';
 import {
   BarChart3,
@@ -16,8 +17,6 @@ import {
 } from '@/prisma/services/dashboard';
 
 import { cn } from '@/lib/utils';
-
-import { useYear } from '@/contexts/YearContext';
 
 import { DashboardCharts } from '@/components/dashboard-charts';
 import { EmptyState } from '@/components/empty-state';
