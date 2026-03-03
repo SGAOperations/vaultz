@@ -137,8 +137,8 @@ export function ContextSwitcher() {
                       items: periods.map((p) => ({
                         label:
                           p.id === activePeriod?.id
-                            ? `${p.year.name} · ${p.name} (Active)`
-                            : `${p.year.name} · ${p.name}`,
+                            ? `${p.name} (Active)`
+                            : p.name,
                         value: p.id,
                       })),
                     },
