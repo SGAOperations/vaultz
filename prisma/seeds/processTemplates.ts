@@ -83,6 +83,68 @@ const templateDefinitions: Array<{
       },
     ],
   },
+  {
+    name: 'Vendor Invoice',
+    description: 'End-to-end process for paying vendor invoices',
+    steps: [
+      {
+        name: 'Receive Invoice',
+        description: 'Log incoming invoice from vendor',
+        order: 1,
+      },
+      {
+        name: 'Match Purchase Order',
+        description: 'Verify invoice matches approved PO',
+        order: 2,
+      },
+      {
+        name: 'Department Verification',
+        description: 'Confirm goods or services were received',
+        order: 3,
+      },
+      {
+        name: 'Accounts Payable Entry',
+        description: 'Record in accounts payable ledger',
+        order: 4,
+      },
+      {
+        name: 'Payment Scheduled',
+        description: 'Payment queued for next payment run',
+        order: 5,
+      },
+      {
+        name: 'Payment Sent',
+        description: 'Funds transferred to vendor',
+        order: 6,
+      },
+      {
+        name: 'Reconciliation',
+        description: 'Confirm payment received and close invoice',
+        order: 7,
+      },
+      {
+        name: 'Archive',
+        description: 'File invoice and supporting documents',
+        order: 8,
+      },
+    ],
+  },
+  {
+    name: 'Quick Approval',
+    description: 'Lightweight approval for low-value purchases',
+    steps: [
+      {
+        name: 'Supervisor Sign-off',
+        description: 'Supervisor approves the purchase',
+        order: 1,
+      },
+      {
+        name: 'Confirm Receipt',
+        description: 'Verify item or service received',
+        order: 2,
+      },
+    ],
+  },
 ];
 
 export type SeededProcessTemplate = ProcessTemplate & { steps: ProcessStep[] };

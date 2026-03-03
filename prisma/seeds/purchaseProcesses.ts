@@ -11,6 +11,17 @@ function randomDateAfter(date: Date): Date {
   return after;
 }
 
+// Returns a per-process completion threshold: how far through the steps are done.
+// Produces a spread from nearly-empty to fully complete.
+function completionThreshold(): number {
+  const r = Math.random();
+  if (r < 0.2) return 0; // ~20% not started at all
+  if (r < 0.4) return 0.25; // ~20% barely started
+  if (r < 0.6) return 0.5; // ~20% halfway through
+  if (r < 0.8) return 0.75; // ~20% mostly done
+  return 1; // ~20% fully complete
+}
+
 export async function seedPurchaseProcesses(
   prisma: PrismaClient,
   purchases: Purchase[],
@@ -19,19 +30,22 @@ export async function seedPurchaseProcesses(
   const processes: PurchaseProcess[] = [];
 
   for (const purchase of purchases) {
-    if (Math.random() >= 0.25) continue;
+    if (Math.random() >= 0.8) continue;
 
     const template = randomPick(templates);
     const startedAt = new Date(purchase.purchasedAt);
+    const threshold = completionThreshold();
 
     const process = await prisma.purchaseProcess.create({
       data: { purchaseId: purchase.id, templateId: template.id, startedAt },
     });
 
-    // Earlier steps are more likely to be completed than later ones
+    // Steps up to the threshold position are completed; the rest are not
+    const sortedSteps = [...template.steps].sort((a, b) => a.order - b.order);
+    const cutoff = Math.floor(threshold * sortedSteps.length);
     await Promise.all(
-      template.steps.map((step) => {
-        const completed = Math.random() < Math.max(0.1, 1 - step.order * 0.2);
+      sortedSteps.map((step, idx) => {
+        const completed = idx < cutoff;
         const markedAt = randomDateAfter(startedAt);
         return prisma.purchaseStepCompletion.create({
           data: {
