@@ -3,14 +3,21 @@
 import prisma from '@/lib/prisma';
 import { parseDateOnly } from '@/lib/utils';
 
-export async function getDashboardStatsByDesignation(designationId: string) {
+export async function getDashboardStatsByDesignation(
+  designationId: string,
+  yearId: string,
+) {
   const [categoryYears, purchases] = await Promise.all([
     prisma.categoryYear.findMany({
-      where: { category: { designationId, deletedAt: null }, deletedAt: null },
+      where: {
+        category: { designationId, deletedAt: null },
+        deletedAt: null,
+        yearId,
+      },
       select: { amount: true },
     }),
     prisma.purchase.findMany({
-      where: { category: { designationId } },
+      where: { category: { designationId }, yearId },
       select: { amount: true },
     }),
   ]);
@@ -30,9 +37,12 @@ export async function getDashboardStatsByDesignation(designationId: string) {
   };
 }
 
-export async function getPurchasesByMonthForDesignation(designationId: string) {
+export async function getPurchasesByMonthForDesignation(
+  designationId: string,
+  yearId: string,
+) {
   const purchases = await prisma.purchase.findMany({
-    where: { category: { designationId } },
+    where: { category: { designationId }, yearId },
     select: { amount: true, purchasedAt: true },
     orderBy: [{ purchasedAt: 'asc' }, { createdAt: 'asc' }],
   });
@@ -69,13 +79,17 @@ export async function getPurchasesByMonthForDesignation(designationId: string) {
 
 export async function getSpendingByCategoryForDesignation(
   designationId: string,
+  yearId: string,
 ) {
   const categories = await prisma.category.findMany({
     where: { designationId, deletedAt: null },
     select: {
       name: true,
-      categoryYears: { where: { deletedAt: null }, select: { amount: true } },
-      purchases: { select: { amount: true } },
+      categoryYears: {
+        where: { deletedAt: null, yearId },
+        select: { amount: true },
+      },
+      purchases: { where: { yearId }, select: { amount: true } },
     },
   });
 

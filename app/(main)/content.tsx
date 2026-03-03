@@ -1,5 +1,6 @@
 'use client';
 
+import { useYear } from '@/contexts/YearContext';
 import { useQuery } from '@tanstack/react-query';
 import {
   BarChart3,
@@ -28,13 +29,17 @@ interface ContentProps {
 }
 
 export function Content({ designationId }: ContentProps) {
+  const { selectedYear } = useYear();
+  const yearId = selectedYear?.id ?? '';
+
   const {
     data: stats,
     isLoading: statsLoading,
     isError: statsError,
   } = useQuery({
-    queryKey: ['dashboard-stats', designationId],
-    queryFn: () => getDashboardStatsByDesignation(designationId),
+    queryKey: ['dashboard-stats', designationId, yearId],
+    queryFn: () => getDashboardStatsByDesignation(designationId, yearId),
+    enabled: !!selectedYear,
   });
 
   const {
@@ -42,8 +47,9 @@ export function Content({ designationId }: ContentProps) {
     isLoading: purchasesLoading,
     isError: purchasesError,
   } = useQuery({
-    queryKey: ['dashboard-purchases', designationId],
-    queryFn: () => getPurchasesByMonthForDesignation(designationId),
+    queryKey: ['dashboard-purchases', designationId, yearId],
+    queryFn: () => getPurchasesByMonthForDesignation(designationId, yearId),
+    enabled: !!selectedYear,
   });
 
   const {
@@ -51,8 +57,9 @@ export function Content({ designationId }: ContentProps) {
     isLoading: spendingLoading,
     isError: spendingError,
   } = useQuery({
-    queryKey: ['dashboard-spending', designationId],
-    queryFn: () => getSpendingByCategoryForDesignation(designationId),
+    queryKey: ['dashboard-spending', designationId, yearId],
+    queryFn: () => getSpendingByCategoryForDesignation(designationId, yearId),
+    enabled: !!selectedYear,
   });
 
   return (

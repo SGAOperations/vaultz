@@ -9,9 +9,8 @@ import {
 } from 'react-hook-form';
 
 import { useDesignation } from '@/contexts/DesignationContext';
-import { useYear } from '@/contexts/YearContext';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Loader2, Trash2 } from 'lucide-react';
 import { z } from 'zod/v4';
 
@@ -21,7 +20,7 @@ import {
   getNewYearSuggestions,
   setYearBudgetsForDesignation,
 } from '@/prisma/services/category-year';
-import { createYear, updateYear } from '@/prisma/services/period';
+import { createYear, getAllYears, updateYear } from '@/prisma/services/period';
 
 import { handleError, isError, parseDateOnly } from '@/lib/utils';
 
@@ -81,9 +80,13 @@ export function YearDialog({
   const [createdYear, setCreatedYear] = useState<Year | null>(null);
   const [loadingBudgets, setLoadingBudgets] = useState(false);
 
-  const { activeDesignation } = useDesignation();
-  const { years } = useYear();
+  const { selectedDesignation } = useDesignation();
   const queryClient = useQueryClient();
+
+  const { data: years = [] } = useQuery({
+    queryKey: ['years'],
+    queryFn: getAllYears,
+  });
 
   const yearForm = useForm<YearFormData>({
     resolver: zodResolver(yearSchema),
@@ -121,13 +124,13 @@ export function YearDialog({
 
   // Load categories when the RESET budget step opens
   useEffect(() => {
-    if (step !== 'budgets' || !createdYear || !activeDesignation) return;
+    if (step !== 'budgets' || !createdYear || !selectedDesignation) return;
     let cancelled = false;
 
     async function load() {
-      if (!createdYear || !activeDesignation) return;
+      if (!createdYear || !selectedDesignation) return;
       const categories = await getCategoriesByDesignation({
-        designationId: activeDesignation.id,
+        designationId: selectedDesignation.id,
       });
       if (cancelled) return;
       replace(
@@ -140,7 +143,7 @@ export function YearDialog({
     return () => {
       cancelled = true;
     };
-  }, [step, createdYear, activeDesignation, replace]);
+  }, [step, createdYear, selectedDesignation, replace]);
 
   async function onYearSubmit(data: YearFormData) {
     if (year) {
@@ -151,7 +154,10 @@ export function YearDialog({
           error: 'Failed to update year',
         },
       });
-      if (!isError(result)) handleOpenChange(false);
+      if (!isError(result)) {
+        await queryClient.invalidateQueries({ queryKey: ['years'] });
+        handleOpenChange(false);
+      }
       return;
     }
 
@@ -168,12 +174,12 @@ export function YearDialog({
     const newYear = result;
     setCreatedYear(newYear);
 
-    if (!activeDesignation) {
+    if (!selectedDesignation) {
       handleOpenChange(false);
       return;
     }
 
-    if (activeDesignation.budgetResetBehavior === 'ROLLOVER') {
+    if (selectedDesignation.budgetResetBehavior === 'ROLLOVER') {
       // Automatic: calculate and save budgets without any user input
       const newYearStart = new Date(newYear.startDate);
       const prevYear = [...years]
@@ -186,7 +192,7 @@ export function YearDialog({
       let budgets: Array<{ categoryId: string; amount: number }>;
       if (prevYear) {
         const suggestions = await getNewYearSuggestions({
-          designationId: activeDesignation.id,
+          designationId: selectedDesignation.id,
           prevYearId: prevYear.id,
         });
         budgets = suggestions.map((s) => ({
@@ -195,14 +201,14 @@ export function YearDialog({
         }));
       } else {
         const categories = await getCategoriesByDesignation({
-          designationId: activeDesignation.id,
+          designationId: selectedDesignation.id,
         });
         budgets = categories.map((c) => ({ categoryId: c.id, amount: 0 }));
       }
 
       await handleError(
         setYearBudgetsForDesignation({
-          designationId: activeDesignation.id,
+          designationId: selectedDesignation.id,
           yearId: newYear.id,
           budgets,
         }),
@@ -215,6 +221,7 @@ export function YearDialog({
         },
       );
       await queryClient.invalidateQueries({ queryKey: ['categories-budget'] });
+      await queryClient.invalidateQueries({ queryKey: ['years'] });
       handleOpenChange(false);
     } else {
       // RESET: go to budget step
@@ -225,11 +232,11 @@ export function YearDialog({
   }
 
   async function onResetSubmit(data: ResetBudgetFormData) {
-    if (!createdYear || !activeDesignation) return;
+    if (!createdYear || !selectedDesignation) return;
 
     const result = await handleError(
       setYearBudgetsForDesignation({
-        designationId: activeDesignation.id,
+        designationId: selectedDesignation.id,
         yearId: createdYear.id,
         budgets: data.entries.map((e) => ({
           categoryId: e.categoryId,
@@ -246,6 +253,7 @@ export function YearDialog({
     );
     if (!isError(result)) {
       await queryClient.invalidateQueries({ queryKey: ['categories-budget'] });
+      await queryClient.invalidateQueries({ queryKey: ['years'] });
       handleOpenChange(false);
     }
   }

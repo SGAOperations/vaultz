@@ -27,6 +27,7 @@ import { SectionHeader } from '@/components/section-header';
 import { StatCards } from '@/components/stat-card';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { UsageBar } from '@/components/usage-bar';
 
 export const metadata: Metadata = { title: 'Allocation Group' };
 
@@ -81,10 +82,16 @@ export default async function AllocationGroup({
         }
       />
 
-      <StatCards
-        total={allocationGroup.totalAmount}
-        spent={allocationGroup.totalSpent}
-      />
+      <div className="mb-2 flex flex-col gap-3">
+        <StatCards
+          total={allocationGroup.totalAmount}
+          spent={allocationGroup.totalSpent}
+        />
+        <UsageBar
+          total={allocationGroup.totalAmount}
+          spent={allocationGroup.totalSpent}
+        />
+      </div>
 
       <SectionHeader title="Allocations" />
 

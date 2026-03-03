@@ -12,19 +12,19 @@ import { Button } from '@/components/ui/button';
 import { Content } from './content';
 
 export default function CategoriesPage() {
-  const { activeDesignation } = useDesignation();
+  const { selectedDesignation } = useDesignation();
 
-  if (!activeDesignation) redirect('/designation');
+  if (!selectedDesignation) redirect('/designation');
 
   return (
     <div className="flex w-full flex-col">
       <PageHeader
         title="Categories"
-        description={`${activeDesignation.name} · DN${activeDesignation.code}`}
+        description={`${selectedDesignation.name} · DN${selectedDesignation.code}`}
         actions={
           <div className="flex gap-2">
             <CreateCategoryDialog
-              designationId={activeDesignation.id}
+              designationId={selectedDesignation.id}
               trigger={
                 <Button size="sm">
                   <Plus className="size-4" />
@@ -36,7 +36,7 @@ export default function CategoriesPage() {
         }
       />
 
-      <Content designationId={activeDesignation.id} />
+      <Content designationId={selectedDesignation.id} />
     </div>
   );
 }

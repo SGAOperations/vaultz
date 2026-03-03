@@ -4,10 +4,8 @@ import { useEffect, useState } from 'react';
 
 import {
   Calendar,
-  Check,
   CircleDollarSign,
   DollarSign,
-  FileCheck,
   FileText,
   StickyNote,
   User as UserIcon,
@@ -173,26 +171,12 @@ export function PurchaseCard({
           </div>
 
           {/* Selector Status Badges */}
-          {(purchase.excludeFromTotal ||
-            purchase.expenseReportCreated ||
-            purchase.reimbursed) && (
+          {purchase.excludeFromTotal && (
             <div className="mt-2 flex flex-wrap gap-1.5">
               {purchase.excludeFromTotal && (
                 <div className="bg-muted flex items-center gap-1 rounded-full px-2 py-0.5">
                   <CircleDollarSign className="size-3" />
                   <span className="text-xs">Excluded</span>
-                </div>
-              )}
-              {purchase.expenseReportCreated && (
-                <div className="bg-muted flex items-center gap-1 rounded-full px-2 py-0.5">
-                  <FileCheck className="size-3" />
-                  <span className="text-xs">Report Filed</span>
-                </div>
-              )}
-              {purchase.reimbursed && (
-                <div className="bg-muted flex items-center gap-1 rounded-full px-2 py-0.5">
-                  <Check className="size-3" />
-                  <span className="text-xs">Reimbursed</span>
                 </div>
               )}
             </div>
