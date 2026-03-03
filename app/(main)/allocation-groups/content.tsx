@@ -50,6 +50,7 @@ export function Content({ designationId }: ContentProps) {
           <AllocationGroupCard
             key={allocationGroup.id}
             allocationGroup={allocationGroup}
+            periodId={selectedPeriod?.id}
           />
         ))}
       </div>

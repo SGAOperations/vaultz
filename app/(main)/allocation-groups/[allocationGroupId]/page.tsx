@@ -14,6 +14,7 @@ import {
 import { getMiscAllocations } from '@/prisma/services/allocation';
 import { getAllocationGroupWithStats } from '@/prisma/services/allocation-groups';
 import { getAllCategories } from '@/prisma/services/category';
+import { getPeriodById } from '@/prisma/services/period';
 import { getAllProcessTemplates } from '@/prisma/services/process-templates';
 import { getUsers } from '@/prisma/services/user';
 
@@ -33,14 +34,18 @@ export const metadata: Metadata = { title: 'Allocation Group' };
 
 export default async function AllocationGroup({
   params,
+  searchParams,
 }: {
   params: Promise<{ allocationGroupId: string }>;
+  searchParams: Promise<{ periodId?: string }>;
 }) {
   const { allocationGroupId } = await params;
+  const { periodId } = await searchParams;
 
-  const allocationGroup = await getAllocationGroupWithStats({
-    id: allocationGroupId,
-  });
+  const [allocationGroup, period] = await Promise.all([
+    getAllocationGroupWithStats({ id: allocationGroupId, periodId }),
+    periodId ? getPeriodById(periodId) : Promise.resolve(null),
+  ]);
   if (allocationGroup === null) notFound();
 
   const categories = await getAllCategories();
@@ -48,11 +53,18 @@ export default async function AllocationGroup({
   const users = await getUsers();
   const processTemplates = await getAllProcessTemplates(true);
 
+  const description = [
+    `${allocationGroup.designation.name} · DN${allocationGroup.designation.code}`,
+    period ? period.name : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+
   return (
     <div className="flex w-full flex-col">
       <PageHeader
         title={allocationGroup.name}
-        description={`${allocationGroup.designation.name} · DN${allocationGroup.designation.code}`}
+        description={description}
         actions={
           <div className="flex gap-2">
             <CreatePurchaseDialog

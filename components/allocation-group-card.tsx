@@ -13,8 +13,10 @@ import { LinkCard } from '@/components/link-card';
 
 export function AllocationGroupCard({
   allocationGroup: { id, name, allocations },
+  periodId,
 }: {
   allocationGroup: AllocationGroupWithAllocations;
+  periodId?: string;
 }) {
   const purchases = allocations.flatMap((v) => v.purchases);
   const totalAllocated =
@@ -29,9 +31,13 @@ export function AllocationGroupCard({
   const percentRemaining =
     totalAllocated === 0 ? 0 : (totalRemaining / totalAllocated) * 100;
 
+  const href = periodId
+    ? `/allocation-groups/${id}?periodId=${periodId}`
+    : `/allocation-groups/${id}`;
+
   return (
     <LinkCard
-      href={`/allocation-groups/${id}`}
+      href={href}
       icon={Layers}
       title={name}
       description={`${allocations.length} allocation${allocations.length !== 1 ? 's' : ''}`}
