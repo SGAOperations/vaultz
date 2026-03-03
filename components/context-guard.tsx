@@ -108,7 +108,7 @@ export function ContextGuard() {
               <label className="text-sm font-semibold">Designation</label>
               <Combobox
                 name="designation"
-                value={selectedDesignation?.id ?? ''}
+                value=''
                 data={[
                   {
                     items: designations.map((designation) => ({
