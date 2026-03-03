@@ -68,7 +68,7 @@ export function DatePicker({
   const currentYear = new Date().getFullYear();
 
   return (
-    <Popover open={open} onOpenChange={handleOpenChange}>
+    <Popover open={open} onOpenChange={handleOpenChange} modal={false}>
       <PopoverTrigger asChild>
         <Button
           variant={'outline'}
