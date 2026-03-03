@@ -85,7 +85,7 @@ export function ContextSwitcher() {
             </span>
           )}
           <span className="text-muted-foreground text-xs leading-tight">
-            {[selectedPeriodName, selectedYearName].filter(Boolean).join(' · ')}
+            {[selectedYearName, selectedPeriodName].filter(Boolean).join(' · ')}
           </span>
         </div>
         <ChevronsUpDown className="text-muted-foreground size-3.5 shrink-0" />
