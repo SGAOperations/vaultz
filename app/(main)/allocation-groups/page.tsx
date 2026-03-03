@@ -5,10 +5,8 @@ import { redirect } from 'next/navigation';
 
 import { useDesignation } from '@/contexts/DesignationContext';
 import { usePeriod } from '@/contexts/PeriodContext';
-import { useQuery } from '@tanstack/react-query';
+import { useYear } from '@/contexts/YearContext';
 import { Plus } from 'lucide-react';
-
-import { getPeriodById } from '@/prisma/services/period';
 
 import { CreateAllocationGroupDialog } from '@/components/create-allocation-group-dialog';
 import { EmptyState } from '@/components/empty-state';
@@ -20,13 +18,7 @@ import { Content } from './content';
 export default function AllocationGroups() {
   const { selectedDesignation } = useDesignation();
   const { selectedPeriod } = usePeriod();
-  const { data: selectedPeriodData } = useQuery({
-    queryKey: ['period', selectedPeriod?.id],
-    queryFn: () => (selectedPeriod?.id ? getPeriodById(selectedPeriod.id) : null),
-    enabled: !!selectedPeriod,
-  });
-
-  const selectedPeriodYear = selectedPeriodData?.year.name;
+  const { selectedYear } = useYear();
 
   if (!selectedDesignation) redirect('/designation');
 
@@ -34,7 +26,7 @@ export default function AllocationGroups() {
     <div className="flex w-full flex-col">
       <PageHeader
         title="Allocation Groups"
-        description={`Organize and manage your budget allocations · DN${selectedDesignation.code}${selectedPeriod && selectedPeriodYear ? ` · ${selectedPeriodYear} · ${selectedPeriod.name}` : selectedPeriod ? ` · ${selectedPeriod.name}` : ''}`}
+        description={`Organize and manage your budget allocations · DN${selectedDesignation.code}${selectedPeriod && selectedYear ? ` · ${selectedYear.name} · ${selectedPeriod.name}` : selectedPeriod ? ` · ${selectedPeriod.name}` : ''}`}
         actions={
           <CreateAllocationGroupDialog
             designationId={selectedDesignation.id}
