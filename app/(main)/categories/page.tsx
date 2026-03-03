@@ -1,7 +1,5 @@
 'use client';
 
-import { redirect } from 'next/navigation';
-
 import { useDesignation } from '@/contexts/DesignationContext';
 import { Plus } from 'lucide-react';
 
@@ -14,7 +12,7 @@ import { Content } from './content';
 export default function CategoriesPage() {
   const { selectedDesignation } = useDesignation();
 
-  if (!selectedDesignation) redirect('/designation');
+  if (!selectedDesignation) return null;
 
   return (
     <div className="flex w-full flex-col">

@@ -6,15 +6,12 @@ import { useDesignation } from '@/contexts/DesignationContext';
 import { usePeriod } from '@/contexts/PeriodContext';
 import { useYear } from '@/contexts/YearContext';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronsUpDown } from 'lucide-react';
+import { ChevronsUpDown, TriangleAlert } from 'lucide-react';
 
 import { getDesignations } from '@/prisma/services/designation';
-import {
-  getActivePeriod,
-  getActiveYear,
-  getAllPeriods,
-  getAllYears,
-} from '@/prisma/services/period';
+import { getAllPeriods, getAllYears } from '@/prisma/services/period';
+
+import { useInactiveSession } from '@/lib/hooks/use-inactive-session';
 
 import { Button } from '@/components/ui/button';
 import { Combobox } from '@/components/ui/combobox';
@@ -46,15 +43,7 @@ export function ContextSwitcher() {
     queryFn: getAllYears,
   });
 
-  const { data: activeYear } = useQuery({
-    queryKey: ['active-year'],
-    queryFn: getActiveYear,
-  });
-
-  const { data: activePeriod } = useQuery({
-    queryKey: ['active-period'],
-    queryFn: getActivePeriod,
-  });
+  const { isInactiveSession, activeYear, activePeriod } = useInactiveSession();
 
   // Use fresh data from query for display, falling back to context state
   const selectedDesignationName =
@@ -85,10 +74,14 @@ export function ContextSwitcher() {
             </span>
           )}
           <span className="text-muted-foreground text-xs leading-tight">
-            {[selectedPeriodName, selectedYearName].filter(Boolean).join(' · ')}
+            {[selectedYearName, selectedPeriodName].filter(Boolean).join(' · ')}
           </span>
         </div>
-        <ChevronsUpDown className="text-muted-foreground size-3.5 shrink-0" />
+        {isInactiveSession ? (
+          <TriangleAlert className="text-warning size-3.5 shrink-0" />
+        ) : (
+          <ChevronsUpDown className="text-muted-foreground size-3.5 shrink-0" />
+        )}
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
@@ -126,31 +119,6 @@ export function ContextSwitcher() {
               </div>
             )}
 
-            {periods.length > 0 && (
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-semibold">Period</label>
-                <Combobox
-                  name="period"
-                  value={selectedPeriod?.id ?? ''}
-                  data={[
-                    {
-                      items: periods.map((p) => ({
-                        label:
-                          p.id === activePeriod?.id
-                            ? `${p.name} (Active)`
-                            : p.name,
-                        value: p.id,
-                      })),
-                    },
-                  ]}
-                  onChange={(value) => {
-                    const p = periods.find((x) => x.id === value);
-                    if (p) setSelectedPeriod({ id: p.id, name: p.name });
-                  }}
-                />
-              </div>
-            )}
-
             {years.length > 0 && (
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-semibold">Fiscal Year</label>
@@ -170,7 +138,44 @@ export function ContextSwitcher() {
                   ]}
                   onChange={(value) => {
                     const y = years.find((x) => x.id === value);
-                    if (y) setSelectedYear({ id: y.id, name: y.name });
+                    if (y) {
+                      setSelectedYear({ id: y.id, name: y.name });
+                      if (
+                        selectedPeriod &&
+                        !periods.some(
+                          (p) =>
+                            p.id === selectedPeriod.id && p.yearId === y.id,
+                        )
+                      )
+                        setSelectedPeriod(null);
+                    }
+                  }}
+                />
+              </div>
+            )}
+
+            {periods.some((p) => p.yearId === selectedYear?.id) && (
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-semibold">Period</label>
+                <Combobox
+                  name="period"
+                  value={selectedPeriod?.id ?? ''}
+                  data={[
+                    {
+                      items: periods
+                        .filter((p) => p.yearId === selectedYear?.id)
+                        .map((p) => ({
+                          label:
+                            p.id === activePeriod?.id
+                              ? `${p.name} (Active)`
+                              : p.name,
+                          value: p.id,
+                        })),
+                    },
+                  ]}
+                  onChange={(value) => {
+                    const p = periods.find((x) => x.id === value);
+                    if (p) setSelectedPeriod({ id: p.id, name: p.name });
                   }}
                 />
               </div>

@@ -1,6 +1,5 @@
 'use client';
 
-import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
 import { useDesignation } from '@/contexts/DesignationContext';
@@ -12,7 +11,7 @@ import { Content } from './content';
 export default function PurchasesPage() {
   const { selectedDesignation } = useDesignation();
 
-  if (!selectedDesignation) redirect('/designation');
+  if (!selectedDesignation) return null;
 
   return (
     <Suspense
