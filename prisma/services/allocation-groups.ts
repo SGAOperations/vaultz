@@ -86,14 +86,17 @@ export async function getAllocationGroup({
 
 export async function getAllocationGroupWithStats({
   id,
+  periodId,
 }: {
   id: string;
+  periodId?: string;
 }): Promise<AllocationGroupWithStats | null> {
   const allocationGroup = await prisma.allocationGroup.findUnique({
     where: { id },
     include: {
       designation: true,
       allocations: {
+        where: periodId ? { periodId } : undefined,
         include: {
           purchases: {
             orderBy: [{ purchasedAt: 'desc' }, { createdAt: 'desc' }],
