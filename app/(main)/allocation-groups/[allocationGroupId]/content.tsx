@@ -2,6 +2,9 @@
 
 import Link from 'next/link';
 
+import { usePeriod } from '@/contexts/PeriodContext';
+import { useYear } from '@/contexts/YearContext';
+import { useQuery } from '@tanstack/react-query';
 import {
   ChevronRight,
   Layers,
@@ -10,11 +13,8 @@ import {
   TrendingUp,
   Wallet,
 } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
 
-import { usePeriod } from '@/contexts/PeriodContext';
-import { useYear } from '@/contexts/YearContext';
-
+import { User } from '@/prisma/client';
 import { getAllocationGroupWithStats } from '@/prisma/services/allocation-groups';
 
 import {
@@ -22,7 +22,6 @@ import {
   CategoryWithDesignation,
   ProcessTemplateWithStepCount,
 } from '@/lib/types';
-import { User } from '@/prisma/client';
 import { cn, formatNumber } from '@/lib/utils';
 
 import { CreateAllocationDialog } from '@/components/create-allocation-dialog';
