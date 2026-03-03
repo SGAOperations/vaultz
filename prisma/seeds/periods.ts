@@ -43,8 +43,6 @@ export async function seedPeriods(prisma: PrismaClient, years: Year[]) {
     years.flatMap((year) => {
       // syear = the calendar year in which the FY begins (July 1)
       const syear = year.startDate.getFullYear();
-      const fyLabel = year.name; // e.g. "FY 23"
-
       // Randomly pick 2 or 3 periods from the pool
       const count = Math.random() < 0.5 ? 3 : 2;
       const selected = shuffled(periodPool).slice(0, count);
@@ -56,7 +54,7 @@ export async function seedPeriods(prisma: PrismaClient, years: Year[]) {
       return selected.map((t) =>
         prisma.period.create({
           data: {
-            name: `${t.name} ${fyLabel}`,
+            name: t.name,
             startDate: t.start(syear),
             endDate: t.end(syear),
             yearId: year.id,
