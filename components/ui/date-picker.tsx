@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 
+import * as PopoverPrimitive from '@radix-ui/react-popover';
 import { Calendar as CalendarIcon } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -10,11 +11,7 @@ import { DateTime } from '@/components/date-time';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Input } from '@/components/ui/input';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { Popover, PopoverTrigger } from '@/components/ui/popover';
 
 function formatDateInput(date: Date): string {
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -68,7 +65,7 @@ export function DatePicker({
   const currentYear = new Date().getFullYear();
 
   return (
-    <Popover open={open} onOpenChange={handleOpenChange} modal={false}>
+    <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <Button
           variant={'outline'}
@@ -81,9 +78,12 @@ export function DatePicker({
           {date ? <DateTime date={date} dateOnly /> : <span>Pick a date</span>}
         </Button>
       </PopoverTrigger>
-      <PopoverContent
-        className="w-auto p-0"
+      <PopoverPrimitive.Content
+        className={cn(
+          'bg-popover text-popover-foreground z-50 w-auto origin-(--radix-popover-content-transform-origin) rounded-md border p-0 shadow-md outline-hidden',
+        )}
         align="start"
+        sideOffset={4}
         avoidCollisions={false}
       >
         <div className="border-b p-3">
@@ -108,7 +108,7 @@ export function DatePicker({
           fromYear={currentYear - 25}
           toYear={currentYear + 25}
         />
-      </PopoverContent>
+      </PopoverPrimitive.Content>
     </Popover>
   );
 }
