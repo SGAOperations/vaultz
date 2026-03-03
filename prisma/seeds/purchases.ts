@@ -19,10 +19,10 @@ function randomPick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-function randomDateInYear(year: number): Date {
-  const start = new Date(year, 0, 1).getTime();
-  const end = new Date(year, 11, 31).getTime();
-  return new Date(start + Math.random() * (end - start));
+function randomDateInRange(start: Date, end: Date): Date {
+  return new Date(
+    start.getTime() + Math.random() * (end.getTime() - start.getTime()),
+  );
 }
 
 const DEFAULT_CATEGORY_KEY = 'Miscellaneous';
@@ -310,8 +310,6 @@ export async function seedPurchases(
   let receiptCounter = 1;
 
   for (const year of years) {
-    const calYear = year.startDate.getFullYear();
-
     // Find periods belonging to this year
     const yearPeriodIds = new Set(
       periods.filter((p) => p.yearId === year.id).map((p) => p.id),
@@ -357,7 +355,7 @@ export async function seedPurchases(
               amount: randomAmount(item.minAmount, item.maxAmount),
               description: item.description,
               notes: item.notes,
-              purchasedAt: randomDateInYear(calYear),
+              purchasedAt: randomDateInRange(year.startDate, year.endDate),
               receipts: [`receipt-${receiptId}.pdf`],
               categoryId: category.id,
               allocationId: allocation?.id ?? null,
