@@ -2,26 +2,64 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { Fragment } from 'react';
 
-import { FolderKanban, Home, Menu, Tag, Users } from 'lucide-react';
+import {
+  ArrowRight,
+  BarChart2,
+  BookOpen,
+  CalendarDays,
+  ChevronDown,
+  CreditCard,
+  FolderKanban,
+  Home,
+  Menu,
+  Settings2,
+  ShoppingCart,
+  Tag,
+  Users,
+  Workflow,
+} from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
-import { DesignationSwitcher } from '@/components/DesignationSwitcher';
+import { ContextSwitcher } from '@/components/ContextSwitcher';
 import { ModeToggle } from '@/components/theme-provider';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-const navItems = [
+const directNavItems = [
   { href: '/', label: 'Home', icon: Home },
-  { href: '/categories', label: 'Categories', icon: Tag },
-  { href: '/users', label: 'Users', icon: Users },
+  { href: '/purchases', label: 'Purchases', icon: ShoppingCart },
   { href: '/allocation-groups', label: 'Allocations', icon: FolderKanban },
+];
+
+const navDropdowns = [
+  {
+    label: 'Logs',
+    icon: BookOpen,
+    items: [
+      { href: '/categories', label: 'Categories', icon: Tag },
+      { href: '/transfers', label: 'Transfers', icon: ArrowRight },
+      { href: '/reports/year-comparison', label: 'Reports', icon: BarChart2 },
+    ],
+  },
+  {
+    label: 'Settings',
+    icon: Settings2,
+    items: [
+      { href: '/users', label: 'Users', icon: Users },
+      { href: '/designation', label: 'Designations', icon: CreditCard },
+      { href: '/processes', label: 'Processes', icon: Workflow },
+      { href: '/periods', label: 'Periods', icon: CalendarDays },
+    ],
+  },
 ];
 
 export function Header() {
@@ -53,11 +91,9 @@ export function Header() {
       </Link>
 
       <nav className="hidden items-center gap-1 md:flex">
-        {navItems.map(({ href, label, icon: Icon }) => {
-          let isActive = false;
-          if (href === '/') isActive = pathname === '/';
-          else isActive = pathname.startsWith(href);
-
+        {directNavItems.map(({ href, label, icon: Icon }) => {
+          const isActive =
+            href === '/' ? pathname === '/' : pathname.startsWith(href);
           return (
             <Link key={href} href={href}>
               <Button
@@ -75,10 +111,50 @@ export function Header() {
             </Link>
           );
         })}
+
+        {navDropdowns.map(({ label, icon: GroupIcon, items }) => {
+          const isActive = items.some(({ href }) =>
+            href === '/' ? pathname === '/' : pathname.startsWith(href),
+          );
+          return (
+            <DropdownMenu key={label} modal={false}>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={cn(
+                    'hover:bg-nav-hover gap-1.5 transition-colors',
+                    isActive &&
+                      'bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary',
+                  )}
+                >
+                  <GroupIcon className="size-4" />
+                  {label}
+                  <ChevronDown className="size-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                {items.map(({ href, label: itemLabel, icon: Icon }) => (
+                  <DropdownMenuItem key={href} asChild>
+                    <Link
+                      href={href}
+                      className={cn(
+                        pathname.startsWith(href) && 'text-primary font-medium',
+                      )}
+                    >
+                      <Icon className="size-4" />
+                      {itemLabel}
+                    </Link>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          );
+        })}
       </nav>
 
       <div className="flex items-center gap-2">
-        <DesignationSwitcher />
+        <ContextSwitcher />
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="icon" className="md:hidden">
@@ -87,13 +163,26 @@ export function Header() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            {navItems.map(({ href, label, icon: Icon }) => (
+            {directNavItems.map(({ href, label, icon: Icon }) => (
               <DropdownMenuItem key={href} asChild>
                 <Link href={href}>
                   <Icon className="size-4" />
                   {label}
                 </Link>
               </DropdownMenuItem>
+            ))}
+            {navDropdowns.map(({ label: groupLabel, items }) => (
+              <Fragment key={groupLabel}>
+                <DropdownMenuSeparator />
+                {items.map(({ href, label, icon: Icon }) => (
+                  <DropdownMenuItem key={href} asChild>
+                    <Link href={href}>
+                      <Icon className="size-4" />
+                      {label}
+                    </Link>
+                  </DropdownMenuItem>
+                ))}
+              </Fragment>
             ))}
           </DropdownMenuContent>
         </DropdownMenu>

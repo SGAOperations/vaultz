@@ -3,26 +3,33 @@
 import prisma from '@/lib/prisma';
 import { parseDateOnly } from '@/lib/utils';
 
-export async function getDashboardStatsByDesignation(designationId: string) {
-  const [categories, purchases] = await Promise.all([
-    prisma.category.findMany({
-      where: { designationId, deletedAt: null },
+export async function getDashboardStatsByDesignation(
+  designationId: string,
+  yearId: string,
+) {
+  const [categoryYears, purchases] = await Promise.all([
+    prisma.categoryYear.findMany({
+      where: {
+        category: { designationId, deletedAt: null },
+        deletedAt: null,
+        yearId,
+      },
       select: { amount: true },
     }),
     prisma.purchase.findMany({
-      where: { category: { designationId } },
+      where: { category: { designationId }, yearId },
       select: { amount: true },
     }),
   ]);
 
-  const totalBudget = categories.reduce(
+  const totalBudget = categoryYears.reduce(
     (sum, c) => sum + c.amount.toNumber(),
     0,
   );
   const totalSpent = purchases.reduce((sum, p) => sum + p.amount.toNumber(), 0);
 
   return {
-    totalCategories: categories.length,
+    totalCategories: categoryYears.length,
     totalPurchases: purchases.length,
     totalBudget,
     totalSpent,
@@ -30,9 +37,12 @@ export async function getDashboardStatsByDesignation(designationId: string) {
   };
 }
 
-export async function getPurchasesByMonthForDesignation(designationId: string) {
+export async function getPurchasesByMonthForDesignation(
+  designationId: string,
+  yearId: string,
+) {
   const purchases = await prisma.purchase.findMany({
-    where: { category: { designationId } },
+    where: { category: { designationId }, yearId },
     select: { amount: true, purchasedAt: true },
     orderBy: [{ purchasedAt: 'asc' }, { createdAt: 'asc' }],
   });
@@ -69,18 +79,25 @@ export async function getPurchasesByMonthForDesignation(designationId: string) {
 
 export async function getSpendingByCategoryForDesignation(
   designationId: string,
+  yearId: string,
 ) {
   const categories = await prisma.category.findMany({
     where: { designationId, deletedAt: null },
     select: {
       name: true,
-      amount: true,
-      purchases: { select: { amount: true } },
+      categoryYears: {
+        where: { deletedAt: null, yearId },
+        select: { amount: true },
+      },
+      purchases: { where: { yearId }, select: { amount: true } },
     },
   });
 
   return categories.map((category) => {
-    const budget = category.amount.toNumber();
+    const budget = category.categoryYears.reduce(
+      (sum, cy) => sum + cy.amount.toNumber(),
+      0,
+    );
     const spent = category.purchases.reduce(
       (sum, p) => sum + p.amount.toNumber(),
       0,

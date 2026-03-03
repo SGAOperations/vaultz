@@ -40,17 +40,13 @@ const schema = z.object({
     .regex(/^\d{3}$/, 'Must be 3 numeric digits'),
   ledgerCode: z.string().length(4, 'Must be exactly 4 characters long'),
   name: z.string().min(1, 'Please enter a category name'),
-  amount: z.coerce
-    .number<number>()
-    .min(0.01, 'Must be at least $0.01')
-    .multipleOf(0.01, 'Must contain at most 2 decimal places'),
 });
 
 export function EditCategoryDialog({
   category,
   trigger,
 }: {
-  category: Category;
+  category: Pick<Category, 'id' | 'code' | 'ledgerCode' | 'name'>;
   trigger: React.ReactNode;
 }) {
   const router = useRouter();
@@ -62,7 +58,6 @@ export function EditCategoryDialog({
       code: category.code,
       ledgerCode: category.ledgerCode,
       name: category.name,
-      amount: category.amount,
     },
   });
   const isSubmitting = form.formState.isSubmitting;
@@ -95,7 +90,7 @@ export function EditCategoryDialog({
       onSuccess: () => {
         setOpen(false);
         // Navigate to the parent designation page
-        router.push(`/designation/${category.designationId}`);
+        router.push(`/designation`);
       },
     });
   }
@@ -173,26 +168,6 @@ export function EditCategoryDialog({
                   <FormDescription>
                     The ledger code to be associated with this category.
                   </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="amount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Amount</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="$21.45"
-                      {...field}
-                      value={field.value != null ? '$' + field.value : ''}
-                      onChange={(e) =>
-                        field.onChange(e.target.value.replace('$', ''))
-                      }
-                    />
-                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
