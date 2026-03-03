@@ -113,13 +113,13 @@ export function Content({ designationId, designationName }: ContentProps) {
   });
 
   const { data: allocationGroups } = useQuery({
-    queryKey: ['allocation-groups', designationId],
-    queryFn: () => getAllAllocationGroups(designationId),
+    queryKey: ['allocation-groups', designationId, selectedYear?.id],
+    queryFn: () => getAllAllocationGroups(designationId, undefined, selectedYear?.id),
   });
 
   const { data: miscAllocations } = useQuery({
-    queryKey: ['misc-allocations', designationId],
-    queryFn: () => getMiscAllocations(designationId),
+    queryKey: ['misc-allocations', designationId, selectedYear?.id],
+    queryFn: () => getMiscAllocations(designationId, undefined, selectedYear?.id),
   });
 
   const { data: processTemplates } = useQuery({
@@ -170,7 +170,7 @@ export function Content({ designationId, designationName }: ContentProps) {
   const hasActiveFilters = !!(categoryId || allocationGroupId || allocationId);
 
   const categoryFilterLabel = selectedCategoryName ?? 'All Categories';
-  const allocationGroupFilterLabel = selectedAllocationGroupName ?? 'All Groups';
+  const allocationGroupFilterLabel = selectedAllocationGroupName ?? 'All Allocation Groups';
   const allocationFilterLabel = selectedAllocationName ?? 'All Allocations';
 
   return (
@@ -256,7 +256,7 @@ export function Content({ designationId, designationName }: ContentProps) {
                   <DropdownMenuItem
                     onClick={() => handleAllocationGroupChange(null)}
                   >
-                    All Groups
+                    All Allocation Groups
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   {allocationGroups.map((g) => (
