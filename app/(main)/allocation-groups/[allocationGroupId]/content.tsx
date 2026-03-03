@@ -65,7 +65,7 @@ export function Content({
   if (!allocationGroup) return null;
 
   const description = [
-    allocationGroup.designation.name,
+    'Manage allocations and budget for this group',
     `DN${allocationGroup.designation.code}`,
     selectedYear?.name,
     selectedPeriod?.name,
