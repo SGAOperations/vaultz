@@ -1,8 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
-
 import { usePathname, useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 import { useDesignation } from '@/contexts/DesignationContext';
 import { useYear } from '@/contexts/YearContext';
@@ -108,7 +107,7 @@ export function ContextGuard() {
               <label className="text-sm font-semibold">Designation</label>
               <Combobox
                 name="designation"
-                value=''
+                value=""
                 data={[
                   {
                     items: designations.map((designation) => ({
@@ -136,7 +135,7 @@ export function ContextGuard() {
               <label className="text-sm font-semibold">Fiscal Year</label>
               <Combobox
                 name="fiscal year"
-                value=''
+                value=""
                 data={[
                   {
                     items: years.map((year) => ({
