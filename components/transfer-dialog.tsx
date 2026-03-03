@@ -96,7 +96,7 @@ export function TransferDialog({
   const [fromCategoryId, setFromCategoryId] = useState('');
   const [toCategoryId, setToCategoryId] = useState('');
   // eslint-disable-next-line react-hooks/incompatible-library
-  const transferAmount = form.watch('amount') ?? 0;
+  const transferAmount = Number(form.watch('amount')) || 0;
   const selectedYearId = form.watch('yearId') ?? '';
 
   const isNonActiveYear = !!selectedYearId && selectedYearId !== activeYearId;
