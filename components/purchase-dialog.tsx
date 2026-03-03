@@ -422,7 +422,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
           className={
             isEditing
               ? 'flex max-h-[90vh] w-2/3 flex-col sm:max-w-full'
-              : 'sm:max-w-full md:w-1/2'
+              : 'flex max-h-[90vh] flex-col sm:max-w-full md:w-1/2'
           }
         >
           <DialogHeader>
@@ -879,7 +879,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
           ) : (
             <>
               {/* Main Purchase Information with prominent badges */}
-              <div className="space-y-6">
+              <div className="flex-1 space-y-6 overflow-y-auto pr-1">
                 {/* Primary Info - Amount and Description */}
                 <div className="flex flex-wrap gap-3">
                   <div className="bg-primary/10 ring-primary/20 flex items-center gap-3 rounded-lg px-4 py-3 ring-1">
