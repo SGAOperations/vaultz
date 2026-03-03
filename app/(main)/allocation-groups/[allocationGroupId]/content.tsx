@@ -13,11 +13,11 @@ import {
 import { useQuery } from '@tanstack/react-query';
 
 import { usePeriod } from '@/contexts/PeriodContext';
+import { useYear } from '@/contexts/YearContext';
 
 import { getAllocationGroupWithStats } from '@/prisma/services/allocation-groups';
 
 import {
-  AllocationGroupWithStats,
   AllocationWithPurchases,
   CategoryWithDesignation,
   ProcessTemplateWithStepCount,
@@ -37,7 +37,6 @@ import { UsageBar } from '@/components/usage-bar';
 
 interface ContentProps {
   allocationGroupId: string;
-  allocationGroup: AllocationGroupWithStats;
   categories: CategoryWithDesignation[];
   miscAllocations: AllocationWithPurchases[];
   users: User[];
@@ -46,13 +45,13 @@ interface ContentProps {
 
 export function Content({
   allocationGroupId,
-  allocationGroup: initialAllocationGroup,
   categories,
   miscAllocations,
   users,
   processTemplates,
 }: ContentProps) {
   const { selectedPeriod } = usePeriod();
+  const { selectedYear } = useYear();
 
   const { data: allocationGroup } = useQuery({
     queryKey: ['allocation-group', allocationGroupId, selectedPeriod?.id],
@@ -61,14 +60,15 @@ export function Content({
         id: allocationGroupId,
         periodId: selectedPeriod?.id ?? undefined,
       }),
-    initialData: initialAllocationGroup,
   });
 
   if (!allocationGroup) return null;
 
   const description = [
-    `${allocationGroup.designation.name} · DN${allocationGroup.designation.code}`,
-    selectedPeriod ? selectedPeriod.name : null,
+    allocationGroup.designation.name,
+    `DN${allocationGroup.designation.code}`,
+    selectedYear?.name,
+    selectedPeriod?.name,
   ]
     .filter(Boolean)
     .join(' · ');
