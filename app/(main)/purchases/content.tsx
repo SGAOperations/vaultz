@@ -1,12 +1,12 @@
 'use client';
 
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useMemo } from 'react';
+import { useMemo } from 'react';
 
 import { useYear } from '@/contexts/YearContext';
 import { useQuery } from '@tanstack/react-query';
 import { SortingState } from '@tanstack/react-table';
 import { ChevronDown, Layers, Tag, Wallet, X } from 'lucide-react';
+import { useQueryState } from 'nuqs';
 
 import { getMiscAllocations } from '@/prisma/services/allocation';
 import { getAllAllocationGroups } from '@/prisma/services/allocation-groups';
@@ -36,62 +36,26 @@ interface ContentProps {
 
 export function Content({ designationId, designationName }: ContentProps) {
   const { selectedYear } = useYear();
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const pathname = usePathname();
 
-  const categoryId = searchParams.get('category');
-  const allocationGroupId = searchParams.get('allocationGroup');
-  const allocationId = searchParams.get('allocation');
-  const sortField = searchParams.get('sort');
-  const sortOrder = searchParams.get('order');
+  const [categoryId, setCategoryId] = useQueryState('category');
+  const [allocationGroupId, setAllocationGroupId] = useQueryState('allocationGroup');
+  const [allocationId, setAllocationId] = useQueryState('allocation');
+  const [sortField, setSortField] = useQueryState('sort');
+  const [sortOrder, setSortOrder] = useQueryState('order');
 
-  const sorting: SortingState = useMemo(() => {
-    if (!sortField) return [];
-    return [{ id: sortField, desc: sortOrder === 'desc' }];
-  }, [sortField, sortOrder]);
+  const sorting: SortingState = sortField
+    ? [{ id: sortField, desc: sortOrder === 'desc' }]
+    : [];
 
-  const updateParams = useCallback(
-    (updates: Record<string, string | null>) => {
-      const params = new URLSearchParams(searchParams.toString());
-      for (const [key, value] of Object.entries(updates)) {
-        if (value) params.set(key, value);
-        else params.delete(key);
-      }
-      const query = params.toString();
-      router.replace(query ? `${pathname}?${query}` : pathname);
-    },
-    [searchParams, router, pathname],
-  );
-
-  const handleCategoryChange = useCallback(
-    (id: string | null) => updateParams({ category: id }),
-    [updateParams],
-  );
-
-  const handleAllocationGroupChange = useCallback(
-    (id: string | null) => updateParams({ allocationGroup: id }),
-    [updateParams],
-  );
-
-  const handleAllocationChange = useCallback(
-    (id: string | null) => updateParams({ allocation: id }),
-    [updateParams],
-  );
-
-  const handleSortingChange = useCallback(
-    (newSorting: SortingState) => {
-      if (newSorting.length === 0) {
-        updateParams({ sort: null, order: null });
-      } else {
-        updateParams({
-          sort: newSorting[0].id,
-          order: newSorting[0].desc ? 'desc' : 'asc',
-        });
-      }
-    },
-    [updateParams],
-  );
+  const handleSortingChange = (newSorting: SortingState) => {
+    if (newSorting.length === 0) {
+      setSortField(null);
+      setSortOrder(null);
+    } else {
+      setSortField(newSorting[0].id);
+      setSortOrder(newSorting[0].desc ? 'desc' : 'asc');
+    }
+  };
 
   const { data: purchases, isLoading: purchasesLoading } = useQuery({
     queryKey: ['purchases', designationId, selectedYear?.id],
@@ -127,51 +91,42 @@ export function Content({ designationId, designationName }: ContentProps) {
     queryFn: () => getAllProcessTemplates(true),
   });
 
+  const allAllocations = useMemo(
+    () => [
+      ...(allocationGroups ?? []).flatMap((g) =>
+        g.allocations.map((a) => ({ id: a.id, name: a.name })),
+      ),
+      ...(miscAllocations ?? []).map((a) => ({ id: a.id, name: a.name })),
+    ],
+    [allocationGroups, miscAllocations],
+  );
+
   const filteredPurchases = useMemo(() => {
     if (!purchases) return [];
-    let result = purchases;
-    if (categoryId) result = result.filter((p) => p.categoryId === categoryId);
-    if (allocationGroupId) {
-      const group = allocationGroups?.find((g) => g.id === allocationGroupId);
-      const allocationIds = new Set(group?.allocations.map((a) => a.id) ?? []);
-      result = result.filter(
-        (p) => p.allocationId != null && allocationIds.has(p.allocationId),
-      );
-    }
-    if (allocationId)
-      result = result.filter((p) => p.allocationId === allocationId);
-    return result;
+    const groupAllocationIds = allocationGroupId
+      ? new Set(
+          allocationGroups
+            ?.find((g) => g.id === allocationGroupId)
+            ?.allocations.map((a) => a.id) ?? [],
+        )
+      : null;
+    return purchases.filter(
+      (p) =>
+        (!categoryId || p.categoryId === categoryId) &&
+        (!groupAllocationIds ||
+          (p.allocationId != null && groupAllocationIds.has(p.allocationId))) &&
+        (!allocationId || p.allocationId === allocationId),
+    );
   }, [purchases, categoryId, allocationGroupId, allocationId, allocationGroups]);
 
-  const selectedCategoryName = useMemo(() => {
-    if (!categoryId || !categories) return null;
-    return categories.find((c) => c.id === categoryId)?.name ?? null;
-  }, [categoryId, categories]);
-
-  const selectedAllocationGroupName = useMemo(() => {
-    if (!allocationGroupId || !allocationGroups) return null;
-    return allocationGroups.find((g) => g.id === allocationGroupId)?.name ?? null;
-  }, [allocationGroupId, allocationGroups]);
-
-  const allAllocations = useMemo(() => {
-    const result: { id: string; name: string }[] = [];
-    for (const group of allocationGroups ?? []) {
-      for (const a of group.allocations) result.push({ id: a.id, name: a.name });
-    }
-    for (const a of miscAllocations ?? []) result.push({ id: a.id, name: a.name });
-    return result;
-  }, [allocationGroups, miscAllocations]);
-
-  const selectedAllocationName = useMemo(() => {
-    if (!allocationId) return null;
-    return allAllocations.find((a) => a.id === allocationId)?.name ?? null;
-  }, [allocationId, allAllocations]);
+  const categoryFilterLabel =
+    categories?.find((c) => c.id === categoryId)?.name ?? 'All Categories';
+  const allocationGroupFilterLabel =
+    allocationGroups?.find((g) => g.id === allocationGroupId)?.name ?? 'All Allocation Groups';
+  const allocationFilterLabel =
+    allAllocations.find((a) => a.id === allocationId)?.name ?? 'All Allocations';
 
   const hasActiveFilters = !!(categoryId || allocationGroupId || allocationId);
-
-  const categoryFilterLabel = selectedCategoryName ?? 'All Categories';
-  const allocationGroupFilterLabel = selectedAllocationGroupName ?? 'All Allocation Groups';
-  const allocationFilterLabel = selectedAllocationName ?? 'All Allocations';
 
   return (
     <div className="flex w-full flex-col">
@@ -222,7 +177,7 @@ export function Content({ designationId, designationName }: ContentProps) {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start">
-                <DropdownMenuItem onClick={() => handleCategoryChange(null)}>
+                <DropdownMenuItem onClick={() => setCategoryId(null)}>
                   All Categories
                 </DropdownMenuItem>
                 {categories && categories.length > 0 && (
@@ -231,7 +186,7 @@ export function Content({ designationId, designationName }: ContentProps) {
                 {categories?.map((c) => (
                   <DropdownMenuItem
                     key={c.id}
-                    onClick={() => handleCategoryChange(c.id)}
+                    onClick={() => setCategoryId(c.id)}
                   >
                     {c.name}
                   </DropdownMenuItem>
@@ -253,16 +208,14 @@ export function Content({ designationId, designationName }: ContentProps) {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start">
-                  <DropdownMenuItem
-                    onClick={() => handleAllocationGroupChange(null)}
-                  >
+                  <DropdownMenuItem onClick={() => setAllocationGroupId(null)}>
                     All Allocation Groups
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   {allocationGroups.map((g) => (
                     <DropdownMenuItem
                       key={g.id}
-                      onClick={() => handleAllocationGroupChange(g.id)}
+                      onClick={() => setAllocationGroupId(g.id)}
                     >
                       {g.name}
                     </DropdownMenuItem>
@@ -285,14 +238,14 @@ export function Content({ designationId, designationName }: ContentProps) {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start">
-                  <DropdownMenuItem onClick={() => handleAllocationChange(null)}>
+                  <DropdownMenuItem onClick={() => setAllocationId(null)}>
                     All Allocations
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   {allAllocations.map((a) => (
                     <DropdownMenuItem
                       key={a.id}
-                      onClick={() => handleAllocationChange(a.id)}
+                      onClick={() => setAllocationId(a.id)}
                     >
                       {a.name}
                     </DropdownMenuItem>
@@ -306,13 +259,11 @@ export function Content({ designationId, designationName }: ContentProps) {
                 variant="ghost"
                 size="sm"
                 className="gap-1 rounded-full"
-                onClick={() =>
-                  updateParams({
-                    category: null,
-                    allocationGroup: null,
-                    allocation: null,
-                  })
-                }
+                onClick={() => {
+                  setCategoryId(null);
+                  setAllocationGroupId(null);
+                  setAllocationId(null);
+                }}
               >
                 <X className="size-3" />
                 Clear filters

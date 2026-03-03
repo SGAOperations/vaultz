@@ -16,16 +16,12 @@ export async function getAllAllocationGroups(
   periodId?: string,
   yearId?: string,
 ): Promise<AllocationGroupWithAllocations[]> {
-  const allocationWhere = {
-    ...(periodId ? { periodId } : {}),
-    ...(yearId ? { period: { yearId } } : {}),
-  };
   return (
     await prisma.allocationGroup.findMany({
       where: designationId ? { designationId } : undefined,
       include: {
         allocations: {
-          where: Object.keys(allocationWhere).length > 0 ? allocationWhere : undefined,
+          where: periodId ? { periodId } : yearId ? { period: { yearId } } : undefined,
           include: {
             purchases: {
               orderBy: [{ purchasedAt: 'desc' }, { createdAt: 'desc' }],

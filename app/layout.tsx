@@ -1,6 +1,7 @@
 import { NextSSRPlugin } from '@uploadthing/react/next-ssr-plugin';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
+import { NuqsAdapter } from 'nuqs/adapters/next/app';
 
 import { extractRouterConfig } from 'uploadthing/server';
 
@@ -62,6 +63,7 @@ export default async function RootLayout({
                 activePeriodId={activePeriod?.id}
               >
                 <QueryProvider>
+                  <NuqsAdapter>
                   <main className="mx-auto flex w-full flex-col items-center 2xl:w-4/5">
                     <div className="bg-background sticky top-0 z-50 w-full px-3 pt-3">
                       <Header />
@@ -74,6 +76,7 @@ export default async function RootLayout({
                       classNames: { description: 'line-clamp-2' },
                     }}
                   />
+                  </NuqsAdapter>
                 </QueryProvider>
               </PeriodProviderWrapper>
             </YearProviderWrapper>
