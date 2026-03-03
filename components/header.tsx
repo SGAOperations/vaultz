@@ -17,11 +17,14 @@ import {
   Settings2,
   ShoppingCart,
   Tag,
+  TriangleAlert,
   Users,
   Workflow,
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
+
+import { useInactiveSession } from '@/lib/hooks/use-inactive-session';
 
 import { ContextSwitcher } from '@/components/ContextSwitcher';
 import { ModeToggle } from '@/components/theme-provider';
@@ -64,9 +67,17 @@ const navDropdowns = [
 
 export function Header() {
   const pathname = usePathname();
+  const { isInactiveYear, isInactivePeriod, isInactiveSession, selectedYear, selectedPeriod } =
+    useInactiveSession();
+
+  const inactiveLabels = [
+    isInactiveYear && selectedYear?.name,
+    isInactivePeriod && selectedPeriod?.name,
+  ].filter(Boolean);
 
   return (
-    <header className="bg-header-bg border-header-border mb-4 flex w-full items-center justify-between rounded-2xl border px-4 py-3 shadow-sm">
+    <>
+      <header className={cn('bg-header-bg border-header-border flex w-full items-center justify-between rounded-2xl border px-4 py-3 shadow-sm', isInactiveSession ? 'mb-2' : 'mb-4')}>
       <Link href={'/'} className="flex items-center gap-2">
         <div className="bg-primary flex size-9 items-center justify-center rounded-xl shadow-md">
           <svg
@@ -190,5 +201,15 @@ export function Header() {
         <ModeToggle />
       </div>
     </header>
+    {isInactiveSession && (
+      <div className="border-warning/40 bg-warning/10 text-warning mb-2 flex items-start gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium">
+        <TriangleAlert className="mt-0.5 size-4 shrink-0" />
+        <span>
+          You are viewing an inactive session ({inactiveLabels.join(' · ')}).
+          Any actions taken will not affect the current active period.
+        </span>
+      </div>
+    )}
+    </>
   );
 }
