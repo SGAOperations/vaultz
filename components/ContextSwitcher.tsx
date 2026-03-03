@@ -145,7 +145,7 @@ export function ContextSwitcher() {
                   ]}
                   onChange={(value) => {
                     const p = periods.find((x) => x.id === value);
-                    if (p) setSelectedPeriod({ id: p.id, name: p.name, yearName: p.year.name });
+                    if (p) setSelectedPeriod({ id: p.id, name: p.name });
                   }}
                 />
               </div>

@@ -47,7 +47,10 @@ export function PeriodSwitcher() {
         <Button variant="outline" size="default" className="gap-1.5">
           <span className="max-w-[150px] truncate">
             {selectedPeriod
-              ? `${selectedPeriod.yearName} · ${selectedPeriod.name}`
+              ? (() => {
+                  const p = periods.find((x) => x.id === selectedPeriod.id);
+                  return p ? `${p.year.name} · ${selectedPeriod.name}` : selectedPeriod.name;
+                })()
               : 'Select Period'}
           </span>
           <ChevronsUpDown className="size-4 shrink-0 opacity-50" />
@@ -60,7 +63,7 @@ export function PeriodSwitcher() {
           value={selectedPeriod?.id ?? ''}
           onValueChange={(value) => {
             const period = periods.find((p) => p.id === value);
-            if (period) setSelectedPeriod({ id: period.id, name: period.name, yearName: period.year.name });
+            if (period) setSelectedPeriod({ id: period.id, name: period.name });
           }}
         >
           {periods.map((period) => (

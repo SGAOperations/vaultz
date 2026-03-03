@@ -7,7 +7,6 @@ import { useQueryClient } from '@tanstack/react-query';
 interface MinimalPeriod {
   id: string;
   name: string;
-  yearName: string;
 }
 
 interface PeriodContextType {

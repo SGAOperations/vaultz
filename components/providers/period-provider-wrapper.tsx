@@ -7,7 +7,6 @@ import { PeriodProvider } from '@/contexts/PeriodContext';
 interface MinimalPeriod {
   id: string;
   name: string;
-  yearName: string;
 }
 
 interface PeriodProviderWrapperProps {
