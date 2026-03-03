@@ -61,10 +61,6 @@ export async function getAllPeriods(): Promise<Period[]> {
   });
 }
 
-export async function getPeriodById(id: string): Promise<Period | null> {
-  return await prisma.period.findUnique({ where: { id } });
-}
-
 export type YearWithPeriods = Year & { periods: Period[] };
 
 export async function getYearsWithPeriods(): Promise<YearWithPeriods[]> {
