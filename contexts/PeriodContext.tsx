@@ -11,7 +11,7 @@ interface MinimalPeriod {
 
 interface PeriodContextType {
   selectedPeriod: MinimalPeriod | null;
-  setSelectedPeriod: (period: MinimalPeriod) => void;
+  setSelectedPeriod: (period: MinimalPeriod | null) => void;
 }
 
 const PeriodContext = createContext<PeriodContextType | undefined>(undefined);
@@ -29,7 +29,7 @@ export function PeriodProvider({
   const [selectedPeriod, setSelectedPeriodState] =
     useState<MinimalPeriod | null>(initialPeriod);
 
-  const setSelectedPeriod = (period: MinimalPeriod) => {
+  const setSelectedPeriod = (period: MinimalPeriod | null) => {
     if (selectedPeriod) {
       queryClient.invalidateQueries({
         predicate: (query) =>

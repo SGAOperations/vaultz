@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation';
 
 import { usePeriod } from '@/contexts/PeriodContext';
+import { useYear } from '@/contexts/YearContext';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronsUpDown } from 'lucide-react';
 
@@ -24,6 +25,7 @@ const ALLOCATION_PATHS = ['/allocation-groups', '/allocations'];
 export function PeriodSwitcher() {
   const pathname = usePathname();
   const { selectedPeriod, setSelectedPeriod } = usePeriod();
+  const { selectedYear } = useYear();
 
   const { data: periods = [] } = useQuery({
     queryKey: ['periods'],
@@ -35,11 +37,13 @@ export function PeriodSwitcher() {
     queryFn: getActivePeriod,
   });
 
+  const periodsForYear = periods.filter((p) => p.yearId === selectedYear?.id);
+
   const isAllocationPage = ALLOCATION_PATHS.some((path) =>
     pathname.startsWith(path),
   );
 
-  if (!isAllocationPage || periods.length === 0) return null;
+  if (!isAllocationPage || periodsForYear.length === 0) return null;
 
   return (
     <DropdownMenu modal={false}>
@@ -61,7 +65,7 @@ export function PeriodSwitcher() {
             if (period) setSelectedPeriod({ id: period.id, name: period.name });
           }}
         >
-          {periods.map((period) => (
+          {periodsForYear.map((period) => (
             <DropdownMenuRadioItem key={period.id} value={period.id}>
               {period.name}
               {period.id === activePeriod?.id && (
