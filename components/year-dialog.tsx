@@ -122,15 +122,6 @@ export function YearDialog({
     }
   }
 
-  // Keep form values in sync with the year prop (e.g. after a successful edit)
-  useEffect(() => {
-    yearForm.reset({
-      name: year?.name ?? '',
-      startDate: year ? parseDateOnly(year.startDate) : undefined,
-      endDate: year ? parseDateOnly(year.endDate) : undefined,
-    });
-  }, [year, yearForm]);
-
   // Load categories when the RESET budget step opens
   useEffect(() => {
     if (step !== 'budgets' || !createdYear || !selectedDesignation) return;
