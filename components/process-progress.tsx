@@ -265,7 +265,7 @@ export function ProcessProgress({
                           {step.completion.completionDate && (
                             <>
                               {' · '}Completed:{' '}
-                              {new Date(
+                              {parseDateOnly(
                                 step.completion.completionDate,
                               ).toLocaleDateString()}
                             </>
@@ -291,16 +291,6 @@ export function ProcessProgress({
                           <Loader2 className="mr-1 size-3 animate-spin" />
                         ) : (
                           <Undo2 className="mr-1 size-3" />
-                      <p className="text-muted-foreground mt-0.5 text-xs">
-                        Marked:{' '}
-                        {new Date(step.completion.markedAt).toLocaleString()}
-                        {step.completion.completionDate && (
-                          <>
-                            {' · '}Completed:{' '}
-                            {parseDateOnly(
-                              step.completion.completionDate,
-                            ).toLocaleDateString()}
-                          </>
                         )}
                         Undo
                       </Button>
