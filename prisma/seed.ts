@@ -3,8 +3,8 @@ import cliProgress from 'cli-progress';
 import { PrismaClient } from './client';
 import { seedAllocationGroups } from './seeds/allocationGroups';
 import { seedAllocations } from './seeds/allocations';
-import { seedCategories } from './seeds/categories';
-import { seedCategoryYears } from './seeds/categoryYears';
+import { seedCategories, budgetCategoryData, cashCategoryData } from './seeds/categories';
+import { seedCategoryYears, CATEGORY_YEARS_COUNT } from './seeds/categoryYears';
 import { seedDesignations } from './seeds/designations';
 import { generatePeriodSlots, seedPeriods } from './seeds/periods';
 import { seedProcessTemplates } from './seeds/processTemplates';
@@ -15,14 +15,14 @@ import {
 import { generatePurchaseCounts, seedPurchases } from './seeds/purchases';
 import { generateTransferCounts, seedTransfers } from './seeds/transfers';
 import { seedUsers } from './seeds/users';
-import { seedYears } from './seeds/years';
+import { seedYears, fiscalYearNames } from './seeds/years';
 
 // Fixed entry counts derived directly from the seed data definitions.
 const USERS = 10; // firstNames.length
 const DESIGNATIONS = 2; // Budget + Cash
 const CATEGORIES = 10; // 6 budget + 4 cash
 const YEARS = 3; // FY 23, 24, 25
-const CATEGORY_YEARS = CATEGORIES * YEARS; // 30
+const CATEGORY_YEARS = CATEGORY_YEARS_COUNT;
 const ALLOCATION_GROUPS = 7; // 4 budget + 3 cash
 // Per period: 4 budget groups × 2 + 1 ungrouped budget + 3 cash groups × 1 + 1 ungrouped cash = 13
 const ALLOCATIONS_PER_PERIOD = 13;
@@ -36,7 +36,8 @@ const TEMPLATE_STEP_COUNTS = [4, 3, 5, 8, 2];
 const periodSlots = generatePeriodSlots(YEARS);
 const periodsCount = periodSlots.reduce((sum, s) => sum + s.length, 0);
 
-const purchaseCounts = generatePurchaseCounts(CATEGORIES, YEARS);
+const allCategoryData = [...budgetCategoryData, ...cashCategoryData];
+const purchaseCounts = generatePurchaseCounts(allCategoryData, fiscalYearNames);
 const purchasesCount = purchaseCounts.reduce((a, b) => a + b, 0);
 
 const processPlans = generateProcessPlans(purchasesCount, TEMPLATE_STEP_COUNTS);

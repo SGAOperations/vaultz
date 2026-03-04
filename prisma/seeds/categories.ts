@@ -1,6 +1,6 @@
 import { Designation, PrismaClient } from '../client';
 
-const budgetCategoryData = [
+export const budgetCategoryData = [
   { code: '001', ledgerCode: '7001', name: 'Office Supplies' },
   { code: '002', ledgerCode: '7002', name: 'Software Licenses' },
   { code: '003', ledgerCode: '7003', name: 'Travel Expenses' },
@@ -9,7 +9,7 @@ const budgetCategoryData = [
   { code: '006', ledgerCode: '7006', name: 'Furniture' },
 ];
 
-const cashCategoryData = [
+export const cashCategoryData = [
   { code: '007', ledgerCode: '7007', name: 'Meals and Entertainment' },
   { code: '008', ledgerCode: '7008', name: 'Transportation' },
   { code: '009', ledgerCode: '7009', name: 'Miscellaneous' },

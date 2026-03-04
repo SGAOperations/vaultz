@@ -1,3 +1,4 @@
+import { isCategoryActiveInYear } from './categoryYears';
 import {
   Allocation,
   Category,
@@ -300,11 +301,17 @@ const purchaseTemplatesByCategory: Record<
 
 // Pre-generate how many purchases to create per (year × category) pair.
 // Pairs are ordered: for each year index yi, for each category index ci → index = yi * catCount + ci.
+// Returns 0 for pairs where the category did not exist in that fiscal year so that
+// seedPurchases can use the same yi * categories.length + ci index without modification.
 export function generatePurchaseCounts(
-  catCount: number,
-  yearCount: number,
+  categories: Array<{ code: string }>,
+  yearNames: string[],
 ): number[] {
-  return Array.from({ length: catCount * yearCount }, () => randomInt(8, 12));
+  return yearNames.flatMap((yearName) =>
+    categories.map((cat) =>
+      isCategoryActiveInYear(cat.code, yearName) ? randomInt(8, 12) : 0,
+    ),
+  );
 }
 
 export async function seedPurchases(
