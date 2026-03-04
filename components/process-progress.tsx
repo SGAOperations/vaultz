@@ -16,7 +16,7 @@ import {
 } from '@/prisma/services/purchase';
 
 import { PurchaseProcessData, PurchaseProcessStep } from '@/lib/types';
-import { handleError } from '@/lib/utils';
+import { handleError, parseDateOnly } from '@/lib/utils';
 
 import { MarkCompleteModal } from '@/components/mark-complete-modal';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -163,7 +163,7 @@ export function ProcessProgress({
                         {step.completion.completionDate && (
                           <>
                             {' · '}Completed:{' '}
-                            {new Date(
+                            {parseDateOnly(
                               step.completion.completionDate,
                             ).toLocaleDateString()}
                           </>
