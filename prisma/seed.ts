@@ -12,6 +12,29 @@ import { seedTransfers } from './seeds/transfers';
 import { seedUsers } from './seeds/users';
 import { seedYears } from './seeds/years';
 
+const TOTAL_STEPS = 12;
+const BAR_WIDTH = 25;
+
+let currentStep = 0;
+let seedStartTime = 0;
+
+function printProgress(label: string) {
+  currentStep++;
+
+  const pct = Math.round((currentStep / TOTAL_STEPS) * 100);
+  const filled = Math.round((currentStep / TOTAL_STEPS) * BAR_WIDTH);
+  const bar = '='.repeat(filled) + '-'.repeat(BAR_WIDTH - filled);
+
+  const elapsedMs = Date.now() - seedStartTime;
+  const elapsed = (elapsedMs / 1000).toFixed(1);
+  const avgStepMs = elapsedMs / currentStep;
+  const eta = ((avgStepMs * (TOTAL_STEPS - currentStep)) / 1000).toFixed(1);
+
+  console.log(
+    `[${bar}] ${String(pct).padStart(3)}% | Step ${currentStep}/${TOTAL_STEPS}: ${label} | Elapsed: ${elapsed}s | ETA: ~${eta}s`,
+  );
+}
+
 const prisma = new PrismaClient();
 
 async function main() {
@@ -22,19 +45,38 @@ async function main() {
     return;
   }
 
+  seedStartTime = Date.now();
+  console.log(`Starting database seeding (${TOTAL_STEPS} steps)...\n`);
+
   const users = await seedUsers(prisma);
+  printProgress('Seeded users');
+
   const designations = await seedDesignations(prisma);
+  printProgress('Seeded designations');
+
   const categories = await seedCategories(prisma, designations);
+  printProgress('Seeded categories');
+
   const years = await seedYears(prisma);
+  printProgress('Seeded years');
+
   const periods = await seedPeriods(prisma, years);
+  printProgress('Seeded periods');
+
   await seedCategoryYears(prisma, categories, years);
+  printProgress('Seeded category years');
+
   const allocationGroups = await seedAllocationGroups(prisma, designations);
+  printProgress('Seeded allocation groups');
+
   const allocations = await seedAllocations(
     prisma,
     designations,
     allocationGroups,
     periods,
   );
+  printProgress('Seeded allocations');
+
   const purchases = await seedPurchases(
     prisma,
     categories,
@@ -43,11 +85,19 @@ async function main() {
     years,
     periods,
   );
-  const processTemplates = await seedProcessTemplates(prisma);
-  await seedPurchaseProcesses(prisma, purchases, processTemplates);
-  await seedTransfers(prisma, categories, years);
+  printProgress('Seeded purchases');
 
-  console.log('Database seeding completed successfully.');
+  const processTemplates = await seedProcessTemplates(prisma);
+  printProgress('Seeded process templates');
+
+  await seedPurchaseProcesses(prisma, purchases, processTemplates);
+  printProgress('Seeded purchase processes');
+
+  await seedTransfers(prisma, categories, years);
+  printProgress('Seeded transfers');
+
+  const totalTime = ((Date.now() - seedStartTime) / 1000).toFixed(1);
+  console.log(`\nDatabase seeding completed successfully in ${totalTime}s.`);
 }
 
 main()
