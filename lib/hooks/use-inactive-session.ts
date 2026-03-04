@@ -4,7 +4,7 @@ import { usePeriod } from '@/contexts/PeriodContext';
 import { useYear } from '@/contexts/YearContext';
 import { useQuery } from '@tanstack/react-query';
 
-import { getActivePeriod, getActiveYear } from '@/prisma/services/period';
+import { getActivePeriods, getActiveYear } from '@/prisma/services/period';
 
 export function useInactiveSession() {
   const { selectedYear } = useYear();
@@ -15,9 +15,9 @@ export function useInactiveSession() {
     queryFn: getActiveYear,
   });
 
-  const { data: activePeriod, isLoading: isLoadingPeriod } = useQuery({
-    queryKey: ['active-period'],
-    queryFn: getActivePeriod,
+  const { data: activePeriods, isLoading: isLoadingPeriod } = useQuery({
+    queryKey: ['active-periods'],
+    queryFn: getActivePeriods,
   });
 
   const isInactiveYear =
@@ -25,7 +25,7 @@ export function useInactiveSession() {
   const isInactivePeriod =
     !isLoadingPeriod &&
     !!selectedPeriod &&
-    selectedPeriod.id !== activePeriod?.id;
+    !activePeriods?.some((period) => period.id === selectedPeriod.id);
 
   return {
     isInactiveYear,
@@ -34,6 +34,6 @@ export function useInactiveSession() {
     selectedYear,
     selectedPeriod,
     activeYear,
-    activePeriod,
+    activePeriods,
   };
 }

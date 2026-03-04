@@ -149,7 +149,7 @@ export function PeriodDialog({
             </DialogTitle>
             <DialogDescription>
               A period is a sub-interval within a year used for budget
-              allocations. Period date ranges cannot overlap.
+              allocations. Multiple periods can overlap in date range.
             </DialogDescription>
           </DialogHeader>
 
