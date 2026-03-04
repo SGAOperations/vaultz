@@ -374,13 +374,13 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
         userId: '',
         categoryId: categories.length === 1 ? categories[0].id : '',
         allocationId: allAllocations.length === 1 ? allAllocations[0].id : '',
+        yearId: activeYearId || '',
+        processTemplateId: '',
         description: '',
         amount: 0,
         purchasedAt: new Date(),
         receipts: [],
         excludeFromTotal: false,
-        expenseReportCreated: false,
-        reimbursed: false,
         notes: '',
       });
     }
