@@ -17,12 +17,11 @@ import {
 } from '@/prisma/services/purchase';
 
 import { PurchaseProcessData, PurchaseProcessStep } from '@/lib/types';
-import { handleError } from '@/lib/utils';
+import { cn, handleError } from '@/lib/utils';
 
 import { Skeleton } from '@/components/ui/skeleton';
 import { DatePicker } from '@/components/ui/date-picker';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 
 import { Button } from './ui/button';
 
@@ -250,31 +249,34 @@ export function ProcessProgress({
                     )}
                   </div>
                 </div>
-                {expandedStepId === step.id && (
-                  <div className="border-t px-3 pb-3 pt-3 space-y-3">
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Actual Completion Date</Label>
-                      <DatePicker
-                        value={completionDate}
-                        onChange={setCompletionDate}
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Notes (optional)</Label>
-                      <Textarea
+                <div
+                  className={cn(
+                    'grid transition-all duration-200 ease-in-out',
+                    expandedStepId === step.id
+                      ? 'grid-rows-[1fr] opacity-100'
+                      : 'grid-rows-[0fr] opacity-0',
+                  )}
+                >
+                  <div className="overflow-hidden">
+                    <div className="flex items-center gap-2 border-t px-3 py-2">
+                      <div className="shrink-0">
+                        <DatePicker
+                          value={completionDate}
+                          onChange={setCompletionDate}
+                        />
+                      </div>
+                      <Input
                         value={notes}
                         onChange={(e) => setNotes(e.target.value)}
-                        placeholder="Add any notes about this step..."
-                        rows={2}
-                        className="text-sm"
+                        placeholder="Notes (optional)"
+                        className="h-9 text-sm"
                       />
-                    </div>
-                    <div className="flex justify-end gap-2">
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => setExpandedStepId(null)}
                         disabled={mutatingStepId === step.id}
+                        className="shrink-0"
                       >
                         Cancel
                       </Button>
@@ -282,6 +284,7 @@ export function ProcessProgress({
                         size="sm"
                         onClick={() => handleConfirm(step)}
                         disabled={mutatingStepId === step.id}
+                        className="shrink-0"
                       >
                         {mutatingStepId === step.id && (
                           <Loader2 className="mr-1 size-3 animate-spin" />
@@ -290,7 +293,7 @@ export function ProcessProgress({
                       </Button>
                     </div>
                   </div>
-                )}
+                </div>
               </div>
             );
           })}
