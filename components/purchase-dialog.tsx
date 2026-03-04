@@ -77,8 +77,6 @@ import {
   FormMessage,
 } from './ui/form';
 import { FormInput } from './ui/form-input';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
 
 const schema = z.object({
@@ -106,6 +104,19 @@ const schema = z.object({
 });
 
 type FormData = z.infer<typeof schema>;
+
+const userSchema = z.object({
+  first: z
+    .string()
+    .min(2, 'Must be at least 2 characters')
+    .max(50, 'Cannot be longer than 50 characters'),
+  last: z
+    .string()
+    .min(2, 'Must be at least 2 characters')
+    .max(50, 'Cannot be longer than 50 characters'),
+});
+
+type UserFormData = z.infer<typeof userSchema>;
 
 // Props for creating a new purchase (no existing purchase)
 type CreatePurchaseProps = {
@@ -176,9 +187,10 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
   );
   const [localUsers, setLocalUsers] = useState(users);
   const [userCreateOpen, setUserCreateOpen] = useState(false);
-  const [newUserFirst, setNewUserFirst] = useState('');
-  const [newUserLast, setNewUserLast] = useState('');
-  const [isCreatingUser, setIsCreatingUser] = useState(false);
+  const userForm = useForm<UserFormData>({
+    resolver: zodResolver(userSchema),
+    defaultValues: { first: '', last: '' },
+  });
 
   const receiptUrls = purchase?.receipts.map((r) => getFileUrl(r)) || [];
 
@@ -372,9 +384,8 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
     setConfirmDelete(false);
   }
 
-  async function handleCreateUser() {
-    setIsCreatingUser(true);
-    await handleError(createUser({ first: newUserFirst, last: newUserLast }), {
+  async function handleCreateUser(data: UserFormData) {
+    await handleError(createUser(data), {
       toast: {
         loading: 'Creating user...',
         success: 'User created successfully',
@@ -383,11 +394,9 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
       onSuccess: (newUser) => {
         setLocalUsers((prev) => [...prev, newUser]);
         form.setValue('userId', newUser.id, { shouldValidate: true });
+        userForm.reset();
         setUserCreateOpen(false);
-        setNewUserFirst('');
-        setNewUserLast('');
       },
-      onFinish: () => setIsCreatingUser(false),
     });
   }
 
@@ -444,7 +453,13 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
           </div>
         </DialogContent>
       </Dialog>
-      <Dialog open={userCreateOpen} onOpenChange={setUserCreateOpen}>
+      <Dialog
+        open={userCreateOpen}
+        onOpenChange={(isOpen) => {
+          setUserCreateOpen(isOpen);
+          if (!isOpen) userForm.reset();
+        }}
+      >
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>Create User</DialogTitle>
@@ -453,38 +468,33 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
               individual or an organization.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="new-user-first">First Name</Label>
-              <Input
-                id="new-user-first"
-                value={newUserFirst}
-                onChange={(e) => setNewUserFirst(e.target.value)}
+          <FormProvider {...userForm}>
+            <form
+              onSubmit={userForm.handleSubmit(handleCreateUser)}
+              className="space-y-4"
+            >
+              <FormInput<UserFormData>
+                name="first"
+                label="First Name"
                 placeholder="John"
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="new-user-last">Last Name</Label>
-              <Input
-                id="new-user-last"
-                value={newUserLast}
-                onChange={(e) => setNewUserLast(e.target.value)}
+              <FormInput<UserFormData>
+                name="last"
+                label="Last Name"
                 placeholder="Travolta"
               />
-            </div>
-            <Button
-              onClick={handleCreateUser}
-              disabled={
-                isCreatingUser ||
-                newUserFirst.length < 2 ||
-                newUserLast.length < 2
-              }
-              className="w-full"
-            >
-              {isCreatingUser && <Loader2 className="animate-spin" />}
-              Create User
-            </Button>
-          </div>
+              <Button
+                type="submit"
+                disabled={userForm.formState.isSubmitting}
+                className="w-full"
+              >
+                {userForm.formState.isSubmitting && (
+                  <Loader2 className="animate-spin" />
+                )}
+                Create User
+              </Button>
+            </form>
+          </FormProvider>
         </DialogContent>
       </Dialog>
       <Dialog open={open} onOpenChange={handleOpenChange}>
