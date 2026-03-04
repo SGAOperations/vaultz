@@ -279,10 +279,12 @@ export async function updateCategoryYearBudget({
   categoryId,
   yearId,
   amount,
+  force,
 }: {
   categoryId: string;
   yearId: string;
   amount: number;
+  force?: boolean;
 }): Promise<ResponseType<void>> {
   const year = await prisma.year.findUnique({
     where: { id: yearId, deletedAt: null },
@@ -292,7 +294,7 @@ export async function updateCategoryYearBudget({
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  if (year.endDate < today) {
+  if (!force && year.endDate < today) {
     const purchaseCount = await prisma.purchase.count({
       where: { categoryId, yearId },
     });

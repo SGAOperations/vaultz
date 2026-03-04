@@ -16,6 +16,8 @@ import {
 
 import { handleError, isError } from '@/lib/utils';
 
+import { toast } from 'sonner';
+
 import { Button } from '@/components/ui/button';
 import { Combobox } from '@/components/ui/combobox';
 import {
@@ -72,6 +74,7 @@ export function CreateCategoryDialog({
   const [selectedCategoryId, setSelectedCategoryId] = useState('');
   const [existingAmount, setExistingAmount] = useState('0');
   const [isAddingExisting, setIsAddingExisting] = useState(false);
+  const [confirmPastYear, setConfirmPastYear] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -97,6 +100,7 @@ export function CreateCategoryDialog({
       setSelectedCategoryId('');
       setExistingAmount('0');
       setExistingCategories([]);
+      setConfirmPastYear(false);
     }
   }
 
@@ -124,14 +128,38 @@ export function CreateCategoryDialog({
     }
   }
 
-  async function onAddExisting() {
+  async function onAddExisting(force?: boolean) {
     if (!yearId || !selectedCategoryId) return;
     setIsAddingExisting(true);
+
+    if (!force) {
+      // First attempt: call directly so we can silently intercept the past-year error
+      const result = await updateCategoryYearBudget({
+        categoryId: selectedCategoryId,
+        yearId,
+        amount: Number(existingAmount) || 0,
+      });
+      setIsAddingExisting(false);
+      if (isError(result)) {
+        if (result.error.includes('is a past year with')) {
+          setConfirmPastYear(true);
+        } else {
+          toast.error(result.error);
+        }
+        return;
+      }
+      await queryClient.invalidateQueries({ queryKey: ['categories-budget'] });
+      handleOpenChange(false);
+      return;
+    }
+
+    // Force add after past-year confirmation
     const result = await handleError(
       updateCategoryYearBudget({
         categoryId: selectedCategoryId,
         yearId,
         amount: Number(existingAmount) || 0,
+        force: true,
       }),
       {
         toast: {
@@ -231,21 +259,30 @@ export function CreateCategoryDialog({
                     type="button"
                     variant="outline"
                     className="flex-1"
-                    onClick={() => handleOpenChange(false)}
+                    onClick={() => {
+                      if (confirmPastYear) setConfirmPastYear(false);
+                      else handleOpenChange(false);
+                    }}
                     disabled={isAddingExisting}
                   >
-                    Cancel
+                    {confirmPastYear ? 'Back' : 'Cancel'}
                   </Button>
                   <Button
                     type="button"
                     className="flex-1"
-                    onClick={onAddExisting}
+                    variant={confirmPastYear ? 'destructive' : 'default'}
+                    onClick={() => onAddExisting(confirmPastYear || undefined)}
                     disabled={!selectedCategoryId || isAddingExisting}
                   >
                     {isAddingExisting && <Loader2 className="animate-spin" />}
-                    Add to {yearName}
+                    {confirmPastYear ? 'Confirm Add' : `Add to ${yearName}`}
                   </Button>
                 </div>
+                {confirmPastYear && (
+                  <p className="text-destructive text-sm">
+                    This is a past year. Adding a category will modify historical budget data. Are you sure?
+                  </p>
+                )}
               </div>
             </TabsContent>
           </Tabs>

@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQueryClient } from '@tanstack/react-query';
 import { Loader2, Trash2 } from 'lucide-react';
 import { z } from 'zod/v4';
 
@@ -53,6 +54,7 @@ export function EditCategoryDialog({
   categoryYearId?: string;
 }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [open, setOpen] = useState<boolean>(false);
   const [confirmDelete, setConfirmDelete] = useState<boolean>(false);
   const form = useForm<z.infer<typeof schema>>({
@@ -91,7 +93,8 @@ export function EditCategoryDialog({
           success: 'Category removed from year successfully',
           error: 'Failed to remove category from year',
         },
-        onSuccess: () => {
+        onSuccess: async () => {
+          await queryClient.invalidateQueries({ queryKey: ['categories-budget'] });
           setOpen(false);
         },
       });
