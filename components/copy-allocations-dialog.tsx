@@ -116,10 +116,12 @@ export function CopyAllocationsDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Skip
           </Button>
-          <Button onClick={handleCopy} disabled={isSubmitting}>
-            {isSubmitting && <Loader2 className="animate-spin" />}
-            Copy Allocations
-          </Button>
+          {copyAmounts && (
+            <Button onClick={handleCopy} disabled={isSubmitting}>
+              {isSubmitting && <Loader2 className="animate-spin" />}
+              Copy Allocations
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
