@@ -85,8 +85,6 @@ export function DatePicker({
         className="w-auto p-0"
         align="start"
         avoidCollisions={false}
-        onOpenAutoFocus={(e) => e.preventDefault()}
-        onCloseAutoFocus={(e) => e.preventDefault()}
       >
         <div className="border-b p-3">
           <Input
