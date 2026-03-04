@@ -71,8 +71,6 @@ export function DatePicker({
     setOpen((prev) => !prev);
   };
 
-  const currentYear = new Date().getFullYear();
-
   return (
     <div ref={containerRef} className="relative">
       <Button
@@ -107,9 +105,6 @@ export function DatePicker({
                 setOpen(false);
               }
             }}
-            captionLayout="dropdown"
-            fromYear={currentYear - 25}
-            toYear={currentYear + 25}
           />
         </div>
       )}
