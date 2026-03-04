@@ -82,60 +82,34 @@ export function EditCategoryDialog({
   const isSubmitting = form.formState.isSubmitting;
 
   async function onSubmit(data: z.infer<typeof schema>) {
-    if (canEditBudget && data.amount !== undefined) {
-      const toastId = toast.loading('Updating spending category...');
-      try {
-        const [categoryResult, budgetResult] = await Promise.all([
-          updateCategory({
-            id: category.id,
-            code: data.code,
-            ledgerCode: data.ledgerCode,
-            name: data.name,
-          }),
-          updateCategoryYearBudget({
-            categoryId: category.id,
-            yearId: yearId!,
-            amount: data.amount,
-          }),
-        ]);
-        if (isError(categoryResult)) {
-          toast.error(categoryResult.error, { id: toastId });
-          return;
-        }
+    const toastId = toast.loading('Updating spending category...');
+    try {
+      const categoryResult = await updateCategory({
+        id: category.id,
+        code: data.code,
+        ledgerCode: data.ledgerCode,
+        name: data.name,
+      });
+      if (isError(categoryResult)) {
+        toast.error(categoryResult.error, { id: toastId });
+        return;
+      }
+      if (canEditBudget && data.amount !== undefined) {
+        const budgetResult = await updateCategoryYearBudget({
+          categoryId: category.id,
+          yearId: yearId!,
+          amount: data.amount,
+        });
         if (isError(budgetResult)) {
           toast.error(budgetResult.error, { id: toastId });
           return;
         }
-        toast.success('Spending category updated successfully', {
-          id: toastId,
-        });
-        await queryClient.invalidateQueries({ queryKey: ['categories-budget'] });
-        setOpen(false);
-      } catch {
-        toast.error('Failed to update spending category', { id: toastId });
       }
-    } else {
-      await handleError(
-        updateCategory({
-          id: category.id,
-          code: data.code,
-          ledgerCode: data.ledgerCode,
-          name: data.name,
-        }),
-        {
-          toast: {
-            loading: 'Updating spending category...',
-            success: 'Spending category updated successfully',
-            error: 'Failed to update spending category',
-          },
-          onSuccess: async () => {
-            await queryClient.invalidateQueries({
-              queryKey: ['categories-budget'],
-            });
-            setOpen(false);
-          },
-        },
-      );
+      toast.success('Spending category updated successfully', { id: toastId });
+      await queryClient.invalidateQueries({ queryKey: ['categories-budget'] });
+      setOpen(false);
+    } catch {
+      toast.error('Failed to update spending category', { id: toastId });
     }
   }
 
