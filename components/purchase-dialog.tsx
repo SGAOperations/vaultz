@@ -628,7 +628,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                     <FormInput<FormData>
                       name="amount"
                       label="Amount"
-                      placeholder="$21.45"
+                      placeholder="21.45"
                       currency
                     />
                   </div>

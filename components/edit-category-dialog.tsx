@@ -31,6 +31,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import { FormInput } from '@/components/ui/form-input';
 import { Input } from '@/components/ui/input';
 
 const schema = z.object({
@@ -140,21 +141,13 @@ export function EditCategoryDialog({
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
+            <FormInput<z.infer<typeof schema>>
               name="code"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Spending Category Code</FormLabel>
-                  <FormControl>
-                    <Input placeholder="123" {...field} />
-                  </FormControl>
-                  <FormDescription>
-                    Enter 3 numbers (displayed with SC prefix, e.g., SC123).
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
+              label="Spending Category Code"
+              placeholder="123"
+              prefix="SC"
+              numbersOnly
+              description="The spending category code associated with this category."
             />
             <FormField
               control={form.control}

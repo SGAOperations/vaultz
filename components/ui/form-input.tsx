@@ -3,6 +3,8 @@
 import * as React from 'react';
 import { FieldValues, Path, useFormContext } from 'react-hook-form';
 
+import { cn } from '@/lib/utils';
+
 import {
   FormControl,
   FormDescription,
@@ -45,30 +47,34 @@ function FormInput<TFieldValues extends FieldValues>({
           <FormLabel>{label}</FormLabel>
           <FormControl>
             {currency ? (
-              <Input
-                {...inputProps}
-                {...field}
-                value={field.value ? '$' + field.value : ''}
-                onChange={(e) =>
-                  field.onChange(e.target.value.replace(/^\$/, ''))
-                }
-              />
+              <div className="flex items-center">
+                <span className="border-input bg-muted text-muted-foreground flex h-9 items-center rounded-l-md border border-r-0 px-3 text-sm">
+                  $
+                </span>
+                <Input
+                  {...inputProps}
+                  {...field}
+                  className={cn('rounded-l-none', inputProps.className)}
+                />
+              </div>
             ) : prefix ? (
-              <Input
-                {...inputProps}
-                {...field}
-                value={field.value ? prefix + field.value : prefix}
-                onChange={(e) => {
-                  let value = e.target.value.replace(
-                    new RegExp(`^${prefix}`),
-                    '',
-                  );
-                  if (numbersOnly) {
-                    value = value.replace(/\D/g, '');
-                  }
-                  field.onChange(value);
-                }}
-              />
+              <div className="flex items-center">
+                <span className="border-input bg-muted text-muted-foreground flex h-9 items-center rounded-l-md border border-r-0 px-3 text-sm">
+                  {prefix}
+                </span>
+                <Input
+                  {...inputProps}
+                  {...field}
+                  className={cn('rounded-l-none', inputProps.className)}
+                  onChange={(e) => {
+                    let value = e.target.value;
+                    if (numbersOnly) {
+                      value = value.replace(/\D/g, '');
+                    }
+                    field.onChange(value);
+                  }}
+                />
+              </div>
             ) : (
               <Input {...inputProps} {...field} />
             )}

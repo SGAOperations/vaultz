@@ -304,7 +304,7 @@ export function TransferDialog({
               <FormInput<FormData>
                 name="amount"
                 label="Amount"
-                placeholder="$0.00"
+                placeholder="0.00"
                 currency
               />
 
