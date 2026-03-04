@@ -5,15 +5,64 @@ import { seedAllocations } from './seeds/allocations';
 import { seedCategories } from './seeds/categories';
 import { seedCategoryYears } from './seeds/categoryYears';
 import { seedDesignations } from './seeds/designations';
-import { seedPeriods } from './seeds/periods';
+import { generatePeriodSlots, seedPeriods } from './seeds/periods';
 import { seedProcessTemplates } from './seeds/processTemplates';
-import { seedPurchaseProcesses } from './seeds/purchaseProcesses';
-import { seedPurchases } from './seeds/purchases';
-import { seedTransfers } from './seeds/transfers';
+import {
+  generateProcessPlans,
+  seedPurchaseProcesses,
+} from './seeds/purchaseProcesses';
+import { generatePurchaseCounts, seedPurchases } from './seeds/purchases';
+import { generateTransferCounts, seedTransfers } from './seeds/transfers';
 import { seedUsers } from './seeds/users';
 import { seedYears } from './seeds/years';
 
-const TOTAL_STEPS = 12;
+// Fixed entry counts derived directly from the seed data definitions.
+const USERS = 10; // firstNames.length
+const DESIGNATIONS = 2; // Budget + Cash
+const CATEGORIES = 10; // 6 budget + 4 cash
+const YEARS = 3; // FY 23, 24, 25
+const CATEGORY_YEARS = CATEGORIES * YEARS; // 30
+const ALLOCATION_GROUPS = 7; // 4 budget + 3 cash
+// Per period: 4 budget groups × 2 + 1 ungrouped budget + 3 cash groups × 1 + 1 ungrouped cash = 13
+const ALLOCATIONS_PER_PERIOD = 13;
+const PROCESS_TEMPLATES = 5;
+const PROCESS_STEPS = 4 + 3 + 5 + 8 + 2; // 22 — one array per templateDefinitions entry
+// Step counts in the same order as templateDefinitions for process plan generation
+const TEMPLATE_STEP_COUNTS = [4, 3, 5, 8, 2];
+
+// Pre-generate all random selections before opening the progress bar so the
+// exact total is known upfront and the bar never needs to be adjusted.
+const periodSlots = generatePeriodSlots(YEARS);
+const periodsCount = periodSlots.reduce((sum, s) => sum + s.length, 0);
+
+const purchaseCounts = generatePurchaseCounts(CATEGORIES, YEARS);
+const purchasesCount = purchaseCounts.reduce((a, b) => a + b, 0);
+
+const processPlans = generateProcessPlans(purchasesCount, TEMPLATE_STEP_COUNTS);
+const processesCount = processPlans.length;
+const stepCompletionsCount = processPlans.reduce(
+  (sum, p) => sum + p.stepCutoff,
+  0,
+);
+
+const transferCounts = generateTransferCounts(DESIGNATIONS, YEARS);
+const transfersCount = transferCounts.reduce((a, b) => a + b, 0);
+
+const TOTAL =
+  USERS +
+  DESIGNATIONS +
+  CATEGORIES +
+  YEARS +
+  periodsCount +
+  CATEGORY_YEARS +
+  ALLOCATION_GROUPS +
+  ALLOCATIONS_PER_PERIOD * periodsCount +
+  purchasesCount +
+  PROCESS_TEMPLATES +
+  PROCESS_STEPS +
+  processesCount +
+  stepCompletionsCount +
+  transfersCount;
 
 const prisma = new PrismaClient();
 
@@ -27,43 +76,29 @@ async function main() {
 
   const bar = new cliProgress.SingleBar({
     format:
-      '[{bar}] {percentage}% | Step {value}/{total}: {task} | Elapsed: {duration}s | ETA: ~{eta}s',
+      '[{bar}] {percentage}% | {value}/{total} entries | {task} | ETA: ~{eta}s',
     barCompleteChar: '=',
     barIncompleteChar: '-',
     hideCursor: true,
   });
 
-  bar.start(TOTAL_STEPS, 0, { task: 'Starting...' });
+  bar.start(TOTAL, 0, { task: 'Starting...' });
+  const tick = (task: string) => bar.increment({ task });
 
-  const users = await seedUsers(prisma);
-  bar.increment({ task: 'Seeded users' });
-
-  const designations = await seedDesignations(prisma);
-  bar.increment({ task: 'Seeded designations' });
-
-  const categories = await seedCategories(prisma, designations);
-  bar.increment({ task: 'Seeded categories' });
-
-  const years = await seedYears(prisma);
-  bar.increment({ task: 'Seeded years' });
-
-  const periods = await seedPeriods(prisma, years);
-  bar.increment({ task: 'Seeded periods' });
-
-  await seedCategoryYears(prisma, categories, years);
-  bar.increment({ task: 'Seeded category years' });
-
-  const allocationGroups = await seedAllocationGroups(prisma, designations);
-  bar.increment({ task: 'Seeded allocation groups' });
-
+  const users = await seedUsers(prisma, tick);
+  const designations = await seedDesignations(prisma, tick);
+  const categories = await seedCategories(prisma, designations, tick);
+  const years = await seedYears(prisma, tick);
+  const periods = await seedPeriods(prisma, years, periodSlots, tick);
+  await seedCategoryYears(prisma, categories, years, tick);
+  const allocationGroups = await seedAllocationGroups(prisma, designations, tick);
   const allocations = await seedAllocations(
     prisma,
     designations,
     allocationGroups,
     periods,
+    tick,
   );
-  bar.increment({ task: 'Seeded allocations' });
-
   const purchases = await seedPurchases(
     prisma,
     categories,
@@ -71,20 +106,20 @@ async function main() {
     users,
     years,
     periods,
+    purchaseCounts,
+    tick,
   );
-  bar.increment({ task: 'Seeded purchases' });
-
-  const processTemplates = await seedProcessTemplates(prisma);
-  bar.increment({ task: 'Seeded process templates' });
-
-  await seedPurchaseProcesses(prisma, purchases, processTemplates);
-  bar.increment({ task: 'Seeded purchase processes' });
-
-  await seedTransfers(prisma, categories, years);
-  bar.increment({ task: 'Seeded transfers' });
+  const processTemplates = await seedProcessTemplates(prisma, tick);
+  await seedPurchaseProcesses(
+    prisma,
+    purchases,
+    processTemplates,
+    processPlans,
+    tick,
+  );
+  await seedTransfers(prisma, categories, years, transferCounts, tick);
 
   bar.stop();
-
   console.log('\nDatabase seeding completed successfully.');
 }
 

@@ -298,6 +298,15 @@ const purchaseTemplatesByCategory: Record<
   ],
 };
 
+// Pre-generate how many purchases to create per (year × category) pair.
+// Pairs are ordered: for each year index yi, for each category index ci → index = yi * catCount + ci.
+export function generatePurchaseCounts(
+  catCount: number,
+  yearCount: number,
+): number[] {
+  return Array.from({ length: catCount * yearCount }, () => randomInt(8, 12));
+}
+
 export async function seedPurchases(
   prisma: PrismaClient,
   categories: Category[],
@@ -305,11 +314,14 @@ export async function seedPurchases(
   users: User[],
   years: Year[],
   periods: Period[],
+  counts: number[],
+  tick: (label: string) => void,
 ) {
   const allPurchases = [];
   let receiptCounter = 1;
 
-  for (const year of years) {
+  for (let yi = 0; yi < years.length; yi++) {
+    const year = years[yi];
     // Find periods belonging to this year
     const yearPeriodIds = new Set(
       periods.filter((p) => p.yearId === year.id).map((p) => p.id),
@@ -320,7 +332,8 @@ export async function seedPurchases(
       yearPeriodIds.has(a.periodId),
     );
 
-    for (const category of categories) {
+    for (let ci = 0; ci < categories.length; ci++) {
+      const category = categories[ci];
       const data =
         purchaseTemplatesByCategory[category.name] ??
         purchaseTemplatesByCategory[DEFAULT_CATEGORY_KEY];
@@ -330,7 +343,7 @@ export async function seedPurchases(
         (a) => a.designationId === category.designationId,
       );
 
-      const purchasesPerCategory = randomInt(8, 12);
+      const purchasesPerCategory = counts[yi * categories.length + ci];
 
       for (let i = 0; i < purchasesPerCategory; i++) {
         const item = randomPick(data);
@@ -365,10 +378,10 @@ export async function seedPurchases(
             },
           }),
         );
+        tick('Seeding purchases');
       }
     }
   }
 
-  console.log(`Seeded ${allPurchases.length} purchases.`);
   return allPurchases;
 }

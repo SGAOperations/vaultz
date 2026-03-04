@@ -23,14 +23,30 @@ const transferNotes = [
   null,
 ];
 
+// Pre-generate how many transfers to create per (year × designation) pair.
+// Pairs are ordered: for each year index yi, for each designation index di → index = yi * designationCount + di.
+// Designation order is determined by first-encounter when iterating categories.
+export function generateTransferCounts(
+  designationCount: number,
+  yearCount: number,
+): number[] {
+  return Array.from(
+    { length: designationCount * yearCount },
+    () => randomInt(3, 6),
+  );
+}
+
 export async function seedTransfers(
   prisma: PrismaClient,
   categories: Category[],
   years: Year[],
+  counts: number[],
+  tick: (label: string) => void,
 ) {
   const allTransfers = [];
 
-  for (const year of years) {
+  for (let yi = 0; yi < years.length; yi++) {
+    const year = years[yi];
     // Group categories by designation so transfers stay within the same designation
     const byDesignation = new Map<string, Category[]>();
     for (const cat of categories) {
@@ -39,10 +55,16 @@ export async function seedTransfers(
       byDesignation.get(cat.designationId)!.push(cat);
     }
 
+    let di = 0;
     for (const [, designationCategories] of byDesignation) {
-      if (designationCategories.length < 2) continue;
+      if (designationCategories.length < 2) {
+        di++;
+        continue;
+      }
 
-      const transferCount = randomInt(3, 6);
+      const transferCount = counts[yi * byDesignation.size + di];
+      di++;
+
       for (let i = 0; i < transferCount; i++) {
         const fromCategory = randomPick(designationCategories);
         const toOptions = designationCategories.filter(
@@ -62,10 +84,10 @@ export async function seedTransfers(
             },
           }),
         );
+        tick('Seeding transfers');
       }
     }
   }
 
-  console.log(`Seeded ${allTransfers.length} transfers.`);
   return allTransfers;
 }

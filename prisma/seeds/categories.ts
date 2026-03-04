@@ -19,23 +19,26 @@ const cashCategoryData = [
 export async function seedCategories(
   prisma: PrismaClient,
   designations: Designation[],
+  tick: (label: string) => void,
 ) {
   const budget = designations.find((d) => d.name === 'Budget')!;
   const cash = designations.find((d) => d.name === 'Cash')!;
 
   const budgetCategories = await Promise.all(
     budgetCategoryData.map((data) =>
-      prisma.category.create({ data: { ...data, designationId: budget.id } }),
+      prisma.category
+        .create({ data: { ...data, designationId: budget.id } })
+        .then((c) => { tick('Seeding categories'); return c; }),
     ),
   );
 
   const cashCategories = await Promise.all(
     cashCategoryData.map((data) =>
-      prisma.category.create({ data: { ...data, designationId: cash.id } }),
+      prisma.category
+        .create({ data: { ...data, designationId: cash.id } })
+        .then((c) => { tick('Seeding categories'); return c; }),
     ),
   );
 
-  const categories = [...budgetCategories, ...cashCategories];
-  console.log(`Seeded ${categories.length} categories.`);
-  return categories;
+  return [...budgetCategories, ...cashCategories];
 }
