@@ -34,6 +34,24 @@ export type CategoryBudgetAcrossYears = {
   yearBudgets: YearBudgetEntry[];
 };
 
+export async function getCategoriesNotInYear({
+  designationId,
+  yearId,
+}: {
+  designationId: string;
+  yearId: string;
+}): Promise<{ id: string; code: string; ledgerCode: string; name: string }[]> {
+  return prisma.category.findMany({
+    where: {
+      designationId,
+      deletedAt: null,
+      categoryYears: { none: { yearId, deletedAt: null } },
+    },
+    select: { id: true, code: true, ledgerCode: true, name: true },
+    orderBy: { code: 'asc' },
+  });
+}
+
 export async function getCategoriesWithBudgetForYear({
   designationId,
   yearId,
@@ -42,7 +60,11 @@ export async function getCategoriesWithBudgetForYear({
   yearId: string;
 }): Promise<CategoryBudgetForYear[]> {
   const categories = await prisma.category.findMany({
-    where: { designationId, deletedAt: null },
+    where: {
+      designationId,
+      deletedAt: null,
+      categoryYears: { some: { yearId, deletedAt: null } },
+    },
     include: {
       categoryYears: { where: { yearId, deletedAt: null } },
       purchases: {
@@ -242,14 +264,27 @@ export async function setYearBudgetsForDesignation({
   revalidatePath('/categories');
 }
 
+export async function deleteCategoryYear(
+  id: string,
+): Promise<ResponseType<void>> {
+  await prisma.categoryYear.update({
+    where: { id },
+    data: { deletedAt: new Date() },
+  });
+
+  revalidatePath('/categories');
+}
+
 export async function updateCategoryYearBudget({
   categoryId,
   yearId,
   amount,
+  force,
 }: {
   categoryId: string;
   yearId: string;
   amount: number;
+  force?: boolean;
 }): Promise<ResponseType<void>> {
   const year = await prisma.year.findUnique({
     where: { id: yearId, deletedAt: null },
@@ -259,7 +294,7 @@ export async function updateCategoryYearBudget({
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  if (year.endDate < today) {
+  if (!force && year.endDate < today) {
     const purchaseCount = await prisma.purchase.count({
       where: { categoryId, yearId },
     });

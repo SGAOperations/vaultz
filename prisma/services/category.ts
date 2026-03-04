@@ -2,6 +2,8 @@
 
 import { revalidatePath } from 'next/cache';
 
+import { Decimal } from '@/prisma/client/runtime/library';
+
 import prisma from '@/lib/prisma';
 import {
   Category,
@@ -17,16 +19,37 @@ export async function createCategory({
   code,
   ledgerCode,
   name,
+  yearId,
+  amount,
 }: {
   designationId: string;
   code: string;
   ledgerCode: string;
   name: string;
+  yearId?: string;
+  amount?: number;
 }): Promise<ResponseType<Category>> {
+  const existing = await prisma.category.findFirst({
+    where: { designationId, code, deletedAt: null },
+  });
+  if (existing)
+    return { error: `SC${code} already exists in this designation.` };
+
   const category = await prisma.category.create({
     data: { designationId, code, ledgerCode, name },
   });
 
+  if (yearId) {
+    await prisma.categoryYear.create({
+      data: {
+        categoryId: category.id,
+        yearId,
+        amount: new Decimal(amount ?? 0),
+      },
+    });
+  }
+
+  revalidatePath('/categories');
   revalidatePath('/designation');
 
   return category;

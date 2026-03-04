@@ -128,7 +128,7 @@ export function Content({
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           {allocationGroup.allocations.map((allocation) => (
             <Link
-              href={`/allocations/${allocation.id}`}
+              href={`/purchases?allocation=${allocation.id}`}
               key={allocation.id}
               className="group h-full"
             >
