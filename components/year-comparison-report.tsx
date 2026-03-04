@@ -437,7 +437,7 @@ export function YearComparisonReport({
             ) : (
               <div className="overflow-x-auto">
                 <Card className="p-0">
-                  <table className="w-full text-sm">
+                  <table className="min-w-full text-sm">
                     <thead>
                       <tr className="border-b">
                         <th className="text-muted-foreground px-4 py-3 text-left font-medium">
@@ -528,7 +528,7 @@ export function YearComparisonReport({
             <SectionHeader title="Budget Comparison Across All Years" />
             <div className="overflow-x-auto">
               <Card className="p-0">
-                <table className="w-full text-sm">
+                <table className="min-w-full text-sm">
                   <thead>
                     <tr className="border-b">
                       <th className="text-muted-foreground px-4 py-3 text-left font-medium">
