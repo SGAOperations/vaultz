@@ -22,7 +22,7 @@ import {
 } from '@/prisma/services/category-year';
 import { createYear, getAllYears, updateYear } from '@/prisma/services/period';
 
-import { handleError, isError, parseDateOnly } from '@/lib/utils';
+import { handleError, parseDateOnly } from '@/lib/utils';
 
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -109,14 +109,15 @@ export function YearDialog({
 
   function handleOpenChange(newOpen: boolean) {
     setOpen(newOpen);
-    if (!newOpen) {
-      setStep('year');
-      setCreatedYear(null);
+    if (newOpen) {
       yearForm.reset({
         name: year?.name ?? '',
         startDate: year ? parseDateOnly(year.startDate) : undefined,
         endDate: year ? parseDateOnly(year.endDate) : undefined,
       });
+    } else {
+      setStep('year');
+      setCreatedYear(null);
       resetForm.reset({ entries: [] });
       replace([]);
     }
@@ -147,94 +148,102 @@ export function YearDialog({
 
   async function onYearSubmit(data: YearFormData) {
     if (year) {
-      const result = await handleError(updateYear({ ...data, id: year.id }), {
+      await handleError(updateYear({ ...data, id: year.id }), {
         toast: {
           loading: 'Updating year...',
           success: 'Year updated successfully',
           error: 'Failed to update year',
         },
+        onSuccess: async (result) => {
+          yearForm.reset({
+            name: result.name,
+            startDate: parseDateOnly(result.startDate),
+            endDate: parseDateOnly(result.endDate),
+          });
+          await queryClient.invalidateQueries({ queryKey: ['years'] });
+          handleOpenChange(false);
+        },
       });
-      if (!isError(result)) {
-        await queryClient.invalidateQueries({ queryKey: ['years'] });
-        handleOpenChange(false);
-      }
       return;
     }
 
-    const result = await handleError(createYear(data), {
+    await handleError(createYear(data), {
       toast: {
         loading: 'Creating year...',
         success: 'Year created successfully',
         error: 'Failed to create year',
       },
+      onSuccess: async (newYear) => {
+        yearForm.reset();
+        setCreatedYear(newYear);
+
+        if (!selectedDesignation) {
+          handleOpenChange(false);
+          return;
+        }
+
+        if (selectedDesignation.budgetResetBehavior === 'ROLLOVER') {
+          // Automatic: calculate and save budgets without any user input
+          const newYearStart = new Date(newYear.startDate);
+          const prevYear = [...years]
+            .filter((y) => new Date(y.endDate) < newYearStart)
+            .sort(
+              (a, b) =>
+                new Date(b.endDate).getTime() - new Date(a.endDate).getTime(),
+            )[0];
+
+          let budgets: Array<{ categoryId: string; amount: number }>;
+          if (prevYear) {
+            const suggestions = await getNewYearSuggestions({
+              designationId: selectedDesignation.id,
+              prevYearId: prevYear.id,
+            });
+            budgets = suggestions.map((s) => ({
+              categoryId: s.categoryId,
+              amount: s.suggestedAmount,
+            }));
+          } else {
+            const categories = await getCategoriesByDesignation({
+              designationId: selectedDesignation.id,
+            });
+            budgets = categories.map((c) => ({ categoryId: c.id, amount: 0 }));
+          }
+
+          await handleError(
+            setYearBudgetsForDesignation({
+              designationId: selectedDesignation.id,
+              yearId: newYear.id,
+              budgets,
+            }),
+            {
+              toast: {
+                loading: 'Rolling over budgets...',
+                success: 'Budgets rolled over automatically',
+                error: 'Failed to roll over budgets',
+              },
+              onSuccess: async () => {
+                await queryClient.invalidateQueries({
+                  queryKey: ['categories-budget'],
+                });
+                await queryClient.invalidateQueries({ queryKey: ['years'] });
+                handleOpenChange(false);
+              },
+            },
+          );
+        } else {
+          // RESET: go to budget step
+          setLoadingBudgets(true);
+          replace([]);
+          setStep('budgets');
+        }
+      },
     });
-    if (isError(result)) return;
-
-    yearForm.reset();
-    const newYear = result;
-    setCreatedYear(newYear);
-
-    if (!selectedDesignation) {
-      handleOpenChange(false);
-      return;
-    }
-
-    if (selectedDesignation.budgetResetBehavior === 'ROLLOVER') {
-      // Automatic: calculate and save budgets without any user input
-      const newYearStart = new Date(newYear.startDate);
-      const prevYear = [...years]
-        .filter((y) => new Date(y.endDate) < newYearStart)
-        .sort(
-          (a, b) =>
-            new Date(b.endDate).getTime() - new Date(a.endDate).getTime(),
-        )[0];
-
-      let budgets: Array<{ categoryId: string; amount: number }>;
-      if (prevYear) {
-        const suggestions = await getNewYearSuggestions({
-          designationId: selectedDesignation.id,
-          prevYearId: prevYear.id,
-        });
-        budgets = suggestions.map((s) => ({
-          categoryId: s.categoryId,
-          amount: s.suggestedAmount,
-        }));
-      } else {
-        const categories = await getCategoriesByDesignation({
-          designationId: selectedDesignation.id,
-        });
-        budgets = categories.map((c) => ({ categoryId: c.id, amount: 0 }));
-      }
-
-      await handleError(
-        setYearBudgetsForDesignation({
-          designationId: selectedDesignation.id,
-          yearId: newYear.id,
-          budgets,
-        }),
-        {
-          toast: {
-            loading: 'Rolling over budgets...',
-            success: 'Budgets rolled over automatically',
-            error: 'Failed to roll over budgets',
-          },
-        },
-      );
-      await queryClient.invalidateQueries({ queryKey: ['categories-budget'] });
-      await queryClient.invalidateQueries({ queryKey: ['years'] });
-      handleOpenChange(false);
-    } else {
-      // RESET: go to budget step
-      setLoadingBudgets(true);
-      replace([]);
-      setStep('budgets');
-    }
   }
 
   async function onResetSubmit(data: ResetBudgetFormData) {
     if (!createdYear || !selectedDesignation) return;
 
-    const result = await handleError(
+    await handleError(
       setYearBudgetsForDesignation({
         designationId: selectedDesignation.id,
         yearId: createdYear.id,
@@ -249,13 +258,15 @@ export function YearDialog({
           success: 'Budgets saved',
           error: 'Failed to save budgets',
         },
+        onSuccess: async () => {
+          await queryClient.invalidateQueries({
+            queryKey: ['categories-budget'],
+          });
+          await queryClient.invalidateQueries({ queryKey: ['years'] });
+          handleOpenChange(false);
+        },
       },
     );
-    if (!isError(result)) {
-      await queryClient.invalidateQueries({ queryKey: ['categories-budget'] });
-      await queryClient.invalidateQueries({ queryKey: ['years'] });
-      handleOpenChange(false);
-    }
   }
 
   return (
