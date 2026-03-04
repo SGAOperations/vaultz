@@ -435,8 +435,8 @@ export function YearComparisonReport({
                 description="No categories have budget or spending data for the selected years"
               />
             ) : (
-              <div className="overflow-x-auto">
-                <Card className="p-0">
+              <Card className="overflow-hidden p-0">
+                <div className="overflow-x-auto">
                   <table className="min-w-full text-sm">
                     <thead>
                       <tr className="border-b">
@@ -509,8 +509,8 @@ export function YearComparisonReport({
                       />
                     </tfoot>
                   </table>
-                </Card>
-              </div>
+                </div>
+              </Card>
             )}
           </>
         )}
@@ -526,8 +526,8 @@ export function YearComparisonReport({
         {selectedDesignationId && budgetData && budgetData.years.length > 0 && (
           <>
             <SectionHeader title="Budget Comparison Across All Years" />
-            <div className="overflow-x-auto">
-              <Card className="p-0">
+            <Card className="overflow-hidden p-0">
+              <div className="overflow-x-auto">
                 <table className="min-w-full text-sm">
                   <thead>
                     <tr className="border-b">
@@ -633,8 +633,8 @@ export function YearComparisonReport({
                     </tr>
                   </tfoot>
                 </table>
-              </Card>
-            </div>
+              </div>
+            </Card>
           </>
         )}
       </div>
