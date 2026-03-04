@@ -3,10 +3,7 @@
 import { revalidatePath } from 'next/cache';
 
 import prisma from '@/lib/prisma';
-import {
-  Allocation,
-  AllocationWithPurchases,
-} from '@/lib/types';
+import { Allocation, AllocationWithPurchases } from '@/lib/types';
 import { ErrorType, ResponseType } from '@/lib/utils';
 
 export async function createAllocation({
