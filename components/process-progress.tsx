@@ -1,7 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 
+import { zodResolver } from '@hookform/resolvers/zod';
 import {
   CheckCircle2,
   Circle,
@@ -9,6 +11,7 @@ import {
   SkipForward,
   Undo2,
 } from 'lucide-react';
+import { z } from 'zod/v4';
 
 import {
   getPurchaseProcess,
@@ -24,6 +27,13 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
 
 import { Button } from './ui/button';
+
+const markCompleteSchema = z.object({
+  completionDate: z.date(),
+  notes: z.string(),
+});
+
+type MarkCompleteFormValues = z.infer<typeof markCompleteSchema>;
 
 function todayDate() {
   const d = new Date();
@@ -79,8 +89,11 @@ export function ProcessProgress({
   );
   const [mutatingStepId, setMutatingStepId] = useState<string | null>(null);
   const [expandedStepId, setExpandedStepId] = useState<string | null>(null);
-  const [completionDate, setCompletionDate] = useState<Date>(todayDate());
-  const [notes, setNotes] = useState('');
+
+  const form = useForm<MarkCompleteFormValues>({
+    resolver: zodResolver(markCompleteSchema),
+    defaultValues: { completionDate: todayDate(), notes: '' },
+  });
 
   const updateData = useCallback(
     (next: PurchaseProcessData | null) => {
@@ -94,14 +107,17 @@ export function ProcessProgress({
     getPurchaseProcess(purchaseId).then(updateData);
   }, [purchaseId, updateData]);
 
-  async function handleConfirm(step: PurchaseProcessStep) {
+  async function handleConfirm(
+    values: MarkCompleteFormValues,
+    step: PurchaseProcessStep,
+  ) {
     if (!data) return;
     setMutatingStepId(step.id);
     const markedAt = new Date();
     const result = await handleError(
       markStepComplete(data.processId, step.id, {
-        completionDate,
-        notes: notes || null,
+        completionDate: values.completionDate,
+        notes: values.notes || null,
       }),
       {
         toast: {
@@ -119,8 +135,8 @@ export function ProcessProgress({
                     completion: {
                       id: res.id,
                       markedAt,
-                      completionDate,
-                      notes: notes || null,
+                      completionDate: values.completionDate,
+                      notes: values.notes || null,
                     },
                   }
                 : s,
@@ -238,8 +254,7 @@ export function ProcessProgress({
                           if (expandedStepId === step.id) {
                             setExpandedStepId(null);
                           } else {
-                            setCompletionDate(todayDate());
-                            setNotes('');
+                            form.reset({ completionDate: todayDate(), notes: '' });
                             setExpandedStepId(step.id);
                           }
                         }}
@@ -258,40 +273,51 @@ export function ProcessProgress({
                   )}
                 >
                   <div className="overflow-hidden">
-                    <div className="flex items-center gap-2 border-t px-3 py-2">
+                    <form
+                      className="flex items-center gap-2 border-t px-3 py-2"
+                      onSubmit={form.handleSubmit((values) =>
+                        handleConfirm(values, step),
+                      )}
+                    >
                       <div className="shrink-0">
-                        <DatePicker
-                          value={completionDate}
-                          onChange={setCompletionDate}
+                        <Controller
+                          control={form.control}
+                          name="completionDate"
+                          render={({ field }) => (
+                            <DatePicker
+                              value={field.value}
+                              onChange={field.onChange}
+                            />
+                          )}
                         />
                       </div>
                       <Input
-                        value={notes}
-                        onChange={(e) => setNotes(e.target.value)}
+                        {...form.register('notes')}
                         placeholder="Notes (optional)"
                         className="h-9 text-sm"
                       />
                       <Button
+                        type="button"
                         size="sm"
                         variant="outline"
                         onClick={() => setExpandedStepId(null)}
-                        disabled={mutatingStepId === step.id}
+                        disabled={form.formState.isSubmitting}
                         className="shrink-0"
                       >
                         Cancel
                       </Button>
                       <Button
+                        type="submit"
                         size="sm"
-                        onClick={() => handleConfirm(step)}
-                        disabled={mutatingStepId === step.id}
+                        disabled={form.formState.isSubmitting}
                         className="shrink-0"
                       >
-                        {mutatingStepId === step.id && (
+                        {form.formState.isSubmitting && (
                           <Loader2 className="mr-1 size-3 animate-spin" />
                         )}
                         Confirm
                       </Button>
-                    </div>
+                    </form>
                   </div>
                 </div>
               </div>
