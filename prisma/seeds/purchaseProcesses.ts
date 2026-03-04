@@ -40,20 +40,20 @@ export async function seedPurchaseProcesses(
       data: { purchaseId: purchase.id, templateId: template.id, startedAt },
     });
 
-    // Steps up to the threshold position are completed; the rest are not
+    // Only create completion records for steps up to the threshold; future steps have no record yet
     const sortedSteps = [...template.steps].sort((a, b) => a.order - b.order);
     const cutoff = Math.floor(threshold * sortedSteps.length);
+    const completedSteps = sortedSteps.slice(0, cutoff);
     await Promise.all(
-      sortedSteps.map((step, idx) => {
-        const completed = idx < cutoff;
+      completedSteps.map((step) => {
         const markedAt = randomDateAfter(startedAt);
         return prisma.purchaseStepCompletion.create({
           data: {
             purchaseProcessId: process.id,
             stepId: step.id,
-            completed,
+            completed: true,
             markedAt,
-            completionDate: completed ? markedAt : null,
+            completionDate: markedAt,
             notes: Math.random() < 0.05 ? 'Reviewed and approved' : null,
           },
         });

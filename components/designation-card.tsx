@@ -10,7 +10,7 @@ export function DesignationCard({ designation }: { designation: Designation }) {
   const { id, name, code, budgetResetBehavior } = designation;
 
   return (
-    <Card className="gap-2">
+    <Card className="h-full gap-2">
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-3">

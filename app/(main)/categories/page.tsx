@@ -1,7 +1,5 @@
 'use client';
 
-import { redirect } from 'next/navigation';
-
 import { useDesignation } from '@/contexts/DesignationContext';
 import { useYear } from '@/contexts/YearContext';
 import { Plus } from 'lucide-react';
@@ -16,7 +14,7 @@ export default function CategoriesPage() {
   const { selectedDesignation } = useDesignation();
   const { selectedYear } = useYear();
 
-  if (!selectedDesignation) redirect('/designation');
+  if (!selectedDesignation) return null;
 
   const description = selectedYear
     ? `${selectedDesignation.name} · DN${selectedDesignation.code} · ${selectedYear.name}`

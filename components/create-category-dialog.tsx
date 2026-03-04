@@ -404,6 +404,30 @@ function NewCategoryForm({
         </div>
       </form>
     </Form>
+    <FormDialog
+      trigger={trigger}
+      title="Create Spending Category"
+      description="Each spending category has a set budget."
+      schema={schema}
+      defaultValues={{ designationId, code: '', ledgerCode: '', name: '' }}
+      onSubmit={onSubmit}
+    >
+      <FormInput<FormData> name="name" label="Name" placeholder="Food" />
+      <FormInput<FormData>
+        name="code"
+        label="Spending Category Code"
+        placeholder="123"
+        prefix="SC"
+        numbersOnly
+        description="The spending category code associated with this category."
+      />
+      <FormInput<FormData>
+        name="ledgerCode"
+        label="Ledger Code"
+        placeholder="7XXX"
+        description="The ledger code to be associated with this category."
+      />
+    </FormDialog>
   );
 }
 
