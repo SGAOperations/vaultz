@@ -130,9 +130,9 @@ export function Content({
             <Link
               href={`/allocations/${allocation.id}`}
               key={allocation.id}
-              className="group"
+              className="group h-full"
             >
-              <Card className="hover:border-primary/30 p-4 transition-all duration-200 hover:shadow-md">
+              <Card className="hover:border-primary/30 h-full p-4 transition-all duration-200 hover:shadow-md">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
                     <div className="bg-primary/10 flex size-10 shrink-0 items-center justify-center rounded-lg">
