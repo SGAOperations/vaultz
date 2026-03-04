@@ -171,17 +171,6 @@ export async function createPeriod({
   startDate: Date;
   endDate: Date;
 }): Promise<ResponseType<Period>> {
-  const overlapping = await prisma.period.findFirst({
-    where: {
-      deletedAt: null,
-      startDate: { lte: endDate },
-      endDate: { gte: startDate },
-    },
-  });
-
-  if (overlapping)
-    return { error: `Overlaps with period "${overlapping.name}"` };
-
   const period = await prisma.period.create({
     data: { name, yearId, startDate, endDate },
   });
@@ -204,18 +193,6 @@ export async function updatePeriod({
   startDate: Date;
   endDate: Date;
 }): Promise<ResponseType<Period>> {
-  const overlapping = await prisma.period.findFirst({
-    where: {
-      deletedAt: null,
-      id: { not: id },
-      startDate: { lte: endDate },
-      endDate: { gte: startDate },
-    },
-  });
-
-  if (overlapping)
-    return { error: `Overlaps with period "${overlapping.name}"` };
-
   const period = await prisma.period.update({
     where: { id, deletedAt: null },
     data: { name, yearId, startDate, endDate },
