@@ -84,7 +84,12 @@ export type ErrorType = { error: string };
 export type ResponseType<T> = T | ErrorType;
 
 export function isError<T>(result: ResponseType<T>): result is ErrorType {
-  return (result as ErrorType).error !== undefined;
+  return (
+    result !== null &&
+    result !== undefined &&
+    typeof result === 'object' &&
+    'error' in result
+  );
 }
 
 /**

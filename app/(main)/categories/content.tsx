@@ -68,8 +68,8 @@ export function Content({ designationId }: ContentProps) {
   if (!categories || categories.length === 0)
     return (
       <EmptyState
-        message="No categories yet"
-        description="Create categories for this designation to see them here"
+        message={`No categories for ${selectedYear.name}`}
+        description="Create a new category or add an existing one from another year"
       />
     );
 
@@ -170,6 +170,7 @@ export function Content({ designationId }: ContentProps) {
             >
               <EditCategoryDialog
                 category={category}
+                categoryYearId={category.categoryYearId ?? undefined}
                 trigger={
                   <Button
                     variant="ghost"
