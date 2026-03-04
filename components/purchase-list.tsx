@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useYear } from '@/contexts/YearContext';
 import {
@@ -19,12 +19,10 @@ import {
   ArrowUp,
   ArrowUpDown,
   Calendar,
-  Check,
   ChevronDown,
   CircleDollarSign,
   DollarSign,
   Download,
-  FileCheck,
   FileText,
   Loader2,
   StickyNote,
@@ -33,10 +31,7 @@ import {
 } from 'lucide-react';
 
 import { User } from '@/prisma/client';
-import {
-  getBatchPurchaseProcessData,
-  getPurchaseProcess,
-} from '@/prisma/services/purchase';
+import { getBatchPurchaseProcessData } from '@/prisma/services/purchase';
 
 import {
   Allocation,
@@ -77,7 +72,7 @@ import { EmptyState } from './empty-state';
 import { getStepStatus } from './process-progress';
 import { PurchaseDialog } from './purchase-dialog';
 
-type StatusFilter = 'excludeFromTotal' | 'expenseReportCreated' | 'reimbursed';
+type StatusFilter = 'excludeFromTotal';
 type StepStatusFilter = 'all' | 'completed' | 'in-progress' | 'not-started';
 type TemplateFilter = 'all' | 'none' | string;
 
@@ -85,11 +80,7 @@ const STATUS_FILTERS: {
   key: StatusFilter;
   label: string;
   Icon: React.ComponentType<{ className?: string }>;
-}[] = [
-  { key: 'excludeFromTotal', label: 'Excluded', Icon: CircleDollarSign },
-  { key: 'expenseReportCreated', label: 'Report Filed', Icon: FileCheck },
-  { key: 'reimbursed', label: 'Reimbursed', Icon: Check },
-];
+}[] = [{ key: 'excludeFromTotal', label: 'Excluded', Icon: CircleDollarSign }];
 
 const STEP_STATUS_OPTIONS: { value: StepStatusFilter; label: string }[] = [
   { value: 'all', label: 'All' },
@@ -124,8 +115,6 @@ function exportToCsv(
     'Template',
     'Current Step',
     'Excluded',
-    'Report Filed',
-    'Reimbursed',
   ];
 
   const rows = purchases.map((p) => {
@@ -142,8 +131,6 @@ function exportToCsv(
       proc?.templateName ?? '',
       currentStep?.name ?? '',
       p.excludeFromTotal ? 'Yes' : 'No',
-      p.expenseReportCreated ? 'Yes' : 'No',
-      p.reimbursed ? 'Yes' : 'No',
     ];
   });
 
@@ -219,8 +206,8 @@ function ProcessCellContent({ data }: { data: PurchaseProcessData }) {
               <div
                 key={step.id}
                 className={cn('size-1.5 rounded-full transition-colors', {
-                  'bg-green-500': status === 'completed',
-                  'bg-yellow-400': status === 'bypassed',
+                  'bg-process-step-completed': status === 'completed',
+                  'bg-process-step-bypassed': status === 'bypassed',
                   'bg-muted-foreground/20': status === 'pending',
                 })}
               />
@@ -245,6 +232,8 @@ function PurchaseTableRow({
   allocationGroups,
   miscAllocations,
   processTemplates,
+  processData,
+  onProcessDataChange,
 }: {
   row: Row<PurchaseWithUser>;
   users: User[];
@@ -252,17 +241,9 @@ function PurchaseTableRow({
   allocationGroups: AllocationGroupWithAllocations[];
   miscAllocations: Allocation[];
   processTemplates: ProcessTemplateWithStepCount[];
+  processData: PurchaseProcessData | null | undefined;
+  onProcessDataChange: (data: PurchaseProcessData | null) => void;
 }) {
-  const [processData, setProcessData] = useState<
-    PurchaseProcessData | null | undefined
-  >(undefined);
-
-  useEffect(() => {
-    getPurchaseProcess(row.original.id)
-      .then(setProcessData)
-      .catch(() => setProcessData(null));
-  }, [row.original.id]);
-
   const isIncomplete =
     !!processData && processData.steps.some((s) => s.completion === null);
 
@@ -272,7 +253,7 @@ function PurchaseTableRow({
         <TableRow
           className={cn(
             'cursor-pointer',
-            isIncomplete && 'border-l-2 border-l-amber-400',
+            isIncomplete && 'border-l-incomplete-indicator border-l-2',
           )}
         >
           {row.getVisibleCells().map((cell) => (
@@ -291,7 +272,7 @@ function PurchaseTableRow({
       allocationGroups={allocationGroups}
       miscAllocations={miscAllocations}
       processTemplates={processTemplates}
-      onProcessDataChange={setProcessData}
+      onProcessDataChange={onProcessDataChange}
     />
   );
 }
@@ -317,13 +298,8 @@ export function PurchaseList({
 }) {
   'use no memo';
   const { selectedYear } = useYear();
-  const [internalSorting, setInternalSorting] = useState<SortingState>(
-    controlledSorting ?? [],
-  );
-
-  useEffect(() => {
-    if (controlledSorting !== undefined) setInternalSorting(controlledSorting);
-  }, [controlledSorting]);
+  const [internalSorting, setInternalSorting] = useState<SortingState>([]);
+  const effectiveSorting = controlledSorting ?? internalSorting;
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState('');
   const [statusFilters, setStatusFilters] = useState<Set<StatusFilter>>(
@@ -336,6 +312,13 @@ export function PurchaseList({
     Record<string, PurchaseProcessData | null>
   >({});
   const [processDataLoading, setProcessDataLoading] = useState(false);
+
+  const handleProcessDataChange = useCallback(
+    (purchaseId: string, data: PurchaseProcessData | null) => {
+      setProcessDataMap((prev) => ({ ...prev, [purchaseId]: data }));
+    },
+    [],
+  );
 
   useEffect(() => {
     if (purchases.length === 0) return;
@@ -468,10 +451,8 @@ export function PurchaseList({
         id: 'status',
         header: 'Status',
         cell: ({ row }) => {
-          const { excludeFromTotal, expenseReportCreated, reimbursed, notes } =
-            row.original;
-          const hasStatus =
-            excludeFromTotal || expenseReportCreated || reimbursed || notes;
+          const { excludeFromTotal, notes } = row.original;
+          const hasStatus = excludeFromTotal || notes;
           if (!hasStatus) return null;
           return (
             <div className="flex flex-wrap items-center gap-1.5">
@@ -479,18 +460,6 @@ export function PurchaseList({
                 <div className="bg-muted flex items-center gap-1 rounded-full px-2 py-0.5">
                   <CircleDollarSign className="size-3" />
                   <span className="text-xs">Excluded</span>
-                </div>
-              )}
-              {expenseReportCreated && (
-                <div className="bg-muted flex items-center gap-1 rounded-full px-2 py-0.5">
-                  <FileCheck className="size-3" />
-                  <span className="text-xs">Report Filed</span>
-                </div>
-              )}
-              {reimbursed && (
-                <div className="bg-muted flex items-center gap-1 rounded-full px-2 py-0.5">
-                  <Check className="size-3" />
-                  <span className="text-xs">Reimbursed</span>
                 </div>
               )}
               {notes && (
@@ -519,14 +488,10 @@ export function PurchaseList({
   const table = useReactTable({
     data: filteredPurchases,
     columns,
-    state: {
-      sorting: controlledSorting ?? internalSorting,
-      columnFilters,
-      globalFilter,
-    },
+    state: { sorting: effectiveSorting, columnFilters, globalFilter },
     onSortingChange: (updater) => {
-      const current = controlledSorting ?? internalSorting;
-      const next = typeof updater === 'function' ? updater(current) : updater;
+      const next =
+        typeof updater === 'function' ? updater(effectiveSorting) : updater;
       if (onControlledSortingChange) onControlledSortingChange(next);
       else setInternalSorting(next);
     },
@@ -702,6 +667,10 @@ export function PurchaseList({
                     allocationGroups={allocationGroups}
                     miscAllocations={miscAllocations}
                     processTemplates={processTemplates}
+                    processData={processDataMap[row.original.id]}
+                    onProcessDataChange={(data) =>
+                      handleProcessDataChange(row.original.id, data)
+                    }
                   />
                 ))
             )}

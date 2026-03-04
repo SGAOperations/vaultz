@@ -4,10 +4,8 @@ import { useEffect, useState } from 'react';
 
 import {
   Calendar,
-  Check,
   CircleDollarSign,
   DollarSign,
-  FileCheck,
   FileText,
   StickyNote,
   User as UserIcon,
@@ -57,9 +55,9 @@ function ProcessCardIndicator({ data }: { data: PurchaseProcessData }) {
               key={step.id}
               className={`size-1.5 rounded-full transition-colors ${
                 status === 'completed'
-                  ? 'bg-green-500'
+                  ? 'bg-process-step-completed'
                   : status === 'bypassed'
-                    ? 'bg-yellow-400'
+                    ? 'bg-process-step-bypassed'
                     : 'bg-muted-foreground/20'
               }`}
             />
@@ -117,7 +115,7 @@ export function PurchaseCard({
           key={purchase.id}
           className={cn(
             'hover:border-primary/20 hover:bg-accent/50 cursor-pointer overflow-hidden p-3 transition-all duration-150',
-            isIncomplete && 'border-l-2 border-l-amber-400',
+            isIncomplete && 'border-l-incomplete-indicator border-l-2',
           )}
           onClick={stopPropagation ? (e) => e.stopPropagation() : undefined}
         >
@@ -173,26 +171,12 @@ export function PurchaseCard({
           </div>
 
           {/* Selector Status Badges */}
-          {(purchase.excludeFromTotal ||
-            purchase.expenseReportCreated ||
-            purchase.reimbursed) && (
+          {purchase.excludeFromTotal && (
             <div className="mt-2 flex flex-wrap gap-1.5">
               {purchase.excludeFromTotal && (
                 <div className="bg-muted flex items-center gap-1 rounded-full px-2 py-0.5">
                   <CircleDollarSign className="size-3" />
                   <span className="text-xs">Excluded</span>
-                </div>
-              )}
-              {purchase.expenseReportCreated && (
-                <div className="bg-muted flex items-center gap-1 rounded-full px-2 py-0.5">
-                  <FileCheck className="size-3" />
-                  <span className="text-xs">Report Filed</span>
-                </div>
-              )}
-              {purchase.reimbursed && (
-                <div className="bg-muted flex items-center gap-1 rounded-full px-2 py-0.5">
-                  <Check className="size-3" />
-                  <span className="text-xs">Reimbursed</span>
                 </div>
               )}
             </div>

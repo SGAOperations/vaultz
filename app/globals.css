@@ -56,6 +56,12 @@
   --color-nav-hover: var(--nav-hover);
   --color-header-bg: var(--header-bg);
   --color-header-border: var(--header-border);
+  --color-icon-secondary: var(--icon-secondary);
+  --color-icon-tertiary: var(--icon-tertiary);
+  --color-process-step-completed: var(--process-step-completed);
+  --color-process-step-bypassed: var(--process-step-bypassed);
+  --color-transfer-income: var(--transfer-income);
+  --color-incomplete-indicator: var(--incomplete-indicator);
 }
 
 :root {
@@ -105,6 +111,12 @@
   --nav-hover: oklch(0.92 0.04 306);
   --header-bg: oklch(1 0 0);
   --header-border: oklch(0.92 0.03 307);
+  --icon-secondary: oklch(0.55 0.2 300);
+  --icon-tertiary: oklch(0.65 0.18 50);
+  --process-step-completed: oklch(0.6 0.18 145);
+  --process-step-bypassed: oklch(0.7 0.15 85);
+  --transfer-income: oklch(0.55 0.18 145);
+  --incomplete-indicator: oklch(0.75 0.18 75);
 }
 
 .dark {
@@ -153,6 +165,12 @@
   --nav-hover: oklch(0.28 0.05 306);
   --header-bg: oklch(0.18 0.02 304);
   --header-border: oklch(0.28 0.04 305);
+  --icon-secondary: oklch(0.65 0.2 300);
+  --icon-tertiary: oklch(0.72 0.18 50);
+  --process-step-completed: oklch(0.6 0.18 145);
+  --process-step-bypassed: oklch(0.7 0.15 85);
+  --transfer-income: oklch(0.6 0.18 145);
+  --incomplete-indicator: oklch(0.75 0.18 75);
 }
 
 @layer base {
@@ -161,5 +179,11 @@
   }
   body {
     @apply bg-background text-foreground;
+    overflow-y: scroll;
+  }
+  body[data-scroll-locked] {
+    overflow-y: scroll !important;
+    padding-right: 0 !important;
+    margin-right: 0 !important;
   }
 }

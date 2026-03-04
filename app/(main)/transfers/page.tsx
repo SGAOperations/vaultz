@@ -1,0 +1,49 @@
+'use client';
+
+import { useDesignation } from '@/contexts/DesignationContext';
+import { useQuery } from '@tanstack/react-query';
+import { Plus } from 'lucide-react';
+
+import { getCategoriesWithAvailableAmount } from '@/prisma/services/category';
+
+import { PageHeader } from '@/components/page-header';
+import { TransferDialog } from '@/components/transfer-dialog';
+import { Button } from '@/components/ui/button';
+
+import { Content } from './content';
+
+export default function TransfersPage() {
+  const { selectedDesignation } = useDesignation();
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ['categories-with-available', selectedDesignation?.id],
+    queryFn: () =>
+      getCategoriesWithAvailableAmount({
+        designationId: selectedDesignation!.id,
+      }),
+    enabled: !!selectedDesignation,
+  });
+
+  if (!selectedDesignation) return null;
+
+  return (
+    <div className="flex w-full flex-col">
+      <PageHeader
+        title="Transfer History"
+        description={`${selectedDesignation.name} · DN${selectedDesignation.code}`}
+        actions={
+          <TransferDialog
+            categories={categories}
+            trigger={
+              <Button>
+                <Plus className="size-4" />
+                New Transfer
+              </Button>
+            }
+          />
+        }
+      />
+      <Content designationId={selectedDesignation.id} />
+    </div>
+  );
+}

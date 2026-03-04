@@ -77,9 +77,9 @@ export function CopyAllocationsDialog({
             <Checkbox
               id="copyAmounts"
               checked={copyAmounts}
-              onChange={(e) => {
-                setCopyAmounts(e.target.checked);
-                if (!e.target.checked) setIncludeCarryover(false);
+              onCheckedChange={(checked) => {
+                setCopyAmounts(!!checked);
+                if (!checked) setIncludeCarryover(false);
               }}
             />
             <Label htmlFor="copyAmounts" className="cursor-pointer">
@@ -92,7 +92,7 @@ export function CopyAllocationsDialog({
               id="includeCarryover"
               checked={includeCarryover}
               disabled={!copyAmounts}
-              onChange={(e) => setIncludeCarryover(e.target.checked)}
+              onCheckedChange={(checked) => setIncludeCarryover(!!checked)}
             />
             <div className="flex flex-col gap-0.5">
               <Label

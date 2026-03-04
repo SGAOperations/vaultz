@@ -1,5 +1,7 @@
 'use client';
 
+import { useState } from 'react';
+
 import { Calendar as CalendarIcon } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -7,11 +9,36 @@ import { cn } from '@/lib/utils';
 import { DateTime } from '@/components/date-time';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
+import { Input } from '@/components/ui/input';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+
+function formatDateInput(date: Date): string {
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const year = date.getFullYear();
+  return `${month}/${day}/${year}`;
+}
+
+const MIN_VALID_YEAR = 1000;
+
+function parseDateInput(input: string): Date | undefined {
+  const parts = input.split('/');
+  if (parts.length !== 3) return undefined;
+  const [month, day, year] = parts.map(Number);
+  if (!month || !day || !year || year < MIN_VALID_YEAR) return undefined;
+  const date = new Date(year, month - 1, day);
+  if (
+    date.getFullYear() === year &&
+    date.getMonth() === month - 1 &&
+    date.getDate() === day
+  )
+    return date;
+  return undefined;
+}
 
 export function DatePicker({
   value,
@@ -21,9 +48,27 @@ export function DatePicker({
   onChange: (value: Date) => void;
 }) {
   const date = value ? new Date(value) : undefined;
+  const [open, setOpen] = useState(false);
+  const [inputValue, setInputValue] = useState(
+    date ? formatDateInput(date) : '',
+  );
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    setInputValue(raw);
+    const parsed = parseDateInput(raw);
+    if (parsed) onChange(parsed);
+  };
+
+  const handleOpenChange = (newOpen: boolean) => {
+    if (newOpen) setInputValue(date ? formatDateInput(date) : '');
+    setOpen(newOpen);
+  };
+
+  const currentYear = new Date().getFullYear();
 
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <Button
           variant={'outline'}
@@ -36,11 +81,32 @@ export function DatePicker({
           {date ? <DateTime date={date} dateOnly /> : <span>Pick a date</span>}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start">
+      <PopoverContent
+        className="w-auto p-0"
+        align="start"
+        avoidCollisions={false}
+      >
+        <div className="border-b p-3">
+          <Input
+            placeholder="MM/DD/YYYY"
+            value={inputValue}
+            onChange={handleInputChange}
+            aria-invalid={inputValue !== '' && !parseDateInput(inputValue)}
+          />
+        </div>
         <Calendar
           mode="single"
           selected={date}
-          onSelect={(newDate) => newDate && onChange(newDate)}
+          onSelect={(newDate) => {
+            if (newDate) {
+              onChange(newDate);
+              setInputValue(formatDateInput(newDate));
+              setOpen(false);
+            }
+          }}
+          captionLayout="dropdown"
+          fromYear={currentYear - 25}
+          toYear={currentYear + 25}
         />
       </PopoverContent>
     </Popover>

@@ -6,14 +6,20 @@ import { FormProvider, useForm } from 'react-hook-form';
 
 import { useYear } from '@/contexts/YearContext';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useQueryClient } from '@tanstack/react-query';
-import { ArrowLeftRight, Loader2, TriangleAlert } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  ArrowLeftRight,
+  ArrowRight,
+  Loader2,
+  TriangleAlert,
+} from 'lucide-react';
 import { z } from 'zod/v4';
 
+import { getActiveYear, getAllYears } from '@/prisma/services/period';
 import { createTransfer } from '@/prisma/services/transfer';
 
 import { CategoryWithAvailableAmountAndYears } from '@/lib/types';
-import { formatNumber, handleError, isError } from '@/lib/utils';
+import { cn, formatCurrency, handleError, isError } from '@/lib/utils';
 
 import { TransferWarningDialog } from '@/components/transfer-warning-dialog';
 import { Button } from '@/components/ui/button';
@@ -61,7 +67,19 @@ export function TransferDialog({
   categories: CategoryWithAvailableAmountAndYears[];
   trigger?: React.ReactNode;
 }) {
-  const { years, activeYearId, selectedYear } = useYear();
+  const { selectedYear } = useYear();
+
+  const { data: years = [] } = useQuery({
+    queryKey: ['years'],
+    queryFn: getAllYears,
+  });
+
+  const { data: activeYear } = useQuery({
+    queryKey: ['active-year'],
+    queryFn: getActiveYear,
+  });
+
+  const activeYearId = activeYear?.id;
   const router = useRouter();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -83,7 +101,7 @@ export function TransferDialog({
   const [fromCategoryId, setFromCategoryId] = useState('');
   const [toCategoryId, setToCategoryId] = useState('');
   // eslint-disable-next-line react-hooks/incompatible-library
-  const transferAmount = form.watch('amount') ?? 0;
+  const transferAmount = Number(form.watch('amount')) || 0;
   const selectedYearId = form.watch('yearId') ?? '';
 
   const isNonActiveYear = !!selectedYearId && selectedYearId !== activeYearId;
@@ -170,12 +188,12 @@ export function TransferDialog({
 
   const fromCategoryItems = categoriesForYear.map((c) => ({
     value: c.id,
-    label: `${c.name} (Available: $${formatNumber(c.available)})`,
+    label: `${c.name} (Available: ${formatCurrency(c.available)})`,
   }));
 
   const toCategoryItems = toCategoryOptions.map((c) => ({
     value: c.id,
-    label: `${c.name} (Remaining: $${formatNumber(c.available)})`,
+    label: `${c.name} (Remaining: ${formatCurrency(c.available)})`,
   }));
 
   return (
@@ -226,7 +244,7 @@ export function TransferDialog({
               />
 
               {isNonActiveYear && (
-                <div className="flex items-start gap-2 rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-800 dark:border-yellow-800 dark:bg-yellow-950 dark:text-yellow-200">
+                <div className="border-warning/30 bg-warning/10 text-warning flex items-start gap-2 rounded-lg border p-3 text-sm">
                   <TriangleAlert className="mt-0.5 size-4 shrink-0" />
                   <p>
                     You are transferring funds in a non-active year. Please
@@ -312,23 +330,47 @@ export function TransferDialog({
                 )}
               />
 
-              {fromCategory && toCategory && transferAmount > 0 && (
-                <div className="bg-muted rounded-lg p-3 text-sm">
-                  <p className="text-muted-foreground mb-1 font-medium">
-                    After transfer:
-                  </p>
-                  <p>
-                    <span className="font-medium">{fromCategory.name}:</span> $
-                    {formatNumber(fromCategory.available - transferAmount)}{' '}
-                    remaining
-                  </p>
-                  <p>
-                    <span className="font-medium">{toCategory.name}:</span> $
-                    {formatNumber(toCategory.available + transferAmount)}{' '}
-                    remaining
-                  </p>
+              <div className="bg-muted rounded-lg p-4 text-sm">
+                <div className="flex items-center gap-3">
+                  <div className="min-w-0 flex-1 text-center">
+                    <p
+                      className={cn(
+                        'text-base font-semibold',
+                        fromCategory &&
+                          fromCategory.available - transferAmount < 0 &&
+                          'text-destructive',
+                      )}
+                    >
+                      {fromCategory
+                        ? formatCurrency(
+                            fromCategory.available - transferAmount,
+                          )
+                        : '—'}
+                    </p>
+                    <p className="text-muted-foreground truncate text-xs">
+                      {fromCategory ? fromCategory.name : 'From'}
+                    </p>
+                  </div>
+                  <ArrowRight className="text-muted-foreground size-5 shrink-0" />
+                  <div className="min-w-0 flex-1 text-center">
+                    <p
+                      className={cn(
+                        'text-base font-semibold',
+                        toCategory &&
+                          toCategory.available + transferAmount < 0 &&
+                          'text-destructive',
+                      )}
+                    >
+                      {toCategory
+                        ? formatCurrency(toCategory.available + transferAmount)
+                        : '—'}
+                    </p>
+                    <p className="text-muted-foreground truncate text-xs">
+                      {toCategory ? toCategory.name : 'To'}
+                    </p>
+                  </div>
                 </div>
-              )}
+              </div>
 
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="animate-spin" />}

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Controller, FormProvider, useForm, useWatch } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, Loader2 } from 'lucide-react';
 import { z } from 'zod/v4';
 
@@ -60,6 +61,7 @@ export function PeriodDialog({
 }) {
   const [open, setOpen] = useState(false);
   const [pendingData, setPendingData] = useState<FormData | null>(null);
+  const queryClient = useQueryClient();
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -104,6 +106,7 @@ export function PeriodDialog({
         },
       );
       if (!isError(result)) {
+        await queryClient.invalidateQueries({ queryKey: ['periods'] });
         setPendingData(null);
         setOpen(false);
       }
@@ -116,6 +119,7 @@ export function PeriodDialog({
         },
       });
       if (!isError(result)) {
+        await queryClient.invalidateQueries({ queryKey: ['periods'] });
         form.reset();
         setPendingData(null);
         setOpen(false);
@@ -227,7 +231,7 @@ export function PeriodDialog({
                 watchedEndDate &&
                 getExceedsYear(form.getValues()) && (
                   <p className="text-muted-foreground flex items-center gap-2 text-sm">
-                    <AlertTriangle className="size-4 shrink-0 text-amber-500" />
+                    <AlertTriangle className="text-warning size-4 shrink-0" />
                     These dates extend beyond the selected year&apos;s range.
                     You will be asked to confirm.
                   </p>
@@ -251,7 +255,7 @@ export function PeriodDialog({
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="size-5 text-amber-500" />
+              <AlertTriangle className="text-warning size-5" />
               Period Extends Beyond Year
             </DialogTitle>
             <DialogDescription>
