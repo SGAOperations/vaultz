@@ -49,12 +49,13 @@ const MONTH_NAMES = [
 
 const YEARS = Array.from({ length: 11 }, (_, i) => 2020 + i);
 
-// DayButton without imperative focus() — prevents the `:focus-visible` flash
-// inside a Dialog that CalendarDayButton's useEffect causes on every hover/click.
+// DayButton without imperative focus() and without focus ring styles — prevents
+// any focus-related visual flash inside a Radix Dialog.
 function PickerDayButton({
   className,
   day: _day,
   modifiers,
+  onMouseDown: onMouseDownProp,
   ...props
 }: React.ComponentProps<typeof DayButton>) {
   const defaultClassNames = getDefaultClassNames();
@@ -72,14 +73,20 @@ function PickerDayButton({
       data-range-end={modifiers.range_end}
       data-range-middle={modifiers.range_middle}
       className={cn(
-        'data-[selected-single=true]:bg-primary data-[selected-single=true]:text-primary-foreground data-[range-middle=true]:bg-accent data-[range-middle=true]:text-accent-foreground data-[range-start=true]:bg-primary data-[range-start=true]:text-primary-foreground data-[range-end=true]:bg-primary data-[range-end=true]:text-primary-foreground dark:hover:text-accent-foreground flex aspect-square size-auto w-full min-w-(--cell-size) flex-col gap-1 leading-none font-normal [&>span]:text-xs [&>span]:opacity-70',
+        'data-[selected-single=true]:bg-primary data-[selected-single=true]:text-primary-foreground data-[range-middle=true]:bg-accent data-[range-middle=true]:text-accent-foreground data-[range-start=true]:bg-primary data-[range-start=true]:text-primary-foreground data-[range-end=true]:bg-primary data-[range-end=true]:text-primary-foreground dark:hover:text-accent-foreground flex aspect-square size-auto w-full min-w-(--cell-size) flex-col gap-1 leading-none font-normal focus-visible:ring-0 focus-visible:border-transparent [&>span]:text-xs [&>span]:opacity-70',
         defaultClassNames.day,
         className,
       )}
+      onMouseDown={(e) => {
+        e.preventDefault();
+        onMouseDownProp?.(e as React.MouseEvent<HTMLButtonElement>);
+      }}
       {...props}
     />
   );
 }
+
+const CALENDAR_COMPONENTS = { DayButton: PickerDayButton };
 
 export function DatePicker({
   value,
@@ -279,9 +286,7 @@ export function DatePicker({
                 month_caption: 'hidden',
                 nav: 'hidden',
               }}
-              components={{
-                DayButton: PickerDayButton,
-              }}
+              components={CALENDAR_COMPONENTS}
             />
           </div>
         </>
