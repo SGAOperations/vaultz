@@ -28,14 +28,21 @@ import { toast } from 'sonner';
 import { twMerge } from 'tailwind-merge';
 import { z } from 'zod/v4';
 
+import { useDesignation } from '@/contexts/DesignationContext';
+import { usePeriod } from '@/contexts/PeriodContext';
+
 import { User } from '@/prisma/client';
+import { getMiscAllocations } from '@/prisma/services/allocation';
+import { getAllAllocationGroups } from '@/prisma/services/allocation-groups';
+import { getCategoriesByDesignation } from '@/prisma/services/category';
 import { getActiveYear, getAllYears } from '@/prisma/services/period';
+import { getAllProcessTemplates } from '@/prisma/services/process-templates';
 import {
   createPurchase,
   deletePurchase,
   updatePurchase,
 } from '@/prisma/services/purchase';
-import { createUser } from '@/prisma/services/user';
+import { createUser, getUsers } from '@/prisma/services/user';
 
 import {
   Allocation,
@@ -1173,14 +1180,70 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
   );
 }
 
-// Backward compatibility export for CreatePurchaseDialog
+// CreatePurchaseDialog self-fetches all data using contexts.
+// Callers may pass optional overrides to filter the options shown in the dialog.
 export function CreatePurchaseDialog(props: {
-  users: User[];
-  categories: CategoryWithDesignation[];
+  trigger?: React.ReactNode;
+  users?: User[];
+  categories?: CategoryWithDesignation[];
   allocationGroups?: AllocationGroupWithAllocations[];
   miscAllocations?: Allocation[];
   processTemplates?: ProcessTemplateWithStepCount[];
   defaultCategoryId?: string;
 }) {
-  return <PurchaseDialog mode="create" {...props} />;
+  const { selectedDesignation } = useDesignation();
+  const { selectedPeriod } = usePeriod();
+  const designationId = selectedDesignation?.id;
+
+  const { data: fetchedUsers = [] } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => getUsers(),
+    enabled: props.users === undefined,
+  });
+
+  const { data: fetchedCategories = [] } = useQuery({
+    queryKey: ['categories-by-designation', designationId],
+    queryFn: () =>
+      designationId
+        ? getCategoriesByDesignation({ designationId })
+        : Promise.resolve([]),
+    enabled: props.categories === undefined && !!designationId,
+  });
+
+  const { data: fetchedAllocationGroups = [] } = useQuery({
+    queryKey: ['allocation-groups', designationId, selectedPeriod?.id],
+    queryFn: () =>
+      designationId
+        ? getAllAllocationGroups(designationId, selectedPeriod?.id ?? undefined)
+        : Promise.resolve([]),
+    enabled: props.allocationGroups === undefined && !!designationId,
+  });
+
+  const { data: fetchedMiscAllocations = [] } = useQuery({
+    queryKey: ['misc-allocations', designationId, selectedPeriod?.id],
+    queryFn: () =>
+      designationId
+        ? getMiscAllocations(designationId, selectedPeriod?.id ?? undefined)
+        : Promise.resolve([]),
+    enabled: props.miscAllocations === undefined && !!designationId,
+  });
+
+  const { data: fetchedProcessTemplates = [] } = useQuery({
+    queryKey: ['process-templates'],
+    queryFn: () => getAllProcessTemplates(true),
+    enabled: props.processTemplates === undefined,
+  });
+
+  return (
+    <PurchaseDialog
+      mode="create"
+      trigger={props.trigger}
+      users={props.users ?? fetchedUsers}
+      categories={props.categories ?? fetchedCategories}
+      allocationGroups={props.allocationGroups ?? fetchedAllocationGroups}
+      miscAllocations={props.miscAllocations ?? fetchedMiscAllocations}
+      processTemplates={props.processTemplates ?? fetchedProcessTemplates}
+      defaultCategoryId={props.defaultCategoryId}
+    />
+  );
 }

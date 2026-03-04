@@ -14,14 +14,8 @@ import {
   Wallet,
 } from 'lucide-react';
 
-import { User } from '@/prisma/client';
 import { getAllocationGroupWithStats } from '@/prisma/services/allocation-groups';
 
-import {
-  AllocationWithPurchases,
-  CategoryWithDesignation,
-  ProcessTemplateWithStepCount,
-} from '@/lib/types';
 import { cn, formatNumber } from '@/lib/utils';
 
 import { CreateAllocationDialog } from '@/components/create-allocation-dialog';
@@ -36,19 +30,9 @@ import { UsageBar } from '@/components/usage-bar';
 
 interface ContentProps {
   allocationGroupId: string;
-  categories: CategoryWithDesignation[];
-  miscAllocations: AllocationWithPurchases[];
-  users: User[];
-  processTemplates: ProcessTemplateWithStepCount[];
 }
 
-export function Content({
-  allocationGroupId,
-  categories,
-  miscAllocations,
-  users,
-  processTemplates,
-}: ContentProps) {
+export function Content({ allocationGroupId }: ContentProps) {
   const { selectedPeriod } = usePeriod();
   const { selectedYear } = useYear();
 
@@ -80,11 +64,7 @@ export function Content({
         actions={
           <div className="flex gap-2">
             <CreatePurchaseDialog
-              users={users}
-              categories={categories}
               allocationGroups={[allocationGroup]}
-              miscAllocations={miscAllocations}
-              processTemplates={processTemplates}
             />
             <Link href={`/purchases?allocationGroup=${allocationGroupId}`}>
               <Button variant="outline" className="gap-2">

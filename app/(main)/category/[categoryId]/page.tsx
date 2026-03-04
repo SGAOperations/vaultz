@@ -4,7 +4,6 @@ import { notFound } from 'next/navigation';
 import { getMiscAllocations } from '@/prisma/services/allocation';
 import { getAllAllocationGroups } from '@/prisma/services/allocation-groups';
 import { getCategoryById } from '@/prisma/services/category';
-import { getAllProcessTemplates } from '@/prisma/services/process-templates';
 import { getTransfersByCategory } from '@/prisma/services/transfer';
 import { getUsers } from '@/prisma/services/user';
 
@@ -27,19 +26,13 @@ export default async function CategoryPage({
   const category = await getCategoryById({ id: categoryId });
   if (category === null) notFound();
 
-  const [
-    users,
-    allocationGroups,
-    miscAllocations,
-    processTemplates,
-    transfers,
-  ] = await Promise.all([
-    getUsers(),
-    getAllAllocationGroups(category.designationId),
-    getMiscAllocations(category.designationId),
-    getAllProcessTemplates(true),
-    getTransfersByCategory(categoryId),
-  ]);
+  const [users, allocationGroups, miscAllocations, transfers] =
+    await Promise.all([
+      getUsers(),
+      getAllAllocationGroups(category.designationId),
+      getMiscAllocations(category.designationId),
+      getTransfersByCategory(categoryId),
+    ]);
 
   const spent = category.purchases
     .filter((purchase) => !purchase.excludeFromTotal)
@@ -61,13 +54,7 @@ export default async function CategoryPage({
         description={`SC${category.code} · DN${category.designation.code}`}
         actions={
           <div className="flex gap-2">
-            <CreatePurchaseDialog
-              users={users}
-              categories={[category]}
-              allocationGroups={allocationGroups}
-              miscAllocations={miscAllocations}
-              processTemplates={processTemplates}
-            />
+            <CreatePurchaseDialog categories={[category]} />
             <CategoryActionsMenu category={category} />
           </div>
         }
@@ -83,7 +70,6 @@ export default async function CategoryPage({
         categories={[category]}
         allocationGroups={allocationGroups}
         miscAllocations={miscAllocations}
-        processTemplates={processTemplates}
       />
     </div>
   );
