@@ -95,7 +95,9 @@ export function EditCategoryDialog({
           error: 'Failed to remove category from year',
         },
         onSuccess: async () => {
-          await queryClient.invalidateQueries({ queryKey: ['categories-budget'] });
+          await queryClient.invalidateQueries({
+            queryKey: ['categories-budget'],
+          });
           setOpen(false);
         },
       });
@@ -195,7 +197,11 @@ export function EditCategoryDialog({
                 className="flex-1"
                 disabled={isSubmitting}
               >
-                {confirmDelete ? (categoryYearId ? 'Cancel Remove' : 'Cancel Delete') : 'Cancel'}
+                {confirmDelete
+                  ? categoryYearId
+                    ? 'Cancel Remove'
+                    : 'Cancel Delete'
+                  : 'Cancel'}
               </Button>
               {!confirmDelete && (
                 <Button
@@ -215,7 +221,11 @@ export function EditCategoryDialog({
                 disabled={isSubmitting}
               >
                 {confirmDelete ? (
-                  categoryYearId ? 'Confirm Remove' : 'Confirm Delete'
+                  categoryYearId ? (
+                    'Confirm Remove'
+                  ) : (
+                    'Confirm Delete'
+                  )
                 ) : (
                   <>
                     <Trash2 className="mr-2 h-4 w-4" />

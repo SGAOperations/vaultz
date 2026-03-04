@@ -32,7 +32,8 @@ export async function createCategory({
   const existing = await prisma.category.findFirst({
     where: { designationId, code, deletedAt: null },
   });
-  if (existing) return { error: `SC${code} already exists in this designation.` };
+  if (existing)
+    return { error: `SC${code} already exists in this designation.` };
 
   const category = await prisma.category.create({
     data: { designationId, code, ledgerCode, name },
@@ -40,7 +41,11 @@ export async function createCategory({
 
   if (yearId) {
     await prisma.categoryYear.create({
-      data: { categoryId: category.id, yearId, amount: new Decimal(amount ?? 0) },
+      data: {
+        categoryId: category.id,
+        yearId,
+        amount: new Decimal(amount ?? 0),
+      },
     });
   }
 

@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { z } from 'zod/v4';
 
 import { createCategory } from '@/prisma/services/category';
@@ -15,8 +16,6 @@ import {
 } from '@/prisma/services/category-year';
 
 import { handleError, isError } from '@/lib/utils';
-
-import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Combobox } from '@/components/ui/combobox';
@@ -28,9 +27,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import {
-  Form,
-} from '@/components/ui/form';
+import { Form } from '@/components/ui/form';
 import { FormInput } from '@/components/ui/form-input';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -75,7 +72,13 @@ export function CreateCategoryDialog({
 
   const form = useForm<NewFormData>({
     resolver: zodResolver(newSchema),
-    defaultValues: { designationId, code: '', ledgerCode: '', name: '', amount: 0 },
+    defaultValues: {
+      designationId,
+      code: '',
+      ledgerCode: '',
+      name: '',
+      amount: 0,
+    },
   });
 
   const isSubmitting = form.formState.isSubmitting;
@@ -90,7 +93,13 @@ export function CreateCategoryDialog({
   function handleOpenChange(newOpen: boolean) {
     setOpen(newOpen);
     if (!newOpen) {
-      form.reset({ designationId, code: '', ledgerCode: '', name: '', amount: 0 });
+      form.reset({
+        designationId,
+        code: '',
+        ledgerCode: '',
+        name: '',
+        amount: 0,
+      });
       setTab('new');
       setSelectedCategoryId('');
       setExistingAmount('0');
@@ -180,11 +189,16 @@ export function CreateCategoryDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Create Spending Category</DialogTitle>
-          <DialogDescription>Each spending category has a set budget.</DialogDescription>
+          <DialogDescription>
+            Each spending category has a set budget.
+          </DialogDescription>
         </DialogHeader>
 
         {showTabs ? (
-          <Tabs value={tab} onValueChange={(v) => setTab(v as 'new' | 'existing')}>
+          <Tabs
+            value={tab}
+            onValueChange={(v) => setTab(v as 'new' | 'existing')}
+          >
             <TabsList>
               <TabsTrigger value="new">New Category</TabsTrigger>
               <TabsTrigger value="existing">Add Existing</TabsTrigger>
@@ -275,7 +289,8 @@ export function CreateCategoryDialog({
                 </div>
                 {confirmPastYear && (
                   <p className="text-destructive text-sm">
-                    This is a past year. Adding a category will modify historical budget data. Are you sure?
+                    This is a past year. Adding a category will modify
+                    historical budget data. Are you sure?
                   </p>
                 )}
               </div>
