@@ -41,6 +41,68 @@ function todayDate() {
   return d;
 }
 
+function MarkCompleteForm({
+  isExpanded,
+  onConfirm,
+  onCancel,
+}: {
+  isExpanded: boolean;
+  onConfirm: (values: MarkCompleteFormValues) => Promise<void>;
+  onCancel: () => void;
+}) {
+  const form = useForm<MarkCompleteFormValues>({
+    resolver: zodResolver(markCompleteSchema),
+    defaultValues: { completionDate: todayDate(), notes: '' },
+  });
+
+  useEffect(() => {
+    if (isExpanded) form.reset({ completionDate: todayDate(), notes: '' });
+  }, [isExpanded, form.reset]);
+
+  return (
+    <form
+      className="flex items-center gap-2 border-t px-3 py-2"
+      onSubmit={form.handleSubmit(onConfirm)}
+    >
+      <div className="shrink-0">
+        <Controller
+          control={form.control}
+          name="completionDate"
+          render={({ field }) => (
+            <DatePicker value={field.value} onChange={field.onChange} />
+          )}
+        />
+      </div>
+      <Input
+        {...form.register('notes')}
+        placeholder="Notes (optional)"
+        className="h-9 text-sm"
+      />
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        onClick={onCancel}
+        disabled={form.formState.isSubmitting}
+        className="shrink-0"
+      >
+        Cancel
+      </Button>
+      <Button
+        type="submit"
+        size="sm"
+        disabled={form.formState.isSubmitting}
+        className="shrink-0"
+      >
+        {form.formState.isSubmitting && (
+          <Loader2 className="mr-1 size-3 animate-spin" />
+        )}
+        Confirm
+      </Button>
+    </form>
+  );
+}
+
 type StepStatus = 'completed' | 'bypassed' | 'pending';
 
 export function getStepStatus(
@@ -89,11 +151,6 @@ export function ProcessProgress({
   );
   const [mutatingStepId, setMutatingStepId] = useState<string | null>(null);
   const [expandedStepId, setExpandedStepId] = useState<string | null>(null);
-
-  const form = useForm<MarkCompleteFormValues>({
-    resolver: zodResolver(markCompleteSchema),
-    defaultValues: { completionDate: todayDate(), notes: '' },
-  });
 
   const updateData = useCallback(
     (next: PurchaseProcessData | null) => {
@@ -254,7 +311,6 @@ export function ProcessProgress({
                           if (expandedStepId === step.id) {
                             setExpandedStepId(null);
                           } else {
-                            form.reset({ completionDate: todayDate(), notes: '' });
                             setExpandedStepId(step.id);
                           }
                         }}
@@ -273,51 +329,11 @@ export function ProcessProgress({
                   )}
                 >
                   <div className="overflow-hidden">
-                    <form
-                      className="flex items-center gap-2 border-t px-3 py-2"
-                      onSubmit={form.handleSubmit((values) =>
-                        handleConfirm(values, step),
-                      )}
-                    >
-                      <div className="shrink-0">
-                        <Controller
-                          control={form.control}
-                          name="completionDate"
-                          render={({ field }) => (
-                            <DatePicker
-                              value={field.value}
-                              onChange={field.onChange}
-                            />
-                          )}
-                        />
-                      </div>
-                      <Input
-                        {...form.register('notes')}
-                        placeholder="Notes (optional)"
-                        className="h-9 text-sm"
-                      />
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setExpandedStepId(null)}
-                        disabled={form.formState.isSubmitting}
-                        className="shrink-0"
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        type="submit"
-                        size="sm"
-                        disabled={form.formState.isSubmitting}
-                        className="shrink-0"
-                      >
-                        {form.formState.isSubmitting && (
-                          <Loader2 className="mr-1 size-3 animate-spin" />
-                        )}
-                        Confirm
-                      </Button>
-                    </form>
+                    <MarkCompleteForm
+                      isExpanded={expandedStepId === step.id}
+                      onConfirm={(values) => handleConfirm(values, step)}
+                      onCancel={() => setExpandedStepId(null)}
+                    />
                   </div>
                 </div>
               </div>
