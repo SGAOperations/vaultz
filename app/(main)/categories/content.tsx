@@ -81,7 +81,10 @@ export function Content({ designationId }: ContentProps) {
 
         return (
           <div key={category.id} className="group relative h-full">
-            <Link href={`/purchases?category=${category.id}`} className="h-full">
+            <Link
+              href={`/purchases?category=${category.id}`}
+              className="h-full"
+            >
               <Card
                 className={cn(
                   'hover:border-primary/30 h-full p-4 transition-all duration-200 hover:shadow-md',
