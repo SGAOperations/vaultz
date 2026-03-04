@@ -43,7 +43,7 @@ export function ContextSwitcher() {
     queryFn: getAllYears,
   });
 
-  const { isInactiveSession, activeYear, activePeriod } = useInactiveSession();
+  const { isInactiveSession, activeYear, activePeriods } = useInactiveSession();
 
   // Use fresh data from query for display, falling back to context state
   const selectedDesignationName =
@@ -166,9 +166,11 @@ export function ContextSwitcher() {
                         .filter((p) => p.yearId === selectedYear?.id)
                         .map((p) => ({
                           label:
-                            p.id === activePeriod?.id
-                              ? `${p.name} (Active)`
-                              : p.name,
+                              activePeriods?.some(
+                                (activePeriod) => activePeriod.id === p.id,
+                              )
+                                ? `${p.name} (Active)`
+                                : p.name,
                           value: p.id,
                         })),
                     },

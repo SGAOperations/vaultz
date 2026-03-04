@@ -37,6 +37,22 @@ export async function getActivePeriod(): Promise<
       year: { deletedAt: null },
     },
     include: { year: true },
+    orderBy: { startDate: 'desc' },
+  });
+}
+
+export async function getActivePeriods(): Promise<(Period & { year: Year })[]> {
+  const today = getStartOfToday();
+
+  return await prisma.period.findMany({
+    where: {
+      deletedAt: null,
+      startDate: { lte: today },
+      endDate: { gte: today },
+      year: { deletedAt: null },
+    },
+    include: { year: true },
+    orderBy: { startDate: 'desc' },
   });
 }
 
