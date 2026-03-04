@@ -172,7 +172,10 @@ export async function seedProcessTemplates(
               templateId: template.id,
             },
           })
-          .then((step) => { tick('Seeding process steps'); return step; }),
+          .then((step) => {
+            tick('Seeding process steps');
+            return step;
+          }),
       ),
     );
     results.push({ ...template, steps });

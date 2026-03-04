@@ -28,7 +28,10 @@ export async function seedCategories(
     budgetCategoryData.map((data) =>
       prisma.category
         .create({ data: { ...data, designationId: budget.id } })
-        .then((c) => { tick('Seeding categories'); return c; }),
+        .then((c) => {
+          tick('Seeding categories');
+          return c;
+        }),
     ),
   );
 
@@ -36,7 +39,10 @@ export async function seedCategories(
     cashCategoryData.map((data) =>
       prisma.category
         .create({ data: { ...data, designationId: cash.id } })
-        .then((c) => { tick('Seeding categories'); return c; }),
+        .then((c) => {
+          tick('Seeding categories');
+          return c;
+        }),
     ),
   );
 

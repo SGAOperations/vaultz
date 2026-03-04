@@ -20,12 +20,16 @@ const fiscalYears = [
   },
 ];
 
-export async function seedYears(prisma: PrismaClient, tick: (label: string) => void) {
+export async function seedYears(
+  prisma: PrismaClient,
+  tick: (label: string) => void,
+) {
   const years = await Promise.all(
     fiscalYears.map((data) =>
-      prisma.year
-        .create({ data })
-        .then((y) => { tick('Seeding years'); return y; }),
+      prisma.year.create({ data }).then((y) => {
+        tick('Seeding years');
+        return y;
+      }),
     ),
   );
   return years;

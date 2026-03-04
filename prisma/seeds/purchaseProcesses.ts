@@ -34,9 +34,7 @@ export function generateProcessPlans(
   const plans: ProcessPlan[] = [];
   for (let i = 0; i < purchasesCount; i++) {
     if (Math.random() >= 0.8) continue;
-    const templateIndex = Math.floor(
-      Math.random() * templateStepCounts.length,
-    );
+    const templateIndex = Math.floor(Math.random() * templateStepCounts.length);
     const threshold = completionThreshold();
     const stepCutoff = Math.floor(
       threshold * templateStepCounts[templateIndex],
@@ -82,7 +80,8 @@ export async function seedPurchaseProcesses(
         });
       }),
     );
-    for (let i = 0; i < plan.stepCutoff; i++) tick('Seeding process completions');
+    for (let i = 0; i < plan.stepCutoff; i++)
+      tick('Seeding process completions');
 
     processes.push(process);
   }

@@ -1,4 +1,5 @@
 import cliProgress from 'cli-progress';
+
 import { PrismaClient } from './client';
 import { seedAllocationGroups } from './seeds/allocationGroups';
 import { seedAllocations } from './seeds/allocations';
@@ -91,7 +92,11 @@ async function main() {
   const years = await seedYears(prisma, tick);
   const periods = await seedPeriods(prisma, years, periodSlots, tick);
   await seedCategoryYears(prisma, categories, years, tick);
-  const allocationGroups = await seedAllocationGroups(prisma, designations, tick);
+  const allocationGroups = await seedAllocationGroups(
+    prisma,
+    designations,
+    tick,
+  );
   const allocations = await seedAllocations(
     prisma,
     designations,

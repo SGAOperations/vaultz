@@ -30,9 +30,8 @@ export function generateTransferCounts(
   designationCount: number,
   yearCount: number,
 ): number[] {
-  return Array.from(
-    { length: designationCount * yearCount },
-    () => randomInt(3, 6),
+  return Array.from({ length: designationCount * yearCount }, () =>
+    randomInt(3, 6),
   );
 }
 

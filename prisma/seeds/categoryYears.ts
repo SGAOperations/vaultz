@@ -21,7 +21,10 @@ export async function seedCategoryYears(
               amount: randomAmount(200, 3000),
             },
           })
-          .then((cy) => { tick('Seeding category budgets'); return cy; }),
+          .then((cy) => {
+            tick('Seeding category budgets');
+            return cy;
+          }),
       ),
     ),
   );

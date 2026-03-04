@@ -21,7 +21,10 @@ export async function seedAllocationGroups(
     budgetGroupNames.map((name) =>
       prisma.allocationGroup
         .create({ data: { name, designationId: budget.id } })
-        .then((g) => { tick('Seeding allocation groups'); return g; }),
+        .then((g) => {
+          tick('Seeding allocation groups');
+          return g;
+        }),
     ),
   );
 
@@ -29,7 +32,10 @@ export async function seedAllocationGroups(
     cashGroupNames.map((name) =>
       prisma.allocationGroup
         .create({ data: { name, designationId: cash.id } })
-        .then((g) => { tick('Seeding allocation groups'); return g; }),
+        .then((g) => {
+          tick('Seeding allocation groups');
+          return g;
+        }),
     ),
   );
 
