@@ -152,14 +152,7 @@ export function Content({ designationId, designationName }: ContentProps) {
             : designationName
         }
         actions={
-          <CreatePurchaseDialog
-            users={users ?? []}
-            categories={categories ?? []}
-            allocationGroups={allocationGroups ?? []}
-            miscAllocations={miscAllocations ?? []}
-            processTemplates={processTemplates ?? []}
-            defaultCategoryId={categoryId ?? undefined}
-          />
+          <CreatePurchaseDialog defaultCategoryId={categoryId ?? undefined} />
         }
       />
 
