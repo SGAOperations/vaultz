@@ -3,6 +3,8 @@
 import * as React from 'react';
 import { FieldValues, Path, useFormContext } from 'react-hook-form';
 
+import { cn } from '@/lib/utils';
+
 import {
   FormControl,
   FormDescription,
@@ -12,7 +14,6 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { cn } from '@/lib/utils';
 
 interface FormInputProps<TFieldValues extends FieldValues> extends Omit<
   React.ComponentProps<'input'>,
