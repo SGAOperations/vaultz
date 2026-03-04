@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 
-import { Decimal } from '@/prisma/client/runtime/library';
+import { Decimal } from '@/prisma/client/runtime/client';
 
 import prisma from '@/lib/prisma';
 import { ResponseType } from '@/lib/utils';

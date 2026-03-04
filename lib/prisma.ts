@@ -1,3 +1,4 @@
+import { PrismaPg } from '@prisma/adapter-pg';
 import { withAccelerate } from '@prisma/extension-accelerate';
 
 import { PrismaClient } from '@/prisma/client';
@@ -5,13 +6,17 @@ import { PrismaClient } from '@/prisma/client';
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
 
 const createPrismaClient = () => {
-  const client = new PrismaClient();
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl)
+    throw new Error('DATABASE_URL environment variable is not set');
 
-  // Only use Accelerate in production
-  if (process.env.NODE_ENV === 'production')
+  if (process.env.NODE_ENV === 'production') {
+    const client = new PrismaClient({ accelerateUrl: databaseUrl });
     return client.$extends(withAccelerate());
+  }
 
-  return client;
+  const adapter = new PrismaPg({ connectionString: databaseUrl });
+  return new PrismaClient({ adapter });
 };
 
 const prisma = globalForPrisma.prisma || createPrismaClient();
