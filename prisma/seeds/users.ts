@@ -26,12 +26,17 @@ const lastNames = [
   'Jones',
 ];
 
-export async function seedUsers(prisma: PrismaClient) {
+export async function seedUsers(
+  prisma: PrismaClient,
+  tick: (label: string) => void,
+) {
   const users = await Promise.all(
     firstNames.map((first, i) =>
-      prisma.user.create({ data: { first, last: lastNames[i] } }),
+      prisma.user.create({ data: { first, last: lastNames[i] } }).then((u) => {
+        tick('Seeding users');
+        return u;
+      }),
     ),
   );
-  console.log(`Seeded ${users.length} users.`);
   return users;
 }

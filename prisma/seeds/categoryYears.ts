@@ -8,20 +8,25 @@ export async function seedCategoryYears(
   prisma: PrismaClient,
   categories: Category[],
   years: Year[],
+  tick: (label: string) => void,
 ) {
   const categoryYears = await Promise.all(
     years.flatMap((year) =>
       categories.map((category) =>
-        prisma.categoryYear.create({
-          data: {
-            categoryId: category.id,
-            yearId: year.id,
-            amount: randomAmount(200, 3000),
-          },
-        }),
+        prisma.categoryYear
+          .create({
+            data: {
+              categoryId: category.id,
+              yearId: year.id,
+              amount: randomAmount(200, 3000),
+            },
+          })
+          .then((cy) => {
+            tick('Seeding category budgets');
+            return cy;
+          }),
       ),
     ),
   );
-  console.log(`Seeded ${categoryYears.length} category-year records.`);
   return categoryYears;
 }
