@@ -1,4 +1,3 @@
-import { isCategoryActiveInYear } from './categoryYears';
 import { Category, PrismaClient, Year } from '../client';
 
 function randomAmount(min: number, max: number): number {
@@ -41,6 +40,7 @@ export async function seedTransfers(
   categories: Category[],
   years: Year[],
   counts: number[],
+  activeCategoryCodesByYear: Record<string, Set<string>>,
   tick: (label: string) => void,
 ) {
   const allTransfers = [];
@@ -49,7 +49,7 @@ export async function seedTransfers(
     const year = years[yi];
     // Only use categories that existed in this fiscal year
     const activeCategories = categories.filter((c) =>
-      isCategoryActiveInYear(c.code, year.name),
+      activeCategoryCodesByYear[year.name]?.has(c.code),
     );
     // Group categories by designation so transfers stay within the same designation
     const byDesignation = new Map<string, Category[]>();

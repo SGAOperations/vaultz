@@ -1,24 +1,76 @@
 import { Designation, PrismaClient } from '../client';
 
-export const budgetCategoryData = [
-  { code: '001', ledgerCode: '7001', name: 'Office Supplies' },
-  { code: '002', ledgerCode: '7002', name: 'Software Licenses' },
-  { code: '003', ledgerCode: '7003', name: 'Travel Expenses' },
-  { code: '004', ledgerCode: '7004', name: 'Training Materials' },
-  { code: '005', ledgerCode: '7005', name: 'Equipment' },
-  { code: '006', ledgerCode: '7006', name: 'Furniture' },
+function randomInt(min: number, max: number): number {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function shuffle<T>(arr: T[]): T[] {
+  const out = [...arr];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+const budgetCategoryPool = [
+  'Office Supplies',
+  'Software Licenses',
+  'Travel Expenses',
+  'Training Materials',
+  'Equipment',
+  'Furniture',
+  'Research and Development',
+  'Marketing Materials',
+  'Utilities',
+  'Maintenance and Repairs',
 ];
 
-export const cashCategoryData = [
-  { code: '007', ledgerCode: '7007', name: 'Meals and Entertainment' },
-  { code: '008', ledgerCode: '7008', name: 'Transportation' },
-  { code: '009', ledgerCode: '7009', name: 'Miscellaneous' },
-  { code: '010', ledgerCode: '7010', name: 'Printing and Postage' },
+const cashCategoryPool = [
+  'Meals and Entertainment',
+  'Transportation',
+  'Miscellaneous',
+  'Printing and Postage',
+  'Petty Cash',
+  'Event Supplies',
+  'Gift Cards',
 ];
+
+export type CategoryData = { code: string; ledgerCode: string; name: string };
+
+// Randomly selects a subset of categories from the pools and assigns sequential
+// codes and ledger codes. The count varies each run (4–8 budget, 3–6 cash).
+export function generateCategoryData(): {
+  budgetCategoryData: CategoryData[];
+  cashCategoryData: CategoryData[];
+} {
+  const budgetCount = randomInt(4, 8);
+  const cashCount = randomInt(3, 6);
+
+  const budgetNames = shuffle(budgetCategoryPool).slice(0, budgetCount);
+  const cashNames = shuffle(cashCategoryPool).slice(0, cashCount);
+
+  const budgetCategoryData: CategoryData[] = budgetNames.map((name, i) => ({
+    code: String(i + 1).padStart(3, '0'),
+    ledgerCode: String(7000 + i + 1),
+    name,
+  }));
+
+  const cashStart = budgetCategoryData.length + 1;
+  const cashCategoryData: CategoryData[] = cashNames.map((name, i) => ({
+    code: String(cashStart + i).padStart(3, '0'),
+    ledgerCode: String(7000 + cashStart + i),
+    name,
+  }));
+
+  return { budgetCategoryData, cashCategoryData };
+}
 
 export async function seedCategories(
   prisma: PrismaClient,
   designations: Designation[],
+  budgetCategoryData: CategoryData[],
+  cashCategoryData: CategoryData[],
   tick: (label: string) => void,
 ) {
   const budget = designations.find((d) => d.name === 'Budget')!;
