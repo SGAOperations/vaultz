@@ -118,7 +118,7 @@ export function CopyAllocationsDialog({
           </Button>
           <Button onClick={handleCopy} disabled={isSubmitting}>
             {isSubmitting && <Loader2 className="animate-spin" />}
-            Copy Allocations
+            {copyAmounts ? 'Copy Allocations' : 'Continue'}
           </Button>
         </DialogFooter>
       </DialogContent>
