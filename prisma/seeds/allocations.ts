@@ -37,6 +37,7 @@ export async function seedAllocations(
   designations: Designation[],
   allocationGroups: AllocationGroup[],
   periods: Period[],
+  tick: (label: string) => void,
 ): Promise<Allocation[]> {
   const budget = designations.find((d) => d.name === 'Budget')!;
   const cash = designations.find((d) => d.name === 'Cash')!;
@@ -67,6 +68,7 @@ export async function seedAllocations(
             },
           }),
         );
+        tick('Seeding allocations');
       }
     }
 
@@ -81,6 +83,7 @@ export async function seedAllocations(
         },
       }),
     );
+    tick('Seeding allocations');
 
     // Grouped cash allocations: 1 per group
     for (const group of cashGroups) {
@@ -96,6 +99,7 @@ export async function seedAllocations(
           },
         }),
       );
+      tick('Seeding allocations');
     }
 
     // Ungrouped cash allocation
@@ -109,8 +113,8 @@ export async function seedAllocations(
         },
       }),
     );
+    tick('Seeding allocations');
   }
 
-  console.log(`Seeded ${allAllocations.length} allocations.`);
   return allAllocations;
 }

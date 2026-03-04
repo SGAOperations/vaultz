@@ -12,25 +12,32 @@ const cashGroupNames = ['Community Outreach', 'Events', 'Hospitality'];
 export async function seedAllocationGroups(
   prisma: PrismaClient,
   designations: Designation[],
+  tick: (label: string) => void,
 ) {
   const budget = designations.find((d) => d.name === 'Budget')!;
   const cash = designations.find((d) => d.name === 'Cash')!;
 
   const budgetGroups = await Promise.all(
     budgetGroupNames.map((name) =>
-      prisma.allocationGroup.create({
-        data: { name, designationId: budget.id },
-      }),
+      prisma.allocationGroup
+        .create({ data: { name, designationId: budget.id } })
+        .then((g) => {
+          tick('Seeding allocation groups');
+          return g;
+        }),
     ),
   );
 
   const cashGroups = await Promise.all(
     cashGroupNames.map((name) =>
-      prisma.allocationGroup.create({ data: { name, designationId: cash.id } }),
+      prisma.allocationGroup
+        .create({ data: { name, designationId: cash.id } })
+        .then((g) => {
+          tick('Seeding allocation groups');
+          return g;
+        }),
     ),
   );
 
-  const groups = [...budgetGroups, ...cashGroups];
-  console.log(`Seeded ${groups.length} allocation groups.`);
-  return groups;
+  return [...budgetGroups, ...cashGroups];
 }
