@@ -14,13 +14,6 @@ import { cn } from '@/lib/utils';
 import { DateTime } from '@/components/date-time';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 
 function formatDateInput(date: Date): string {
@@ -52,6 +45,8 @@ const MONTH_NAMES = [
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
 
+const YEARS = Array.from({ length: 11 }, (_, i) => 2020 + i);
+
 export function DatePicker({
   value,
   onChange,
@@ -65,6 +60,7 @@ export function DatePicker({
     date ? formatDateInput(date) : '',
   );
   const [viewedDate, setViewedDate] = useState(() => date ?? new Date());
+  const [openDropdown, setOpenDropdown] = useState<'month' | 'year' | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
@@ -80,17 +76,10 @@ export function DatePicker({
     if (!open) {
       setInputValue(date ? formatDateInput(date) : '');
       setViewedDate(date ?? new Date());
+      setOpenDropdown(null);
     }
     setOpen((prev) => !prev);
   };
-
-  const currentYear = new Date().getFullYear();
-  const YEARS_BEFORE = 25;
-  const YEAR_COUNT = 51;
-  const years = Array.from(
-    { length: YEAR_COUNT },
-    (_, i) => currentYear - YEARS_BEFORE + i,
-  );
 
   return (
     <div className="relative">
@@ -109,14 +98,14 @@ export function DatePicker({
       </Button>
       {open && (
         <>
-          {/* Backdrop — sits below the calendar (z-40) so clicks outside close it,
-              while portaled DropdownMenu content at z-50 stays interactive. */}
+          {/* Backdrop — clicking outside the calendar panel closes it */}
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          {/* Calendar panel — all content is inline, no portals */}
           <div
-            className="fixed inset-0 z-40"
-            onClick={() => setOpen(false)}
-          />
-          <div className="bg-popover text-popover-foreground absolute left-0 top-full z-50 mt-1 w-auto rounded-md border p-0 shadow-md">
-            <div className="border-b p-3">
+            className="bg-popover text-popover-foreground absolute left-0 top-full z-50 mt-1 w-auto rounded-md border p-0 shadow-md"
+            onClick={() => setOpenDropdown(null)}
+          >
+            <div className="border-b p-3" onClick={(e) => e.stopPropagation()}>
               <Input
                 placeholder="MM/DD/YYYY"
                 value={inputValue}
@@ -138,66 +127,95 @@ export function DatePicker({
               >
                 <ChevronLeftIcon className="size-4" />
               </Button>
+
               <div className="flex items-center gap-1">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 gap-1 px-2 text-sm font-medium"
-                    >
-                      {MONTH_NAMES[viewedDate.getMonth()]}
-                      <ChevronDownIcon className="size-3 opacity-60" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="center" className="max-h-60 overflow-y-auto">
-                    <DropdownMenuRadioGroup
-                      value={String(viewedDate.getMonth())}
-                      onValueChange={(v) =>
-                        setViewedDate(
-                          (d) => new Date(d.getFullYear(), Number(v), 1),
-                        )
-                      }
-                    >
+                {/* Month dropdown — inline, no portal */}
+                <div
+                  className="relative"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 gap-1 px-2 text-sm font-medium"
+                    onClick={() =>
+                      setOpenDropdown(
+                        openDropdown === 'month' ? null : 'month',
+                      )
+                    }
+                  >
+                    {MONTH_NAMES[viewedDate.getMonth()]}
+                    <ChevronDownIcon className="size-3 opacity-60" />
+                  </Button>
+                  {openDropdown === 'month' && (
+                    <div className="bg-popover text-popover-foreground absolute left-0 top-full z-10 max-h-60 min-w-[9rem] overflow-y-auto rounded-md border p-1 shadow-md">
                       {MONTH_NAMES.map((name, i) => (
-                        <DropdownMenuRadioItem key={i} value={String(i)}>
+                        <div
+                          key={i}
+                          className={cn(
+                            'cursor-pointer rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground',
+                            viewedDate.getMonth() === i &&
+                              'bg-accent text-accent-foreground',
+                          )}
+                          onClick={() => {
+                            setViewedDate(
+                              (d) => new Date(d.getFullYear(), i, 1),
+                            );
+                            setOpenDropdown(null);
+                          }}
+                        >
                           {name}
-                        </DropdownMenuRadioItem>
+                        </div>
                       ))}
-                    </DropdownMenuRadioGroup>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 gap-1 px-2 text-sm font-medium"
-                    >
-                      {viewedDate.getFullYear()}
-                      <ChevronDownIcon className="size-3 opacity-60" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="center" className="max-h-60 overflow-y-auto">
-                    <DropdownMenuRadioGroup
-                      value={String(viewedDate.getFullYear())}
-                      onValueChange={(v) =>
-                        setViewedDate(
-                          (d) => new Date(Number(v), d.getMonth(), 1),
-                        )
-                      }
-                    >
-                      {years.map((y) => (
-                        <DropdownMenuRadioItem key={y} value={String(y)}>
+                    </div>
+                  )}
+                </div>
+
+                {/* Year dropdown — inline, no portal */}
+                <div
+                  className="relative"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 gap-1 px-2 text-sm font-medium"
+                    onClick={() =>
+                      setOpenDropdown(
+                        openDropdown === 'year' ? null : 'year',
+                      )
+                    }
+                  >
+                    {viewedDate.getFullYear()}
+                    <ChevronDownIcon className="size-3 opacity-60" />
+                  </Button>
+                  {openDropdown === 'year' && (
+                    <div className="bg-popover text-popover-foreground absolute left-0 top-full z-10 max-h-60 min-w-[6rem] overflow-y-auto rounded-md border p-1 shadow-md">
+                      {YEARS.map((y) => (
+                        <div
+                          key={y}
+                          className={cn(
+                            'cursor-pointer rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground',
+                            viewedDate.getFullYear() === y &&
+                              'bg-accent text-accent-foreground',
+                          )}
+                          onClick={() => {
+                            setViewedDate(
+                              (d) => new Date(y, d.getMonth(), 1),
+                            );
+                            setOpenDropdown(null);
+                          }}
+                        >
                           {y}
-                        </DropdownMenuRadioItem>
+                        </div>
                       ))}
-                    </DropdownMenuRadioGroup>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                    </div>
+                  )}
+                </div>
               </div>
+
               <Button
                 type="button"
                 variant="ghost"
