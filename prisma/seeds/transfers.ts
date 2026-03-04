@@ -40,15 +40,20 @@ export async function seedTransfers(
   categories: Category[],
   years: Year[],
   counts: number[],
+  activeCategoryCodesByYear: Record<string, Set<string>>,
   tick: (label: string) => void,
 ) {
   const allTransfers = [];
 
   for (let yi = 0; yi < years.length; yi++) {
     const year = years[yi];
+    // Only use categories that existed in this fiscal year
+    const activeCategories = categories.filter((c) =>
+      activeCategoryCodesByYear[year.name]?.has(c.code),
+    );
     // Group categories by designation so transfers stay within the same designation
     const byDesignation = new Map<string, Category[]>();
-    for (const cat of categories) {
+    for (const cat of activeCategories) {
       if (!byDesignation.has(cat.designationId))
         byDesignation.set(cat.designationId, []);
       byDesignation.get(cat.designationId)!.push(cat);
