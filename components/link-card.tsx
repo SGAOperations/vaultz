@@ -39,7 +39,7 @@ export function LinkCard({
   actions,
 }: LinkCardProps) {
   return (
-    <Link href={href} className="group">
+    <Link href={href} className="group h-full">
       <Card className="hover:border-primary/30 h-full gap-2 transition-all duration-200 hover:shadow-md">
         <CardHeader className="pb-2">
           <div className="flex items-start justify-between">

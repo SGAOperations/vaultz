@@ -8,6 +8,7 @@ import { seedPeriods } from './seeds/periods';
 import { seedProcessTemplates } from './seeds/processTemplates';
 import { seedPurchaseProcesses } from './seeds/purchaseProcesses';
 import { seedPurchases } from './seeds/purchases';
+import { seedTransfers } from './seeds/transfers';
 import { seedUsers } from './seeds/users';
 import { seedYears } from './seeds/years';
 
@@ -44,6 +45,7 @@ async function main() {
   );
   const processTemplates = await seedProcessTemplates(prisma);
   await seedPurchaseProcesses(prisma, purchases, processTemplates);
+  await seedTransfers(prisma, categories, years);
 
   console.log('Database seeding completed successfully.');
 }

@@ -53,7 +53,9 @@ export function CreateCategoryDialog({
         name="code"
         label="Spending Category Code"
         placeholder="123"
-        description="Enter 3 numbers (displayed with SC prefix, e.g., SC123)."
+        prefix="SC"
+        numbersOnly
+        description="The spending category code associated with this category."
       />
       <FormInput<FormData>
         name="ledgerCode"

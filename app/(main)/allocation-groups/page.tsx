@@ -4,6 +4,7 @@ import Link from 'next/link';
 
 import { useDesignation } from '@/contexts/DesignationContext';
 import { usePeriod } from '@/contexts/PeriodContext';
+import { useYear } from '@/contexts/YearContext';
 import { Plus } from 'lucide-react';
 
 import { CreateAllocationGroupDialog } from '@/components/create-allocation-group-dialog';
@@ -16,6 +17,7 @@ import { Content } from './content';
 export default function AllocationGroups() {
   const { selectedDesignation } = useDesignation();
   const { selectedPeriod } = usePeriod();
+  const { selectedYear } = useYear();
 
   if (!selectedDesignation) return null;
 
@@ -23,7 +25,7 @@ export default function AllocationGroups() {
     <div className="flex w-full flex-col">
       <PageHeader
         title="Allocation Groups"
-        description={`Organize and manage your budget allocations · DN${selectedDesignation.code}${selectedPeriod ? ` · ${selectedPeriod.name}` : ''}`}
+        description={`Organize and manage your budget allocations · DN${selectedDesignation.code}${selectedYear?.name ? ` · ${selectedYear.name}` : ''}${selectedPeriod?.name ? ` · ${selectedPeriod.name}` : ''}`}
         actions={
           selectedPeriod && (
             <CreateAllocationGroupDialog

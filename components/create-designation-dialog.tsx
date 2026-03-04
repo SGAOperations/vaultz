@@ -24,12 +24,12 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import { FormInput } from '@/components/ui/form-input';
 import { Input } from '@/components/ui/input';
 
 const schema = z.object({
@@ -130,36 +130,14 @@ export function CreateDesignationDialog({
               )}
             />
 
-            <FormField
-              control={form.control}
+            <FormInput<FormData>
               name="code"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Code</FormLabel>
-                  <FormControl>
-                    <div className="flex items-center">
-                      <span className="border-input bg-muted text-muted-foreground flex h-9 items-center rounded-l-md border border-r-0 px-3 text-sm">
-                        DN
-                      </span>
-                      <Input
-                        placeholder="XXXX"
-                        className="rounded-l-none"
-                        maxLength={4}
-                        {...field}
-                        onChange={(e) => {
-                          const v = e.target.value.replace(/\D/g, '');
-                          field.onChange(v);
-                        }}
-                      />
-                    </div>
-                  </FormControl>
-                  <FormDescription>
-                    The designation number to be associated with this
-                    designation.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
+              label="Code"
+              placeholder="XXXX"
+              prefix="DN"
+              numbersOnly
+              maxLength={4}
+              description="The designation number to be associated with this designation."
             />
 
             <FormField

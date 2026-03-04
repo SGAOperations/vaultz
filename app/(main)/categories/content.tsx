@@ -80,11 +80,14 @@ export function Content({ designationId }: ContentProps) {
         const hasBudget = category.categoryYearId !== null;
 
         return (
-          <div key={category.id} className="group relative">
-            <Link href={`/purchases?category=${category.id}`}>
+          <div key={category.id} className="group relative h-full">
+            <Link
+              href={`/purchases?category=${category.id}`}
+              className="h-full"
+            >
               <Card
                 className={cn(
-                  'hover:border-primary/30 p-4 transition-all duration-200 hover:shadow-md',
+                  'hover:border-primary/30 h-full p-4 transition-all duration-200 hover:shadow-md',
                   !hasBudget && 'border-dashed opacity-75',
                 )}
               >
