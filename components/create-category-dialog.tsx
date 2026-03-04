@@ -30,13 +30,8 @@ import {
 } from '@/components/ui/dialog';
 import {
   Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
 } from '@/components/ui/form';
+import { FormInput } from '@/components/ui/form-input';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -237,8 +232,8 @@ export function CreateCategoryDialog({
                     <label className="text-sm font-medium">
                       Budget for {yearName}
                     </label>
-                    <div className="relative">
-                      <span className="text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 text-sm">
+                    <div className="flex items-center">
+                      <span className="border-input bg-muted text-muted-foreground flex h-9 items-center rounded-l-md border border-r-0 px-3 text-sm">
                         $
                       </span>
                       <Input
@@ -246,7 +241,7 @@ export function CreateCategoryDialog({
                         min={0}
                         step="0.01"
                         placeholder="0.00"
-                        className="pl-7"
+                        className="rounded-l-none"
                         value={existingAmount}
                         onChange={(e) => setExistingAmount(e.target.value)}
                         disabled={!selectedCategoryId}
@@ -315,76 +310,31 @@ function NewCategoryForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-2">
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Name</FormLabel>
-              <FormControl>
-                <Input placeholder="Food" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
+        <FormInput<NewFormData> name="name" label="Name" placeholder="Food" />
+        <FormInput<NewFormData>
           name="code"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Spending Category Code</FormLabel>
-              <FormControl>
-                <Input placeholder="123" {...field} />
-              </FormControl>
-              <FormDescription>
-                Enter 3 numbers (displayed with SC prefix, e.g., SC123).
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
+          label="Spending Category Code"
+          placeholder="123"
+          prefix="SC"
+          numbersOnly
+          maxLength={3}
+          description="The spending category code associated with this category."
         />
-        <FormField
-          control={form.control}
+        <FormInput<NewFormData>
           name="ledgerCode"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Ledger Code</FormLabel>
-              <FormControl>
-                <Input placeholder="7XXX" {...field} />
-              </FormControl>
-              <FormDescription>
-                The ledger code to be associated with this category.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
+          label="Ledger Code"
+          placeholder="7XXX"
+          description="The ledger code to be associated with this category."
         />
         {yearName && (
-          <FormField
-            control={form.control}
+          <FormInput<NewFormData>
             name="amount"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Budget for {yearName}</FormLabel>
-                <FormControl>
-                  <div className="relative">
-                    <span className="text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 text-sm">
-                      $
-                    </span>
-                    <Input
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      placeholder="0.00"
-                      className="pl-7"
-                      {...field}
-                    />
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            label={`Budget for ${yearName}`}
+            placeholder="0.00"
+            currency
+            type="number"
+            min={0}
+            step="0.01"
           />
         )}
         <div className="flex gap-2">
@@ -404,30 +354,5 @@ function NewCategoryForm({
         </div>
       </form>
     </Form>
-    <FormDialog
-      trigger={trigger}
-      title="Create Spending Category"
-      description="Each spending category has a set budget."
-      schema={schema}
-      defaultValues={{ designationId, code: '', ledgerCode: '', name: '' }}
-      onSubmit={onSubmit}
-    >
-      <FormInput<FormData> name="name" label="Name" placeholder="Food" />
-      <FormInput<FormData>
-        name="code"
-        label="Spending Category Code"
-        placeholder="123"
-        prefix="SC"
-        numbersOnly
-        description="The spending category code associated with this category."
-      />
-      <FormInput<FormData>
-        name="ledgerCode"
-        label="Ledger Code"
-        placeholder="7XXX"
-        description="The ledger code to be associated with this category."
-      />
-    </FormDialog>
   );
 }
-
