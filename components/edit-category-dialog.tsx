@@ -6,14 +6,18 @@ import { useForm } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
-import { Loader2, Trash2 } from 'lucide-react';
+import { Loader2, TriangleAlert, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { z } from 'zod/v4';
 
 import { deleteCategory, updateCategory } from '@/prisma/services/category';
-import { deleteCategoryYear } from '@/prisma/services/category-year';
+import {
+  deleteCategoryYear,
+  updateCategoryYearBudget,
+} from '@/prisma/services/category-year';
 
 import { Category } from '@/lib/types';
-import { handleError } from '@/lib/utils';
+import { handleError, isError } from '@/lib/utils';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -43,42 +47,96 @@ const schema = z.object({
     .regex(/^\d{3}$/, 'Must be 3 numeric digits'),
   ledgerCode: z.string().length(4, 'Must be exactly 4 characters long'),
   name: z.string().min(1, 'Please enter a category name'),
+  amount: z.coerce.number<number>().min(0, 'Must be ≥ 0').optional(),
 });
 
 export function EditCategoryDialog({
   category,
   trigger,
   categoryYearId,
+  yearId,
+  yearName,
+  amount,
 }: {
   category: Pick<Category, 'id' | 'code' | 'ledgerCode' | 'name'>;
   trigger: React.ReactNode;
   categoryYearId?: string;
+  yearId?: string;
+  yearName?: string;
+  amount?: number;
 }) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState<boolean>(false);
   const [confirmDelete, setConfirmDelete] = useState<boolean>(false);
+  const canEditBudget = !!categoryYearId && !!yearId;
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {
       code: category.code,
       ledgerCode: category.ledgerCode,
       name: category.name,
+      amount: amount ?? 0,
     },
   });
   const isSubmitting = form.formState.isSubmitting;
 
   async function onSubmit(data: z.infer<typeof schema>) {
-    await handleError(updateCategory({ id: category.id, ...data }), {
-      toast: {
-        loading: 'Updating spending category...',
-        success: 'Spending category updated successfully',
-        error: 'Failed to update spending category',
-      },
-      onSuccess: () => {
+    if (canEditBudget && data.amount !== undefined) {
+      const toastId = toast.loading('Updating spending category...');
+      try {
+        const [categoryResult, budgetResult] = await Promise.all([
+          updateCategory({
+            id: category.id,
+            code: data.code,
+            ledgerCode: data.ledgerCode,
+            name: data.name,
+          }),
+          updateCategoryYearBudget({
+            categoryId: category.id,
+            yearId: yearId!,
+            amount: data.amount,
+          }),
+        ]);
+        if (isError(categoryResult)) {
+          toast.error(categoryResult.error, { id: toastId });
+          return;
+        }
+        if (isError(budgetResult)) {
+          toast.error(budgetResult.error, { id: toastId });
+          return;
+        }
+        toast.success('Spending category updated successfully', {
+          id: toastId,
+        });
+        await queryClient.invalidateQueries({ queryKey: ['categories-budget'] });
         setOpen(false);
-      },
-    });
+      } catch {
+        toast.error('Failed to update spending category', { id: toastId });
+      }
+    } else {
+      await handleError(
+        updateCategory({
+          id: category.id,
+          code: data.code,
+          ledgerCode: data.ledgerCode,
+          name: data.name,
+        }),
+        {
+          toast: {
+            loading: 'Updating spending category...',
+            success: 'Spending category updated successfully',
+            error: 'Failed to update spending category',
+          },
+          onSuccess: async () => {
+            await queryClient.invalidateQueries({
+              queryKey: ['categories-budget'],
+            });
+            setOpen(false);
+          },
+        },
+      );
+    }
   }
 
   async function handleDelete() {
@@ -131,7 +189,12 @@ export function EditCategoryDialog({
     setOpen(newOpen);
     if (!newOpen) {
       setConfirmDelete(false);
-      form.reset();
+      form.reset({
+        code: category.code,
+        ledgerCode: category.ledgerCode,
+        name: category.name,
+        amount: amount ?? 0,
+      });
     }
   }
 
@@ -188,6 +251,35 @@ export function EditCategoryDialog({
                 </FormItem>
               )}
             />
+
+            {canEditBudget && (
+              <>
+                <div className="bg-warning/10 border-warning/30 flex items-start gap-2 rounded-md border p-3">
+                  <TriangleAlert className="text-warning mt-0.5 size-4 shrink-0" />
+                  <div className="space-y-1">
+                    <p className="text-warning text-sm font-medium">
+                      Before changing the budget amount
+                    </p>
+                    <p className="text-muted-foreground text-sm">
+                      Consider whether this change should instead be recorded as
+                      a <strong>purchase</strong> or a{' '}
+                      <strong>transfer</strong>. Only update the budget amount
+                      to correct the original allocation, not to account for
+                      spending.
+                    </p>
+                  </div>
+                </div>
+                <FormInput<z.infer<typeof schema>>
+                  name="amount"
+                  label={`Budget Amount${yearName ? ` for ${yearName}` : ''}`}
+                  placeholder="0.00"
+                  currency
+                  type="number"
+                  min={0}
+                  step="0.01"
+                />
+              </>
+            )}
 
             <div className="flex gap-2">
               <Button

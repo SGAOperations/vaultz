@@ -171,6 +171,9 @@ export function Content({ designationId }: ContentProps) {
               <EditCategoryDialog
                 category={category}
                 categoryYearId={category.categoryYearId ?? undefined}
+                yearId={selectedYear.id}
+                yearName={selectedYear.name}
+                amount={category.budget}
                 trigger={
                   <Button
                     variant="ghost"
