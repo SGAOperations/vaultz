@@ -3,11 +3,11 @@ import cliProgress from 'cli-progress';
 import { PrismaClient } from './client';
 import { seedAllocationGroups } from './seeds/allocationGroups';
 import { seedAllocations } from './seeds/allocations';
-import { seedCategories, generateCategoryData } from './seeds/categories';
+import { generateCategoryData, seedCategories } from './seeds/categories';
 import {
-  seedCategoryYears,
-  generateActiveCategoryCodesByYear,
   categoryYearsCount,
+  generateActiveCategoryCodesByYear,
+  seedCategoryYears,
 } from './seeds/categoryYears';
 import { seedDesignations } from './seeds/designations';
 import { generatePeriodSlots, seedPeriods } from './seeds/periods';
@@ -19,7 +19,7 @@ import {
 import { generatePurchaseCounts, seedPurchases } from './seeds/purchases';
 import { generateTransferCounts, seedTransfers } from './seeds/transfers';
 import { seedUsers } from './seeds/users';
-import { seedYears, fiscalYearNames } from './seeds/years';
+import { fiscalYearNames, seedYears } from './seeds/years';
 
 // Fixed entry counts derived directly from the seed data definitions.
 const USERS = 10; // firstNames.length
@@ -113,7 +113,13 @@ async function main() {
   );
   const years = await seedYears(prisma, tick);
   const periods = await seedPeriods(prisma, years, periodSlots, tick);
-  await seedCategoryYears(prisma, categories, years, activeCategoryCodesByYear, tick);
+  await seedCategoryYears(
+    prisma,
+    categories,
+    years,
+    activeCategoryCodesByYear,
+    tick,
+  );
   const allocationGroups = await seedAllocationGroups(
     prisma,
     designations,
