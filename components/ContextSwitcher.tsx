@@ -165,12 +165,11 @@ export function ContextSwitcher() {
                       items: periods
                         .filter((p) => p.yearId === selectedYear?.id)
                         .map((p) => ({
-                          label:
-                              activePeriods?.some(
-                                (activePeriod) => activePeriod.id === p.id,
-                              )
-                                ? `${p.name} (Active)`
-                                : p.name,
+                          label: activePeriods?.some(
+                            (activePeriod) => activePeriod.id === p.id,
+                          )
+                            ? `${p.name} (Active)`
+                            : p.name,
                           value: p.id,
                         })),
                     },
