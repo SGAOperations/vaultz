@@ -1,3 +1,4 @@
+import cliProgress from 'cli-progress';
 import { PrismaClient } from './client';
 import { seedAllocationGroups } from './seeds/allocationGroups';
 import { seedAllocations } from './seeds/allocations';
@@ -13,27 +14,6 @@ import { seedUsers } from './seeds/users';
 import { seedYears } from './seeds/years';
 
 const TOTAL_STEPS = 12;
-const BAR_WIDTH = 25;
-
-let currentStep = 0;
-let seedStartTime = 0;
-
-function printProgress(label: string) {
-  currentStep++;
-
-  const pct = Math.round((currentStep / TOTAL_STEPS) * 100);
-  const filled = Math.round((currentStep / TOTAL_STEPS) * BAR_WIDTH);
-  const bar = '='.repeat(filled) + '-'.repeat(BAR_WIDTH - filled);
-
-  const elapsedMs = Date.now() - seedStartTime;
-  const elapsed = (elapsedMs / 1000).toFixed(1);
-  const avgStepMs = elapsedMs / currentStep;
-  const eta = ((avgStepMs * (TOTAL_STEPS - currentStep)) / 1000).toFixed(1);
-
-  console.log(
-    `[${bar}] ${String(pct).padStart(3)}% | Step ${currentStep}/${TOTAL_STEPS}: ${label} | Elapsed: ${elapsed}s | ETA: ~${eta}s`,
-  );
-}
 
 const prisma = new PrismaClient();
 
@@ -45,29 +25,36 @@ async function main() {
     return;
   }
 
-  seedStartTime = Date.now();
-  console.log(`Starting database seeding (${TOTAL_STEPS} steps)...\n`);
+  const bar = new cliProgress.SingleBar({
+    format:
+      '[{bar}] {percentage}% | Step {value}/{total}: {task} | Elapsed: {duration}s | ETA: ~{eta}s',
+    barCompleteChar: '=',
+    barIncompleteChar: '-',
+    hideCursor: true,
+  });
+
+  bar.start(TOTAL_STEPS, 0, { task: 'Starting...' });
 
   const users = await seedUsers(prisma);
-  printProgress('Seeded users');
+  bar.increment({ task: 'Seeded users' });
 
   const designations = await seedDesignations(prisma);
-  printProgress('Seeded designations');
+  bar.increment({ task: 'Seeded designations' });
 
   const categories = await seedCategories(prisma, designations);
-  printProgress('Seeded categories');
+  bar.increment({ task: 'Seeded categories' });
 
   const years = await seedYears(prisma);
-  printProgress('Seeded years');
+  bar.increment({ task: 'Seeded years' });
 
   const periods = await seedPeriods(prisma, years);
-  printProgress('Seeded periods');
+  bar.increment({ task: 'Seeded periods' });
 
   await seedCategoryYears(prisma, categories, years);
-  printProgress('Seeded category years');
+  bar.increment({ task: 'Seeded category years' });
 
   const allocationGroups = await seedAllocationGroups(prisma, designations);
-  printProgress('Seeded allocation groups');
+  bar.increment({ task: 'Seeded allocation groups' });
 
   const allocations = await seedAllocations(
     prisma,
@@ -75,7 +62,7 @@ async function main() {
     allocationGroups,
     periods,
   );
-  printProgress('Seeded allocations');
+  bar.increment({ task: 'Seeded allocations' });
 
   const purchases = await seedPurchases(
     prisma,
@@ -85,19 +72,20 @@ async function main() {
     years,
     periods,
   );
-  printProgress('Seeded purchases');
+  bar.increment({ task: 'Seeded purchases' });
 
   const processTemplates = await seedProcessTemplates(prisma);
-  printProgress('Seeded process templates');
+  bar.increment({ task: 'Seeded process templates' });
 
   await seedPurchaseProcesses(prisma, purchases, processTemplates);
-  printProgress('Seeded purchase processes');
+  bar.increment({ task: 'Seeded purchase processes' });
 
   await seedTransfers(prisma, categories, years);
-  printProgress('Seeded transfers');
+  bar.increment({ task: 'Seeded transfers' });
 
-  const totalTime = ((Date.now() - seedStartTime) / 1000).toFixed(1);
-  console.log(`\nDatabase seeding completed successfully in ${totalTime}s.`);
+  bar.stop();
+
+  console.log('\nDatabase seeding completed successfully.');
 }
 
 main()
