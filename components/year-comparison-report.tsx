@@ -196,7 +196,7 @@ export function YearComparisonReport({
 
   return (
     <TooltipProvider>
-      <div className="flex flex-col gap-4">
+      <div className="flex w-full min-w-0 flex-col gap-4">
         {/* Filters */}
         <Card className="gap-4 p-4">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
