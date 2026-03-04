@@ -35,6 +35,7 @@ import {
   deletePurchase,
   updatePurchase,
 } from '@/prisma/services/purchase';
+import { createUser } from '@/prisma/services/user';
 
 import {
   Allocation,
@@ -76,6 +77,8 @@ import {
   FormMessage,
 } from './ui/form';
 import { FormInput } from './ui/form-input';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
 
 const schema = z.object({
@@ -171,6 +174,11 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
   const [showAdvanced, setShowAdvanced] = useState(
     !!(purchase && purchase.yearId !== activeYearId),
   );
+  const [localUsers, setLocalUsers] = useState(users);
+  const [userCreateOpen, setUserCreateOpen] = useState(false);
+  const [newUserFirst, setNewUserFirst] = useState('');
+  const [newUserLast, setNewUserLast] = useState('');
+  const [isCreatingUser, setIsCreatingUser] = useState(false);
 
   const receiptUrls = purchase?.receipts.map((r) => getFileUrl(r)) || [];
 
@@ -364,6 +372,25 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
     setConfirmDelete(false);
   }
 
+  async function handleCreateUser() {
+    setIsCreatingUser(true);
+    await handleError(createUser({ first: newUserFirst, last: newUserLast }), {
+      toast: {
+        loading: 'Creating user...',
+        success: 'User created successfully',
+        error: 'Failed to create user',
+      },
+      onSuccess: (newUser) => {
+        setLocalUsers((prev) => [...prev, newUser]);
+        form.setValue('userId', newUser.id, { shouldValidate: true });
+        setUserCreateOpen(false);
+        setNewUserFirst('');
+        setNewUserLast('');
+      },
+      onFinish: () => setIsCreatingUser(false),
+    });
+  }
+
   function handleOpenChange(newOpen: boolean) {
     setOpen(newOpen);
     if (!newOpen) {
@@ -417,6 +444,49 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
           </div>
         </DialogContent>
       </Dialog>
+      <Dialog open={userCreateOpen} onOpenChange={setUserCreateOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Create User</DialogTitle>
+            <DialogDescription>
+              A user is associated with purchases. It can represent an
+              individual or an organization.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-user-first">First Name</Label>
+              <Input
+                id="new-user-first"
+                value={newUserFirst}
+                onChange={(e) => setNewUserFirst(e.target.value)}
+                placeholder="John"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-user-last">Last Name</Label>
+              <Input
+                id="new-user-last"
+                value={newUserLast}
+                onChange={(e) => setNewUserLast(e.target.value)}
+                placeholder="Travolta"
+              />
+            </div>
+            <Button
+              onClick={handleCreateUser}
+              disabled={
+                isCreatingUser ||
+                newUserFirst.length < 2 ||
+                newUserLast.length < 2
+              }
+              className="w-full"
+            >
+              {isCreatingUser && <Loader2 className="animate-spin" />}
+              Create User
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogTrigger asChild>{trigger}</DialogTrigger>
         <DialogContent
@@ -464,12 +534,22 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                       name="userId"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Name</FormLabel>
+                          <div className="flex items-center justify-between">
+                            <FormLabel>Name</FormLabel>
+                            <button
+                              type="button"
+                              onClick={() => setUserCreateOpen(true)}
+                              className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs"
+                            >
+                              <Plus className="size-3" />
+                              Add User
+                            </button>
+                          </div>
                           <FormControl>
                             <Combobox
                               data={[
                                 {
-                                  items: users.map((v) => ({
+                                  items: localUsers.map((v) => ({
                                     value: v.id,
                                     label: `${v.first} ${v.last}`,
                                   })),
