@@ -1,41 +1,50 @@
 import { Designation, PrismaClient } from '../client';
 
 const budgetCategoryData = [
-  { code: 'SC001', ledgerCode: '7001', name: 'Office Supplies' },
-  { code: 'SC002', ledgerCode: '7002', name: 'Software Licenses' },
-  { code: 'SC003', ledgerCode: '7003', name: 'Travel Expenses' },
-  { code: 'SC004', ledgerCode: '7004', name: 'Training Materials' },
-  { code: 'SC005', ledgerCode: '7005', name: 'Equipment' },
-  { code: 'SC006', ledgerCode: '7006', name: 'Furniture' },
+  { code: '001', ledgerCode: '7001', name: 'Office Supplies' },
+  { code: '002', ledgerCode: '7002', name: 'Software Licenses' },
+  { code: '003', ledgerCode: '7003', name: 'Travel Expenses' },
+  { code: '004', ledgerCode: '7004', name: 'Training Materials' },
+  { code: '005', ledgerCode: '7005', name: 'Equipment' },
+  { code: '006', ledgerCode: '7006', name: 'Furniture' },
 ];
 
 const cashCategoryData = [
-  { code: 'SC007', ledgerCode: '7007', name: 'Meals and Entertainment' },
-  { code: 'SC008', ledgerCode: '7008', name: 'Transportation' },
-  { code: 'SC009', ledgerCode: '7009', name: 'Miscellaneous' },
-  { code: 'SC010', ledgerCode: '7010', name: 'Printing and Postage' },
+  { code: '007', ledgerCode: '7007', name: 'Meals and Entertainment' },
+  { code: '008', ledgerCode: '7008', name: 'Transportation' },
+  { code: '009', ledgerCode: '7009', name: 'Miscellaneous' },
+  { code: '010', ledgerCode: '7010', name: 'Printing and Postage' },
 ];
 
 export async function seedCategories(
   prisma: PrismaClient,
   designations: Designation[],
+  tick: (label: string) => void,
 ) {
   const budget = designations.find((d) => d.name === 'Budget')!;
   const cash = designations.find((d) => d.name === 'Cash')!;
 
   const budgetCategories = await Promise.all(
     budgetCategoryData.map((data) =>
-      prisma.category.create({ data: { ...data, designationId: budget.id } }),
+      prisma.category
+        .create({ data: { ...data, designationId: budget.id } })
+        .then((c) => {
+          tick('Seeding categories');
+          return c;
+        }),
     ),
   );
 
   const cashCategories = await Promise.all(
     cashCategoryData.map((data) =>
-      prisma.category.create({ data: { ...data, designationId: cash.id } }),
+      prisma.category
+        .create({ data: { ...data, designationId: cash.id } })
+        .then((c) => {
+          tick('Seeding categories');
+          return c;
+        }),
     ),
   );
 
-  const categories = [...budgetCategories, ...cashCategories];
-  console.log(`Seeded ${categories.length} categories.`);
-  return categories;
+  return [...budgetCategories, ...cashCategories];
 }

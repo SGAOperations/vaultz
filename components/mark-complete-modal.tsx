@@ -56,9 +56,16 @@ export function MarkCompleteModal({
     if (!step) return;
     setIsSubmitting(true);
     const markedAt = new Date();
+    const utcCompletionDate = new Date(
+      Date.UTC(
+        completionDate.getFullYear(),
+        completionDate.getMonth(),
+        completionDate.getDate(),
+      ),
+    );
     const result = await handleError(
       markStepComplete(purchaseProcessId, step.id, {
-        completionDate,
+        completionDate: utcCompletionDate,
         notes: notes || null,
       }),
       {
@@ -71,7 +78,7 @@ export function MarkCompleteModal({
           onComplete({
             id: res.id,
             markedAt,
-            completionDate,
+            completionDate: utcCompletionDate,
             notes: notes || null,
           });
           onOpenChange(false);

@@ -5,10 +5,12 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQueryClient } from '@tanstack/react-query';
 import { Loader2, Trash2 } from 'lucide-react';
 import { z } from 'zod/v4';
 
 import { deleteCategory, updateCategory } from '@/prisma/services/category';
+import { deleteCategoryYear } from '@/prisma/services/category-year';
 
 import { Category } from '@/lib/types';
 import { handleError } from '@/lib/utils';
@@ -31,6 +33,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import { FormInput } from '@/components/ui/form-input';
 import { Input } from '@/components/ui/input';
 
 const schema = z.object({
@@ -45,11 +48,14 @@ const schema = z.object({
 export function EditCategoryDialog({
   category,
   trigger,
+  categoryYearId,
 }: {
   category: Pick<Category, 'id' | 'code' | 'ledgerCode' | 'name'>;
   trigger: React.ReactNode;
+  categoryYearId?: string;
 }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [open, setOpen] = useState<boolean>(false);
   const [confirmDelete, setConfirmDelete] = useState<boolean>(false);
   const form = useForm<z.infer<typeof schema>>({
@@ -81,18 +87,34 @@ export function EditCategoryDialog({
       return;
     }
 
-    await handleError(deleteCategory(category.id), {
-      toast: {
-        loading: 'Deleting spending category...',
-        success: 'Spending category deleted successfully',
-        error: 'Failed to delete spending category',
-      },
-      onSuccess: () => {
-        setOpen(false);
-        // Navigate to the parent designation page
-        router.push(`/designation`);
-      },
-    });
+    if (categoryYearId) {
+      await handleError(deleteCategoryYear(categoryYearId), {
+        toast: {
+          loading: 'Removing category from year...',
+          success: 'Category removed from year successfully',
+          error: 'Failed to remove category from year',
+        },
+        onSuccess: async () => {
+          await queryClient.invalidateQueries({
+            queryKey: ['categories-budget'],
+          });
+          setOpen(false);
+        },
+      });
+    } else {
+      await handleError(deleteCategory(category.id), {
+        toast: {
+          loading: 'Deleting spending category...',
+          success: 'Spending category deleted successfully',
+          error: 'Failed to delete spending category',
+        },
+        onSuccess: () => {
+          setOpen(false);
+          // Navigate to the parent designation page
+          router.push(`/designation`);
+        },
+      });
+    }
   }
 
   function handleCancel() {
@@ -121,7 +143,9 @@ export function EditCategoryDialog({
         <DialogHeader>
           <DialogTitle>Edit Spending Category</DialogTitle>
           <DialogDescription>
-            Update the spending category details or delete it entirely.
+            {categoryYearId
+              ? 'Update the spending category details or remove it from this year.'
+              : 'Update the spending category details or delete it entirely.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -140,21 +164,13 @@ export function EditCategoryDialog({
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
+            <FormInput<z.infer<typeof schema>>
               name="code"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Spending Category Code</FormLabel>
-                  <FormControl>
-                    <Input placeholder="123" {...field} />
-                  </FormControl>
-                  <FormDescription>
-                    Enter 3 numbers (displayed with SC prefix, e.g., SC123).
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
+              label="Spending Category Code"
+              placeholder="123"
+              prefix="SC"
+              numbersOnly
+              description="The spending category code associated with this category."
             />
             <FormField
               control={form.control}
@@ -181,7 +197,11 @@ export function EditCategoryDialog({
                 className="flex-1"
                 disabled={isSubmitting}
               >
-                {confirmDelete ? 'Cancel Delete' : 'Cancel'}
+                {confirmDelete
+                  ? categoryYearId
+                    ? 'Cancel Remove'
+                    : 'Cancel Delete'
+                  : 'Cancel'}
               </Button>
               {!confirmDelete && (
                 <Button
@@ -201,11 +221,15 @@ export function EditCategoryDialog({
                 disabled={isSubmitting}
               >
                 {confirmDelete ? (
-                  'Confirm Delete'
+                  categoryYearId ? (
+                    'Confirm Remove'
+                  ) : (
+                    'Confirm Delete'
+                  )
                 ) : (
                   <>
                     <Trash2 className="mr-2 h-4 w-4" />
-                    Delete
+                    {categoryYearId ? 'Remove from Year' : 'Delete'}
                   </>
                 )}
               </Button>

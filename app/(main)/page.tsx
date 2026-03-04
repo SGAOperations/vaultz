@@ -19,7 +19,7 @@ export default function Home() {
       <PageHeader
         title={selectedDesignation.name}
         description={`Dashboard · DN${selectedDesignation.code}${selectedYear ? ` · ${selectedYear.name}` : ''}`}
-        actions={<QuickActionButtons designationId={selectedDesignation.id} />}
+        actions={<QuickActionButtons />}
       />
       <Content designationId={selectedDesignation.id} />
     </div>

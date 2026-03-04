@@ -196,7 +196,7 @@ export function YearComparisonReport({
 
   return (
     <TooltipProvider>
-      <div className="flex flex-col gap-4">
+      <div className="flex w-full min-w-0 flex-col gap-4">
         {/* Filters */}
         <Card className="gap-4 p-4">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
@@ -435,9 +435,9 @@ export function YearComparisonReport({
                 description="No categories have budget or spending data for the selected years"
               />
             ) : (
-              <div className="overflow-x-auto">
-                <Card className="p-0">
-                  <table className="w-full text-sm">
+              <Card className="overflow-hidden p-0">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
                     <thead>
                       <tr className="border-b">
                         <th className="text-muted-foreground px-4 py-3 text-left font-medium">
@@ -509,8 +509,8 @@ export function YearComparisonReport({
                       />
                     </tfoot>
                   </table>
-                </Card>
-              </div>
+                </div>
+              </Card>
             )}
           </>
         )}
@@ -526,9 +526,9 @@ export function YearComparisonReport({
         {selectedDesignationId && budgetData && budgetData.years.length > 0 && (
           <>
             <SectionHeader title="Budget Comparison Across All Years" />
-            <div className="overflow-x-auto">
-              <Card className="p-0">
-                <table className="w-full text-sm">
+            <Card className="overflow-hidden p-0">
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
                   <thead>
                     <tr className="border-b">
                       <th className="text-muted-foreground px-4 py-3 text-left font-medium">
@@ -633,8 +633,8 @@ export function YearComparisonReport({
                     </tr>
                   </tfoot>
                 </table>
-              </Card>
-            </div>
+              </div>
+            </Card>
           </>
         )}
       </div>

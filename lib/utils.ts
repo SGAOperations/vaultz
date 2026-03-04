@@ -84,7 +84,12 @@ export type ErrorType = { error: string };
 export type ResponseType<T> = T | ErrorType;
 
 export function isError<T>(result: ResponseType<T>): result is ErrorType {
-  return (result as ErrorType).error !== undefined;
+  return (
+    result !== null &&
+    result !== undefined &&
+    typeof result === 'object' &&
+    'error' in result
+  );
 }
 
 /**
@@ -98,9 +103,9 @@ export async function handleError<T>(
   promise: Promise<ResponseType<T>>,
   options: {
     toast: { loading: string; success: string; error?: string };
-    onSuccess?: (data: T) => void;
-    onError?: (error: ErrorType) => void;
-    onFinish?: () => void;
+    onSuccess?: (data: T) => void | Promise<void>;
+    onError?: (error: ErrorType) => void | Promise<void>;
+    onFinish?: () => void | Promise<void>;
   },
 ): Promise<ResponseType<T>> {
   const toastId = toast.loading(options.toast.loading);
@@ -113,14 +118,14 @@ export async function handleError<T>(
       const errorMessage =
         result.error || options.toast.error || 'An error occurred';
       toast.error(errorMessage, { id: toastId });
-      if (options.onError) options.onError(result);
+      if (options.onError) await options.onError(result);
       return result;
     }
 
     // Show success toast
     toast.success(options.toast.success, { id: toastId });
 
-    if (options.onSuccess) options.onSuccess(result);
+    if (options.onSuccess) await options.onSuccess(result);
 
     return result;
   } catch (error) {
@@ -128,6 +133,6 @@ export async function handleError<T>(
     toast.error(options.toast.error || 'An error occurred', { id: toastId });
     throw error;
   } finally {
-    if (options.onFinish) options.onFinish();
+    if (options.onFinish) await options.onFinish();
   }
 }

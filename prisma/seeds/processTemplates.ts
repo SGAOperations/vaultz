@@ -151,6 +151,7 @@ export type SeededProcessTemplate = ProcessTemplate & { steps: ProcessStep[] };
 
 export async function seedProcessTemplates(
   prisma: PrismaClient,
+  tick: (label: string) => void,
 ): Promise<SeededProcessTemplate[]> {
   const results: SeededProcessTemplate[] = [];
 
@@ -158,24 +159,27 @@ export async function seedProcessTemplates(
     const template = await prisma.processTemplate.create({
       data: { name: defn.name, description: defn.description },
     });
+    tick('Seeding process templates');
+
     const steps = await Promise.all(
       defn.steps.map((s) =>
-        prisma.processStep.create({
-          data: {
-            name: s.name,
-            description: s.description,
-            order: s.order,
-            templateId: template.id,
-          },
-        }),
+        prisma.processStep
+          .create({
+            data: {
+              name: s.name,
+              description: s.description,
+              order: s.order,
+              templateId: template.id,
+            },
+          })
+          .then((step) => {
+            tick('Seeding process steps');
+            return step;
+          }),
       ),
     );
     results.push({ ...template, steps });
   }
 
-  const stepCount = results.reduce((sum, t) => sum + t.steps.length, 0);
-  console.log(
-    `Seeded ${results.length} process templates with ${stepCount} steps.`,
-  );
   return results;
 }

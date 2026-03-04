@@ -3,6 +3,8 @@
 import { useMemo, useState } from 'react';
 import { FormProvider, useForm, useWatch } from 'react-hook-form';
 
+import { useDesignation } from '@/contexts/DesignationContext';
+import { usePeriod } from '@/contexts/PeriodContext';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -29,12 +31,17 @@ import { twMerge } from 'tailwind-merge';
 import { z } from 'zod/v4';
 
 import { User } from '@/prisma/client';
+import { getMiscAllocations } from '@/prisma/services/allocation';
+import { getAllAllocationGroups } from '@/prisma/services/allocation-groups';
+import { getCategoriesByDesignation } from '@/prisma/services/category';
 import { getActiveYear, getAllYears } from '@/prisma/services/period';
+import { getAllProcessTemplates } from '@/prisma/services/process-templates';
 import {
   createPurchase,
   deletePurchase,
   updatePurchase,
 } from '@/prisma/services/purchase';
+import { createUser, getUsers } from '@/prisma/services/user';
 
 import {
   Allocation,
@@ -104,6 +111,19 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
+const userSchema = z.object({
+  first: z
+    .string()
+    .min(2, 'Must be at least 2 characters')
+    .max(50, 'Cannot be longer than 50 characters'),
+  last: z
+    .string()
+    .min(2, 'Must be at least 2 characters')
+    .max(50, 'Cannot be longer than 50 characters'),
+});
+
+type UserFormData = z.infer<typeof userSchema>;
+
 // Props for creating a new purchase (no existing purchase)
 type CreatePurchaseProps = {
   mode: 'create';
@@ -171,6 +191,12 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
   const [showAdvanced, setShowAdvanced] = useState(
     !!(purchase && purchase.yearId !== activeYearId),
   );
+  const [localUsers, setLocalUsers] = useState(users);
+  const [userCreateOpen, setUserCreateOpen] = useState(false);
+  const userForm = useForm<UserFormData>({
+    resolver: zodResolver(userSchema),
+    defaultValues: { first: '', last: '' },
+  });
 
   const receiptUrls = purchase?.receipts.map((r) => getFileUrl(r)) || [];
 
@@ -364,6 +390,22 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
     setConfirmDelete(false);
   }
 
+  async function handleCreateUser(data: UserFormData) {
+    await handleError(createUser(data), {
+      toast: {
+        loading: 'Creating user...',
+        success: 'User created successfully',
+        error: 'Failed to create user',
+      },
+      onSuccess: (newUser) => {
+        setLocalUsers((prev) => [...prev, newUser]);
+        form.setValue('userId', newUser.id, { shouldValidate: true });
+        userForm.reset();
+        setUserCreateOpen(false);
+      },
+    });
+  }
+
   function handleOpenChange(newOpen: boolean) {
     setOpen(newOpen);
     if (!newOpen) {
@@ -417,6 +459,50 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
           </div>
         </DialogContent>
       </Dialog>
+      <Dialog
+        open={userCreateOpen}
+        onOpenChange={(isOpen) => {
+          setUserCreateOpen(isOpen);
+          if (!isOpen) userForm.reset();
+        }}
+      >
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Create User</DialogTitle>
+            <DialogDescription>
+              A user is associated with purchases. It can represent an
+              individual or an organization.
+            </DialogDescription>
+          </DialogHeader>
+          <FormProvider {...userForm}>
+            <form
+              onSubmit={userForm.handleSubmit(handleCreateUser)}
+              className="space-y-4"
+            >
+              <FormInput<UserFormData>
+                name="first"
+                label="First Name"
+                placeholder="John"
+              />
+              <FormInput<UserFormData>
+                name="last"
+                label="Last Name"
+                placeholder="Travolta"
+              />
+              <Button
+                type="submit"
+                disabled={userForm.formState.isSubmitting}
+                className="w-full"
+              >
+                {userForm.formState.isSubmitting && (
+                  <Loader2 className="animate-spin" />
+                )}
+                Create User
+              </Button>
+            </form>
+          </FormProvider>
+        </DialogContent>
+      </Dialog>
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogTrigger asChild>{trigger}</DialogTrigger>
         <DialogContent
@@ -464,12 +550,22 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                       name="userId"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Name</FormLabel>
+                          <div className="flex items-center justify-between">
+                            <FormLabel>Name</FormLabel>
+                            <button
+                              type="button"
+                              onClick={() => setUserCreateOpen(true)}
+                              className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs"
+                            >
+                              <Plus className="size-3" />
+                              Add User
+                            </button>
+                          </div>
                           <FormControl>
                             <Combobox
                               data={[
                                 {
-                                  items: users.map((v) => ({
+                                  items: localUsers.map((v) => ({
                                     value: v.id,
                                     label: `${v.first} ${v.last}`,
                                   })),
@@ -628,7 +724,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                     <FormInput<FormData>
                       name="amount"
                       label="Amount"
-                      placeholder="$21.45"
+                      placeholder="21.45"
                       currency
                     />
                   </div>
@@ -1083,14 +1179,70 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
   );
 }
 
-// Backward compatibility export for CreatePurchaseDialog
+// CreatePurchaseDialog self-fetches all data using contexts.
+// Callers may pass optional overrides to filter the options shown in the dialog.
 export function CreatePurchaseDialog(props: {
-  users: User[];
-  categories: CategoryWithDesignation[];
+  trigger?: React.ReactNode;
+  users?: User[];
+  categories?: CategoryWithDesignation[];
   allocationGroups?: AllocationGroupWithAllocations[];
   miscAllocations?: Allocation[];
   processTemplates?: ProcessTemplateWithStepCount[];
   defaultCategoryId?: string;
 }) {
-  return <PurchaseDialog mode="create" {...props} />;
+  const { selectedDesignation } = useDesignation();
+  const { selectedPeriod } = usePeriod();
+  const designationId = selectedDesignation?.id;
+
+  const { data: fetchedUsers = [] } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => getUsers(),
+    enabled: props.users === undefined,
+  });
+
+  const { data: fetchedCategories = [] } = useQuery({
+    queryKey: ['categories-by-designation', designationId],
+    queryFn: () =>
+      designationId
+        ? getCategoriesByDesignation({ designationId })
+        : Promise.resolve([]),
+    enabled: props.categories === undefined && !!designationId,
+  });
+
+  const { data: fetchedAllocationGroups = [] } = useQuery({
+    queryKey: ['allocation-groups', designationId, selectedPeriod?.id],
+    queryFn: () =>
+      designationId
+        ? getAllAllocationGroups(designationId, selectedPeriod?.id ?? undefined)
+        : Promise.resolve([]),
+    enabled: props.allocationGroups === undefined && !!designationId,
+  });
+
+  const { data: fetchedMiscAllocations = [] } = useQuery({
+    queryKey: ['misc-allocations', designationId, selectedPeriod?.id],
+    queryFn: () =>
+      designationId
+        ? getMiscAllocations(designationId, selectedPeriod?.id ?? undefined)
+        : Promise.resolve([]),
+    enabled: props.miscAllocations === undefined && !!designationId,
+  });
+
+  const { data: fetchedProcessTemplates = [] } = useQuery({
+    queryKey: ['process-templates'],
+    queryFn: () => getAllProcessTemplates(true),
+    enabled: props.processTemplates === undefined,
+  });
+
+  return (
+    <PurchaseDialog
+      mode="create"
+      trigger={props.trigger}
+      users={props.users ?? fetchedUsers}
+      categories={props.categories ?? fetchedCategories}
+      allocationGroups={props.allocationGroups ?? fetchedAllocationGroups}
+      miscAllocations={props.miscAllocations ?? fetchedMiscAllocations}
+      processTemplates={props.processTemplates ?? fetchedProcessTemplates}
+      defaultCategoryId={props.defaultCategoryId}
+    />
+  );
 }

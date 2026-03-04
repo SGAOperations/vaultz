@@ -29,6 +29,8 @@ const periodPool: Array<{
   },
 ];
 
+type PeriodPoolItem = (typeof periodPool)[number];
+
 function shuffled<T>(arr: T[]): T[] {
   const copy = [...arr];
   for (let i = copy.length - 1; i > 0; i--) {
@@ -38,21 +40,33 @@ function shuffled<T>(arr: T[]): T[] {
   return copy;
 }
 
-export async function seedPeriods(prisma: PrismaClient, years: Year[]) {
-  const allPeriods = await Promise.all(
-    years.flatMap((year) => {
-      // syear = the calendar year in which the FY begins (July 1)
-      const syear = year.startDate.getFullYear();
-      // Randomly pick 2 or 3 periods from the pool
-      const count = Math.random() < 0.5 ? 3 : 2;
-      const selected = shuffled(periodPool).slice(0, count);
-      // Re-sort by start date so ordering is chronological
-      selected.sort(
-        (a, b) => a.start(syear).getTime() - b.start(syear).getTime(),
-      );
+// Pre-generate which pool items each year will use (without needing year IDs).
+// Returns one slot array per year; the slots are sorted during insertion.
+export function generatePeriodSlots(yearCount: number): PeriodPoolItem[][] {
+  return Array.from({ length: yearCount }, () => {
+    const count = Math.random() < 0.5 ? 3 : 2;
+    return shuffled(periodPool).slice(0, count);
+  });
+}
 
-      return selected.map((t) =>
-        prisma.period.create({
+export type PeriodSlots = ReturnType<typeof generatePeriodSlots>;
+
+export async function seedPeriods(
+  prisma: PrismaClient,
+  years: Year[],
+  slots: PeriodSlots,
+  tick: (label: string) => void,
+) {
+  const allPeriods = [];
+  for (let yi = 0; yi < years.length; yi++) {
+    const year = years[yi];
+    const syear = year.startDate.getFullYear();
+    const selected = [...slots[yi]].sort(
+      (a, b) => a.start(syear).getTime() - b.start(syear).getTime(),
+    );
+    for (const t of selected) {
+      allPeriods.push(
+        await prisma.period.create({
           data: {
             name: t.name,
             startDate: t.start(syear),
@@ -61,8 +75,8 @@ export async function seedPeriods(prisma: PrismaClient, years: Year[]) {
           },
         }),
       );
-    }),
-  );
-  console.log(`Seeded ${allPeriods.length} periods.`);
+      tick('Seeding periods');
+    }
+  }
   return allPeriods;
 }

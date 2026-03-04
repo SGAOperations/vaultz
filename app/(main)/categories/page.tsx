@@ -1,6 +1,7 @@
 'use client';
 
 import { useDesignation } from '@/contexts/DesignationContext';
+import { useYear } from '@/contexts/YearContext';
 import { Plus } from 'lucide-react';
 
 import { CreateCategoryDialog } from '@/components/create-category-dialog';
@@ -11,18 +12,25 @@ import { Content } from './content';
 
 export default function CategoriesPage() {
   const { selectedDesignation } = useDesignation();
+  const { selectedYear } = useYear();
 
   if (!selectedDesignation) return null;
+
+  const description = selectedYear
+    ? `${selectedDesignation.name} · DN${selectedDesignation.code} · ${selectedYear.name}`
+    : `${selectedDesignation.name} · DN${selectedDesignation.code}`;
 
   return (
     <div className="flex w-full flex-col">
       <PageHeader
         title="Categories"
-        description={`${selectedDesignation.name} · DN${selectedDesignation.code}`}
+        description={description}
         actions={
           <div className="flex gap-2">
             <CreateCategoryDialog
               designationId={selectedDesignation.id}
+              yearId={selectedYear?.id}
+              yearName={selectedYear?.name}
               trigger={
                 <Button size="sm">
                   <Plus className="size-4" />

@@ -68,8 +68,8 @@ export function Content({ designationId }: ContentProps) {
   if (!categories || categories.length === 0)
     return (
       <EmptyState
-        message="No categories yet"
-        description="Create categories for this designation to see them here"
+        message={`No categories for ${selectedYear.name}`}
+        description="Create a new category or add an existing one from another year"
       />
     );
 
@@ -80,11 +80,14 @@ export function Content({ designationId }: ContentProps) {
         const hasBudget = category.categoryYearId !== null;
 
         return (
-          <div key={category.id} className="group relative">
-            <Link href={`/purchases?category=${category.id}`}>
+          <div key={category.id} className="group relative h-full">
+            <Link
+              href={`/purchases?category=${category.id}`}
+              className="h-full"
+            >
               <Card
                 className={cn(
-                  'hover:border-primary/30 p-4 transition-all duration-200 hover:shadow-md',
+                  'hover:border-primary/30 h-full p-4 transition-all duration-200 hover:shadow-md',
                   !hasBudget && 'border-dashed opacity-75',
                 )}
               >
@@ -167,6 +170,7 @@ export function Content({ designationId }: ContentProps) {
             >
               <EditCategoryDialog
                 category={category}
+                categoryYearId={category.categoryYearId ?? undefined}
                 trigger={
                   <Button
                     variant="ghost"
