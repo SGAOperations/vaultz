@@ -9,7 +9,6 @@ import './globals.css';
 
 import { receiptFileRouter } from '@/app/api/uploadthing/core';
 
-import { getFirstDesignation } from '@/prisma/services/designation';
 import { getActivePeriod, getActiveYear } from '@/prisma/services/period';
 
 import { cn } from '@/lib/utils';
@@ -32,13 +31,12 @@ export const metadata: Metadata = {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const [firstDesignation, activeYear, activePeriod] = await Promise.all([
-    getFirstDesignation(),
+  const [activeYear, activePeriod] = await Promise.all([
     getActiveYear(),
     getActivePeriod(),
   ]);
 
-  const initialDesignation = firstDesignation;
+  const initialDesignation = null;
   const initialYear = activeYear
     ? { id: activeYear.id, name: activeYear.name }
     : null;
