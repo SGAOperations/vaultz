@@ -20,7 +20,7 @@ import {
 } from '@/prisma/services/purchase';
 
 import { PurchaseProcessData, PurchaseProcessStep } from '@/lib/types';
-import { cn, handleError } from '@/lib/utils';
+import { handleError } from '@/lib/utils';
 
 import { Skeleton } from '@/components/ui/skeleton';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -42,11 +42,9 @@ function todayDate() {
 }
 
 function MarkCompleteForm({
-  isExpanded,
   onConfirm,
   onCancel,
 }: {
-  isExpanded: boolean;
   onConfirm: (values: MarkCompleteFormValues) => Promise<void>;
   onCancel: () => void;
 }) {
@@ -54,10 +52,6 @@ function MarkCompleteForm({
     resolver: zodResolver(markCompleteSchema),
     defaultValues: { completionDate: todayDate(), notes: '' },
   });
-
-  useEffect(() => {
-    if (isExpanded) form.reset({ completionDate: todayDate(), notes: '' });
-  }, [isExpanded, form.reset]);
 
   return (
     <form
@@ -320,22 +314,14 @@ export function ProcessProgress({
                     )}
                   </div>
                 </div>
-                <div
-                  className={cn(
-                    'grid transition-all duration-200 ease-in-out',
-                    expandedStepId === step.id
-                      ? 'grid-rows-[1fr] opacity-100'
-                      : 'grid-rows-[0fr] opacity-0',
-                  )}
-                >
-                  <div className="overflow-hidden">
+                {expandedStepId === step.id && (
+                  <div className="animate-in slide-in-from-top-1 fade-in-0 duration-200">
                     <MarkCompleteForm
-                      isExpanded={expandedStepId === step.id}
                       onConfirm={(values) => handleConfirm(values, step)}
                       onCancel={() => setExpandedStepId(null)}
                     />
                   </div>
-                </div>
+                )}
               </div>
             );
           })}
