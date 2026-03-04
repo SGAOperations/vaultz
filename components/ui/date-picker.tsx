@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import {
   Calendar as CalendarIcon,
+  ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
 } from 'lucide-react';
@@ -13,6 +14,13 @@ import { cn } from '@/lib/utils';
 import { DateTime } from '@/components/date-time';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 
 function formatDateInput(date: Date): string {
@@ -58,15 +66,6 @@ export function DatePicker({
   );
   const [viewedDate, setViewedDate] = useState(() => date ?? new Date());
 
-  // Any pointerdown that bubbles to the document originated outside both the
-  // trigger button and the calendar panel (both call stopPropagation).
-  useEffect(() => {
-    if (!open) return;
-    const close = () => setOpen(false);
-    document.addEventListener('pointerdown', close);
-    return () => document.removeEventListener('pointerdown', close);
-  }, [open]);
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
     setInputValue(raw);
@@ -109,96 +108,129 @@ export function DatePicker({
         {date ? <DateTime date={date} dateOnly /> : <span>Pick a date</span>}
       </Button>
       {open && (
-        <div
-          className="bg-popover text-popover-foreground absolute left-0 top-full z-50 mt-1 w-auto rounded-md border p-0 shadow-md"
-          onPointerDown={(e) => e.stopPropagation()}
-        >
-          <div className="border-b p-3">
-            <Input
-              placeholder="MM/DD/YYYY"
-              value={inputValue}
-              onChange={handleInputChange}
-              aria-invalid={inputValue !== '' && !parseDateInput(inputValue)}
+        <>
+          {/* Backdrop — sits below the calendar (z-40) so clicks outside close it,
+              while portaled DropdownMenu content at z-50 stays interactive. */}
+          <div
+            className="fixed inset-0 z-40"
+            onClick={() => setOpen(false)}
+          />
+          <div className="bg-popover text-popover-foreground absolute left-0 top-full z-50 mt-1 w-auto rounded-md border p-0 shadow-md">
+            <div className="border-b p-3">
+              <Input
+                placeholder="MM/DD/YYYY"
+                value={inputValue}
+                onChange={handleInputChange}
+                aria-invalid={inputValue !== '' && !parseDateInput(inputValue)}
+              />
+            </div>
+            <div className="flex items-center justify-between px-3 py-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="size-7"
+                onClick={() =>
+                  setViewedDate(
+                    (d) => new Date(d.getFullYear(), d.getMonth() - 1, 1),
+                  )
+                }
+              >
+                <ChevronLeftIcon className="size-4" />
+              </Button>
+              <div className="flex items-center gap-1">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 gap-1 px-2 text-sm font-medium"
+                    >
+                      {MONTH_NAMES[viewedDate.getMonth()]}
+                      <ChevronDownIcon className="size-3 opacity-60" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="center" className="max-h-60 overflow-y-auto">
+                    <DropdownMenuRadioGroup
+                      value={String(viewedDate.getMonth())}
+                      onValueChange={(v) =>
+                        setViewedDate(
+                          (d) => new Date(d.getFullYear(), Number(v), 1),
+                        )
+                      }
+                    >
+                      {MONTH_NAMES.map((name, i) => (
+                        <DropdownMenuRadioItem key={i} value={String(i)}>
+                          {name}
+                        </DropdownMenuRadioItem>
+                      ))}
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 gap-1 px-2 text-sm font-medium"
+                    >
+                      {viewedDate.getFullYear()}
+                      <ChevronDownIcon className="size-3 opacity-60" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="center" className="max-h-60 overflow-y-auto">
+                    <DropdownMenuRadioGroup
+                      value={String(viewedDate.getFullYear())}
+                      onValueChange={(v) =>
+                        setViewedDate(
+                          (d) => new Date(Number(v), d.getMonth(), 1),
+                        )
+                      }
+                    >
+                      {years.map((y) => (
+                        <DropdownMenuRadioItem key={y} value={String(y)}>
+                          {y}
+                        </DropdownMenuRadioItem>
+                      ))}
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="size-7"
+                onClick={() =>
+                  setViewedDate(
+                    (d) => new Date(d.getFullYear(), d.getMonth() + 1, 1),
+                  )
+                }
+              >
+                <ChevronRightIcon className="size-4" />
+              </Button>
+            </div>
+            <Calendar
+              mode="single"
+              selected={date}
+              onSelect={(newDate) => {
+                if (newDate) {
+                  onChange(newDate);
+                  setInputValue(formatDateInput(newDate));
+                  setOpen(false);
+                }
+              }}
+              month={viewedDate}
+              onMonthChange={setViewedDate}
+              classNames={{
+                month_caption: 'hidden',
+                nav: 'hidden',
+              }}
             />
           </div>
-          <div className="flex items-center justify-between px-3 py-2">
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="size-7"
-              onClick={() =>
-                setViewedDate(
-                  (d) => new Date(d.getFullYear(), d.getMonth() - 1, 1),
-                )
-              }
-            >
-              <ChevronLeftIcon className="size-4" />
-            </Button>
-            <div className="flex items-center gap-1 text-sm font-medium">
-              <select
-                className="cursor-pointer appearance-none bg-transparent focus:outline-none"
-                value={viewedDate.getMonth()}
-                onChange={(e) =>
-                  setViewedDate(
-                    (d) => new Date(d.getFullYear(), Number(e.target.value), 1),
-                  )
-                }
-              >
-                {MONTH_NAMES.map((name, i) => (
-                  <option key={i} value={i}>
-                    {name}
-                  </option>
-                ))}
-              </select>
-              <select
-                className="cursor-pointer appearance-none bg-transparent focus:outline-none"
-                value={viewedDate.getFullYear()}
-                onChange={(e) =>
-                  setViewedDate(
-                    (d) => new Date(Number(e.target.value), d.getMonth(), 1),
-                  )
-                }
-              >
-                {years.map((y) => (
-                  <option key={y} value={y}>
-                    {y}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="size-7"
-              onClick={() =>
-                setViewedDate(
-                  (d) => new Date(d.getFullYear(), d.getMonth() + 1, 1),
-                )
-              }
-            >
-              <ChevronRightIcon className="size-4" />
-            </Button>
-          </div>
-          <Calendar
-            mode="single"
-            selected={date}
-            onSelect={(newDate) => {
-              if (newDate) {
-                onChange(newDate);
-                setInputValue(formatDateInput(newDate));
-                setOpen(false);
-              }
-            }}
-            month={viewedDate}
-            onMonthChange={setViewedDate}
-            classNames={{
-              month_caption: 'hidden',
-              nav: 'hidden',
-            }}
-          />
-        </div>
+        </>
       )}
     </div>
   );
