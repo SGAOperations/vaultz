@@ -180,7 +180,7 @@ function YearCard({
             </div>
 
             <div className="flex items-center gap-2">
-              <YearDialog key={year.updatedAt.getTime()} year={year}>
+              <YearDialog year={year}>
                 <Button variant="outline" size="sm" className="gap-1.5">
                   <Pencil className="size-3.5" />
                   Edit

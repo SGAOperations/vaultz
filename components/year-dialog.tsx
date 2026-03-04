@@ -109,14 +109,15 @@ export function YearDialog({
 
   function handleOpenChange(newOpen: boolean) {
     setOpen(newOpen);
-    if (!newOpen) {
-      setStep('year');
-      setCreatedYear(null);
+    if (newOpen) {
       yearForm.reset({
         name: year?.name ?? '',
         startDate: year ? parseDateOnly(year.startDate) : undefined,
         endDate: year ? parseDateOnly(year.endDate) : undefined,
       });
+    } else {
+      setStep('year');
+      setCreatedYear(null);
       resetForm.reset({ entries: [] });
       replace([]);
     }
@@ -155,6 +156,11 @@ export function YearDialog({
         },
       });
       if (!isError(result)) {
+        yearForm.reset({
+          name: result.name,
+          startDate: parseDateOnly(result.startDate),
+          endDate: parseDateOnly(result.endDate),
+        });
         await queryClient.invalidateQueries({ queryKey: ['years'] });
         handleOpenChange(false);
       }
