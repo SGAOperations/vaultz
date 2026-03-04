@@ -3,6 +3,8 @@
 import { useMemo, useState } from 'react';
 import { FormProvider, useForm, useWatch } from 'react-hook-form';
 
+import { useDesignation } from '@/contexts/DesignationContext';
+import { usePeriod } from '@/contexts/PeriodContext';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -27,9 +29,6 @@ import {
 import { toast } from 'sonner';
 import { twMerge } from 'tailwind-merge';
 import { z } from 'zod/v4';
-
-import { useDesignation } from '@/contexts/DesignationContext';
-import { usePeriod } from '@/contexts/PeriodContext';
 
 import { User } from '@/prisma/client';
 import { getMiscAllocations } from '@/prisma/services/allocation';

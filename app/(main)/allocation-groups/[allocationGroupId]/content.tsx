@@ -63,9 +63,7 @@ export function Content({ allocationGroupId }: ContentProps) {
         description={description}
         actions={
           <div className="flex gap-2">
-            <CreatePurchaseDialog
-              allocationGroups={[allocationGroup]}
-            />
+            <CreatePurchaseDialog allocationGroups={[allocationGroup]} />
             <Link href={`/purchases?allocationGroup=${allocationGroupId}`}>
               <Button variant="outline" className="gap-2">
                 <ShoppingCart className="size-4" />
