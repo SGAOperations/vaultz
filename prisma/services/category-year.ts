@@ -264,6 +264,17 @@ export async function setYearBudgetsForDesignation({
   revalidatePath('/categories');
 }
 
+export async function deleteCategoryYear(
+  id: string,
+): Promise<ResponseType<void>> {
+  await prisma.categoryYear.update({
+    where: { id },
+    data: { deletedAt: new Date() },
+  });
+
+  revalidatePath('/categories');
+}
+
 export async function updateCategoryYearBudget({
   categoryId,
   yearId,

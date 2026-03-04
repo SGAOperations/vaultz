@@ -9,6 +9,7 @@ import { Loader2, Trash2 } from 'lucide-react';
 import { z } from 'zod/v4';
 
 import { deleteCategory, updateCategory } from '@/prisma/services/category';
+import { deleteCategoryYear } from '@/prisma/services/category-year';
 
 import { Category } from '@/lib/types';
 import { handleError } from '@/lib/utils';
@@ -45,9 +46,11 @@ const schema = z.object({
 export function EditCategoryDialog({
   category,
   trigger,
+  categoryYearId,
 }: {
   category: Pick<Category, 'id' | 'code' | 'ledgerCode' | 'name'>;
   trigger: React.ReactNode;
+  categoryYearId?: string;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState<boolean>(false);
@@ -81,18 +84,31 @@ export function EditCategoryDialog({
       return;
     }
 
-    await handleError(deleteCategory(category.id), {
-      toast: {
-        loading: 'Deleting spending category...',
-        success: 'Spending category deleted successfully',
-        error: 'Failed to delete spending category',
-      },
-      onSuccess: () => {
-        setOpen(false);
-        // Navigate to the parent designation page
-        router.push(`/designation`);
-      },
-    });
+    if (categoryYearId) {
+      await handleError(deleteCategoryYear(categoryYearId), {
+        toast: {
+          loading: 'Removing category from year...',
+          success: 'Category removed from year successfully',
+          error: 'Failed to remove category from year',
+        },
+        onSuccess: () => {
+          setOpen(false);
+        },
+      });
+    } else {
+      await handleError(deleteCategory(category.id), {
+        toast: {
+          loading: 'Deleting spending category...',
+          success: 'Spending category deleted successfully',
+          error: 'Failed to delete spending category',
+        },
+        onSuccess: () => {
+          setOpen(false);
+          // Navigate to the parent designation page
+          router.push(`/designation`);
+        },
+      });
+    }
   }
 
   function handleCancel() {
@@ -121,7 +137,9 @@ export function EditCategoryDialog({
         <DialogHeader>
           <DialogTitle>Edit Spending Category</DialogTitle>
           <DialogDescription>
-            Update the spending category details or delete it entirely.
+            {categoryYearId
+              ? 'Update the spending category details or remove it from this year.'
+              : 'Update the spending category details or delete it entirely.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -181,7 +199,7 @@ export function EditCategoryDialog({
                 className="flex-1"
                 disabled={isSubmitting}
               >
-                {confirmDelete ? 'Cancel Delete' : 'Cancel'}
+                {confirmDelete ? (categoryYearId ? 'Cancel Remove' : 'Cancel Delete') : 'Cancel'}
               </Button>
               {!confirmDelete && (
                 <Button
@@ -201,11 +219,11 @@ export function EditCategoryDialog({
                 disabled={isSubmitting}
               >
                 {confirmDelete ? (
-                  'Confirm Delete'
+                  categoryYearId ? 'Confirm Remove' : 'Confirm Delete'
                 ) : (
                   <>
                     <Trash2 className="mr-2 h-4 w-4" />
-                    Delete
+                    {categoryYearId ? 'Remove from Year' : 'Delete'}
                   </>
                 )}
               </Button>

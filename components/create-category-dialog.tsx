@@ -209,15 +209,21 @@ export function CreateCategoryDialog({
                     <label className="text-sm font-medium">
                       Budget for {yearName}
                     </label>
-                    <Input
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      placeholder="0.00"
-                      value={existingAmount}
-                      onChange={(e) => setExistingAmount(e.target.value)}
-                      disabled={!selectedCategoryId}
-                    />
+                    <div className="relative">
+                      <span className="text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 text-sm">
+                        $
+                      </span>
+                      <Input
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        placeholder="0.00"
+                        className="pl-7"
+                        value={existingAmount}
+                        onChange={(e) => setExistingAmount(e.target.value)}
+                        disabled={!selectedCategoryId}
+                      />
+                    </div>
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -325,13 +331,19 @@ function NewCategoryForm({
               <FormItem>
                 <FormLabel>Budget for {yearName}</FormLabel>
                 <FormControl>
-                  <Input
-                    type="number"
-                    min={0}
-                    step="0.01"
-                    placeholder="0.00"
-                    {...field}
-                  />
+                  <div className="relative">
+                    <span className="text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 text-sm">
+                      $
+                    </span>
+                    <Input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      placeholder="0.00"
+                      className="pl-7"
+                      {...field}
+                    />
+                  </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>
