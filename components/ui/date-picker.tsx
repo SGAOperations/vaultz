@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { useState } from 'react';
+import { DayButton, getDefaultClassNames } from 'react-day-picker';
 
 import {
   Calendar as CalendarIcon,
@@ -9,7 +10,6 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
 } from 'lucide-react';
-import { DayButton, getDefaultClassNames } from 'react-day-picker';
 
 import { cn } from '@/lib/utils';
 
@@ -43,8 +43,18 @@ function parseDateInput(input: string): Date | undefined {
 }
 
 const MONTH_NAMES = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
 ];
 
 const YEARS = Array.from({ length: 11 }, (_, i) => 2020 + i);
@@ -70,7 +80,7 @@ function PickerDayButton({
       data-range-end={modifiers.range_end}
       data-range-middle={modifiers.range_middle}
       className={cn(
-        'data-[selected-single=true]:bg-primary data-[selected-single=true]:text-primary-foreground data-[range-middle=true]:bg-accent data-[range-middle=true]:text-accent-foreground data-[range-start=true]:bg-primary data-[range-start=true]:text-primary-foreground data-[range-end=true]:bg-primary data-[range-end=true]:text-primary-foreground dark:hover:text-accent-foreground flex aspect-square size-auto w-full min-w-(--cell-size) flex-col gap-1 leading-none font-normal focus-visible:ring-0 focus-visible:border-transparent [&>span]:text-xs [&>span]:opacity-70',
+        'data-[selected-single=true]:bg-primary data-[selected-single=true]:text-primary-foreground data-[range-middle=true]:bg-accent data-[range-middle=true]:text-accent-foreground data-[range-start=true]:bg-primary data-[range-start=true]:text-primary-foreground data-[range-end=true]:bg-primary data-[range-end=true]:text-primary-foreground dark:hover:text-accent-foreground flex aspect-square size-auto w-full min-w-(--cell-size) flex-col gap-1 leading-none font-normal focus-visible:border-transparent focus-visible:ring-0 [&>span]:text-xs [&>span]:opacity-70',
         defaultClassNames.day,
         className,
       )}
@@ -98,7 +108,9 @@ export function DatePicker({
     date ? formatDateInput(date) : '',
   );
   const [viewedDate, setViewedDate] = useState(() => date ?? new Date());
-  const [openDropdown, setOpenDropdown] = useState<'month' | 'year' | null>(null);
+  const [openDropdown, setOpenDropdown] = useState<'month' | 'year' | null>(
+    null,
+  );
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
@@ -138,7 +150,7 @@ export function DatePicker({
         <>
           {/* Calendar panel — all content is inline, no portals */}
           <div
-            className="bg-popover text-popover-foreground absolute left-0 top-full z-50 mt-1 w-auto rounded-md border p-0 shadow-md"
+            className="bg-popover text-popover-foreground absolute top-full left-0 z-50 mt-1 w-auto rounded-md border p-0 shadow-md"
             onPointerDown={(e) => e.stopPropagation()}
             onClick={() => setOpenDropdown(null)}
           >
@@ -167,31 +179,26 @@ export function DatePicker({
 
               <div className="flex items-center gap-1">
                 {/* Month dropdown — inline, no portal */}
-                <div
-                  className="relative"
-                  onClick={(e) => e.stopPropagation()}
-                >
+                <div className="relative" onClick={(e) => e.stopPropagation()}>
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
                     className="h-7 gap-1 px-2 text-sm font-medium"
                     onClick={() =>
-                      setOpenDropdown(
-                        openDropdown === 'month' ? null : 'month',
-                      )
+                      setOpenDropdown(openDropdown === 'month' ? null : 'month')
                     }
                   >
                     {MONTH_NAMES[viewedDate.getMonth()]}
                     <ChevronDownIcon className="size-3 opacity-60" />
                   </Button>
                   {openDropdown === 'month' && (
-                    <div className="bg-popover text-popover-foreground absolute left-0 top-full z-10 max-h-60 min-w-[9rem] overflow-y-auto rounded-md border p-1 shadow-md">
+                    <div className="bg-popover text-popover-foreground absolute top-full left-0 z-10 max-h-60 min-w-[9rem] overflow-y-auto rounded-md border p-1 shadow-md">
                       {MONTH_NAMES.map((name, i) => (
                         <div
                           key={i}
                           className={cn(
-                            'cursor-pointer rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground',
+                            'hover:bg-accent hover:text-accent-foreground cursor-pointer rounded-sm px-2 py-1.5 text-sm',
                             viewedDate.getMonth() === i &&
                               'bg-accent text-accent-foreground',
                           )}
@@ -210,38 +217,31 @@ export function DatePicker({
                 </div>
 
                 {/* Year dropdown — inline, no portal */}
-                <div
-                  className="relative"
-                  onClick={(e) => e.stopPropagation()}
-                >
+                <div className="relative" onClick={(e) => e.stopPropagation()}>
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
                     className="h-7 gap-1 px-2 text-sm font-medium"
                     onClick={() =>
-                      setOpenDropdown(
-                        openDropdown === 'year' ? null : 'year',
-                      )
+                      setOpenDropdown(openDropdown === 'year' ? null : 'year')
                     }
                   >
                     {viewedDate.getFullYear()}
                     <ChevronDownIcon className="size-3 opacity-60" />
                   </Button>
                   {openDropdown === 'year' && (
-                    <div className="bg-popover text-popover-foreground absolute left-0 top-full z-10 max-h-60 min-w-[6rem] overflow-y-auto rounded-md border p-1 shadow-md">
+                    <div className="bg-popover text-popover-foreground absolute top-full left-0 z-10 max-h-60 min-w-[6rem] overflow-y-auto rounded-md border p-1 shadow-md">
                       {YEARS.map((y) => (
                         <div
                           key={y}
                           className={cn(
-                            'cursor-pointer rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground',
+                            'hover:bg-accent hover:text-accent-foreground cursor-pointer rounded-sm px-2 py-1.5 text-sm',
                             viewedDate.getFullYear() === y &&
                               'bg-accent text-accent-foreground',
                           )}
                           onClick={() => {
-                            setViewedDate(
-                              (d) => new Date(y, d.getMonth(), 1),
-                            );
+                            setViewedDate((d) => new Date(y, d.getMonth(), 1));
                             setOpenDropdown(null);
                           }}
                         >
@@ -279,10 +279,7 @@ export function DatePicker({
               }}
               month={viewedDate}
               onMonthChange={setViewedDate}
-              classNames={{
-                month_caption: 'hidden',
-                nav: 'hidden',
-              }}
+              classNames={{ month_caption: 'hidden', nav: 'hidden' }}
               components={CALENDAR_COMPONENTS}
             />
           </div>

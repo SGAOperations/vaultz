@@ -23,9 +23,9 @@ import {
 import { PurchaseProcessData, PurchaseProcessStep } from '@/lib/types';
 import { handleError, parseDateOnly } from '@/lib/utils';
 
-import { Skeleton } from '@/components/ui/skeleton';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
 
 import { Button } from './ui/button';
 
@@ -251,10 +251,7 @@ export function ProcessProgress({
           {data.steps.map((step: PurchaseProcessStep, idx: number) => {
             const status = getStepStatus(step, data.steps);
             return (
-              <div
-                key={step.id}
-                className="bg-background rounded-md"
-              >
+              <div key={step.id} className="bg-background rounded-md">
                 <div className="flex items-start justify-between gap-3 px-3 py-2.5">
                   <div className="flex items-start gap-2.5">
                     <span className="bg-muted text-muted-foreground mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full text-xs font-medium">
@@ -289,7 +286,9 @@ export function ProcessProgress({
                         variant="ghost"
                         className="text-muted-foreground h-6 px-2 text-xs"
                         disabled={mutatingStepId !== null}
-                        onClick={() => handleUnmark(step.id, step.completion!.id)}
+                        onClick={() =>
+                          handleUnmark(step.id, step.completion!.id)
+                        }
                       >
                         {mutatingStepId === step.id ? (
                           <Loader2 className="mr-1 size-3 animate-spin" />
