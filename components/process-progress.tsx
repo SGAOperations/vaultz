@@ -1,9 +1,10 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   CheckCircle2,
   Circle,
@@ -133,6 +134,11 @@ function StepStatusBadge({ status }: { status: StepStatus }) {
   );
 }
 
+const PURCHASE_PROCESS_KEY = (purchaseId: string) => [
+  'purchase-process',
+  purchaseId,
+];
+
 export function ProcessProgress({
   purchaseId,
   onDataChange,
@@ -140,23 +146,19 @@ export function ProcessProgress({
   purchaseId: string;
   onDataChange?: (data: PurchaseProcessData | null) => void;
 }) {
-  const [data, setData] = useState<PurchaseProcessData | null | undefined>(
-    undefined,
-  );
+  const queryClient = useQueryClient();
   const [mutatingStepId, setMutatingStepId] = useState<string | null>(null);
   const [expandedStepId, setExpandedStepId] = useState<string | null>(null);
 
-  const updateData = useCallback(
-    (next: PurchaseProcessData | null) => {
-      setData(next);
-      if (onDataChange) onDataChange(next);
-    },
-    [onDataChange],
-  );
+  const { data, isLoading } = useQuery({
+    queryKey: PURCHASE_PROCESS_KEY(purchaseId),
+    queryFn: () => getPurchaseProcess(purchaseId),
+  });
 
-  useEffect(() => {
-    getPurchaseProcess(purchaseId).then(updateData);
-  }, [purchaseId, updateData]);
+  function setQueryData(next: PurchaseProcessData | null) {
+    queryClient.setQueryData(PURCHASE_PROCESS_KEY(purchaseId), next);
+    onDataChange?.(next);
+  }
 
   async function handleConfirm(
     values: MarkCompleteFormValues,
@@ -177,7 +179,8 @@ export function ProcessProgress({
           error: 'Failed to mark step complete',
         },
         onSuccess: (res) => {
-          updateData({
+          if (!data) return;
+          setQueryData({
             ...data,
             steps: data.steps.map((s: PurchaseProcessStep) =>
               s.id === step.id
@@ -211,7 +214,8 @@ export function ProcessProgress({
         error: 'Failed to undo completion',
       },
       onSuccess: () => {
-        updateData({
+        if (!data) return;
+        setQueryData({
           ...data,
           steps: data.steps.map((s: PurchaseProcessStep) =>
             s.id === stepId ? { ...s, completion: null } : s,
@@ -223,7 +227,7 @@ export function ProcessProgress({
     setMutatingStepId(null);
   }
 
-  if (data === undefined)
+  if (isLoading)
     return (
       <div className="space-y-2">
         <Skeleton className="h-4 w-32" />
@@ -232,7 +236,7 @@ export function ProcessProgress({
       </div>
     );
 
-  if (data === null) return null;
+  if (!data) return null;
 
   return (
     <>
