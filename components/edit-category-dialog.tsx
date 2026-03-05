@@ -7,7 +7,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
 import { Loader2, TriangleAlert, Trash2 } from 'lucide-react';
-import { toast } from 'sonner';
 import { z } from 'zod/v4';
 
 import { deleteCategory, updateCategory } from '@/prisma/services/category';
@@ -47,7 +46,7 @@ const schema = z.object({
     .regex(/^\d{3}$/, 'Must be 3 numeric digits'),
   ledgerCode: z.string().length(4, 'Must be exactly 4 characters long'),
   name: z.string().min(1, 'Please enter a category name'),
-  amount: z.coerce.number<number>().min(0, 'Must be ≥ 0').optional(),
+  amount: z.coerce.number<number>().min(0, 'Must be ≥ 0'),
 });
 
 export function EditCategoryDialog({
@@ -82,35 +81,43 @@ export function EditCategoryDialog({
   const isSubmitting = form.formState.isSubmitting;
 
   async function onSubmit(data: z.infer<typeof schema>) {
-    const toastId = toast.loading('Updating spending category...');
-    try {
-      const categoryResult = await updateCategory({
+    const categoryResult = await handleError(
+      updateCategory({
         id: category.id,
         code: data.code,
         ledgerCode: data.ledgerCode,
         name: data.name,
-      });
-      if (isError(categoryResult)) {
-        toast.error(categoryResult.error, { id: toastId });
-        return;
-      }
-      if (canEditBudget && data.amount !== undefined) {
-        const budgetResult = await updateCategoryYearBudget({
+      }),
+      {
+        toast: {
+          loading: 'Updating spending category...',
+          success: 'Spending category updated successfully',
+          error: 'Failed to update spending category',
+        },
+      },
+    );
+    if (isError(categoryResult)) return;
+
+    if (canEditBudget) {
+      const budgetResult = await handleError(
+        updateCategoryYearBudget({
           categoryId: category.id,
           yearId: yearId!,
           amount: data.amount,
-        });
-        if (isError(budgetResult)) {
-          toast.error(budgetResult.error, { id: toastId });
-          return;
-        }
-      }
-      toast.success('Spending category updated successfully', { id: toastId });
-      await queryClient.invalidateQueries({ queryKey: ['categories-budget'] });
-      setOpen(false);
-    } catch {
-      toast.error('Failed to update spending category', { id: toastId });
+        }),
+        {
+          toast: {
+            loading: 'Updating budget...',
+            success: 'Spending category updated successfully',
+            error: 'Failed to update budget',
+          },
+        },
+      );
+      if (isError(budgetResult)) return;
     }
+
+    await queryClient.invalidateQueries({ queryKey: ['categories-budget'] });
+    setOpen(false);
   }
 
   async function handleDelete() {
