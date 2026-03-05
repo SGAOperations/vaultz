@@ -193,7 +193,7 @@ export function DatePicker({
                     <ChevronDownIcon className="size-3 opacity-60" />
                   </Button>
                   {openDropdown === 'month' && (
-                    <div className="bg-popover text-popover-foreground absolute top-full left-0 z-10 max-h-60 min-w-[9rem] overflow-y-auto rounded-md border p-1 shadow-md">
+                    <div className="bg-popover text-popover-foreground absolute top-full left-0 z-10 max-h-60 min-w-36 overflow-y-auto rounded-md border p-1 shadow-md">
                       {MONTH_NAMES.map((name, i) => (
                         <div
                           key={i}
@@ -231,7 +231,7 @@ export function DatePicker({
                     <ChevronDownIcon className="size-3 opacity-60" />
                   </Button>
                   {openDropdown === 'year' && (
-                    <div className="bg-popover text-popover-foreground absolute top-full left-0 z-10 max-h-60 min-w-[6rem] overflow-y-auto rounded-md border p-1 shadow-md">
+                    <div className="bg-popover text-popover-foreground absolute top-full left-0 z-10 max-h-60 min-w-24 overflow-y-auto rounded-md border p-1 shadow-md">
                       {YEARS.map((y) => (
                         <div
                           key={y}
