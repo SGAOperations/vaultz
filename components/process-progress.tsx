@@ -1,7 +1,10 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   CheckCircle2,
   Circle,
@@ -9,19 +12,91 @@ import {
   SkipForward,
   Undo2,
 } from 'lucide-react';
+import { z } from 'zod/v4';
 
 import {
   getPurchaseProcess,
+  markStepComplete,
   unmarkStepComplete,
 } from '@/prisma/services/purchase';
 
 import { PurchaseProcessData, PurchaseProcessStep } from '@/lib/types';
 import { handleError, parseDateOnly } from '@/lib/utils';
 
-import { MarkCompleteModal } from '@/components/mark-complete-modal';
+import { DatePicker } from '@/components/ui/date-picker';
+import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 
 import { Button } from './ui/button';
+
+const markCompleteSchema = z.object({
+  completionDate: z.date(),
+  notes: z.string(),
+});
+
+type MarkCompleteFormValues = z.infer<typeof markCompleteSchema>;
+
+function todayDate() {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function MarkCompleteForm({
+  onConfirm,
+  onCancel,
+}: {
+  onConfirm: (values: MarkCompleteFormValues) => Promise<void>;
+  onCancel: () => void;
+}) {
+  const form = useForm<MarkCompleteFormValues>({
+    resolver: zodResolver(markCompleteSchema),
+    defaultValues: { completionDate: todayDate(), notes: '' },
+  });
+
+  return (
+    <form
+      className="flex items-center gap-2 border-t px-3 py-2"
+      onSubmit={form.handleSubmit(onConfirm)}
+    >
+      <div className="shrink-0">
+        <Controller
+          control={form.control}
+          name="completionDate"
+          render={({ field }) => (
+            <DatePicker value={field.value} onChange={field.onChange} />
+          )}
+        />
+      </div>
+      <Input
+        {...form.register('notes')}
+        placeholder="Notes (optional)"
+        className="h-9 text-sm"
+      />
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        onClick={onCancel}
+        disabled={form.formState.isSubmitting}
+        className="shrink-0"
+      >
+        Cancel
+      </Button>
+      <Button
+        type="submit"
+        size="sm"
+        disabled={form.formState.isSubmitting}
+        className="shrink-0"
+      >
+        {form.formState.isSubmitting && (
+          <Loader2 className="mr-1 size-3 animate-spin" />
+        )}
+        Confirm
+      </Button>
+    </form>
+  );
+}
 
 type StepStatus = 'completed' | 'bypassed' | 'pending';
 
@@ -59,6 +134,11 @@ function StepStatusBadge({ status }: { status: StepStatus }) {
   );
 }
 
+const PURCHASE_PROCESS_KEY = (purchaseId: string) => [
+  'purchase-process',
+  purchaseId,
+];
+
 export function ProcessProgress({
   purchaseId,
   onDataChange,
@@ -66,38 +146,62 @@ export function ProcessProgress({
   purchaseId: string;
   onDataChange?: (data: PurchaseProcessData | null) => void;
 }) {
-  const [data, setData] = useState<PurchaseProcessData | null | undefined>(
-    undefined,
-  );
+  const queryClient = useQueryClient();
   const [mutatingStepId, setMutatingStepId] = useState<string | null>(null);
-  const [modalStep, setModalStep] = useState<PurchaseProcessStep | null>(null);
-  const [modalKey, setModalKey] = useState(0);
+  const [expandedStepId, setExpandedStepId] = useState<string | null>(null);
 
-  const updateData = useCallback(
-    (next: PurchaseProcessData | null) => {
-      setData(next);
-      if (onDataChange) onDataChange(next);
-    },
-    [onDataChange],
-  );
+  const { data, isLoading } = useQuery({
+    queryKey: PURCHASE_PROCESS_KEY(purchaseId),
+    queryFn: () => getPurchaseProcess(purchaseId),
+  });
 
-  useEffect(() => {
-    getPurchaseProcess(purchaseId).then(updateData);
-  }, [purchaseId, updateData]);
+  function setQueryData(next: PurchaseProcessData | null) {
+    queryClient.setQueryData(PURCHASE_PROCESS_KEY(purchaseId), next);
+    onDataChange?.(next);
+  }
 
-  function handleModalComplete(completion: {
-    id: string;
-    markedAt: Date;
-    completionDate: Date | null;
-    notes: string | null;
-  }) {
-    if (!data || !modalStep) return;
-    updateData({
-      ...data,
-      steps: data.steps.map((s: PurchaseProcessStep) =>
-        s.id === modalStep.id ? { ...s, completion } : s,
-      ),
-    });
+  async function handleConfirm(
+    values: MarkCompleteFormValues,
+    step: PurchaseProcessStep,
+  ) {
+    if (!data) return;
+    setMutatingStepId(step.id);
+    const markedAt = new Date();
+    const result = await handleError(
+      markStepComplete(data.processId, step.id, {
+        completionDate: values.completionDate,
+        notes: values.notes || null,
+      }),
+      {
+        toast: {
+          loading: 'Marking step complete...',
+          success: 'Step marked as complete',
+          error: 'Failed to mark step complete',
+        },
+        onSuccess: (res) => {
+          if (!data) return;
+          setQueryData({
+            ...data,
+            steps: data.steps.map((s: PurchaseProcessStep) =>
+              s.id === step.id
+                ? {
+                    ...s,
+                    completion: {
+                      id: res.id,
+                      markedAt,
+                      completionDate: values.completionDate,
+                      notes: values.notes || null,
+                    },
+                  }
+                : s,
+            ),
+          });
+          setExpandedStepId(null);
+        },
+      },
+    );
+    void result;
+    setMutatingStepId(null);
   }
 
   async function handleUnmark(stepId: string, completionId: string) {
@@ -110,7 +214,8 @@ export function ProcessProgress({
         error: 'Failed to undo completion',
       },
       onSuccess: () => {
-        updateData({
+        if (!data) return;
+        setQueryData({
           ...data,
           steps: data.steps.map((s: PurchaseProcessStep) =>
             s.id === stepId ? { ...s, completion: null } : s,
@@ -122,7 +227,7 @@ export function ProcessProgress({
     setMutatingStepId(null);
   }
 
-  if (data === undefined)
+  if (isLoading)
     return (
       <div className="space-y-2">
         <Skeleton className="h-4 w-32" />
@@ -131,7 +236,7 @@ export function ProcessProgress({
       </div>
     );
 
-  if (data === null) return null;
+  if (!data) return null;
 
   return (
     <>
@@ -146,81 +251,85 @@ export function ProcessProgress({
           {data.steps.map((step: PurchaseProcessStep, idx: number) => {
             const status = getStepStatus(step, data.steps);
             return (
-              <div
-                key={step.id}
-                className="bg-background flex items-start justify-between gap-3 rounded-md px-3 py-2.5"
-              >
-                <div className="flex items-start gap-2.5">
-                  <span className="bg-muted text-muted-foreground mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full text-xs font-medium">
-                    {idx + 1}
-                  </span>
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium">{step.name}</p>
+              <div key={step.id} className="bg-background rounded-md">
+                <div className="flex items-start justify-between gap-3 px-3 py-2.5">
+                  <div className="flex items-start gap-2.5">
+                    <span className="bg-muted text-muted-foreground mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full text-xs font-medium">
+                      {idx + 1}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium">{step.name}</p>
+                      {status === 'completed' && step.completion && (
+                        <p className="text-muted-foreground mt-0.5 text-xs">
+                          Marked:{' '}
+                          {new Date(step.completion.markedAt).toLocaleString()}
+                          {step.completion.completionDate && (
+                            <>
+                              {' · '}Completed:{' '}
+                              {parseDateOnly(
+                                step.completion.completionDate,
+                              ).toLocaleDateString()}
+                            </>
+                          )}
+                          {step.completion.notes && (
+                            <> · {step.completion.notes}</>
+                          )}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <StepStatusBadge status={status} />
                     {status === 'completed' && step.completion && (
-                      <p className="text-muted-foreground mt-0.5 text-xs">
-                        Marked:{' '}
-                        {new Date(step.completion.markedAt).toLocaleString()}
-                        {step.completion.completionDate && (
-                          <>
-                            {' · '}Completed:{' '}
-                            {parseDateOnly(
-                              step.completion.completionDate,
-                            ).toLocaleDateString()}
-                          </>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-muted-foreground h-6 px-2 text-xs"
+                        disabled={mutatingStepId !== null}
+                        onClick={() =>
+                          handleUnmark(step.id, step.completion!.id)
+                        }
+                      >
+                        {mutatingStepId === step.id ? (
+                          <Loader2 className="mr-1 size-3 animate-spin" />
+                        ) : (
+                          <Undo2 className="mr-1 size-3" />
                         )}
-                        {step.completion.notes && (
-                          <> · {step.completion.notes}</>
-                        )}
-                      </p>
+                        Undo
+                      </Button>
+                    )}
+                    {(status === 'pending' || status === 'bypassed') && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-6 px-2 text-xs"
+                        disabled={mutatingStepId !== null}
+                        onClick={() => {
+                          if (expandedStepId === step.id) {
+                            setExpandedStepId(null);
+                          } else {
+                            setExpandedStepId(step.id);
+                          }
+                        }}
+                      >
+                        Mark Complete
+                      </Button>
                     )}
                   </div>
                 </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  <StepStatusBadge status={status} />
-                  {status === 'completed' && step.completion && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="text-muted-foreground h-6 px-2 text-xs"
-                      disabled={mutatingStepId !== null}
-                      onClick={() => handleUnmark(step.id, step.completion!.id)}
-                    >
-                      {mutatingStepId === step.id ? (
-                        <Loader2 className="mr-1 size-3 animate-spin" />
-                      ) : (
-                        <Undo2 className="mr-1 size-3" />
-                      )}
-                      Undo
-                    </Button>
-                  )}
-                  {(status === 'pending' || status === 'bypassed') && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-6 px-2 text-xs"
-                      disabled={mutatingStepId !== null}
-                      onClick={() => {
-                        setModalStep(step);
-                        setModalKey((k) => k + 1);
-                      }}
-                    >
-                      Mark Complete
-                    </Button>
-                  )}
-                </div>
+                {expandedStepId === step.id && (
+                  <div className="animate-in slide-in-from-top-1 fade-in-0 duration-200">
+                    <MarkCompleteForm
+                      onConfirm={(values) => handleConfirm(values, step)}
+                      onCancel={() => setExpandedStepId(null)}
+                    />
+                  </div>
+                )}
               </div>
             );
           })}
         </div>
       </div>
-      <MarkCompleteModal
-        key={modalKey}
-        step={modalStep}
-        purchaseProcessId={data.processId}
-        open={modalStep !== null}
-        onOpenChange={(open) => !open && setModalStep(null)}
-        onComplete={handleModalComplete}
-      />
     </>
   );
 }

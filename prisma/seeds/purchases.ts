@@ -296,15 +296,204 @@ const purchaseTemplatesByCategory: Record<
       maxAmount: 300,
     },
   ],
+  'Research and Development': [
+    {
+      description: 'Prototype materials',
+      notes: 'Components for R&D prototype build',
+      minAmount: 200,
+      maxAmount: 800,
+    },
+    {
+      description: 'Research software subscription',
+      notes: 'Annual license for data analysis tools',
+      minAmount: 300,
+      maxAmount: 900,
+    },
+    {
+      description: 'Lab supplies',
+      notes: 'Consumables for testing lab',
+      minAmount: 100,
+      maxAmount: 400,
+    },
+    {
+      description: 'Academic journal access',
+      notes: 'Annual journal subscription',
+      minAmount: 150,
+      maxAmount: 500,
+    },
+  ],
+  'Marketing Materials': [
+    {
+      description: 'Branded merchandise',
+      notes: 'Logo pens and notebooks for events',
+      minAmount: 100,
+      maxAmount: 400,
+    },
+    {
+      description: 'Social media ad spend',
+      notes: 'Paid promotion for campaign',
+      minAmount: 200,
+      maxAmount: 600,
+    },
+    {
+      description: 'Banner and signage',
+      notes: 'Printed banners for trade show',
+      minAmount: 150,
+      maxAmount: 500,
+    },
+    {
+      description: 'Photography session',
+      notes: 'Product photos for catalog',
+      minAmount: 200,
+      maxAmount: 700,
+    },
+  ],
+  Utilities: [
+    {
+      description: 'Electricity bill',
+      notes: 'Monthly office electricity',
+      minAmount: 150,
+      maxAmount: 500,
+    },
+    {
+      description: 'Internet service',
+      notes: 'Monthly broadband invoice',
+      minAmount: 80,
+      maxAmount: 200,
+    },
+    {
+      description: 'Water and sewage',
+      notes: 'Quarterly utility bill',
+      minAmount: 40,
+      maxAmount: 120,
+    },
+    {
+      description: 'Natural gas',
+      notes: 'Monthly heating bill',
+      minAmount: 60,
+      maxAmount: 180,
+    },
+  ],
+  'Maintenance and Repairs': [
+    {
+      description: 'HVAC service',
+      notes: 'Annual HVAC maintenance contract',
+      minAmount: 200,
+      maxAmount: 600,
+    },
+    {
+      description: 'Plumbing repair',
+      notes: 'Emergency plumbing fix',
+      minAmount: 100,
+      maxAmount: 400,
+    },
+    {
+      description: 'Elevator inspection',
+      notes: 'Annual safety inspection',
+      minAmount: 150,
+      maxAmount: 450,
+    },
+    {
+      description: 'Office equipment repair',
+      notes: 'Printer and copier maintenance',
+      minAmount: 80,
+      maxAmount: 300,
+    },
+  ],
+  'Petty Cash': [
+    {
+      description: 'Office refreshments',
+      notes: 'Coffee and beverages for staff',
+      minAmount: 15,
+      maxAmount: 60,
+    },
+    {
+      description: 'Parking meter fees',
+      notes: 'Short-term parking for errands',
+      minAmount: 5,
+      maxAmount: 30,
+    },
+    {
+      description: 'Small office supplies',
+      notes: 'Pens, tape, and batteries',
+      minAmount: 10,
+      maxAmount: 40,
+    },
+    {
+      description: 'Courier tip',
+      notes: 'Tip for delivery service',
+      minAmount: 5,
+      maxAmount: 20,
+    },
+  ],
+  'Event Supplies': [
+    {
+      description: 'Tablecloths and decorations',
+      notes: 'Setup materials for event',
+      minAmount: 40,
+      maxAmount: 150,
+    },
+    {
+      description: 'Name badge holders',
+      notes: 'Lanyards for conference attendees',
+      minAmount: 20,
+      maxAmount: 80,
+    },
+    {
+      description: 'Catering supplies',
+      notes: 'Plates, cups, and napkins',
+      minAmount: 30,
+      maxAmount: 120,
+    },
+    {
+      description: 'Audio-visual rental',
+      notes: 'Projector and screen rental',
+      minAmount: 100,
+      maxAmount: 400,
+    },
+  ],
+  'Gift Cards': [
+    {
+      description: 'Employee recognition gift cards',
+      notes: 'Q3 performance recognition awards',
+      minAmount: 25,
+      maxAmount: 100,
+    },
+    {
+      description: 'Client appreciation gift cards',
+      notes: 'Thank-you gifts for key clients',
+      minAmount: 50,
+      maxAmount: 150,
+    },
+    {
+      description: 'Raffle prize gift cards',
+      notes: 'Prizes for staff event raffle',
+      minAmount: 25,
+      maxAmount: 100,
+    },
+    {
+      description: 'Volunteer thank-you gift cards',
+      notes: 'Appreciation for event volunteers',
+      minAmount: 20,
+      maxAmount: 75,
+    },
+  ],
 };
 
 // Pre-generate how many purchases to create per (year × category) pair.
 // Pairs are ordered: for each year index yi, for each category index ci → index = yi * catCount + ci.
+// Returns 0 for pairs where the category did not exist in that fiscal year so that
+// seedPurchases can use the same yi * categories.length + ci index without modification.
 export function generatePurchaseCounts(
-  catCount: number,
-  yearCount: number,
+  categories: Array<{ code: string }>,
+  yearNames: string[],
+  activeCategoryCodesByYear: Record<string, Set<string>>,
 ): number[] {
-  return Array.from({ length: catCount * yearCount }, () => randomInt(8, 12));
+  return yearNames.flatMap((yearName) =>
+    categories.map((cat) =>
+      activeCategoryCodesByYear[yearName]?.has(cat.code) ? randomInt(8, 12) : 0,
+    ),
+  );
 }
 
 export async function seedPurchases(

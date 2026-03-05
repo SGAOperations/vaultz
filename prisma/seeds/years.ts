@@ -20,6 +20,8 @@ const fiscalYears = [
   },
 ];
 
+export const fiscalYearNames = fiscalYears.map((y) => y.name);
+
 export async function seedYears(
   prisma: PrismaClient,
   tick: (label: string) => void,
