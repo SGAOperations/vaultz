@@ -49,11 +49,8 @@ const MONTH_NAMES = [
 
 const YEARS = Array.from({ length: 11 }, (_, i) => 2020 + i);
 
-// DayButton without imperative focus() and without focus ring styles — prevents
-// any focus-related visual flash inside a Radix Dialog.
 function PickerDayButton({
   className,
-  day: _day,
   modifiers,
   onMouseDown: onMouseDownProp,
   ...props
