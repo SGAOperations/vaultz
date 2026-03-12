@@ -152,11 +152,7 @@ type ViewEditPurchaseProps = {
 type PurchaseDialogProps = CreatePurchaseProps | ViewEditPurchaseProps;
 
 export function PurchaseDialog(props: PurchaseDialogProps) {
-  const {
-    categories,
-    allocationGroups = [],
-    miscAllocations = [],
-  } = props;
+  const { categories, allocationGroups = [], miscAllocations = [] } = props;
 
   const processTemplates = props.processTemplates ?? [];
   const defaultCategoryId =
