@@ -299,10 +299,14 @@ export function Content({ designationId, designationName }: ContentProps) {
                   {groupedAllocations.map(({ period, groups, misc }, periodIdx) => (
                     <DropdownMenuGroup key={period.id}>
                       {periodIdx > 0 && <DropdownMenuSeparator />}
-                      <DropdownMenuLabel>{period.name}</DropdownMenuLabel>
+                      <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground">
+                        {period.name}
+                      </DropdownMenuLabel>
                       {groups.map((group) => (
                         <DropdownMenuGroup key={group.id}>
-                          <DropdownMenuLabel inset>{group.name}</DropdownMenuLabel>
+                          <DropdownMenuLabel className="pl-4 text-xs font-medium text-muted-foreground">
+                            {group.name}
+                          </DropdownMenuLabel>
                           {group.allocations.map((a) => (
                             <DropdownMenuCheckboxItem
                               key={a.id}
@@ -316,7 +320,7 @@ export function Content({ designationId, designationName }: ContentProps) {
                       ))}
                       {misc.length > 0 && (
                         <DropdownMenuGroup>
-                          <DropdownMenuLabel inset>
+                          <DropdownMenuLabel className="pl-4 text-xs font-medium text-muted-foreground">
                             Miscellaneous
                           </DropdownMenuLabel>
                           {misc.map((a) => (
