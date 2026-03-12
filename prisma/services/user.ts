@@ -89,7 +89,11 @@ export async function getUserById({
     include: {
       purchases: {
         orderBy: [{ purchasedAt: 'desc' }, { createdAt: 'desc' }],
-        include: { user: true, category: true, process: { select: { templateId: true } } },
+        include: {
+          user: true,
+          category: true,
+          process: { select: { templateId: true } },
+        },
       },
     },
   });

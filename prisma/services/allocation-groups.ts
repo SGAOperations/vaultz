@@ -29,7 +29,10 @@ export async function getAllAllocationGroups(
           include: {
             purchases: {
               orderBy: [{ purchasedAt: 'desc' }, { createdAt: 'desc' }],
-              include: { user: true, process: { select: { templateId: true } } },
+              include: {
+                user: true,
+                process: { select: { templateId: true } },
+              },
             },
           },
         },
