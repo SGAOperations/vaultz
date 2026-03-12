@@ -4,7 +4,7 @@ import Link from 'next/link';
 
 import { usePeriod } from '@/contexts/PeriodContext';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronRight, Layers } from 'lucide-react';
+import { Layers } from 'lucide-react';
 
 import { getAllAllocationGroups } from '@/prisma/services/allocation-groups';
 
@@ -80,24 +80,19 @@ export function Content({ designationId }: ContentProps) {
       )}
       {emptyGroups.length > 0 && (
         <>
-          <SectionHeader title="Groups Without Allocations" />
-          <div className="flex w-full flex-col gap-2">
+          <SectionHeader title="Unused Allocation Groups" />
+          <div className="grid w-full grid-cols-3 gap-2">
             {emptyGroups.map((group) => (
               <Link
                 key={group.id}
                 href={`/allocation-groups/${group.id}`}
                 className="group"
               >
-                <Card className="flex items-center justify-between px-4 py-3 transition-all duration-200 hover:border-primary/30 hover:shadow-md">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-primary/10 flex size-8 items-center justify-center rounded-lg">
-                      <Layers className="text-primary size-4" />
-                    </div>
-                    <span className="group-hover:text-primary text-sm font-medium transition-colors">
-                      {group.name}
-                    </span>
-                  </div>
-                  <ChevronRight className="text-muted-foreground size-4 transition-transform group-hover:translate-x-0.5" />
+                <Card className="flex items-center gap-2 px-3 py-2 transition-all duration-200 hover:border-primary/30 hover:shadow-md">
+                  <Layers className="text-muted-foreground size-3.5 shrink-0" />
+                  <span className="group-hover:text-primary truncate text-sm font-medium transition-colors">
+                    {group.name}
+                  </span>
                 </Card>
               </Link>
             ))}
