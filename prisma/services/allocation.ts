@@ -58,7 +58,7 @@ export async function getAllocationById({
     include: {
       purchases: {
         orderBy: [{ purchasedAt: 'desc' }, { createdAt: 'desc' }],
-        include: { user: true },
+        include: { user: true, process: { select: { templateId: true } } },
       },
     },
   });
@@ -90,7 +90,7 @@ export async function getMiscAllocations(
     include: {
       purchases: {
         orderBy: [{ purchasedAt: 'desc' }, { createdAt: 'desc' }],
-        include: { user: true },
+        include: { user: true, process: { select: { templateId: true } } },
       },
     },
     orderBy: { name: 'asc' },
