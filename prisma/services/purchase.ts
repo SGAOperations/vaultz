@@ -14,7 +14,7 @@ export async function getLatestPurchases(
   const purchases = await prisma.purchase.findMany({
     take: limit,
     orderBy: [{ purchasedAt: 'desc' }, { createdAt: 'desc' }],
-    include: { user: true },
+    include: { user: true, process: { select: { templateId: true } } },
   });
 
   return purchases.map(({ amount, ...v }) => ({
@@ -33,7 +33,7 @@ export async function getPurchasesByDesignation({
   const purchases = await prisma.purchase.findMany({
     where: { yearId, category: { designationId, deletedAt: null } },
     orderBy: [{ purchasedAt: 'desc' }, { createdAt: 'desc' }],
-    include: { user: true },
+    include: { user: true, process: { select: { templateId: true } } },
   });
 
   return purchases.map(({ amount, ...v }) => ({
