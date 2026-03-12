@@ -98,7 +98,7 @@ export function Content({ designationId, designationName }: ContentProps) {
   const { data: periods, isLoading: periodsLoading } = useQuery({
     queryKey: ['periods', selectedYear?.id],
     queryFn: () =>
-      selectedYear ? getPeriodsForYear(selectedYear.id) : Promise.resolve([]),
+      selectedYear ? getPeriodsForYear(selectedYear.id, true) : Promise.resolve([]),
     enabled: !!selectedYear,
   });
 
