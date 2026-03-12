@@ -1,8 +1,8 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
-import { getMiscAllocations } from '@/prisma/services/allocation';
-import { getAllAllocationGroups } from '@/prisma/services/allocation-groups';
+import { getMiscAllocationsOnly } from '@/prisma/services/allocation';
+import { getAllAllocationGroupsWithAllocationsOnly } from '@/prisma/services/allocation-groups';
 import { getCategoryById } from '@/prisma/services/category';
 import { getTransfersByCategory } from '@/prisma/services/transfer';
 import { getUsers } from '@/prisma/services/user';
@@ -29,8 +29,8 @@ export default async function CategoryPage({
   const [users, allocationGroups, miscAllocations, transfers] =
     await Promise.all([
       getUsers(),
-      getAllAllocationGroups(category.designationId),
-      getMiscAllocations(category.designationId),
+      getAllAllocationGroupsWithAllocationsOnly(category.designationId),
+      getMiscAllocationsOnly(category.designationId),
       getTransfersByCategory(categoryId),
     ]);
 
@@ -54,7 +54,12 @@ export default async function CategoryPage({
         description={`SC${category.code} · DN${category.designation.code}`}
         actions={
           <div className="flex gap-2">
-            <CreatePurchaseDialog categories={[category]} />
+            <CreatePurchaseDialog
+              categories={[category]}
+              users={users}
+              allocationGroups={allocationGroups}
+              miscAllocations={miscAllocations}
+            />
             <CategoryActionsMenu category={category} />
           </div>
         }

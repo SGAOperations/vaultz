@@ -3,8 +3,8 @@ import { notFound } from 'next/navigation';
 
 import { Pencil } from 'lucide-react';
 
-import { getMiscAllocations } from '@/prisma/services/allocation';
-import { getAllAllocationGroups } from '@/prisma/services/allocation-groups';
+import { getMiscAllocationsOnly } from '@/prisma/services/allocation';
+import { getAllAllocationGroupsWithAllocationsOnly } from '@/prisma/services/allocation-groups';
 import { getAllCategories } from '@/prisma/services/category';
 import { getUserById, getUsers } from '@/prisma/services/user';
 
@@ -29,8 +29,8 @@ export default async function UserPage({
       getUserById({ id: userId }),
       getUsers(),
       getAllCategories(),
-      getAllAllocationGroups(),
-      getMiscAllocations(),
+      getAllAllocationGroupsWithAllocationsOnly(),
+      getMiscAllocationsOnly(),
     ]);
   if (user === null) notFound();
 
