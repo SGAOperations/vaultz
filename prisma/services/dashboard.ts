@@ -3,11 +3,8 @@
 import prisma from '@/lib/prisma';
 import { parseDateOnly } from '@/lib/utils';
 
-export async function getDashboardStatsByDesignation(
-  designationId: string,
-  yearId: string,
-) {
-  const [categoryYears, purchases] = await Promise.all([
+export async function getDashboardData(designationId: string, yearId: string) {
+  const [categoryYears, purchases, categories] = await Promise.all([
     prisma.categoryYear.findMany({
       where: {
         category: { designationId, deletedAt: null },
@@ -18,7 +15,19 @@ export async function getDashboardStatsByDesignation(
     }),
     prisma.purchase.findMany({
       where: { category: { designationId }, yearId },
-      select: { amount: true },
+      select: { amount: true, purchasedAt: true },
+      orderBy: [{ purchasedAt: 'asc' }, { createdAt: 'asc' }],
+    }),
+    prisma.category.findMany({
+      where: { designationId, deletedAt: null },
+      select: {
+        name: true,
+        categoryYears: {
+          where: { deletedAt: null, yearId },
+          select: { amount: true },
+        },
+        purchases: { where: { yearId }, select: { amount: true } },
+      },
     }),
   ]);
 
@@ -28,24 +37,13 @@ export async function getDashboardStatsByDesignation(
   );
   const totalSpent = purchases.reduce((sum, p) => sum + p.amount.toNumber(), 0);
 
-  return {
+  const stats = {
     totalCategories: categoryYears.length,
     totalPurchases: purchases.length,
     totalBudget,
     totalSpent,
     remaining: totalBudget - totalSpent,
   };
-}
-
-export async function getPurchasesByMonthForDesignation(
-  designationId: string,
-  yearId: string,
-) {
-  const purchases = await prisma.purchase.findMany({
-    where: { category: { designationId }, yearId },
-    select: { amount: true, purchasedAt: true },
-    orderBy: [{ purchasedAt: 'asc' }, { createdAt: 'asc' }],
-  });
 
   const monthlyData = new Map<
     string,
@@ -72,28 +70,11 @@ export async function getPurchasesByMonthForDesignation(
     });
   }
 
-  return Array.from(monthlyData.values()).sort((a, b) =>
+  const purchasesByMonth = Array.from(monthlyData.values()).sort((a, b) =>
     a.monthKey.localeCompare(b.monthKey),
   );
-}
 
-export async function getSpendingByCategoryForDesignation(
-  designationId: string,
-  yearId: string,
-) {
-  const categories = await prisma.category.findMany({
-    where: { designationId, deletedAt: null },
-    select: {
-      name: true,
-      categoryYears: {
-        where: { deletedAt: null, yearId },
-        select: { amount: true },
-      },
-      purchases: { where: { yearId }, select: { amount: true } },
-    },
-  });
-
-  return categories.map((category) => {
+  const spendingByCategory = categories.map((category) => {
     const budget = category.categoryYears.reduce(
       (sum, cy) => sum + cy.amount.toNumber(),
       0,
@@ -104,4 +85,6 @@ export async function getSpendingByCategoryForDesignation(
     );
     return { name: category.name, budget, spent, remaining: budget - spent };
   });
+
+  return { stats, purchasesByMonth, spendingByCategory };
 }

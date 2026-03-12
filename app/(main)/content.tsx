@@ -10,11 +10,7 @@ import {
   Wallet,
 } from 'lucide-react';
 
-import {
-  getDashboardStatsByDesignation,
-  getPurchasesByMonthForDesignation,
-  getSpendingByCategoryForDesignation,
-} from '@/prisma/services/dashboard';
+import { getDashboardData } from '@/prisma/services/dashboard';
 
 import { cn } from '@/lib/utils';
 
@@ -32,42 +28,22 @@ export function Content({ designationId }: ContentProps) {
   const { selectedYear } = useYear();
   const yearId = selectedYear?.id ?? '';
 
-  const {
-    data: stats,
-    isLoading: statsLoading,
-    isError: statsError,
-  } = useQuery({
-    queryKey: ['dashboard-stats', designationId, yearId],
-    queryFn: () => getDashboardStatsByDesignation(designationId, yearId),
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['dashboard', designationId, yearId],
+    queryFn: () => getDashboardData(designationId, yearId),
     enabled: !!selectedYear,
   });
 
-  const {
-    data: purchasesByMonth,
-    isLoading: purchasesLoading,
-    isError: purchasesError,
-  } = useQuery({
-    queryKey: ['dashboard-purchases', designationId, yearId],
-    queryFn: () => getPurchasesByMonthForDesignation(designationId, yearId),
-    enabled: !!selectedYear,
-  });
-
-  const {
-    data: spendingByCategory,
-    isLoading: spendingLoading,
-    isError: spendingError,
-  } = useQuery({
-    queryKey: ['dashboard-spending', designationId, yearId],
-    queryFn: () => getSpendingByCategoryForDesignation(designationId, yearId),
-    enabled: !!selectedYear,
-  });
+  const stats = data?.stats;
+  const purchasesByMonth = data?.purchasesByMonth;
+  const spendingByCategory = data?.spendingByCategory;
 
   return (
     <>
       {/* Stats Grid */}
-      {statsLoading ? (
+      {isLoading ? (
         <StatsSkeleton />
-      ) : statsError ? (
+      ) : isError ? (
         <EmptyState message="Failed to load stats" />
       ) : (
         <div className="mb-6 grid w-full grid-cols-1 gap-3 sm:grid-cols-2">
@@ -89,9 +65,9 @@ export function Content({ designationId }: ContentProps) {
       )}
 
       {/* Financial Overview */}
-      {statsLoading ? (
+      {isLoading ? (
         <FinancialSkeleton />
-      ) : statsError ? null : (
+      ) : isError ? null : (
         <div className="mb-6 grid w-full grid-cols-1 gap-3 md:grid-cols-3">
           <FinancialStatCard
             label="Budget"
@@ -115,9 +91,9 @@ export function Content({ designationId }: ContentProps) {
       )}
 
       {/* Charts */}
-      {purchasesLoading || spendingLoading ? (
+      {isLoading ? (
         <ChartsSkeleton />
-      ) : purchasesError || spendingError ? (
+      ) : isError ? (
         <EmptyState message="Failed to load charts" />
       ) : (
         <DashboardCharts

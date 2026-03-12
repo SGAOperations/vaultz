@@ -106,6 +106,27 @@ export async function getMiscAllocations(
   }));
 }
 
+export async function getMiscAllocationsOnly(
+  designationId?: string,
+  periodId?: string,
+  yearId?: string,
+): Promise<Allocation[]> {
+  const allocations = await prisma.allocation.findMany({
+    where: {
+      allocationGroupId: null,
+      ...(designationId && { designationId }),
+      ...(periodId && { periodId }),
+      ...(!periodId && yearId && { period: { yearId } }),
+    },
+    orderBy: { name: 'asc' },
+  });
+
+  return allocations.map((allocation) => ({
+    ...allocation,
+    amount: allocation.amount.toNumber(),
+  }));
+}
+
 export async function copyAllocationsFromPeriod({
   fromPeriodId,
   toPeriodId,

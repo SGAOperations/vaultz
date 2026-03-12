@@ -31,8 +31,8 @@ import { twMerge } from 'tailwind-merge';
 import { z } from 'zod/v4';
 
 import { User } from '@/prisma/client';
-import { getMiscAllocations } from '@/prisma/services/allocation';
-import { getAllAllocationGroups } from '@/prisma/services/allocation-groups';
+import { getMiscAllocationsOnly } from '@/prisma/services/allocation';
+import { getAllAllocationGroupsWithAllocationsOnly } from '@/prisma/services/allocation-groups';
 import { getCategoriesByDesignation } from '@/prisma/services/category';
 import { getActiveYear, getAllYears } from '@/prisma/services/period';
 import { getAllProcessTemplates } from '@/prisma/services/process-templates';
@@ -45,7 +45,7 @@ import { createUser, getUsers } from '@/prisma/services/user';
 
 import {
   Allocation,
-  AllocationGroupWithAllocations,
+  AllocationGroupWithAllocationsOnly,
   CategoryWithDesignation,
   ProcessTemplateWithStepCount,
   PurchaseProcessData,
@@ -131,7 +131,7 @@ type CreatePurchaseProps = {
   purchase?: never;
   users: User[];
   categories: CategoryWithDesignation[];
-  allocationGroups?: AllocationGroupWithAllocations[];
+  allocationGroups?: AllocationGroupWithAllocationsOnly[];
   miscAllocations?: Allocation[];
   processTemplates?: ProcessTemplateWithStepCount[];
   defaultCategoryId?: string;
@@ -144,7 +144,7 @@ type ViewEditPurchaseProps = {
   purchase: PurchaseWithUser;
   users: User[];
   categories: CategoryWithDesignation[];
-  allocationGroups: AllocationGroupWithAllocations[];
+  allocationGroups: AllocationGroupWithAllocationsOnly[];
   miscAllocations: Allocation[];
   processTemplates?: ProcessTemplateWithStepCount[];
   onProcessDataChange?: (data: PurchaseProcessData | null) => void;
@@ -1185,7 +1185,7 @@ export function CreatePurchaseDialog(props: {
   trigger?: React.ReactNode;
   users?: User[];
   categories?: CategoryWithDesignation[];
-  allocationGroups?: AllocationGroupWithAllocations[];
+  allocationGroups?: AllocationGroupWithAllocationsOnly[];
   miscAllocations?: Allocation[];
   processTemplates?: ProcessTemplateWithStepCount[];
   defaultCategoryId?: string;
@@ -1213,7 +1213,10 @@ export function CreatePurchaseDialog(props: {
     queryKey: ['allocation-groups', designationId, selectedPeriod?.id],
     queryFn: () =>
       designationId
-        ? getAllAllocationGroups(designationId, selectedPeriod?.id ?? undefined)
+        ? getAllAllocationGroupsWithAllocationsOnly(
+            designationId,
+            selectedPeriod?.id ?? undefined,
+          )
         : Promise.resolve([]),
     enabled: props.allocationGroups === undefined && !!designationId,
   });
@@ -1222,7 +1225,7 @@ export function CreatePurchaseDialog(props: {
     queryKey: ['misc-allocations', designationId, selectedPeriod?.id],
     queryFn: () =>
       designationId
-        ? getMiscAllocations(designationId, selectedPeriod?.id ?? undefined)
+        ? getMiscAllocationsOnly(designationId, selectedPeriod?.id ?? undefined)
         : Promise.resolve([]),
     enabled: props.miscAllocations === undefined && !!designationId,
   });

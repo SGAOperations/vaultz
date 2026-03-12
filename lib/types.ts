@@ -62,6 +62,10 @@ export type AllocationGroupWithAllocations = AllocationGroup & {
   allocations: AllocationWithPurchases[];
 };
 
+export type AllocationGroupWithAllocationsOnly = AllocationGroup & {
+  allocations: Allocation[];
+};
+
 export type AllocationGroupWithStats = AllocationGroup & {
   designation: Designation;
   allocations: AllocationWithStats[];

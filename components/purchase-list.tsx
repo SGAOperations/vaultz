@@ -35,7 +35,7 @@ import { getBatchPurchaseProcessData } from '@/prisma/services/purchase';
 
 import {
   Allocation,
-  AllocationGroupWithAllocations,
+  AllocationGroupWithAllocationsOnly,
   CategoryWithDesignation,
   ProcessTemplateWithStepCount,
   PurchaseProcessData,
@@ -238,7 +238,7 @@ function PurchaseTableRow({
   row: Row<PurchaseWithUser>;
   users: User[];
   categories: CategoryWithDesignation[];
-  allocationGroups: AllocationGroupWithAllocations[];
+  allocationGroups: AllocationGroupWithAllocationsOnly[];
   miscAllocations: Allocation[];
   processTemplates: ProcessTemplateWithStepCount[];
   processData: PurchaseProcessData | null | undefined;
@@ -290,7 +290,7 @@ export function PurchaseList({
   purchases: PurchaseWithUser[];
   users: User[];
   categories: CategoryWithDesignation[];
-  allocationGroups: AllocationGroupWithAllocations[];
+  allocationGroups: AllocationGroupWithAllocationsOnly[];
   miscAllocations: Allocation[];
   processTemplates?: ProcessTemplateWithStepCount[];
   sorting?: SortingState;

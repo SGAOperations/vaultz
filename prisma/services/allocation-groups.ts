@@ -7,6 +7,7 @@ import { AllocationGroup } from '@/prisma/client';
 import prisma from '@/lib/prisma';
 import {
   AllocationGroupWithAllocations,
+  AllocationGroupWithAllocationsOnly,
   AllocationGroupWithStats,
 } from '@/lib/types';
 import { ResponseType } from '@/lib/utils';
@@ -141,6 +142,33 @@ export async function getAllocationGroupWithStats({
       .filter((p) => !p.excludeFromTotal)
       .reduce((acc, p) => acc + p.amount, 0),
   };
+}
+
+export async function getAllAllocationGroupsWithAllocationsOnly(
+  designationId?: string,
+  periodId?: string,
+  yearId?: string,
+): Promise<AllocationGroupWithAllocationsOnly[]> {
+  const groups = await prisma.allocationGroup.findMany({
+    where: designationId ? { designationId } : undefined,
+    include: {
+      allocations: {
+        where: periodId
+          ? { periodId }
+          : yearId
+            ? { period: { yearId } }
+            : undefined,
+      },
+    },
+  });
+
+  return groups.map(({ allocations, ...v }) => ({
+    ...v,
+    allocations: allocations.map(({ amount, ...a }) => ({
+      ...a,
+      amount: amount.toNumber(),
+    })),
+  }));
 }
 
 export async function createAllocationGroup(data: {

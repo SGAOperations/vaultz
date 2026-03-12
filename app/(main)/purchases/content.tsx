@@ -8,8 +8,8 @@ import { SortingState } from '@tanstack/react-table';
 import { ChevronDown, Layers, Tag, Wallet, X } from 'lucide-react';
 import { useQueryState } from 'nuqs';
 
-import { getMiscAllocations } from '@/prisma/services/allocation';
-import { getAllAllocationGroups } from '@/prisma/services/allocation-groups';
+import { getMiscAllocationsOnly } from '@/prisma/services/allocation';
+import { getAllAllocationGroupsWithAllocationsOnly } from '@/prisma/services/allocation-groups';
 import { getCategoriesWithAvailableAmount } from '@/prisma/services/category';
 import { getAllProcessTemplates } from '@/prisma/services/process-templates';
 import { getPurchasesByDesignation } from '@/prisma/services/purchase';
@@ -81,14 +81,18 @@ export function Content({ designationId, designationName }: ContentProps) {
     useQuery({
       queryKey: ['allocation-groups', designationId, selectedYear?.id],
       queryFn: () =>
-        getAllAllocationGroups(designationId, undefined, selectedYear?.id),
+        getAllAllocationGroupsWithAllocationsOnly(
+          designationId,
+          undefined,
+          selectedYear?.id,
+        ),
     });
 
   const { data: miscAllocations, isLoading: miscAllocationsLoading } = useQuery(
     {
       queryKey: ['misc-allocations', designationId, selectedYear?.id],
       queryFn: () =>
-        getMiscAllocations(designationId, undefined, selectedYear?.id),
+        getMiscAllocationsOnly(designationId, undefined, selectedYear?.id),
     },
   );
 
