@@ -11,6 +11,7 @@ import { useQueryState } from 'nuqs';
 import { getMiscAllocations } from '@/prisma/services/allocation';
 import { getAllAllocationGroups } from '@/prisma/services/allocation-groups';
 import { getCategoriesWithAvailableAmount } from '@/prisma/services/category';
+import { getPeriodsForYear } from '@/prisma/services/period';
 import { getAllProcessTemplates } from '@/prisma/services/process-templates';
 import { getPurchasesByDesignation } from '@/prisma/services/purchase';
 import { getUsers } from '@/prisma/services/user';
@@ -24,6 +25,8 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
@@ -92,6 +95,13 @@ export function Content({ designationId, designationName }: ContentProps) {
     },
   );
 
+  const { data: periods, isLoading: periodsLoading } = useQuery({
+    queryKey: ['periods', selectedYear?.id],
+    queryFn: () =>
+      selectedYear ? getPeriodsForYear(selectedYear.id) : Promise.resolve([]),
+    enabled: !!selectedYear,
+  });
+
   const { data: processTemplates } = useQuery({
     queryKey: ['process-templates'],
     queryFn: () => getAllProcessTemplates(true),
@@ -106,6 +116,27 @@ export function Content({ designationId, designationName }: ContentProps) {
     ],
     [allocationGroups, miscAllocations],
   );
+
+  const groupedAllocations = useMemo(() => {
+    if (!periods || !allocationGroups || !miscAllocations) return [];
+
+    return periods
+      .map((period) => {
+        const groups = allocationGroups
+          .map((group) => ({
+            ...group,
+            allocations: group.allocations.filter(
+              (a) => a.periodId === period.id,
+            ),
+          }))
+          .filter((group) => group.allocations.length > 0);
+
+        const misc = miscAllocations.filter((a) => a.periodId === period.id);
+
+        return { period, groups, misc };
+      })
+      .filter(({ groups, misc }) => groups.length > 0 || misc.length > 0);
+  }, [periods, allocationGroups, miscAllocations]);
 
   const filteredPurchases = useMemo(() => {
     if (!purchases) return [];
@@ -238,6 +269,7 @@ export function Content({ designationId, designationName }: ContentProps) {
 
             {(allocationGroupsLoading ||
               miscAllocationsLoading ||
+              periodsLoading ||
               allAllocations.length > 0) && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -245,7 +277,11 @@ export function Content({ designationId, designationName }: ContentProps) {
                     variant={allocationId ? 'default' : 'outline'}
                     size="sm"
                     className="gap-1.5 rounded-full"
-                    disabled={miscAllocationsLoading || allocationGroupsLoading}
+                    disabled={
+                      miscAllocationsLoading ||
+                      allocationGroupsLoading ||
+                      periodsLoading
+                    }
                   >
                     <Wallet className="size-3.5" />
                     {allocationFilterLabel}
@@ -259,15 +295,42 @@ export function Content({ designationId, designationName }: ContentProps) {
                   >
                     All Allocations
                   </DropdownMenuCheckboxItem>
-                  {allAllocations.length > 0 && <DropdownMenuSeparator />}
-                  {allAllocations.map((a) => (
-                    <DropdownMenuCheckboxItem
-                      key={a.id}
-                      checked={allocationId === a.id}
-                      onClick={() => setAllocationId(a.id)}
-                    >
-                      {a.name}
-                    </DropdownMenuCheckboxItem>
+                  {groupedAllocations.length > 0 && <DropdownMenuSeparator />}
+                  {groupedAllocations.map(({ period, groups, misc }, periodIdx) => (
+                    <DropdownMenuGroup key={period.id}>
+                      {periodIdx > 0 && <DropdownMenuSeparator />}
+                      <DropdownMenuLabel>{period.name}</DropdownMenuLabel>
+                      {groups.map((group) => (
+                        <DropdownMenuGroup key={group.id}>
+                          <DropdownMenuLabel inset>{group.name}</DropdownMenuLabel>
+                          {group.allocations.map((a) => (
+                            <DropdownMenuCheckboxItem
+                              key={a.id}
+                              checked={allocationId === a.id}
+                              onClick={() => setAllocationId(a.id)}
+                            >
+                              {a.name}
+                            </DropdownMenuCheckboxItem>
+                          ))}
+                        </DropdownMenuGroup>
+                      ))}
+                      {misc.length > 0 && (
+                        <DropdownMenuGroup>
+                          <DropdownMenuLabel inset>
+                            Miscellaneous
+                          </DropdownMenuLabel>
+                          {misc.map((a) => (
+                            <DropdownMenuCheckboxItem
+                              key={a.id}
+                              checked={allocationId === a.id}
+                              onClick={() => setAllocationId(a.id)}
+                            >
+                              {a.name}
+                            </DropdownMenuCheckboxItem>
+                          ))}
+                        </DropdownMenuGroup>
+                      )}
+                    </DropdownMenuGroup>
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
