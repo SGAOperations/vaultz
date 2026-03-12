@@ -164,6 +164,8 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
   const defaultCategoryId =
     props.mode === 'create' ? (props.defaultCategoryId ?? '') : '';
 
+  const { selectedPeriod } = usePeriod();
+
   const { data: years = [] } = useQuery({
     queryKey: ['years'],
     queryFn: getAllYears,
@@ -217,6 +219,24 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
     ];
     return allAllocations.find((a) => a.id === purchase.allocationId)?.name;
   }, [purchase, allocationGroups, miscAllocations]);
+
+  // Filter allocations shown in the form to the currently selected period only
+  const formAllocationGroups = useMemo(() => {
+    if (!selectedPeriod) return allocationGroups;
+    return allocationGroups
+      .map((group) => ({
+        ...group,
+        allocations: group.allocations.filter(
+          (a) => a.periodId === selectedPeriod.id,
+        ),
+      }))
+      .filter((group) => group.allocations.length > 0);
+  }, [allocationGroups, selectedPeriod]);
+
+  const formMiscAllocations = useMemo(() => {
+    if (!selectedPeriod) return miscAllocations;
+    return miscAllocations.filter((a) => a.periodId === selectedPeriod.id);
+  }, [miscAllocations, selectedPeriod]);
 
   const purchaseYear = useMemo(
     () => (purchase ? years.find((y) => y.id === purchase.yearId) : undefined),
@@ -641,7 +661,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                           <FormControl>
                             <Combobox
                               data={[
-                                ...allocationGroups.map((group) => ({
+                                ...formAllocationGroups.map((group) => ({
                                   heading: group.name,
                                   items: group.allocations.map(
                                     (allocation) => ({
@@ -650,11 +670,11 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                                     }),
                                   ),
                                 })),
-                                ...(miscAllocations.length > 0
+                                ...(formMiscAllocations.length > 0
                                   ? [
                                       {
                                         heading: 'Miscellaneous',
-                                        items: miscAllocations.map(
+                                        items: formMiscAllocations.map(
                                           (allocation) => ({
                                             value: allocation.id,
                                             label: allocation.name,
