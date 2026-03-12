@@ -30,7 +30,6 @@ import {
   X,
 } from 'lucide-react';
 
-import { User } from '@/prisma/client';
 import { getBatchPurchaseProcessData } from '@/prisma/services/purchase';
 
 import {
@@ -47,8 +46,8 @@ import { DateTime } from '@/components/date-time';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
@@ -227,7 +226,6 @@ function ProcessCellContent({ data }: { data: PurchaseProcessData }) {
 
 function PurchaseTableRow({
   row,
-  users,
   categories,
   allocationGroups,
   miscAllocations,
@@ -236,7 +234,6 @@ function PurchaseTableRow({
   onProcessDataChange,
 }: {
   row: Row<PurchaseWithUser>;
-  users: User[];
   categories: CategoryWithDesignation[];
   allocationGroups: AllocationGroupWithAllocationsOnly[];
   miscAllocations: Allocation[];
@@ -267,7 +264,6 @@ function PurchaseTableRow({
         </TableRow>
       }
       purchase={row.original}
-      users={users}
       categories={categories}
       allocationGroups={allocationGroups}
       miscAllocations={miscAllocations}
@@ -279,7 +275,6 @@ function PurchaseTableRow({
 
 export function PurchaseList({
   purchases,
-  users,
   categories,
   allocationGroups,
   miscAllocations,
@@ -288,7 +283,6 @@ export function PurchaseList({
   onSortingChange: onControlledSortingChange,
 }: {
   purchases: PurchaseWithUser[];
-  users: User[];
   categories: CategoryWithDesignation[];
   allocationGroups: AllocationGroupWithAllocationsOnly[];
   miscAllocations: Allocation[];
@@ -550,20 +544,27 @@ export function PurchaseList({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
-              <DropdownMenuItem onClick={() => setTemplateFilter('all')}>
+              <DropdownMenuCheckboxItem
+                checked={templateFilter === 'all'}
+                onClick={() => setTemplateFilter('all')}
+              >
                 All Templates
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setTemplateFilter('none')}>
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem
+                checked={templateFilter === 'none'}
+                onClick={() => setTemplateFilter('none')}
+              >
                 No Process
-              </DropdownMenuItem>
+              </DropdownMenuCheckboxItem>
               {processTemplates.length > 0 && <DropdownMenuSeparator />}
               {processTemplates.map((t) => (
-                <DropdownMenuItem
+                <DropdownMenuCheckboxItem
                   key={t.id}
+                  checked={templateFilter === t.id}
                   onClick={() => setTemplateFilter(t.id)}
                 >
                   {t.name}
-                </DropdownMenuItem>
+                </DropdownMenuCheckboxItem>
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
@@ -662,7 +663,6 @@ export function PurchaseList({
                   <PurchaseTableRow
                     key={row.id}
                     row={row}
-                    users={users}
                     categories={categories}
                     allocationGroups={allocationGroups}
                     miscAllocations={miscAllocations}

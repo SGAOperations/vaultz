@@ -40,7 +40,10 @@ export type CategoryWithAvailableAmountAndYears =
 
 export type UserWithPurchases = User & { purchases: Purchase[] };
 
-export type PurchaseWithUser = Purchase & { user: User };
+export type PurchaseWithUser = Purchase & {
+  user: User;
+  process: { templateId: string } | null;
+};
 
 export type DesignationWithPurchases = Designation & {
   purchases: PurchaseWithUser[];
@@ -76,6 +79,7 @@ export type AllocationGroupWithStats = AllocationGroup & {
 export type PurchaseWithUserAndCategory = Purchase & {
   user: User;
   category: Category;
+  process: { templateId: string } | null;
 };
 
 export type UserWithPurchasesAndCategory = User & {

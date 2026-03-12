@@ -13,7 +13,6 @@ import { getAllAllocationGroupsWithAllocationsOnly } from '@/prisma/services/all
 import { getCategoriesWithAvailableAmount } from '@/prisma/services/category';
 import { getAllProcessTemplates } from '@/prisma/services/process-templates';
 import { getPurchasesByDesignation } from '@/prisma/services/purchase';
-import { getUsers } from '@/prisma/services/user';
 
 import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/page-header';
@@ -22,8 +21,8 @@ import { PurchaseList } from '@/components/purchase-list';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
@@ -65,11 +64,6 @@ export function Content({ designationId, designationName }: ContentProps) {
         ? getPurchasesByDesignation({ designationId, yearId: selectedYear.id })
         : Promise.resolve([]),
     enabled: !!selectedYear,
-  });
-
-  const { data: users } = useQuery({
-    queryKey: ['users'],
-    queryFn: () => getUsers(),
   });
 
   const { data: categories } = useQuery({
@@ -188,19 +182,23 @@ export function Content({ designationId, designationName }: ContentProps) {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start">
-                <DropdownMenuItem onClick={() => setCategoryId(null)}>
+                <DropdownMenuCheckboxItem
+                  checked={!categoryId}
+                  onClick={() => setCategoryId(null)}
+                >
                   All Categories
-                </DropdownMenuItem>
+                </DropdownMenuCheckboxItem>
                 {categories && categories.length > 0 && (
                   <DropdownMenuSeparator />
                 )}
                 {categories?.map((c) => (
-                  <DropdownMenuItem
+                  <DropdownMenuCheckboxItem
                     key={c.id}
+                    checked={categoryId === c.id}
                     onClick={() => setCategoryId(c.id)}
                   >
                     {c.name}
-                  </DropdownMenuItem>
+                  </DropdownMenuCheckboxItem>
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
@@ -221,19 +219,23 @@ export function Content({ designationId, designationName }: ContentProps) {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start">
-                  <DropdownMenuItem onClick={() => setAllocationGroupId(null)}>
+                  <DropdownMenuCheckboxItem
+                    checked={!allocationGroupId}
+                    onClick={() => setAllocationGroupId(null)}
+                  >
                     All Allocation Groups
-                  </DropdownMenuItem>
+                  </DropdownMenuCheckboxItem>
                   {allocationGroups && allocationGroups.length > 0 && (
                     <DropdownMenuSeparator />
                   )}
                   {allocationGroups?.map((g) => (
-                    <DropdownMenuItem
+                    <DropdownMenuCheckboxItem
                       key={g.id}
+                      checked={allocationGroupId === g.id}
                       onClick={() => setAllocationGroupId(g.id)}
                     >
                       {g.name}
-                    </DropdownMenuItem>
+                    </DropdownMenuCheckboxItem>
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -256,17 +258,21 @@ export function Content({ designationId, designationName }: ContentProps) {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start">
-                  <DropdownMenuItem onClick={() => setAllocationId(null)}>
+                  <DropdownMenuCheckboxItem
+                    checked={!allocationId}
+                    onClick={() => setAllocationId(null)}
+                  >
                     All Allocations
-                  </DropdownMenuItem>
+                  </DropdownMenuCheckboxItem>
                   {allAllocations.length > 0 && <DropdownMenuSeparator />}
                   {allAllocations.map((a) => (
-                    <DropdownMenuItem
+                    <DropdownMenuCheckboxItem
                       key={a.id}
+                      checked={allocationId === a.id}
                       onClick={() => setAllocationId(a.id)}
                     >
                       {a.name}
-                    </DropdownMenuItem>
+                    </DropdownMenuCheckboxItem>
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -294,7 +300,6 @@ export function Content({ designationId, designationName }: ContentProps) {
           ) : (
             <PurchaseList
               purchases={filteredPurchases}
-              users={users ?? []}
               categories={categories ?? []}
               allocationGroups={allocationGroups ?? []}
               miscAllocations={miscAllocations ?? []}

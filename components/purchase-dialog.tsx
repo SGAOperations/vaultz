@@ -5,8 +5,9 @@ import { FormProvider, useForm, useWatch } from 'react-hook-form';
 
 import { useDesignation } from '@/contexts/DesignationContext';
 import { usePeriod } from '@/contexts/PeriodContext';
+import { useYear } from '@/contexts/YearContext';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Calendar,
   ChevronDown,
@@ -129,7 +130,6 @@ type CreatePurchaseProps = {
   mode: 'create';
   trigger?: React.ReactNode;
   purchase?: never;
-  users: User[];
   categories: CategoryWithDesignation[];
   allocationGroups?: AllocationGroupWithAllocationsOnly[];
   miscAllocations?: Allocation[];
@@ -142,7 +142,6 @@ type ViewEditPurchaseProps = {
   mode?: 'view';
   trigger: React.ReactNode;
   purchase: PurchaseWithUser;
-  users: User[];
   categories: CategoryWithDesignation[];
   allocationGroups: AllocationGroupWithAllocationsOnly[];
   miscAllocations: Allocation[];
@@ -153,16 +152,14 @@ type ViewEditPurchaseProps = {
 type PurchaseDialogProps = CreatePurchaseProps | ViewEditPurchaseProps;
 
 export function PurchaseDialog(props: PurchaseDialogProps) {
-  const {
-    users,
-    categories,
-    allocationGroups = [],
-    miscAllocations = [],
-  } = props;
+  const { categories, allocationGroups = [], miscAllocations = [] } = props;
 
   const processTemplates = props.processTemplates ?? [];
   const defaultCategoryId =
     props.mode === 'create' ? (props.defaultCategoryId ?? '') : '';
+
+  const queryClient = useQueryClient();
+  const { selectedPeriod } = usePeriod();
 
   const { data: years = [] } = useQuery({
     queryKey: ['years'],
@@ -172,6 +169,11 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
   const { data: activeYear } = useQuery({
     queryKey: ['active-year'],
     queryFn: getActiveYear,
+  });
+
+  const { data: users = [] } = useQuery({
+    queryKey: ['users'],
+    queryFn: getUsers,
   });
 
   const activeYearId = activeYear?.id;
@@ -191,7 +193,6 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
   const [showAdvanced, setShowAdvanced] = useState(
     !!(purchase && purchase.yearId !== activeYearId),
   );
-  const [localUsers, setLocalUsers] = useState(users);
   const [userCreateOpen, setUserCreateOpen] = useState(false);
   const userForm = useForm<UserFormData>({
     resolver: zodResolver(userSchema),
@@ -218,6 +219,24 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
     return allAllocations.find((a) => a.id === purchase.allocationId)?.name;
   }, [purchase, allocationGroups, miscAllocations]);
 
+  // Filter allocations shown in the form to the currently selected period only
+  const formAllocationGroups = useMemo(() => {
+    const groups = selectedPeriod
+      ? allocationGroups.map((group) => ({
+          ...group,
+          allocations: group.allocations.filter(
+            (a) => a.periodId === selectedPeriod.id,
+          ),
+        }))
+      : allocationGroups;
+    return groups.filter((group) => group.allocations.length > 0);
+  }, [allocationGroups, selectedPeriod]);
+
+  const formMiscAllocations = useMemo(() => {
+    if (!selectedPeriod) return miscAllocations;
+    return miscAllocations.filter((a) => a.periodId === selectedPeriod.id);
+  }, [miscAllocations, selectedPeriod]);
+
   const purchaseYear = useMemo(
     () => (purchase ? years.find((y) => y.id === purchase.yearId) : undefined),
     [purchase, years],
@@ -233,7 +252,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
         (categories.length === 1 ? categories[0].id : ''),
       allocationId: purchase?.allocationId || '',
       yearId: purchase?.yearId || activeYearId || '',
-      processTemplateId: '',
+      processTemplateId: purchase?.process?.templateId ?? '',
       description: purchase?.description || '',
       amount: purchase?.amount || 0,
       purchasedAt: purchase ? parseDateOnly(purchase.purchasedAt) : new Date(),
@@ -375,6 +394,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
       categoryId: purchase!.categoryId,
       allocationId: purchase!.allocationId || '',
       yearId: purchase!.yearId,
+      processTemplateId: purchase!.process?.templateId ?? '',
       description: purchase!.description,
       amount: purchase!.amount,
       purchasedAt: parseDateOnly(purchase!.purchasedAt),
@@ -398,7 +418,10 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
         error: 'Failed to create user',
       },
       onSuccess: (newUser) => {
-        setLocalUsers((prev) => [...prev, newUser]);
+        queryClient.setQueryData(['users'], (prev: User[] | undefined) => [
+          ...(prev ?? []),
+          newUser,
+        ]);
         form.setValue('userId', newUser.id, { shouldValidate: true });
         userForm.reset();
         setUserCreateOpen(false);
@@ -565,7 +588,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                             <Combobox
                               data={[
                                 {
-                                  items: localUsers.map((v) => ({
+                                  items: users.map((v) => ({
                                     value: v.id,
                                     label: `${v.first} ${v.last}`,
                                   })),
@@ -641,7 +664,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                           <FormControl>
                             <Combobox
                               data={[
-                                ...allocationGroups.map((group) => ({
+                                ...formAllocationGroups.map((group) => ({
                                   heading: group.name,
                                   items: group.allocations.map(
                                     (allocation) => ({
@@ -650,11 +673,11 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                                     }),
                                   ),
                                 })),
-                                ...(miscAllocations.length > 0
+                                ...(formMiscAllocations.length > 0
                                   ? [
                                       {
                                         heading: 'Miscellaneous',
-                                        items: miscAllocations.map(
+                                        items: formMiscAllocations.map(
                                           (allocation) => ({
                                             value: allocation.id,
                                             label: allocation.name,
@@ -1183,7 +1206,6 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
 // Callers may pass optional overrides to filter the options shown in the dialog.
 export function CreatePurchaseDialog(props: {
   trigger?: React.ReactNode;
-  users?: User[];
   categories?: CategoryWithDesignation[];
   allocationGroups?: AllocationGroupWithAllocationsOnly[];
   miscAllocations?: Allocation[];
@@ -1192,13 +1214,8 @@ export function CreatePurchaseDialog(props: {
 }) {
   const { selectedDesignation } = useDesignation();
   const { selectedPeriod } = usePeriod();
+  const { selectedYear } = useYear();
   const designationId = selectedDesignation?.id;
-
-  const { data: fetchedUsers = [] } = useQuery({
-    queryKey: ['users'],
-    queryFn: () => getUsers(),
-    enabled: props.users === undefined,
-  });
 
   const { data: fetchedCategories = [] } = useQuery({
     queryKey: ['categories-by-designation', designationId],
@@ -1210,22 +1227,35 @@ export function CreatePurchaseDialog(props: {
   });
 
   const { data: fetchedAllocationGroups = [] } = useQuery({
-    queryKey: ['allocation-groups', designationId, selectedPeriod?.id],
+    queryKey: [
+      'allocation-groups',
+      designationId,
+      selectedPeriod?.id ?? selectedYear?.id,
+    ],
     queryFn: () =>
       designationId
-        ? getAllAllocationGroupsWithAllocationsOnly(
+        ? getAllAllocationGroups(
             designationId,
             selectedPeriod?.id ?? undefined,
+            selectedPeriod ? undefined : (selectedYear?.id ?? undefined),
           )
         : Promise.resolve([]),
     enabled: props.allocationGroups === undefined && !!designationId,
   });
 
   const { data: fetchedMiscAllocations = [] } = useQuery({
-    queryKey: ['misc-allocations', designationId, selectedPeriod?.id],
+    queryKey: [
+      'misc-allocations',
+      designationId,
+      selectedPeriod?.id ?? selectedYear?.id,
+    ],
     queryFn: () =>
       designationId
-        ? getMiscAllocationsOnly(designationId, selectedPeriod?.id ?? undefined)
+        ? getMiscAllocations(
+            designationId,
+            selectedPeriod?.id ?? undefined,
+            selectedPeriod ? undefined : (selectedYear?.id ?? undefined),
+          )
         : Promise.resolve([]),
     enabled: props.miscAllocations === undefined && !!designationId,
   });
@@ -1240,7 +1270,6 @@ export function CreatePurchaseDialog(props: {
     <PurchaseDialog
       mode="create"
       trigger={props.trigger}
-      users={props.users ?? fetchedUsers}
       categories={props.categories ?? fetchedCategories}
       allocationGroups={props.allocationGroups ?? fetchedAllocationGroups}
       miscAllocations={props.miscAllocations ?? fetchedMiscAllocations}
