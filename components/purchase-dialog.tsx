@@ -1234,7 +1234,7 @@ export function CreatePurchaseDialog(props: {
     ],
     queryFn: () =>
       designationId
-        ? getAllAllocationGroups(
+        ? getAllAllocationGroupsWithAllocationsOnly(
             designationId,
             selectedPeriod?.id ?? undefined,
             selectedPeriod ? undefined : (selectedYear?.id ?? undefined),
@@ -1251,7 +1251,7 @@ export function CreatePurchaseDialog(props: {
     ],
     queryFn: () =>
       designationId
-        ? getMiscAllocations(
+        ? getMiscAllocationsOnly(
             designationId,
             selectedPeriod?.id ?? undefined,
             selectedPeriod ? undefined : (selectedYear?.id ?? undefined),

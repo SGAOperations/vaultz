@@ -27,6 +27,14 @@ export async function getDashboardData(designationId: string, yearId: string) {
           select: { amount: true },
         },
         purchases: { where: { yearId }, select: { amount: true } },
+        transfersFrom: {
+          where: { deletedAt: null, yearId },
+          select: { amount: true },
+        },
+        transfersTo: {
+          where: { deletedAt: null, yearId },
+          select: { amount: true },
+        },
       },
     }),
   ]);
@@ -73,6 +81,35 @@ export async function getDashboardData(designationId: string, yearId: string) {
   const purchasesByMonth = Array.from(monthlyData.values()).sort((a, b) =>
     a.monthKey.localeCompare(b.monthKey),
   );
+
+  const spendingByCategory = categories.map((category) => {
+    const budget = category.categoryYears.reduce(
+      (sum, cy) => sum + cy.amount.toNumber(),
+      0,
+    );
+    const spent = category.purchases.reduce(
+      (sum, p) => sum + p.amount.toNumber(),
+      0,
+    );
+    const outgoing = category.transfersFrom.reduce(
+      (sum, t) => sum + t.amount.toNumber(),
+      0,
+    );
+    const incoming = category.transfersTo.reduce(
+      (sum, t) => sum + t.amount.toNumber(),
+      0,
+    );
+    const totalSpent = spent + outgoing;
+    return {
+      name: category.name,
+      budget,
+      spent: totalSpent,
+      remaining: budget - totalSpent + incoming,
+    };
+  });
+
+  return { stats, purchasesByMonth, spendingByCategory };
+}
 
 export async function getSpendingByCategoryForDesignation(
   designationId: string,
@@ -123,6 +160,4 @@ export async function getSpendingByCategoryForDesignation(
       remaining: budget - spent + incoming,
     };
   });
-
-  return { stats, purchasesByMonth, spendingByCategory };
 }

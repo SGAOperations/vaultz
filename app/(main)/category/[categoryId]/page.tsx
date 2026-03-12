@@ -26,8 +26,8 @@ export default async function CategoryPage({
   if (category === null) notFound();
 
   const [allocationGroups, miscAllocations, transfers] = await Promise.all([
-    getAllAllocationGroups(category.designationId),
-    getMiscAllocations(category.designationId),
+    getAllAllocationGroupsWithAllocationsOnly(category.designationId),
+    getMiscAllocationsOnly(category.designationId),
     getTransfersByCategory(categoryId),
   ]);
 
@@ -53,7 +53,6 @@ export default async function CategoryPage({
           <div className="flex gap-2">
             <CreatePurchaseDialog
               categories={[category]}
-              users={users}
               allocationGroups={allocationGroups}
               miscAllocations={miscAllocations}
             />
