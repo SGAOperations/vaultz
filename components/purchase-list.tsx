@@ -273,6 +273,65 @@ function PurchaseTableRow({
   );
 }
 
+function PurchaseTotals({
+  rows,
+  categoryMap,
+}: {
+  rows: Row<PurchaseWithUser>[];
+  categoryMap: Map<string, CategoryWithDesignation>;
+}) {
+  const totalCount = rows.length;
+  const totalAmount = rows.reduce((sum, r) => sum + r.original.amount, 0);
+
+  const byCategory = new Map<
+    string,
+    { name: string; count: number; amount: number }
+  >();
+  for (const row of rows) {
+    const { categoryId, amount } = row.original;
+    const existing = byCategory.get(categoryId);
+    if (existing) {
+      existing.count += 1;
+      existing.amount += amount;
+    } else {
+      byCategory.set(categoryId, {
+        name: categoryMap.get(categoryId)?.name ?? 'Unknown Category',
+        count: 1,
+        amount,
+      });
+    }
+  }
+
+  const categoryBreakdown = [...byCategory.entries()]
+    .map(([categoryId, stats]) => ({ categoryId, ...stats }))
+    .sort((a, b) => b.amount - a.amount);
+
+  return (
+    <div className="text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-1 px-1 text-sm">
+      <span className="font-medium">
+        {totalCount} {totalCount === 1 ? 'purchase' : 'purchases'}
+      </span>
+      <span className="text-foreground font-semibold">
+        {formatCurrency(totalAmount)}
+      </span>
+      {categoryBreakdown.length > 1 && (
+        <>
+          <span className="text-muted-foreground/40">·</span>
+          {categoryBreakdown.map(({ categoryId, name, count, amount }) => (
+            <span key={categoryId} className="flex items-center gap-1.5">
+              <span>{name}</span>
+              <span className="text-muted-foreground/60">{count}</span>
+              <span className="text-foreground/80 font-medium">
+                {formatCurrency(amount)}
+              </span>
+            </span>
+          ))}
+        </>
+      )}
+    </div>
+  );
+}
+
 export function PurchaseList({
   purchases,
   categories,
@@ -478,6 +537,11 @@ export function PurchaseList({
     [],
   );
 
+  const categoryMap = useMemo(
+    () => new Map(categories.map((c) => [c.id, c])),
+    [categories],
+  );
+
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data: filteredPurchases,
@@ -619,6 +683,7 @@ export function PurchaseList({
           Export CSV
         </Button>
       </div>
+      <PurchaseTotals rows={table.getRowModel().rows} categoryMap={categoryMap} />
       <div className="rounded-lg border">
         <Table className="table-fixed">
           <colgroup>
