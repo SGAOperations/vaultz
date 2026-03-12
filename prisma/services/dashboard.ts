@@ -90,6 +90,14 @@ export async function getSpendingByCategoryForDesignation(
         select: { amount: true },
       },
       purchases: { where: { yearId }, select: { amount: true } },
+      transfersFrom: {
+        where: { deletedAt: null, yearId },
+        select: { amount: true },
+      },
+      transfersTo: {
+        where: { deletedAt: null, yearId },
+        select: { amount: true },
+      },
     },
   });
 
@@ -98,10 +106,24 @@ export async function getSpendingByCategoryForDesignation(
       (sum, cy) => sum + cy.amount.toNumber(),
       0,
     );
-    const spent = category.purchases.reduce(
+    const purchases = category.purchases.reduce(
       (sum, p) => sum + p.amount.toNumber(),
       0,
     );
-    return { name: category.name, budget, spent, remaining: budget - spent };
+    const outgoing = category.transfersFrom.reduce(
+      (sum, t) => sum + t.amount.toNumber(),
+      0,
+    );
+    const incoming = category.transfersTo.reduce(
+      (sum, t) => sum + t.amount.toNumber(),
+      0,
+    );
+    const spent = purchases + outgoing;
+    return {
+      name: category.name,
+      budget,
+      spent,
+      remaining: budget - spent + incoming,
+    };
   });
 }
