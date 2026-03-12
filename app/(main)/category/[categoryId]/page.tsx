@@ -5,7 +5,6 @@ import { getMiscAllocations } from '@/prisma/services/allocation';
 import { getAllAllocationGroups } from '@/prisma/services/allocation-groups';
 import { getCategoryById } from '@/prisma/services/category';
 import { getTransfersByCategory } from '@/prisma/services/transfer';
-import { getUsers } from '@/prisma/services/user';
 
 import { CategoryActionsMenu } from '@/components/category-actions-menu';
 import { PageHeader } from '@/components/page-header';
@@ -26,13 +25,11 @@ export default async function CategoryPage({
   const category = await getCategoryById({ id: categoryId });
   if (category === null) notFound();
 
-  const [users, allocationGroups, miscAllocations, transfers] =
-    await Promise.all([
-      getUsers(),
-      getAllAllocationGroups(category.designationId),
-      getMiscAllocations(category.designationId),
-      getTransfersByCategory(categoryId),
-    ]);
+  const [allocationGroups, miscAllocations, transfers] = await Promise.all([
+    getAllAllocationGroups(category.designationId),
+    getMiscAllocations(category.designationId),
+    getTransfersByCategory(categoryId),
+  ]);
 
   const spent = category.purchases
     .filter((purchase) => !purchase.excludeFromTotal)
@@ -66,7 +63,6 @@ export default async function CategoryPage({
 
       <PurchaseList
         purchases={category.purchases}
-        users={users}
         categories={[category]}
         allocationGroups={allocationGroups}
         miscAllocations={miscAllocations}

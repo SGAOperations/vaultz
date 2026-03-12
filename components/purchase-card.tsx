@@ -11,7 +11,6 @@ import {
   User as UserIcon,
 } from 'lucide-react';
 
-import { User } from '@/prisma/client';
 import { getPurchaseProcess } from '@/prisma/services/purchase';
 
 import {
@@ -80,7 +79,6 @@ function ProcessCardIndicator({ data }: { data: PurchaseProcessData }) {
 
 export function PurchaseCard({
   purchase,
-  users,
   categories,
   allocationGroups,
   miscAllocations,
@@ -88,7 +86,6 @@ export function PurchaseCard({
   stopPropagation = false,
 }: {
   purchase: PurchaseWithUser;
-  users: User[];
   categories: CategoryWithDesignation[];
   allocationGroups: AllocationGroupWithAllocations[];
   miscAllocations: Allocation[];
@@ -187,7 +184,6 @@ export function PurchaseCard({
         </Card>
       }
       purchase={purchase}
-      users={users}
       categories={categories}
       allocationGroups={allocationGroups}
       miscAllocations={miscAllocations}

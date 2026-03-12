@@ -30,7 +30,6 @@ import {
   X,
 } from 'lucide-react';
 
-import { User } from '@/prisma/client';
 import { getBatchPurchaseProcessData } from '@/prisma/services/purchase';
 
 import {
@@ -227,7 +226,6 @@ function ProcessCellContent({ data }: { data: PurchaseProcessData }) {
 
 function PurchaseTableRow({
   row,
-  users,
   categories,
   allocationGroups,
   miscAllocations,
@@ -236,7 +234,6 @@ function PurchaseTableRow({
   onProcessDataChange,
 }: {
   row: Row<PurchaseWithUser>;
-  users: User[];
   categories: CategoryWithDesignation[];
   allocationGroups: AllocationGroupWithAllocations[];
   miscAllocations: Allocation[];
@@ -267,7 +264,6 @@ function PurchaseTableRow({
         </TableRow>
       }
       purchase={row.original}
-      users={users}
       categories={categories}
       allocationGroups={allocationGroups}
       miscAllocations={miscAllocations}
@@ -279,7 +275,6 @@ function PurchaseTableRow({
 
 export function PurchaseList({
   purchases,
-  users,
   categories,
   allocationGroups,
   miscAllocations,
@@ -288,7 +283,6 @@ export function PurchaseList({
   onSortingChange: onControlledSortingChange,
 }: {
   purchases: PurchaseWithUser[];
-  users: User[];
   categories: CategoryWithDesignation[];
   allocationGroups: AllocationGroupWithAllocations[];
   miscAllocations: Allocation[];
@@ -669,7 +663,6 @@ export function PurchaseList({
                   <PurchaseTableRow
                     key={row.id}
                     row={row}
-                    users={users}
                     categories={categories}
                     allocationGroups={allocationGroups}
                     miscAllocations={miscAllocations}

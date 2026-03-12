@@ -7,7 +7,7 @@ import { useDesignation } from '@/contexts/DesignationContext';
 import { usePeriod } from '@/contexts/PeriodContext';
 import { useYear } from '@/contexts/YearContext';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Calendar,
   ChevronDown,
@@ -130,7 +130,6 @@ type CreatePurchaseProps = {
   mode: 'create';
   trigger?: React.ReactNode;
   purchase?: never;
-  users: User[];
   categories: CategoryWithDesignation[];
   allocationGroups?: AllocationGroupWithAllocations[];
   miscAllocations?: Allocation[];
@@ -143,7 +142,6 @@ type ViewEditPurchaseProps = {
   mode?: 'view';
   trigger: React.ReactNode;
   purchase: PurchaseWithUser;
-  users: User[];
   categories: CategoryWithDesignation[];
   allocationGroups: AllocationGroupWithAllocations[];
   miscAllocations: Allocation[];
@@ -154,17 +152,13 @@ type ViewEditPurchaseProps = {
 type PurchaseDialogProps = CreatePurchaseProps | ViewEditPurchaseProps;
 
 export function PurchaseDialog(props: PurchaseDialogProps) {
-  const {
-    users,
-    categories,
-    allocationGroups = [],
-    miscAllocations = [],
-  } = props;
+  const { categories, allocationGroups = [], miscAllocations = [] } = props;
 
   const processTemplates = props.processTemplates ?? [];
   const defaultCategoryId =
     props.mode === 'create' ? (props.defaultCategoryId ?? '') : '';
 
+  const queryClient = useQueryClient();
   const { selectedPeriod } = usePeriod();
 
   const { data: years = [] } = useQuery({
@@ -175,6 +169,11 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
   const { data: activeYear } = useQuery({
     queryKey: ['active-year'],
     queryFn: getActiveYear,
+  });
+
+  const { data: users = [] } = useQuery({
+    queryKey: ['users'],
+    queryFn: getUsers,
   });
 
   const activeYearId = activeYear?.id;
@@ -194,7 +193,6 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
   const [showAdvanced, setShowAdvanced] = useState(
     !!(purchase && purchase.yearId !== activeYearId),
   );
-  const [localUsers, setLocalUsers] = useState(users);
   const [userCreateOpen, setUserCreateOpen] = useState(false);
   const userForm = useForm<UserFormData>({
     resolver: zodResolver(userSchema),
@@ -420,7 +418,10 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
         error: 'Failed to create user',
       },
       onSuccess: (newUser) => {
-        setLocalUsers((prev) => [...prev, newUser]);
+        queryClient.setQueryData(['users'], (prev: User[] | undefined) => [
+          ...(prev ?? []),
+          newUser,
+        ]);
         form.setValue('userId', newUser.id, { shouldValidate: true });
         userForm.reset();
         setUserCreateOpen(false);
@@ -587,7 +588,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                             <Combobox
                               data={[
                                 {
-                                  items: localUsers.map((v) => ({
+                                  items: users.map((v) => ({
                                     value: v.id,
                                     label: `${v.first} ${v.last}`,
                                   })),
@@ -1205,7 +1206,6 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
 // Callers may pass optional overrides to filter the options shown in the dialog.
 export function CreatePurchaseDialog(props: {
   trigger?: React.ReactNode;
-  users?: User[];
   categories?: CategoryWithDesignation[];
   allocationGroups?: AllocationGroupWithAllocations[];
   miscAllocations?: Allocation[];
@@ -1216,12 +1216,6 @@ export function CreatePurchaseDialog(props: {
   const { selectedPeriod } = usePeriod();
   const { selectedYear } = useYear();
   const designationId = selectedDesignation?.id;
-
-  const { data: fetchedUsers = [] } = useQuery({
-    queryKey: ['users'],
-    queryFn: () => getUsers(),
-    enabled: props.users === undefined,
-  });
 
   const { data: fetchedCategories = [] } = useQuery({
     queryKey: ['categories-by-designation', designationId],
@@ -1276,7 +1270,6 @@ export function CreatePurchaseDialog(props: {
     <PurchaseDialog
       mode="create"
       trigger={props.trigger}
-      users={props.users ?? fetchedUsers}
       categories={props.categories ?? fetchedCategories}
       allocationGroups={props.allocationGroups ?? fetchedAllocationGroups}
       miscAllocations={props.miscAllocations ?? fetchedMiscAllocations}
