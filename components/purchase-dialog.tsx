@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { FormProvider, useForm, useWatch } from 'react-hook-form';
 
 import { useDesignation } from '@/contexts/DesignationContext';
@@ -192,9 +192,6 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
     !!(purchase && purchase.yearId !== activeYearId),
   );
   const [localUsers, setLocalUsers] = useState(users);
-  useEffect(() => {
-    setLocalUsers(users);
-  }, [users]);
   const [userCreateOpen, setUserCreateOpen] = useState(false);
   const userForm = useForm<UserFormData>({
     resolver: zodResolver(userSchema),
