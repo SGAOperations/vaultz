@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useEffect, useRef, useState } from 'react';
 import { FormProvider, useForm, useWatch } from 'react-hook-form';
 
 import { useDesignation } from '@/contexts/DesignationContext';
@@ -39,6 +39,7 @@ import { getAllProcessTemplates } from '@/prisma/services/process-templates';
 import {
   createPurchase,
   deletePurchase,
+  getPurchaseProcess,
   updatePurchase,
 } from '@/prisma/services/purchase';
 import { createUser, getUsers } from '@/prisma/services/user';
@@ -179,6 +180,12 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
   const isCreateMode = props.mode === 'create';
   const purchase = isCreateMode ? null : props.purchase;
 
+  const { data: existingProcessData } = useQuery({
+    queryKey: ['purchase-process', purchase?.id],
+    queryFn: () => getPurchaseProcess(purchase!.id),
+    enabled: !isCreateMode && !!purchase,
+  });
+
   const [open, setOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(isCreateMode);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -244,6 +251,17 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
   });
   const isSubmitting = form.formState.isSubmitting;
   const watchedYearId = useWatch({ control: form.control, name: 'yearId' });
+
+  // When loading process data completes while the edit form is open, sync the
+  // processTemplateId field if it hasn't been set yet (handles the race where
+  // the user clicks Edit before the query resolves).
+  const processTemplateInitialized = useRef(false);
+  useEffect(() => {
+    if (!isCreateMode && isEditing && existingProcessData !== undefined && !processTemplateInitialized.current) {
+      form.setValue('processTemplateId', existingProcessData !== null ? existingProcessData.templateId : '');
+      processTemplateInitialized.current = true;
+    }
+  }, [isEditing, existingProcessData, isCreateMode, form]);
 
   function handleYearChange(yearId: string) {
     if (!yearId || yearId === activeYearId) {
@@ -375,6 +393,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
       categoryId: purchase!.categoryId,
       allocationId: purchase!.allocationId || '',
       yearId: purchase!.yearId,
+      processTemplateId: existingProcessData != null ? existingProcessData.templateId : '',
       description: purchase!.description,
       amount: purchase!.amount,
       purchasedAt: parseDateOnly(purchase!.purchasedAt),
@@ -416,6 +435,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
       setReceiptsToDisplay(purchase?.receipts || []);
       setFilesUploaded([]);
       setShowAdvanced(!!(purchase && purchase.yearId !== activeYearId));
+      processTemplateInitialized.current = false;
     }
   }
 
@@ -1166,7 +1186,16 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
               </div>
 
               <div className="flex gap-2">
-                <Button onClick={() => setIsEditing(true)} className="flex-1">
+                <Button
+                  onClick={() => {
+                    setIsEditing(true);
+                    form.setValue(
+                      'processTemplateId',
+                      existingProcessData != null ? existingProcessData.templateId : '',
+                    );
+                  }}
+                  className="flex-1"
+                >
                   <Pencil className="mr-2 h-4 w-4" />
                   Edit
                 </Button>
