@@ -187,7 +187,6 @@ export function PurchaseCard({
         </Card>
       }
       purchase={purchase}
-      users={users}
       categories={categories}
       allocationGroups={allocationGroups}
       miscAllocations={miscAllocations}

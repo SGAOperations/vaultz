@@ -81,7 +81,6 @@ export default async function UserPage({
 
       <PurchaseList
         purchases={user.purchases}
-        users={users}
         categories={categories}
         allocationGroups={allocationGroups}
         miscAllocations={miscAllocations}
