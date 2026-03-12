@@ -101,38 +101,58 @@ export function Content({ designationId, designationName }: ContentProps) {
     [allocationGroups, miscAllocations],
   );
 
+  const miscAllocationIds = useMemo(
+    () => new Set((miscAllocations ?? []).map((a) => a.id)),
+    [miscAllocations],
+  );
+
   const filteredPurchases = useMemo(() => {
     if (!purchases) return [];
-    const groupAllocationIds = allocationGroupId
-      ? new Set(
+    return purchases.filter((p) => {
+      if (categoryId && p.categoryId !== categoryId) return false;
+
+      if (allocationGroupId === 'none') {
+        if (p.allocationId !== null && !miscAllocationIds.has(p.allocationId))
+          return false;
+      } else if (allocationGroupId) {
+        const groupAllocationIds = new Set(
           allocationGroups
             ?.find((g) => g.id === allocationGroupId)
             ?.allocations.map((a) => a.id) ?? [],
-        )
-      : null;
-    return purchases.filter(
-      (p) =>
-        (!categoryId || p.categoryId === categoryId) &&
-        (!groupAllocationIds ||
-          (p.allocationId != null && groupAllocationIds.has(p.allocationId))) &&
-        (!allocationId || p.allocationId === allocationId),
-    );
+        );
+        if (p.allocationId === null || !groupAllocationIds.has(p.allocationId))
+          return false;
+      }
+
+      if (allocationId === 'none') {
+        if (p.allocationId !== null) return false;
+      } else if (allocationId && p.allocationId !== allocationId) {
+        return false;
+      }
+
+      return true;
+    });
   }, [
     purchases,
     categoryId,
     allocationGroupId,
     allocationId,
     allocationGroups,
+    miscAllocationIds,
   ]);
 
   const categoryFilterLabel =
     categories?.find((c) => c.id === categoryId)?.name ?? 'All Categories';
   const allocationGroupFilterLabel =
-    allocationGroups?.find((g) => g.id === allocationGroupId)?.name ??
-    'All Allocation Groups';
+    allocationGroupId === 'none'
+      ? 'No Allocation Group'
+      : allocationGroups?.find((g) => g.id === allocationGroupId)?.name ??
+        'All Allocation Groups';
   const allocationFilterLabel =
-    allAllocations.find((a) => a.id === allocationId)?.name ??
-    'All Allocations';
+    allocationId === 'none'
+      ? 'No Allocation'
+      : allAllocations.find((a) => a.id === allocationId)?.name ??
+        'All Allocations';
 
   const hasActiveFilters = !!(categoryId || allocationGroupId || allocationId);
 
@@ -214,6 +234,13 @@ export function Content({ designationId, designationName }: ContentProps) {
                   >
                     All Allocation Groups
                   </DropdownMenuCheckboxItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuCheckboxItem
+                    checked={allocationGroupId === 'none'}
+                    onClick={() => setAllocationGroupId('none')}
+                  >
+                    No Allocation Group
+                  </DropdownMenuCheckboxItem>
                   {allocationGroups && allocationGroups.length > 0 && (
                     <DropdownMenuSeparator />
                   )}
@@ -252,6 +279,13 @@ export function Content({ designationId, designationName }: ContentProps) {
                     onClick={() => setAllocationId(null)}
                   >
                     All Allocations
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuCheckboxItem
+                    checked={allocationId === 'none'}
+                    onClick={() => setAllocationId('none')}
+                  >
+                    No Allocation
                   </DropdownMenuCheckboxItem>
                   {allAllocations.length > 0 && <DropdownMenuSeparator />}
                   {allAllocations.map((a) => (
