@@ -29,7 +29,7 @@ export async function getAllAllocationGroups(
           include: {
             purchases: {
               orderBy: [{ purchasedAt: 'desc' }, { createdAt: 'desc' }],
-              include: { user: true },
+              include: { user: true, process: { select: { templateId: true } } },
             },
           },
         },
@@ -60,7 +60,7 @@ export async function getAllocationGroup({
         include: {
           purchases: {
             orderBy: [{ purchasedAt: 'desc' }, { createdAt: 'desc' }],
-            include: { user: true },
+            include: { user: true, process: { select: { templateId: true } } },
           },
         },
       },
@@ -100,7 +100,7 @@ export async function getAllocationGroupWithStats({
         include: {
           purchases: {
             orderBy: [{ purchasedAt: 'desc' }, { createdAt: 'desc' }],
-            include: { user: true },
+            include: { user: true, process: { select: { templateId: true } } },
           },
         },
       },

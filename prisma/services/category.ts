@@ -65,7 +65,7 @@ export async function getCategoryById({
     include: {
       purchases: {
         orderBy: [{ purchasedAt: 'desc' }, { createdAt: 'desc' }],
-        include: { user: true },
+        include: { user: true, process: { select: { templateId: true } } },
       },
       designation: true,
       categoryYears: { where: { deletedAt: null } },
@@ -122,7 +122,7 @@ export async function getCategoriesWithPurchasesByDesignation({
       categoryYears: { where: { deletedAt: null } },
       purchases: {
         orderBy: [{ purchasedAt: 'desc' }, { createdAt: 'desc' }],
-        include: { user: true },
+        include: { user: true, process: { select: { templateId: true } } },
       },
     },
   });
