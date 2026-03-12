@@ -13,7 +13,6 @@ import { getAllAllocationGroups } from '@/prisma/services/allocation-groups';
 import { getCategoriesWithAvailableAmount } from '@/prisma/services/category';
 import { getAllProcessTemplates } from '@/prisma/services/process-templates';
 import { getPurchasesByDesignation } from '@/prisma/services/purchase';
-import { getUsers } from '@/prisma/services/user';
 
 import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/page-header';
@@ -65,11 +64,6 @@ export function Content({ designationId, designationName }: ContentProps) {
         ? getPurchasesByDesignation({ designationId, yearId: selectedYear.id })
         : Promise.resolve([]),
     enabled: !!selectedYear,
-  });
-
-  const { data: users } = useQuery({
-    queryKey: ['users'],
-    queryFn: () => getUsers(),
   });
 
   const { data: categories } = useQuery({
@@ -152,10 +146,7 @@ export function Content({ designationId, designationName }: ContentProps) {
             : designationName
         }
         actions={
-          <CreatePurchaseDialog
-            users={users ?? []}
-            defaultCategoryId={categoryId ?? undefined}
-          />
+          <CreatePurchaseDialog defaultCategoryId={categoryId ?? undefined} />
         }
       />
 
@@ -286,7 +277,6 @@ export function Content({ designationId, designationName }: ContentProps) {
           ) : (
             <PurchaseList
               purchases={filteredPurchases}
-              users={users ?? []}
               categories={categories ?? []}
               allocationGroups={allocationGroups ?? []}
               miscAllocations={miscAllocations ?? []}
