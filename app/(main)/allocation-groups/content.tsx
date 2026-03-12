@@ -88,7 +88,7 @@ export function Content({ designationId }: ContentProps) {
                 href={`/allocation-groups/${group.id}`}
                 className="group"
               >
-                <Card className="flex flex-row items-center justify-between gap-2 px-3 py-2 transition-all duration-200 hover:border-primary/30 hover:shadow-md">
+                <Card className="hover:border-primary/30 flex flex-row items-center justify-between gap-2 px-3 py-2 transition-all duration-200 hover:shadow-md">
                   <div className="flex min-w-0 items-center gap-2">
                     <Layers className="text-muted-foreground size-3.5 shrink-0" />
                     <span className="group-hover:text-primary truncate text-sm font-medium transition-colors">
