@@ -46,7 +46,6 @@ const schema = z.object({
     .regex(/^\d{3}$/, 'Must be 3 numeric digits'),
   ledgerCode: z.string().length(4, 'Must be exactly 4 characters long'),
   name: z.string().min(1, 'Please enter a category name'),
-  amount: z.coerce.number<number>().min(0, 'Must be ≥ 0'),
 });
 
 export function EditCategoryDialog({
@@ -68,6 +67,9 @@ export function EditCategoryDialog({
   const queryClient = useQueryClient();
   const [open, setOpen] = useState<boolean>(false);
   const [confirmDelete, setConfirmDelete] = useState<boolean>(false);
+  const [budgetAmount, setBudgetAmount] = useState<string>(
+    String(amount ?? 0),
+  );
   const canEditBudget = !!categoryYearId && !!yearId;
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
@@ -75,7 +77,6 @@ export function EditCategoryDialog({
       code: category.code,
       ledgerCode: category.ledgerCode,
       name: category.name,
-      amount: amount ?? 0,
     },
   });
   const isSubmitting = form.formState.isSubmitting;
@@ -91,7 +92,9 @@ export function EditCategoryDialog({
       {
         toast: {
           loading: 'Updating spending category...',
-          success: 'Spending category updated successfully',
+          success: canEditBudget
+            ? 'Category updated'
+            : 'Spending category updated successfully',
           error: 'Failed to update spending category',
         },
       },
@@ -103,7 +106,7 @@ export function EditCategoryDialog({
         updateCategoryYearBudget({
           categoryId: category.id,
           yearId: yearId!,
-          amount: data.amount,
+          amount: Number(budgetAmount) || 0,
         }),
         {
           toast: {
@@ -159,7 +162,6 @@ export function EditCategoryDialog({
   function handleCancel() {
     handleOpenChange(false);
     setConfirmDelete(false);
-    form.reset();
   }
 
   function handleCancelDelete() {
@@ -168,14 +170,15 @@ export function EditCategoryDialog({
 
   function handleOpenChange(newOpen: boolean) {
     setOpen(newOpen);
-    if (!newOpen) {
-      setConfirmDelete(false);
+    if (newOpen) {
+      setBudgetAmount(String(amount ?? 0));
       form.reset({
         code: category.code,
         ledgerCode: category.ledgerCode,
         name: category.name,
-        amount: amount ?? 0,
       });
+    } else {
+      setConfirmDelete(false);
     }
   }
 
@@ -250,15 +253,29 @@ export function EditCategoryDialog({
                     </p>
                   </div>
                 </div>
-                <FormInput<z.infer<typeof schema>>
-                  name="amount"
-                  label={`Budget Amount${yearName ? ` for ${yearName}` : ''}`}
-                  placeholder="0.00"
-                  currency
-                  type="number"
-                  min={0}
-                  step="0.01"
-                />
+                <div className="space-y-2">
+                  <label
+                    htmlFor="budget-amount"
+                    className="text-sm font-medium"
+                  >
+                    {`Budget Amount${yearName ? ` for ${yearName}` : ''}`}
+                  </label>
+                  <div className="flex items-center">
+                    <span className="border-input bg-muted text-muted-foreground flex h-9 items-center rounded-l-md border border-r-0 px-3 text-sm">
+                      $
+                    </span>
+                    <Input
+                      id="budget-amount"
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      placeholder="0.00"
+                      className="rounded-l-none"
+                      value={budgetAmount}
+                      onChange={(e) => setBudgetAmount(e.target.value)}
+                    />
+                  </div>
+                </div>
               </>
             )}
 
