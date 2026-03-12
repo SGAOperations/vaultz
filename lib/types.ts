@@ -75,6 +75,7 @@ export type AllocationGroupWithStats = AllocationGroup & {
 export type PurchaseWithUserAndCategory = Purchase & {
   user: User;
   category: Category;
+  process: { templateId: string } | null;
 };
 
 export type UserWithPurchasesAndCategory = User & {
