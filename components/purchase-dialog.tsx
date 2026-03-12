@@ -223,15 +223,15 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
 
   // Filter allocations shown in the form to the currently selected period only
   const formAllocationGroups = useMemo(() => {
-    if (!selectedPeriod) return allocationGroups;
-    return allocationGroups
-      .map((group) => ({
-        ...group,
-        allocations: group.allocations.filter(
-          (a) => a.periodId === selectedPeriod.id,
-        ),
-      }))
-      .filter((group) => group.allocations.length > 0);
+    const groups = selectedPeriod
+      ? allocationGroups.map((group) => ({
+          ...group,
+          allocations: group.allocations.filter(
+            (a) => a.periodId === selectedPeriod.id,
+          ),
+        }))
+      : allocationGroups;
+    return groups.filter((group) => group.allocations.length > 0);
   }, [allocationGroups, selectedPeriod]);
 
   const formMiscAllocations = useMemo(() => {
