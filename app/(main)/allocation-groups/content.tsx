@@ -1,7 +1,10 @@
 'use client';
 
+import Link from 'next/link';
+
 import { usePeriod } from '@/contexts/PeriodContext';
 import { useQuery } from '@tanstack/react-query';
+import { ChevronRight, Layers } from 'lucide-react';
 
 import { getAllAllocationGroups } from '@/prisma/services/allocation-groups';
 
@@ -9,6 +12,7 @@ import { AllocationGroupCard } from '@/components/allocation-group-card';
 import { AllocationGroupsSummary } from '@/components/allocation-groups-summary';
 import { EmptyState } from '@/components/empty-state';
 import { SectionHeader } from '@/components/section-header';
+import { Card } from '@/components/ui/card';
 
 import { AllocationGroupsSkeleton } from './skeleton';
 
@@ -41,18 +45,65 @@ export function Content({ designationId }: ContentProps) {
       />
     );
 
+  const { activeGroups, emptyGroups } = allocationGroups!.reduce(
+    (acc, group) => {
+      if (group.allocations.length > 0) acc.activeGroups.push(group);
+      else acc.emptyGroups.push(group);
+      return acc;
+    },
+    {
+      activeGroups: [] as NonNullable<typeof allocationGroups>,
+      emptyGroups: [] as NonNullable<typeof allocationGroups>,
+    },
+  );
+
   return (
     <div className="flex w-full flex-col">
-      <AllocationGroupsSummary allocationGroups={allocationGroups!} />
-      <SectionHeader title="Allocation Groups" />
-      <div className="grid w-full grid-cols-1 gap-4 lg:grid-cols-2">
-        {allocationGroups!.map((allocationGroup) => (
-          <AllocationGroupCard
-            key={allocationGroup.id}
-            allocationGroup={allocationGroup}
-          />
-        ))}
-      </div>
+      {activeGroups.length > 0 ? (
+        <>
+          <AllocationGroupsSummary allocationGroups={activeGroups} />
+          <SectionHeader title="Allocation Groups" />
+          <div className="grid w-full grid-cols-1 gap-4 lg:grid-cols-2">
+            {activeGroups.map((allocationGroup) => (
+              <AllocationGroupCard
+                key={allocationGroup.id}
+                allocationGroup={allocationGroup}
+              />
+            ))}
+          </div>
+        </>
+      ) : (
+        <EmptyState
+          message="No active allocation groups"
+          description="None of your allocation groups have allocations in the current period"
+        />
+      )}
+      {emptyGroups.length > 0 && (
+        <>
+          <SectionHeader title="Groups Without Allocations" />
+          <div className="flex w-full flex-col gap-2">
+            {emptyGroups.map((group) => (
+              <Link
+                key={group.id}
+                href={`/allocation-groups/${group.id}`}
+                className="group"
+              >
+                <Card className="flex items-center justify-between px-4 py-3 transition-all duration-200 hover:border-primary/30 hover:shadow-md">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-primary/10 flex size-8 items-center justify-center rounded-lg">
+                      <Layers className="text-primary size-4" />
+                    </div>
+                    <span className="group-hover:text-primary text-sm font-medium transition-colors">
+                      {group.name}
+                    </span>
+                  </div>
+                  <ChevronRight className="text-muted-foreground size-4 transition-transform group-hover:translate-x-0.5" />
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }
