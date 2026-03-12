@@ -47,8 +47,8 @@ import { DateTime } from '@/components/date-time';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
@@ -550,20 +550,27 @@ export function PurchaseList({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
-              <DropdownMenuItem onClick={() => setTemplateFilter('all')}>
+              <DropdownMenuCheckboxItem
+                checked={templateFilter === 'all'}
+                onClick={() => setTemplateFilter('all')}
+              >
                 All Templates
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setTemplateFilter('none')}>
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem
+                checked={templateFilter === 'none'}
+                onClick={() => setTemplateFilter('none')}
+              >
                 No Process
-              </DropdownMenuItem>
+              </DropdownMenuCheckboxItem>
               {processTemplates.length > 0 && <DropdownMenuSeparator />}
               {processTemplates.map((t) => (
-                <DropdownMenuItem
+                <DropdownMenuCheckboxItem
                   key={t.id}
+                  checked={templateFilter === t.id}
                   onClick={() => setTemplateFilter(t.id)}
                 >
                   {t.name}
-                </DropdownMenuItem>
+                </DropdownMenuCheckboxItem>
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
