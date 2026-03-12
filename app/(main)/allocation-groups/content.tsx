@@ -4,7 +4,7 @@ import Link from 'next/link';
 
 import { usePeriod } from '@/contexts/PeriodContext';
 import { useQuery } from '@tanstack/react-query';
-import { Layers } from 'lucide-react';
+import { ChevronRight, Layers } from 'lucide-react';
 
 import { getAllAllocationGroups } from '@/prisma/services/allocation-groups';
 
@@ -88,11 +88,14 @@ export function Content({ designationId }: ContentProps) {
                 href={`/allocation-groups/${group.id}`}
                 className="group"
               >
-                <Card className="flex items-center gap-2 px-3 py-2 transition-all duration-200 hover:border-primary/30 hover:shadow-md">
-                  <Layers className="text-muted-foreground size-3.5 shrink-0" />
-                  <span className="group-hover:text-primary truncate text-sm font-medium transition-colors">
-                    {group.name}
-                  </span>
+                <Card className="flex items-center justify-between px-3 py-2 transition-all duration-200 hover:border-primary/30 hover:shadow-md">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <Layers className="text-muted-foreground size-3.5 shrink-0" />
+                    <span className="group-hover:text-primary truncate text-sm font-medium transition-colors">
+                      {group.name}
+                    </span>
+                  </div>
+                  <ChevronRight className="text-muted-foreground size-3.5 shrink-0 transition-transform group-hover:translate-x-0.5" />
                 </Card>
               </Link>
             ))}
