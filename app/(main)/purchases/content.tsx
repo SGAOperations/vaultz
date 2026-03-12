@@ -5,7 +5,7 @@ import { useMemo } from 'react';
 import { useYear } from '@/contexts/YearContext';
 import { useQuery } from '@tanstack/react-query';
 import { SortingState } from '@tanstack/react-table';
-import { ChevronDown, Layers, Tag, Wallet, X } from 'lucide-react';
+import { CalendarRange, ChevronDown, Layers, Tag, Wallet, X } from 'lucide-react';
 import { useQueryState } from 'nuqs';
 
 import { getMiscAllocations } from '@/prisma/services/allocation';
@@ -14,11 +14,14 @@ import { getCategoriesWithAvailableAmount } from '@/prisma/services/category';
 import { getAllProcessTemplates } from '@/prisma/services/process-templates';
 import { getPurchasesByDesignation } from '@/prisma/services/purchase';
 
+import { parseDateOnly } from '@/lib/utils';
+
 import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/page-header';
 import { CreatePurchaseDialog } from '@/components/purchase-dialog';
 import { PurchaseList } from '@/components/purchase-list';
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -26,6 +29,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface ContentProps {
@@ -40,6 +48,8 @@ export function Content({ designationId, designationName }: ContentProps) {
   const [allocationGroupId, setAllocationGroupId] =
     useQueryState('allocationGroup');
   const [allocationId, setAllocationId] = useQueryState('allocation');
+  const [dateFrom, setDateFrom] = useQueryState('dateFrom');
+  const [dateTo, setDateTo] = useQueryState('dateTo');
   const [sortField, setSortField] = useQueryState('sort');
   const [sortOrder, setSortOrder] = useQueryState('order');
 
@@ -110,19 +120,31 @@ export function Content({ designationId, designationName }: ContentProps) {
             ?.allocations.map((a) => a.id) ?? [],
         )
       : null;
-    return purchases.filter(
-      (p) =>
-        (!categoryId || p.categoryId === categoryId) &&
-        (!groupAllocationIds ||
-          (p.allocationId != null && groupAllocationIds.has(p.allocationId))) &&
-        (!allocationId || p.allocationId === allocationId),
-    );
+    const fromDate = dateFrom ? new Date(dateFrom) : null;
+    const toDate = dateTo ? new Date(dateTo) : null;
+    return purchases.filter((p) => {
+      if (categoryId && p.categoryId !== categoryId) return false;
+      if (
+        groupAllocationIds &&
+        (p.allocationId == null || !groupAllocationIds.has(p.allocationId))
+      )
+        return false;
+      if (allocationId && p.allocationId !== allocationId) return false;
+      if (fromDate || toDate) {
+        const purchaseDate = parseDateOnly(p.purchasedAt);
+        if (fromDate && purchaseDate < fromDate) return false;
+        if (toDate && purchaseDate > toDate) return false;
+      }
+      return true;
+    });
   }, [
     purchases,
     categoryId,
     allocationGroupId,
     allocationId,
     allocationGroups,
+    dateFrom,
+    dateTo,
   ]);
 
   const categoryFilterLabel =
@@ -134,7 +156,13 @@ export function Content({ designationId, designationName }: ContentProps) {
     allAllocations.find((a) => a.id === allocationId)?.name ??
     'All Allocations';
 
-  const hasActiveFilters = !!(categoryId || allocationGroupId || allocationId);
+  const hasActiveFilters = !!(
+    categoryId ||
+    allocationGroupId ||
+    allocationId ||
+    dateFrom ||
+    dateTo
+  );
 
   return (
     <div className="flex w-full flex-col">
@@ -267,6 +295,84 @@ export function Content({ designationId, designationName }: ContentProps) {
               </DropdownMenu>
             )}
 
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={dateFrom || dateTo ? 'default' : 'outline'}
+                  size="sm"
+                  className="gap-1.5 rounded-full"
+                >
+                  <CalendarRange className="size-3.5" />
+                  {dateFrom || dateTo
+                    ? [dateFrom, dateTo]
+                        .map((d) =>
+                          d
+                            ? new Date(d).toLocaleDateString(undefined, {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                              })
+                            : '…',
+                        )
+                        .join(' – ')
+                    : 'Date Range'}
+                  <ChevronDown className="size-3.5" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="start" className="w-auto p-4">
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <span className="text-muted-foreground text-xs font-medium">
+                      From
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <DatePicker
+                        value={dateFrom ? new Date(dateFrom) : undefined}
+                        onChange={(d) =>
+                          setDateFrom(d.toISOString().split('T')[0])
+                        }
+                      />
+                      {dateFrom && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label="Clear from date"
+                          className="size-8 shrink-0"
+                          onClick={() => setDateFrom(null)}
+                        >
+                          <X className="size-3.5" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <span className="text-muted-foreground text-xs font-medium">
+                      To
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <DatePicker
+                        value={dateTo ? new Date(dateTo) : undefined}
+                        onChange={(d) =>
+                          setDateTo(d.toISOString().split('T')[0])
+                        }
+                      />
+                      {dateTo && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label="Clear to date"
+                          className="size-8 shrink-0"
+                          onClick={() => setDateTo(null)}
+                        >
+                          <X className="size-3.5" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+
             {hasActiveFilters && (
               <Button
                 variant="ghost"
@@ -276,6 +382,8 @@ export function Content({ designationId, designationName }: ContentProps) {
                   setCategoryId(null);
                   setAllocationGroupId(null);
                   setAllocationId(null);
+                  setDateFrom(null);
+                  setDateTo(null);
                 }}
               >
                 <X className="size-3" />
