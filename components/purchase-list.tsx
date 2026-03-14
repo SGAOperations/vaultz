@@ -280,6 +280,7 @@ function PurchaseTotals({
   rows: Row<PurchaseWithUser>[];
   categoryMap: Map<string, CategoryWithDesignation>;
 }) {
+  const [showBreakdown, setShowBreakdown] = useState(false);
   const totalCount = rows.length;
   const totalAmount = rows.reduce((sum, r) => sum + r.original.amount, 0);
 
@@ -316,16 +317,25 @@ function PurchaseTotals({
       </span>
       {categoryBreakdown.length > 1 && (
         <>
-          <span className="text-muted-foreground/40">·</span>
-          {categoryBreakdown.map(({ categoryId, name, count, amount }) => (
-            <span key={categoryId} className="flex items-center gap-1.5">
-              <span>{name}</span>
-              <span className="text-muted-foreground/60">{count}</span>
-              <span className="text-foreground/80 font-medium">
-                {formatCurrency(amount)}
+          <button
+            onClick={() => setShowBreakdown((v) => !v)}
+            className="text-muted-foreground/60 hover:text-muted-foreground flex items-center gap-0.5 transition-colors"
+          >
+            {categoryBreakdown.length} categories
+            <ChevronDown
+              className={cn('size-3.5 transition-transform', showBreakdown && 'rotate-180')}
+            />
+          </button>
+          {showBreakdown &&
+            categoryBreakdown.map(({ categoryId, name, count, amount }) => (
+              <span key={categoryId} className="flex items-center gap-1.5">
+                <span>{name}</span>
+                <span className="text-muted-foreground/60">{count}</span>
+                <span className="text-foreground/80 font-medium">
+                  {formatCurrency(amount)}
+                </span>
               </span>
-            </span>
-          ))}
+            ))}
         </>
       )}
     </div>
