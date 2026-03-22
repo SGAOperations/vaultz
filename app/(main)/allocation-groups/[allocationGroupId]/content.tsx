@@ -6,7 +6,6 @@ import { usePeriod } from '@/contexts/PeriodContext';
 import { useYear } from '@/contexts/YearContext';
 import { useQuery } from '@tanstack/react-query';
 import {
-  ChevronRight,
   Layers,
   Pencil,
   ShoppingCart,
@@ -128,7 +127,6 @@ export function Content({ allocationGroupId }: ContentProps) {
                         </p>
                       </div>
                     </div>
-                    <ChevronRight className="text-muted-foreground size-5 shrink-0 transition-transform group-hover:translate-x-0.5" />
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <div className="bg-muted flex items-center gap-2 rounded-full px-3 py-1.5">
