@@ -177,7 +177,6 @@ export function Content({ allocationGroupId }: ContentProps) {
                       variant="ghost"
                       size="icon"
                       className="size-8 opacity-0 transition-opacity group-hover:opacity-100"
-                      onClick={(e) => e.preventDefault()}
                     >
                       <Pencil className="size-4" />
                     </Button>
