@@ -8,7 +8,10 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Loader2, Trash2 } from 'lucide-react';
 import { z } from 'zod/v4';
 
-import { deleteAllocation, updateAllocation } from '@/prisma/services/allocation';
+import {
+  deleteAllocation,
+  updateAllocation,
+} from '@/prisma/services/allocation';
 
 import { Allocation } from '@/lib/types';
 import { handleError } from '@/lib/utils';
@@ -80,7 +83,11 @@ export function EditAllocationDialog({
     if (parsedAmount === null) return;
 
     await handleError(
-      updateAllocation({ id: allocation.id, name: data.name, amount: parsedAmount }),
+      updateAllocation({
+        id: allocation.id,
+        name: data.name,
+        amount: parsedAmount,
+      }),
       {
         toast: {
           loading: 'Updating allocation...',

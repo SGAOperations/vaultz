@@ -164,7 +164,7 @@ export function Content({ allocationGroupId }: ContentProps) {
                   </div>
                 </Card>
               </Link>
-              <div className="absolute right-3 top-3">
+              <div className="absolute top-3 right-3">
                 <EditAllocationDialog
                   allocation={allocation}
                   queryKey={[
