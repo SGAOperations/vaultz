@@ -8,6 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 import {
   ChevronRight,
   Layers,
+  Pencil,
   ShoppingCart,
   TrendingDown,
   TrendingUp,
@@ -19,6 +20,7 @@ import { getAllocationGroupWithStats } from '@/prisma/services/allocation-groups
 import { cn, formatNumber } from '@/lib/utils';
 
 import { CreateAllocationDialog } from '@/components/create-allocation-dialog';
+import { EditAllocationDialog } from '@/components/edit-allocation-dialog';
 import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/page-header';
 import { CreatePurchaseDialog } from '@/components/purchase-dialog';
@@ -105,65 +107,86 @@ export function Content({ allocationGroupId }: ContentProps) {
       ) : (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           {allocationGroup.allocations.map((allocation) => (
-            <Link
-              href={`/purchases?allocation=${allocation.id}`}
-              key={allocation.id}
-              className="group h-full"
-            >
-              <Card className="hover:border-primary/30 h-full p-4 transition-all duration-200 hover:shadow-md">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-primary/10 flex size-10 shrink-0 items-center justify-center rounded-lg">
-                      <Layers className="text-primary size-5" />
+            <div key={allocation.id} className="group relative h-full">
+              <Link
+                href={`/purchases?allocation=${allocation.id}`}
+                className="block h-full"
+              >
+                <Card className="hover:border-primary/30 h-full p-4 transition-all duration-200 hover:shadow-md">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-primary/10 flex size-10 shrink-0 items-center justify-center rounded-lg">
+                        <Layers className="text-primary size-5" />
+                      </div>
+                      <div>
+                        <h3 className="group-hover:text-primary font-semibold transition-colors">
+                          {allocation.name}
+                        </h3>
+                        <p className="text-muted-foreground text-sm">
+                          {allocation.purchases.length} purchase
+                          {allocation.purchases.length !== 1 ? 's' : ''}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="group-hover:text-primary font-semibold transition-colors">
-                        {allocation.name}
-                      </h3>
-                      <p className="text-muted-foreground text-sm">
-                        {allocation.purchases.length} purchase
-                        {allocation.purchases.length !== 1 ? 's' : ''}
-                      </p>
+                    <ChevronRight className="text-muted-foreground size-5 shrink-0 transition-transform group-hover:translate-x-0.5" />
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <div className="bg-muted flex items-center gap-2 rounded-full px-3 py-1.5">
+                      <Wallet className="text-stat-total size-4" />
+                      <span className="text-sm">
+                        <span className="text-muted-foreground">Budget:</span>{' '}
+                        <span className="font-semibold">
+                          ${formatNumber(allocation.amount)}
+                        </span>
+                      </span>
+                    </div>
+                    <div className="bg-muted flex items-center gap-2 rounded-full px-3 py-1.5">
+                      <TrendingDown className="text-stat-spent size-4" />
+                      <span className="text-sm">
+                        <span className="text-muted-foreground">Spent:</span>{' '}
+                        <span className="font-semibold">
+                          ${formatNumber(allocation.spent)}
+                        </span>
+                      </span>
+                    </div>
+                    <div className="bg-muted flex items-center gap-2 rounded-full px-3 py-1.5">
+                      <TrendingUp className="text-stat-remaining size-4" />
+                      <span className="text-sm">
+                        <span className="text-muted-foreground">Left:</span>{' '}
+                        <span
+                          className={cn(
+                            'font-semibold',
+                            allocation.remaining < 0 && 'text-destructive',
+                          )}
+                        >
+                          ${formatNumber(allocation.remaining)}
+                        </span>
+                      </span>
                     </div>
                   </div>
-                  <ChevronRight className="text-muted-foreground size-5 shrink-0 transition-transform group-hover:translate-x-0.5" />
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <div className="bg-muted flex items-center gap-2 rounded-full px-3 py-1.5">
-                    <Wallet className="text-stat-total size-4" />
-                    <span className="text-sm">
-                      <span className="text-muted-foreground">Budget:</span>{' '}
-                      <span className="font-semibold">
-                        ${formatNumber(allocation.amount)}
-                      </span>
-                    </span>
-                  </div>
-                  <div className="bg-muted flex items-center gap-2 rounded-full px-3 py-1.5">
-                    <TrendingDown className="text-stat-spent size-4" />
-                    <span className="text-sm">
-                      <span className="text-muted-foreground">Spent:</span>{' '}
-                      <span className="font-semibold">
-                        ${formatNumber(allocation.spent)}
-                      </span>
-                    </span>
-                  </div>
-                  <div className="bg-muted flex items-center gap-2 rounded-full px-3 py-1.5">
-                    <TrendingUp className="text-stat-remaining size-4" />
-                    <span className="text-sm">
-                      <span className="text-muted-foreground">Left:</span>{' '}
-                      <span
-                        className={cn(
-                          'font-semibold',
-                          allocation.remaining < 0 && 'text-destructive',
-                        )}
-                      >
-                        ${formatNumber(allocation.remaining)}
-                      </span>
-                    </span>
-                  </div>
-                </div>
-              </Card>
-            </Link>
+                </Card>
+              </Link>
+              <div className="absolute right-3 top-3">
+                <EditAllocationDialog
+                  allocation={allocation}
+                  queryKey={[
+                    'allocation-group',
+                    allocationGroupId,
+                    selectedPeriod?.id,
+                  ]}
+                  trigger={
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="size-8 opacity-0 transition-opacity group-hover:opacity-100"
+                      onClick={(e) => e.preventDefault()}
+                    >
+                      <Pencil className="size-4" />
+                    </Button>
+                  }
+                />
+              </div>
+            </div>
           ))}
         </div>
       )}
