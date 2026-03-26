@@ -13,7 +13,7 @@ export function UserCard({ user }: { user: UserWithPurchases }) {
 
   return (
     <LinkCard
-      href={`/users/${user.id}`}
+      href={`/purchases?user=${user.id}`}
       icon={User}
       title={`${user.first} ${user.last}`}
       badges={[

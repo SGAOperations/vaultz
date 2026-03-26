@@ -5,7 +5,7 @@ import { useMemo } from 'react';
 import { useYear } from '@/contexts/YearContext';
 import { useQuery } from '@tanstack/react-query';
 import { SortingState } from '@tanstack/react-table';
-import { ChevronDown, Layers, Tag, Wallet, X } from 'lucide-react';
+import { ChevronDown, Layers, Tag, User, Wallet, X } from 'lucide-react';
 import { useQueryState } from 'nuqs';
 
 import { getMiscAllocations } from '@/prisma/services/allocation';
@@ -14,6 +14,7 @@ import { getCategoriesWithAvailableAmount } from '@/prisma/services/category';
 import { getPeriodsForYear } from '@/prisma/services/period';
 import { getAllProcessTemplates } from '@/prisma/services/process-templates';
 import { getPurchasesByDesignation } from '@/prisma/services/purchase';
+import { getUsers } from '@/prisma/services/user';
 
 import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/page-header';
@@ -43,6 +44,7 @@ export function Content({ designationId, designationName }: ContentProps) {
   const [allocationGroupId, setAllocationGroupId] =
     useQueryState('allocationGroup');
   const [allocationId, setAllocationId] = useQueryState('allocation');
+  const [userId, setUserId] = useQueryState('user');
   const [sortField, setSortField] = useQueryState('sort');
   const [sortOrder, setSortOrder] = useQueryState('order');
 
@@ -103,6 +105,11 @@ export function Content({ designationId, designationName }: ContentProps) {
     queryFn: () => getAllProcessTemplates(true),
   });
 
+  const { data: users } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => getUsers(),
+  });
+
   const allAllocations = useMemo(
     () => [
       ...(allocationGroups ?? []).flatMap((g) =>
@@ -148,13 +155,15 @@ export function Content({ designationId, designationName }: ContentProps) {
         (!categoryId || p.categoryId === categoryId) &&
         (!groupAllocationIds ||
           (p.allocationId != null && groupAllocationIds.has(p.allocationId))) &&
-        (!allocationId || p.allocationId === allocationId),
+        (!allocationId || p.allocationId === allocationId) &&
+        (!userId || p.userId === userId),
     );
   }, [
     purchases,
     categoryId,
     allocationGroupId,
     allocationId,
+    userId,
     allocationGroups,
   ]);
 
@@ -166,8 +175,17 @@ export function Content({ designationId, designationName }: ContentProps) {
   const allocationFilterLabel =
     allAllocations.find((a) => a.id === allocationId)?.name ??
     'All Allocations';
+  const selectedUser = users?.find((u) => u.id === userId);
+  const userFilterLabel = selectedUser
+    ? `${selectedUser.first} ${selectedUser.last}`
+    : 'All Users';
 
-  const hasActiveFilters = !!(categoryId || allocationGroupId || allocationId);
+  const hasActiveFilters = !!(
+    categoryId ||
+    allocationGroupId ||
+    allocationId ||
+    userId
+  );
 
   return (
     <div className="flex w-full flex-col">
@@ -338,6 +356,38 @@ export function Content({ designationId, designationName }: ContentProps) {
               </DropdownMenu>
             )}
 
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant={userId ? 'default' : 'outline'}
+                  size="sm"
+                  className="gap-1.5 rounded-full"
+                >
+                  <User className="size-3.5" />
+                  {userFilterLabel}
+                  <ChevronDown className="size-3.5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuCheckboxItem
+                  checked={!userId}
+                  onClick={() => setUserId(null)}
+                >
+                  All Users
+                </DropdownMenuCheckboxItem>
+                {users && users.length > 0 && <DropdownMenuSeparator />}
+                {users?.map((u) => (
+                  <DropdownMenuCheckboxItem
+                    key={u.id}
+                    checked={userId === u.id}
+                    onClick={() => setUserId(u.id)}
+                  >
+                    {u.first} {u.last}
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             {hasActiveFilters && (
               <Button
                 variant="ghost"
@@ -347,6 +397,7 @@ export function Content({ designationId, designationName }: ContentProps) {
                   setCategoryId(null);
                   setAllocationGroupId(null);
                   setAllocationId(null);
+                  setUserId(null);
                 }}
               >
                 <X className="size-3" />
