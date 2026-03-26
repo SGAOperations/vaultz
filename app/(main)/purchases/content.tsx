@@ -147,7 +147,12 @@ export function Content({ designationId, designationName }: ContentProps) {
     ? `${selectedUser.first} ${selectedUser.last}`
     : 'All Users';
 
-  const hasActiveFilters = !!(categoryId || allocationGroupId || allocationId || userId);
+  const hasActiveFilters = !!(
+    categoryId ||
+    allocationGroupId ||
+    allocationId ||
+    userId
+  );
 
   return (
     <div className="flex w-full flex-col">
