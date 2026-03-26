@@ -420,7 +420,7 @@ export function Content({ template }: { template: ProcessTemplateWithSteps }) {
         description={template.description ?? undefined}
         actions={
           <div className="flex gap-2">
-            <Link href="/processes" prefetch={false}>
+            <Link href="/processes">
               <Button variant="outline" size="sm">
                 <ArrowLeft className="size-4" />
                 Back

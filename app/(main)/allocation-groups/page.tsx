@@ -45,7 +45,7 @@ export default function AllocationGroups() {
           message="No period selected"
           description="Select or create a fiscal period to view and manage allocations"
           action={
-            <Link href="/periods" prefetch={false}>
+            <Link href="/periods">
               <Button size="sm">
                 <Plus className="size-4" />
                 Create Period

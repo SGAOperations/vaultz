@@ -87,7 +87,7 @@ export function Header() {
           isInactiveSession ? 'mb-2' : 'mb-4',
         )}
       >
-        <Link href={'/'} prefetch={false} className="flex items-center gap-2">
+        <Link href={'/'} className="flex items-center gap-2">
           <div className="bg-primary flex size-9 items-center justify-center rounded-xl shadow-md">
             <svg
               className="size-5 text-white"
@@ -115,7 +115,7 @@ export function Header() {
             const isActive =
               href === '/' ? pathname === '/' : pathname.startsWith(href);
             return (
-              <Link key={href} href={href} prefetch={false}>
+              <Link key={href} href={href}>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -158,7 +158,7 @@ export function Header() {
                     <DropdownMenuItem key={href} asChild>
                       <Link
                         href={href}
-                        prefetch={false}
+                       
                         className={cn(
                           pathname.startsWith(href) &&
                             'text-primary font-medium',
@@ -187,7 +187,7 @@ export function Header() {
             <DropdownMenuContent align="end">
               {directNavItems.map(({ href, label, icon: Icon }) => (
                 <DropdownMenuItem key={href} asChild>
-                  <Link href={href} prefetch={false}>
+                  <Link href={href}>
                     <Icon className="size-4" />
                     {label}
                   </Link>
@@ -198,7 +198,7 @@ export function Header() {
                   <DropdownMenuSeparator />
                   {items.map(({ href, label, icon: Icon }) => (
                     <DropdownMenuItem key={href} asChild>
-                      <Link href={href} prefetch={false}>
+                      <Link href={href}>
                         <Icon className="size-4" />
                         {label}
                       </Link>

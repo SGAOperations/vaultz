@@ -86,7 +86,6 @@ export function Content({ designationId }: ContentProps) {
               <Link
                 key={group.id}
                 href={`/allocation-groups/${group.id}`}
-                prefetch={false}
                 className="group"
               >
                 <Card className="hover:border-primary/30 flex flex-row items-center justify-between gap-2 px-3 py-2 transition-all duration-200 hover:shadow-md">
