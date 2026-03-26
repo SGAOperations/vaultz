@@ -308,18 +308,18 @@ function PurchaseTotals({
     .sort((a, b) => b.amount - a.amount);
 
   return (
-    <div className="border-border/50 bg-background/40 flex flex-col gap-1.5 rounded-md border px-2 py-1.5 text-sm">
+    <div className="border-border bg-background/40 flex flex-col gap-1.5 rounded-md border px-2 py-1.5 text-sm">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <div className="flex items-baseline gap-1">
           <span className="text-muted-foreground text-xs tracking-normal">
-            purchases
+            Purchases
           </span>
           <span className="text-foreground font-semibold">{totalCount}</span>
         </div>
         <div className="bg-border/50 h-3.5 w-px" />
         <div className="flex items-baseline gap-1">
           <span className="text-muted-foreground text-xs tracking-normal">
-            total spend
+            Total
           </span>
           <span className="text-foreground font-semibold">
             {formatCurrency(totalAmount)}
@@ -332,7 +332,7 @@ function PurchaseTotals({
               onClick={() => setShowBreakdown((v) => !v)}
               className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs font-medium transition-colors"
             >
-              categories ({categoryBreakdown.length})
+              Categories ({categoryBreakdown.length})
               <ChevronDown
                 className={cn(
                   'size-3.5 transition-transform',
@@ -344,19 +344,19 @@ function PurchaseTotals({
         )}
       </div>
       {showBreakdown && categoryBreakdown.length > 1 && (
-        <div className="border-border/50 grid gap-x-3 gap-y-1.5 border-t pt-1.5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="border-border grid gap-x-3 gap-y-1.5 border-t pt-1.5 sm:grid-cols-2 lg:grid-cols-3">
           {categoryBreakdown.map(({ categoryId, name, count, amount }) => (
             <div key={categoryId} className="min-w-0">
               <div className="text-foreground truncate font-medium">{name}</div>
               <div className="text-muted-foreground mt-0.5 flex items-center gap-2 text-xs">
                 <span>
-                  count{' '}
+                  Count{' '}
                   <span className="text-foreground/90 font-medium">
                     {count}
                   </span>
                 </span>
                 <span>
-                  spend{' '}
+                  Spend{' '}
                   <span className="text-foreground/90 font-medium">
                     {formatCurrency(amount)}
                   </span>
