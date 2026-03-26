@@ -98,7 +98,9 @@ export function Content({ designationId, designationName }: ContentProps) {
   const { data: periods, isLoading: periodsLoading } = useQuery({
     queryKey: ['periods', selectedYear?.id],
     queryFn: () =>
-      selectedYear ? getPeriodsForYear(selectedYear.id, true) : Promise.resolve([]),
+      selectedYear
+        ? getPeriodsForYear(selectedYear.id, true)
+        : Promise.resolve([]),
     enabled: !!selectedYear,
   });
 
@@ -296,46 +298,48 @@ export function Content({ designationId, designationName }: ContentProps) {
                     All Allocations
                   </DropdownMenuCheckboxItem>
                   {groupedAllocations.length > 0 && <DropdownMenuSeparator />}
-                  {groupedAllocations.map(({ period, groups, misc }, periodIdx) => (
-                    <DropdownMenuGroup key={period.id}>
-                      {periodIdx > 0 && <DropdownMenuSeparator />}
-                      <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground">
-                        {period.name}
-                      </DropdownMenuLabel>
-                      {groups.map((group) => (
-                        <DropdownMenuGroup key={group.id}>
-                          <DropdownMenuLabel className="pl-4 text-xs font-medium text-muted-foreground">
-                            {group.name}
-                          </DropdownMenuLabel>
-                          {group.allocations.map((a) => (
-                            <DropdownMenuCheckboxItem
-                              key={a.id}
-                              checked={allocationId === a.id}
-                              onClick={() => setAllocationId(a.id)}
-                            >
-                              {a.name}
-                            </DropdownMenuCheckboxItem>
-                          ))}
-                        </DropdownMenuGroup>
-                      ))}
-                      {misc.length > 0 && (
-                        <DropdownMenuGroup>
-                          <DropdownMenuLabel className="pl-4 text-xs font-medium text-muted-foreground">
-                            Miscellaneous
-                          </DropdownMenuLabel>
-                          {misc.map((a) => (
-                            <DropdownMenuCheckboxItem
-                              key={a.id}
-                              checked={allocationId === a.id}
-                              onClick={() => setAllocationId(a.id)}
-                            >
-                              {a.name}
-                            </DropdownMenuCheckboxItem>
-                          ))}
-                        </DropdownMenuGroup>
-                      )}
-                    </DropdownMenuGroup>
-                  ))}
+                  {groupedAllocations.map(
+                    ({ period, groups, misc }, periodIdx) => (
+                      <DropdownMenuGroup key={period.id}>
+                        {periodIdx > 0 && <DropdownMenuSeparator />}
+                        <DropdownMenuLabel className="text-muted-foreground text-xs font-semibold">
+                          {period.name}
+                        </DropdownMenuLabel>
+                        {groups.map((group) => (
+                          <DropdownMenuGroup key={group.id}>
+                            <DropdownMenuLabel className="text-muted-foreground pl-4 text-xs font-medium">
+                              {group.name}
+                            </DropdownMenuLabel>
+                            {group.allocations.map((a) => (
+                              <DropdownMenuCheckboxItem
+                                key={a.id}
+                                checked={allocationId === a.id}
+                                onClick={() => setAllocationId(a.id)}
+                              >
+                                {a.name}
+                              </DropdownMenuCheckboxItem>
+                            ))}
+                          </DropdownMenuGroup>
+                        ))}
+                        {misc.length > 0 && (
+                          <DropdownMenuGroup>
+                            <DropdownMenuLabel className="text-muted-foreground pl-4 text-xs font-medium">
+                              Miscellaneous
+                            </DropdownMenuLabel>
+                            {misc.map((a) => (
+                              <DropdownMenuCheckboxItem
+                                key={a.id}
+                                checked={allocationId === a.id}
+                                onClick={() => setAllocationId(a.id)}
+                              >
+                                {a.name}
+                              </DropdownMenuCheckboxItem>
+                            ))}
+                          </DropdownMenuGroup>
+                        )}
+                      </DropdownMenuGroup>
+                    ),
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
