@@ -60,7 +60,7 @@ type LocalStepNode = {
 
 type AddFormState =
   | { type: 'root' }
-  | { type: 'branch'; siblingStepId: string }
+  | { type: 'branch'; parentStepId: string }
   | null;
 
 const stepSchema = z.object({
@@ -315,6 +315,7 @@ function StepCard({
 
 function StepGroup({
   nodes,
+  parentId,
   depth,
   isMutating,
   addFormState,
@@ -326,6 +327,7 @@ function StepGroup({
   onAddFormCancel,
 }: {
   nodes: LocalStepNode[];
+  parentId: string | null;
   depth: number;
   isMutating: boolean;
   addFormState: AddFormState;
@@ -336,10 +338,6 @@ function StepGroup({
   onAddFormSubmit: (data: StepFormData) => Promise<void>;
   onAddFormCancel: () => void;
 }) {
-  const showBranchForm =
-    addFormState?.type === 'branch' &&
-    nodes.some((n) => n.id === addFormState.siblingStepId);
-
   const groupProps = {
     isMutating,
     addFormState,
@@ -359,35 +357,43 @@ function StepGroup({
           : 'flex flex-col gap-2'
       }
     >
-      {nodes.map((node, idx) => (
-        <Fragment key={node.id}>
-          <StepCard
-            node={node}
-            siblingIdx={idx}
-            siblingCount={nodes.length}
-            isMutating={isMutating || (showBranchForm && !isMutating)}
-            onEdit={onEdit}
-            onDelete={onDelete}
-            onMove={onMove}
-            onAddBranch={onAddBranch}
-          />
-          {node.children.length > 0 && (
-            <StepGroup
-              nodes={node.children}
-              depth={depth + 1}
-              {...groupProps}
+      {nodes.map((node, idx) => {
+        const isBranchTarget =
+          addFormState?.type === 'branch' &&
+          addFormState.parentStepId === node.id;
+        const showChildGroup = node.children.length > 0 || isBranchTarget;
+        return (
+          <Fragment key={node.id}>
+            <StepCard
+              node={node}
+              siblingIdx={idx}
+              siblingCount={nodes.length}
+              isMutating={isMutating}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              onMove={onMove}
+              onAddBranch={onAddBranch}
             />
-          )}
-        </Fragment>
-      ))}
-      {showBranchForm && (
-        <AddStepForm
-          label="New Branch"
-          isMutating={isMutating}
-          onAdd={onAddFormSubmit}
-          onCancel={onAddFormCancel}
-        />
-      )}
+            {showChildGroup && (
+              <StepGroup
+                nodes={node.children}
+                parentId={node.id}
+                depth={depth + 1}
+                {...groupProps}
+              />
+            )}
+          </Fragment>
+        );
+      })}
+      {addFormState?.type === 'branch' &&
+        addFormState.parentStepId === parentId && (
+          <AddStepForm
+            label="New Branch"
+            isMutating={isMutating}
+            onAdd={onAddFormSubmit}
+            onCancel={onAddFormCancel}
+          />
+        )}
     </div>
   );
 }
@@ -499,7 +505,7 @@ export function Content({
     setIsMutating(true);
     try {
       await handleError(
-        addBranchStep(template.id, addFormState.siblingStepId, {
+        addBranchStep(template.id, addFormState.parentStepId, {
           name: data.name,
           description: data.description || undefined,
         }),
@@ -666,6 +672,7 @@ export function Content({
         )}
         <StepGroup
           nodes={steps}
+          parentId={null}
           depth={0}
           isMutating={isMutating || isDeleted}
           addFormState={addFormState}
@@ -673,7 +680,7 @@ export function Content({
           onDelete={handleDeleteStep}
           onMove={handleMoveStep}
           onAddBranch={(stepId) =>
-            setAddFormState({ type: 'branch', siblingStepId: stepId })
+            setAddFormState({ type: 'branch', parentStepId: stepId })
           }
           onAddFormSubmit={handleAddBranchSubmit}
           onAddFormCancel={() => setAddFormState(null)}

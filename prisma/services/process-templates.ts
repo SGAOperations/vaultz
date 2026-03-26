@@ -156,21 +156,12 @@ export async function addProcessStep(
 
 export async function addBranchStep(
   templateId: string,
-  siblingStepId: string,
+  parentStepId: string,
   data: { name: string; description?: string },
 ): Promise<ResponseType<ProcessStep>> {
-  const sibling = await prisma.processStep.findUnique({
-    where: { id: siblingStepId },
-  });
-  if (!sibling) return { error: 'Step not found' };
-
   const step = await prisma.$transaction(async (tx) => {
-    const maxSibling = await tx.processStep.findFirst({
-      where: {
-        templateId,
-        deletedAt: null,
-        parentStepId: sibling.parentStepId,
-      },
+    const maxChild = await tx.processStep.findFirst({
+      where: { templateId, deletedAt: null, parentStepId },
       orderBy: { order: 'desc' },
     });
     const s = await tx.processStep.create({
@@ -178,8 +169,8 @@ export async function addBranchStep(
         templateId,
         name: data.name,
         description: data.description || null,
-        order: maxSibling ? maxSibling.order + 1 : 0,
-        parentStepId: sibling.parentStepId,
+        order: maxChild ? maxChild.order + 1 : 0,
+        parentStepId,
       },
     });
     await tx.processTemplate.update({
