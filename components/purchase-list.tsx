@@ -308,17 +308,17 @@ function PurchaseTotals({
     .sort((a, b) => b.amount - a.amount);
 
   return (
-    <div className="border-border/60 bg-muted/10 flex flex-col gap-2 rounded-md border px-3 py-2 text-sm">
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-        <div className="flex items-baseline gap-1.5">
-          <span className="text-muted-foreground/80 text-xs tracking-wide uppercase">
+    <div className="border-border/50 bg-background/40 flex flex-col gap-1.5 rounded-md border px-2 py-1.5 text-sm">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <div className="flex items-baseline gap-1">
+          <span className="text-muted-foreground text-xs tracking-normal">
             purchases
           </span>
           <span className="text-foreground font-semibold">{totalCount}</span>
         </div>
-        <div className="bg-border/50 h-4 w-px" />
-        <div className="flex items-baseline gap-1.5">
-          <span className="text-muted-foreground/80 text-xs tracking-wide uppercase">
+        <div className="bg-border/50 h-3.5 w-px" />
+        <div className="flex items-baseline gap-1">
+          <span className="text-muted-foreground text-xs tracking-normal">
             total spend
           </span>
           <span className="text-foreground font-semibold">
@@ -327,10 +327,10 @@ function PurchaseTotals({
         </div>
         {categoryBreakdown.length > 1 && (
           <>
-            <div className="bg-border/50 h-4 w-px" />
+            <div className="bg-border/50 h-3.5 w-px" />
             <button
               onClick={() => setShowBreakdown((v) => !v)}
-              className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs font-medium tracking-wide uppercase transition-colors"
+              className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs font-medium transition-colors"
             >
               categories ({categoryBreakdown.length})
               <ChevronDown
@@ -344,22 +344,19 @@ function PurchaseTotals({
         )}
       </div>
       {showBreakdown && categoryBreakdown.length > 1 && (
-        <div className="border-border/60 grid gap-2 border-t pt-2 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="border-border/50 grid gap-x-3 gap-y-1.5 border-t pt-1.5 sm:grid-cols-2 lg:grid-cols-3">
           {categoryBreakdown.map(({ categoryId, name, count, amount }) => (
-            <div
-              key={categoryId}
-              className="bg-background/60 rounded-sm px-2 py-1"
-            >
+            <div key={categoryId} className="min-w-0">
               <div className="text-foreground truncate font-medium">{name}</div>
-              <div className="text-muted-foreground mt-0.5 flex items-center gap-3 text-xs">
+              <div className="text-muted-foreground mt-0.5 flex items-center gap-2 text-xs">
                 <span>
-                  Count{' '}
+                  count{' '}
                   <span className="text-foreground/90 font-medium">
                     {count}
                   </span>
                 </span>
                 <span>
-                  Spend{' '}
+                  spend{' '}
                   <span className="text-foreground/90 font-medium">
                     {formatCurrency(amount)}
                   </span>
