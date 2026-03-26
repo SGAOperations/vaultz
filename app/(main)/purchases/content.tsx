@@ -24,7 +24,7 @@ import { getAllProcessTemplates } from '@/prisma/services/process-templates';
 import { getPurchasesByDesignation } from '@/prisma/services/purchase';
 import { getUsers } from '@/prisma/services/user';
 
-import { parseDateOnly } from '@/lib/utils';
+import { cn, parseDateOnly } from '@/lib/utils';
 
 import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/page-header';
@@ -51,6 +51,15 @@ import { Skeleton } from '@/components/ui/skeleton';
 interface ContentProps {
   designationId: string;
   designationName: string;
+}
+
+function formatDateLabel(value: string | null) {
+  if (!value) return 'Date';
+  return new Date(value).toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
 }
 
 export function Content({ designationId, designationName }: ContentProps) {
@@ -211,15 +220,7 @@ export function Content({ designationId, designationName }: ContentProps) {
     : 'All Users';
   const dateRangeLabel =
     dateFrom || dateTo
-      ? `${dateFrom ? new Date(dateFrom).toLocaleDateString(undefined, {
-          month: 'short',
-          day: 'numeric',
-          year: 'numeric',
-        }) : 'Date'} - ${dateTo ? new Date(dateTo).toLocaleDateString(undefined, {
-          month: 'short',
-          day: 'numeric',
-          year: 'numeric',
-        }) : 'Date'}`
+      ? `${formatDateLabel(dateFrom)} - ${formatDateLabel(dateTo)}`
       : 'Date Range';
 
   const hasActiveFilters = !!(
@@ -463,7 +464,10 @@ export function Content({ designationId, designationName }: ContentProps) {
                     variant="ghost"
                     size="icon"
                     aria-label="Clear from date"
-                    className={`size-8 shrink-0 ${dateFrom ? '' : 'invisible pointer-events-none'}`}
+                    className={cn(
+                      'size-8 shrink-0',
+                      !dateFrom && 'invisible pointer-events-none',
+                    )}
                     onClick={() => setDateFrom(null)}
                   >
                     <X className="size-3.5" />
@@ -486,7 +490,10 @@ export function Content({ designationId, designationName }: ContentProps) {
                     variant="ghost"
                     size="icon"
                     aria-label="Clear to date"
-                    className={`size-8 shrink-0 ${dateTo ? '' : 'invisible pointer-events-none'}`}
+                    className={cn(
+                      'size-8 shrink-0',
+                      !dateTo && 'invisible pointer-events-none',
+                    )}
                     onClick={() => setDateTo(null)}
                   >
                     <X className="size-3.5" />
