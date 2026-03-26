@@ -83,6 +83,7 @@ export function Content({ designationId }: ContentProps) {
           <div key={category.id} className="group relative h-full">
             <Link
               href={`/purchases?category=${category.id}`}
+              prefetch={false}
               className="h-full"
             >
               <Card

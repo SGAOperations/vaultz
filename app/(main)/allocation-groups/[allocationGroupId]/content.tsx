@@ -64,7 +64,10 @@ export function Content({ allocationGroupId }: ContentProps) {
         actions={
           <div className="flex gap-2">
             <CreatePurchaseDialog allocationGroups={[allocationGroup]} />
-            <Link href={`/purchases?allocationGroup=${allocationGroupId}`}>
+            <Link
+              href={`/purchases?allocationGroup=${allocationGroupId}`}
+              prefetch={false}
+            >
               <Button variant="outline" className="gap-2">
                 <ShoppingCart className="size-4" />
                 View Purchases
@@ -107,6 +110,7 @@ export function Content({ allocationGroupId }: ContentProps) {
           {allocationGroup.allocations.map((allocation) => (
             <Link
               href={`/purchases?allocation=${allocation.id}`}
+              prefetch={false}
               key={allocation.id}
               className="group h-full"
             >
