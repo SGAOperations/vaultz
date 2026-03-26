@@ -54,7 +54,7 @@ interface ContentProps {
 }
 
 function formatDateLabel(value: string | null) {
-  if (!value) return 'Date';
+  if (!value) return '';
   return new Date(value).toLocaleDateString(undefined, {
     month: 'short',
     day: 'numeric',
@@ -218,11 +218,7 @@ export function Content({ designationId, designationName }: ContentProps) {
   const userFilterLabel = selectedUser
     ? `${selectedUser.first} ${selectedUser.last}`
     : 'All Users';
-  const dateRangeLabel =
-    dateFrom || dateTo
-      ? `${formatDateLabel(dateFrom)} - ${formatDateLabel(dateTo)}`
-      : 'Date Range';
-
+  const hasDateRangeSelection = !!(dateFrom || dateTo);
   const hasActiveFilters = !!(
     categoryId ||
     allocationGroupId ||
@@ -441,24 +437,24 @@ export function Content({ designationId, designationName }: ContentProps) {
                   className="gap-1.5 rounded-full"
                 >
                   <CalendarRange className="size-3.5" />
-                  {dateRangeLabel}
+                  <span className="inline-flex min-w-0 items-center gap-1">
+                    <span className="truncate">{formatDateLabel(dateFrom)}</span>
+                    {hasDateRangeSelection ? '-' : 'Date Range'}
+                    <span className="truncate">{formatDateLabel(dateTo)}</span>
+                  </span>
                   <ChevronDown className="size-3.5" />
                 </Button>
               </PopoverTrigger>
               <PopoverContent align="start" className="w-[22rem] p-3">
-                <div className="grid grid-cols-[auto_1fr_auto] items-center gap-x-2 gap-y-3">
+                <div className="grid grid-cols-[2.5rem_minmax(0,1fr)_auto] items-center gap-x-1 gap-y-3">
                   <span className="text-muted-foreground text-xs font-medium">
                     From
                   </span>
                   <div className="min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <DatePicker
-                        value={dateFrom ? new Date(dateFrom) : undefined}
-                        onChange={(d) =>
-                          setDateFrom(d.toISOString().split('T')[0])
-                        }
-                      />
-                    </div>
+                    <DatePicker
+                      value={dateFrom ? new Date(dateFrom) : undefined}
+                      onChange={(d) => setDateFrom(d.toISOString().split('T')[0])}
+                    />
                   </div>
                   <Button
                     variant="ghost"
@@ -477,14 +473,10 @@ export function Content({ designationId, designationName }: ContentProps) {
                     To
                   </span>
                   <div className="min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <DatePicker
-                        value={dateTo ? new Date(dateTo) : undefined}
-                        onChange={(d) =>
-                          setDateTo(d.toISOString().split('T')[0])
-                        }
-                      />
-                    </div>
+                    <DatePicker
+                      value={dateTo ? new Date(dateTo) : undefined}
+                      onChange={(d) => setDateTo(d.toISOString().split('T')[0])}
+                    />
                   </div>
                   <Button
                     variant="ghost"
