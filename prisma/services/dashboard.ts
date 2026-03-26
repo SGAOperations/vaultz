@@ -120,11 +120,6 @@ export async function getSpendingByCategoryForDesignation(
     );
     const budget = baseBudget + incoming - outgoing;
     const spent = purchases;
-    return {
-      name: category.name,
-      budget,
-      spent,
-      remaining: budget - spent,
-    };
+    return { name: category.name, budget, spent, remaining: budget - spent };
   });
 }
