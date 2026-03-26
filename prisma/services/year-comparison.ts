@@ -56,6 +56,14 @@ export async function getYearComparisonData({
           where: { excludeFromTotal: false, yearId: { in: yearIds } },
           select: { amount: true, yearId: true },
         },
+        transfersTo: {
+          where: { deletedAt: null, yearId: { in: yearIds } },
+          select: { amount: true, yearId: true },
+        },
+        transfersFrom: {
+          where: { deletedAt: null, yearId: { in: yearIds } },
+          select: { amount: true, yearId: true },
+        },
       },
       orderBy: { code: 'asc' },
     }),
@@ -73,10 +81,17 @@ export async function getYearComparisonData({
         (yearId) => {
           const year = years.find((y) => y.id === yearId);
           const cy = category.categoryYears.find((cy) => cy.yearId === yearId);
-          const budget = cy ? cy.amount.toNumber() : 0;
+          const baseBudget = cy ? cy.amount.toNumber() : 0;
           const spent = category.purchases
             .filter((p) => p.yearId === yearId)
             .reduce((acc, p) => acc + p.amount.toNumber(), 0);
+          const transfersIn = category.transfersTo
+            .filter((t) => t.yearId === yearId)
+            .reduce((acc, t) => acc + t.amount.toNumber(), 0);
+          const transfersOut = category.transfersFrom
+            .filter((t) => t.yearId === yearId)
+            .reduce((acc, t) => acc + t.amount.toNumber(), 0);
+          const budget = baseBudget + transfersIn - transfersOut;
           return {
             yearId,
             yearName: year?.name ?? '',
