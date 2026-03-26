@@ -5,14 +5,16 @@ import { useMemo } from 'react';
 import { useYear } from '@/contexts/YearContext';
 import { useQuery } from '@tanstack/react-query';
 import { SortingState } from '@tanstack/react-table';
-import { ChevronDown, Layers, Tag, Wallet, X } from 'lucide-react';
+import { ChevronDown, Layers, Tag, User, Wallet, X } from 'lucide-react';
 import { useQueryState } from 'nuqs';
 
 import { getMiscAllocations } from '@/prisma/services/allocation';
 import { getAllAllocationGroups } from '@/prisma/services/allocation-groups';
 import { getCategoriesWithAvailableAmount } from '@/prisma/services/category';
+import { getPeriodsForYear } from '@/prisma/services/period';
 import { getAllProcessTemplates } from '@/prisma/services/process-templates';
 import { getPurchasesByDesignation } from '@/prisma/services/purchase';
+import { getUsers } from '@/prisma/services/user';
 
 import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/page-header';
@@ -23,6 +25,8 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
@@ -40,6 +44,7 @@ export function Content({ designationId, designationName }: ContentProps) {
   const [allocationGroupId, setAllocationGroupId] =
     useQueryState('allocationGroup');
   const [allocationId, setAllocationId] = useQueryState('allocation');
+  const [userId, setUserId] = useQueryState('user');
   const [sortField, setSortField] = useQueryState('sort');
   const [sortOrder, setSortOrder] = useQueryState('order');
 
@@ -86,9 +91,23 @@ export function Content({ designationId, designationName }: ContentProps) {
     },
   );
 
+  const { data: periods, isLoading: periodsLoading } = useQuery({
+    queryKey: ['periods', selectedYear?.id],
+    queryFn: () =>
+      selectedYear
+        ? getPeriodsForYear(selectedYear.id, true)
+        : Promise.resolve([]),
+    enabled: !!selectedYear,
+  });
+
   const { data: processTemplates } = useQuery({
     queryKey: ['process-templates'],
     queryFn: () => getAllProcessTemplates(true),
+  });
+
+  const { data: users } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => getUsers(),
   });
 
   const allAllocations = useMemo(
@@ -101,40 +120,93 @@ export function Content({ designationId, designationName }: ContentProps) {
     [allocationGroups, miscAllocations],
   );
 
+  const miscAllocationIds = useMemo(
+    () => new Set((miscAllocations ?? []).map((a) => a.id)),
+    [miscAllocations],
+  );
+
+  const groupedAllocations = useMemo(() => {
+    if (!periods || !allocationGroups || !miscAllocations) return [];
+
+    return periods
+      .map((period) => {
+        const groups = allocationGroups
+          .map((group) => ({
+            ...group,
+            allocations: group.allocations.filter(
+              (a) => a.periodId === period.id,
+            ),
+          }))
+          .filter((group) => group.allocations.length > 0);
+
+        const misc = miscAllocations.filter((a) => a.periodId === period.id);
+
+        return { period, groups, misc };
+      })
+      .filter(({ groups, misc }) => groups.length > 0 || misc.length > 0);
+  }, [periods, allocationGroups, miscAllocations]);
+
   const filteredPurchases = useMemo(() => {
     if (!purchases) return [];
-    const groupAllocationIds = allocationGroupId
-      ? new Set(
+    return purchases.filter((p) => {
+      if (categoryId && p.categoryId !== categoryId) return false;
+
+      if (allocationGroupId === 'none') {
+        if (p.allocationId !== null && !miscAllocationIds.has(p.allocationId))
+          return false;
+      } else if (allocationGroupId) {
+        const groupAllocationIds = new Set(
           allocationGroups
             ?.find((g) => g.id === allocationGroupId)
             ?.allocations.map((a) => a.id) ?? [],
-        )
-      : null;
-    return purchases.filter(
-      (p) =>
-        (!categoryId || p.categoryId === categoryId) &&
-        (!groupAllocationIds ||
-          (p.allocationId != null && groupAllocationIds.has(p.allocationId))) &&
-        (!allocationId || p.allocationId === allocationId),
-    );
+        );
+        if (p.allocationId === null || !groupAllocationIds.has(p.allocationId))
+          return false;
+      }
+
+      if (allocationId === 'none') {
+        if (p.allocationId !== null) return false;
+      } else if (allocationId && p.allocationId !== allocationId) {
+        return false;
+      }
+
+      if (userId && p.userId !== userId) return false;
+
+      return true;
+    });
   }, [
     purchases,
     categoryId,
     allocationGroupId,
     allocationId,
+    userId,
     allocationGroups,
+    miscAllocationIds,
   ]);
 
   const categoryFilterLabel =
     categories?.find((c) => c.id === categoryId)?.name ?? 'All Categories';
   const allocationGroupFilterLabel =
-    allocationGroups?.find((g) => g.id === allocationGroupId)?.name ??
-    'All Allocation Groups';
+    allocationGroupId === 'none'
+      ? 'No Allocation Group'
+      : (allocationGroups?.find((g) => g.id === allocationGroupId)?.name ??
+        'All Allocation Groups');
   const allocationFilterLabel =
-    allAllocations.find((a) => a.id === allocationId)?.name ??
-    'All Allocations';
+    allocationId === 'none'
+      ? 'No Allocation'
+      : (allAllocations.find((a) => a.id === allocationId)?.name ??
+        'All Allocations');
+  const selectedUser = users?.find((u) => u.id === userId);
+  const userFilterLabel = selectedUser
+    ? `${selectedUser.first} ${selectedUser.last}`
+    : 'All Users';
 
-  const hasActiveFilters = !!(categoryId || allocationGroupId || allocationId);
+  const hasActiveFilters = !!(
+    categoryId ||
+    allocationGroupId ||
+    allocationId ||
+    userId
+  );
 
   return (
     <div className="flex w-full flex-col">
@@ -214,6 +286,13 @@ export function Content({ designationId, designationName }: ContentProps) {
                   >
                     All Allocation Groups
                   </DropdownMenuCheckboxItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuCheckboxItem
+                    checked={allocationGroupId === 'none'}
+                    onClick={() => setAllocationGroupId('none')}
+                  >
+                    No Allocation Group
+                  </DropdownMenuCheckboxItem>
                   {allocationGroups && allocationGroups.length > 0 && (
                     <DropdownMenuSeparator />
                   )}
@@ -232,6 +311,7 @@ export function Content({ designationId, designationName }: ContentProps) {
 
             {(allocationGroupsLoading ||
               miscAllocationsLoading ||
+              periodsLoading ||
               allAllocations.length > 0) && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -239,7 +319,11 @@ export function Content({ designationId, designationName }: ContentProps) {
                     variant={allocationId ? 'default' : 'outline'}
                     size="sm"
                     className="gap-1.5 rounded-full"
-                    disabled={miscAllocationsLoading || allocationGroupsLoading}
+                    disabled={
+                      miscAllocationsLoading ||
+                      allocationGroupsLoading ||
+                      periodsLoading
+                    }
                   >
                     <Wallet className="size-3.5" />
                     {allocationFilterLabel}
@@ -253,19 +337,91 @@ export function Content({ designationId, designationName }: ContentProps) {
                   >
                     All Allocations
                   </DropdownMenuCheckboxItem>
-                  {allAllocations.length > 0 && <DropdownMenuSeparator />}
-                  {allAllocations.map((a) => (
-                    <DropdownMenuCheckboxItem
-                      key={a.id}
-                      checked={allocationId === a.id}
-                      onClick={() => setAllocationId(a.id)}
-                    >
-                      {a.name}
-                    </DropdownMenuCheckboxItem>
-                  ))}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuCheckboxItem
+                    checked={allocationId === 'none'}
+                    onClick={() => setAllocationId('none')}
+                  >
+                    No Allocation
+                  </DropdownMenuCheckboxItem>
+                  {groupedAllocations.length > 0 && <DropdownMenuSeparator />}
+                  {groupedAllocations.map(
+                    ({ period, groups, misc }, periodIdx) => (
+                      <DropdownMenuGroup key={period.id}>
+                        {periodIdx > 0 && <DropdownMenuSeparator />}
+                        <DropdownMenuLabel className="text-muted-foreground text-xs font-semibold">
+                          {period.name}
+                        </DropdownMenuLabel>
+                        {groups.map((group) => (
+                          <DropdownMenuGroup key={group.id}>
+                            <DropdownMenuLabel className="text-muted-foreground pl-4 text-xs font-medium">
+                              {group.name}
+                            </DropdownMenuLabel>
+                            {group.allocations.map((a) => (
+                              <DropdownMenuCheckboxItem
+                                key={a.id}
+                                checked={allocationId === a.id}
+                                onClick={() => setAllocationId(a.id)}
+                              >
+                                {a.name}
+                              </DropdownMenuCheckboxItem>
+                            ))}
+                          </DropdownMenuGroup>
+                        ))}
+                        {misc.length > 0 && (
+                          <DropdownMenuGroup>
+                            <DropdownMenuLabel className="text-muted-foreground pl-4 text-xs font-medium">
+                              Miscellaneous
+                            </DropdownMenuLabel>
+                            {misc.map((a) => (
+                              <DropdownMenuCheckboxItem
+                                key={a.id}
+                                checked={allocationId === a.id}
+                                onClick={() => setAllocationId(a.id)}
+                              >
+                                {a.name}
+                              </DropdownMenuCheckboxItem>
+                            ))}
+                          </DropdownMenuGroup>
+                        )}
+                      </DropdownMenuGroup>
+                    ),
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant={userId ? 'default' : 'outline'}
+                  size="sm"
+                  className="gap-1.5 rounded-full"
+                >
+                  <User className="size-3.5" />
+                  {userFilterLabel}
+                  <ChevronDown className="size-3.5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuCheckboxItem
+                  checked={!userId}
+                  onClick={() => setUserId(null)}
+                >
+                  All Users
+                </DropdownMenuCheckboxItem>
+                {users && users.length > 0 && <DropdownMenuSeparator />}
+                {users?.map((u) => (
+                  <DropdownMenuCheckboxItem
+                    key={u.id}
+                    checked={userId === u.id}
+                    onClick={() => setUserId(u.id)}
+                  >
+                    {u.first} {u.last}
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             {hasActiveFilters && (
               <Button
@@ -276,6 +432,7 @@ export function Content({ designationId, designationName }: ContentProps) {
                   setCategoryId(null);
                   setAllocationGroupId(null);
                   setAllocationId(null);
+                  setUserId(null);
                 }}
               >
                 <X className="size-3" />

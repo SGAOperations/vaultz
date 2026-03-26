@@ -102,7 +102,7 @@ export async function getSpendingByCategoryForDesignation(
   });
 
   return categories.map((category) => {
-    const budget = category.categoryYears.reduce(
+    const baseBudget = category.categoryYears.reduce(
       (sum, cy) => sum + cy.amount.toNumber(),
       0,
     );
@@ -118,12 +118,8 @@ export async function getSpendingByCategoryForDesignation(
       (sum, t) => sum + t.amount.toNumber(),
       0,
     );
-    const spent = purchases + outgoing;
-    return {
-      name: category.name,
-      budget,
-      spent,
-      remaining: budget - spent + incoming,
-    };
+    const budget = baseBudget + incoming - outgoing;
+    const spent = purchases;
+    return { name: category.name, budget, spent, remaining: budget - spent };
   });
 }
