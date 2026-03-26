@@ -144,8 +144,7 @@ model ProcessStep {
     parent       ProcessStep?  @relation("StepBranches", fields: [parentStepId], references: [id])
     children     ProcessStep[] @relation("StepBranches")
 
-    completions       PurchaseStepCompletion[]
-    currentProcesses  PurchaseProcess[]
+    completions PurchaseStepCompletion[]
 }
 
 model PurchaseProcess {
@@ -159,9 +158,6 @@ model PurchaseProcess {
     purchase   Purchase        @relation(fields: [purchaseId], references: [id])
     templateId String
     template   ProcessTemplate @relation(fields: [templateId], references: [id])
-
-    currentStepId String?
-    currentStep   ProcessStep? @relation(fields: [currentStepId], references: [id])
 
     completions PurchaseStepCompletion[]
 }
