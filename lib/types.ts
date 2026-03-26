@@ -97,9 +97,7 @@ export type ProcessTemplateWithSteps = ProcessTemplate & {
   steps: ProcessStep[];
 };
 
-export type ProcessStepNode = ProcessStep & {
-  children: ProcessStepNode[];
-};
+export type ProcessStepNode = ProcessStep & { children: ProcessStepNode[] };
 
 export type ProcessTemplateWithStepTree = ProcessTemplate & {
   steps: ProcessStepNode[];
