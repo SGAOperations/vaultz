@@ -106,6 +106,46 @@ export async function getMiscAllocations(
   }));
 }
 
+export async function updateAllocation({
+  id,
+  name,
+  amount,
+}: {
+  id: string;
+  name: string;
+  amount: number;
+}): Promise<ResponseType<Allocation>> {
+  const allocation = await prisma.allocation.update({
+    where: { id },
+    data: { name, amount },
+  });
+
+  revalidatePath('/allocation-groups');
+
+  return { ...allocation, amount: allocation.amount.toNumber() };
+}
+
+export async function deleteAllocation(
+  id: string,
+): Promise<ResponseType<void>> {
+  const allocation = await prisma.allocation.findUnique({
+    where: { id },
+    include: { purchases: { take: 1 } },
+  });
+
+  if (!allocation) return { error: 'Allocation not found.' };
+
+  if (allocation.purchases.length > 0)
+    return {
+      error:
+        'Cannot delete an allocation that has purchases. Remove all purchases first.',
+    };
+
+  await prisma.allocation.delete({ where: { id } });
+
+  revalidatePath('/allocation-groups');
+}
+
 export async function copyAllocationsFromPeriod({
   fromPeriodId,
   toPeriodId,
