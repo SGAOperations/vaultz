@@ -158,7 +158,6 @@ export function Header() {
                     <DropdownMenuItem key={href} asChild>
                       <Link
                         href={href}
-                       
                         className={cn(
                           pathname.startsWith(href) &&
                             'text-primary font-medium',
