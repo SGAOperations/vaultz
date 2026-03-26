@@ -140,6 +140,10 @@ model ProcessStep {
     templateId  String
     template    ProcessTemplate @relation(fields: [templateId], references: [id])
 
+    parentStepId String?
+    parent       ProcessStep?  @relation("StepBranches", fields: [parentStepId], references: [id])
+    children     ProcessStep[] @relation("StepBranches")
+
     completions PurchaseStepCompletion[]
 }
 
