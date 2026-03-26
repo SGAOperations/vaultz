@@ -273,6 +273,103 @@ function PurchaseTableRow({
   );
 }
 
+function PurchaseTotals({
+  rows,
+  categoryMap,
+}: {
+  rows: Row<PurchaseWithUser>[];
+  categoryMap: Map<string, CategoryWithDesignation>;
+}) {
+  const [showBreakdown, setShowBreakdown] = useState(false);
+  const totalCount = rows.length;
+  const totalAmount = rows.reduce((sum, r) => sum + r.original.amount, 0);
+
+  const byCategory = new Map<
+    string,
+    { name: string; count: number; amount: number }
+  >();
+  for (const row of rows) {
+    const { categoryId, amount } = row.original;
+    const existing = byCategory.get(categoryId);
+    if (existing) {
+      existing.count += 1;
+      existing.amount += amount;
+    } else {
+      byCategory.set(categoryId, {
+        name: categoryMap.get(categoryId)?.name ?? 'Unknown Category',
+        count: 1,
+        amount,
+      });
+    }
+  }
+
+  const categoryBreakdown = [...byCategory.entries()]
+    .map(([categoryId, stats]) => ({ categoryId, ...stats }))
+    .sort((a, b) => b.amount - a.amount);
+
+  return (
+    <div className="border-border bg-background/40 flex flex-col gap-1.5 rounded-md border px-2 py-1.5 text-sm">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <div className="flex items-baseline gap-1">
+          <span className="text-muted-foreground text-xs tracking-normal">
+            Purchases
+          </span>
+          <span className="text-foreground font-semibold">{totalCount}</span>
+        </div>
+        <div className="bg-border/50 h-3.5 w-px" />
+        <div className="flex items-baseline gap-1">
+          <span className="text-muted-foreground text-xs tracking-normal">
+            Total
+          </span>
+          <span className="text-foreground font-semibold">
+            {formatCurrency(totalAmount)}
+          </span>
+        </div>
+        {categoryBreakdown.length > 1 && (
+          <>
+            <div className="bg-border/50 h-3.5 w-px" />
+            <button
+              onClick={() => setShowBreakdown((v) => !v)}
+              className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs font-medium transition-colors"
+            >
+              Categories ({categoryBreakdown.length})
+              <ChevronDown
+                className={cn(
+                  'size-3.5 transition-transform',
+                  showBreakdown && 'rotate-180',
+                )}
+              />
+            </button>
+          </>
+        )}
+      </div>
+      {showBreakdown && categoryBreakdown.length > 1 && (
+        <div className="border-border grid gap-x-3 gap-y-1.5 border-t pt-1.5 sm:grid-cols-2 lg:grid-cols-3">
+          {categoryBreakdown.map(({ categoryId, name, count, amount }) => (
+            <div key={categoryId} className="min-w-0">
+              <div className="text-foreground truncate font-medium">{name}</div>
+              <div className="text-muted-foreground mt-0.5 flex items-center gap-2 text-xs">
+                <span>
+                  Count{' '}
+                  <span className="text-foreground/90 font-medium">
+                    {count}
+                  </span>
+                </span>
+                <span>
+                  Spend{' '}
+                  <span className="text-foreground/90 font-medium">
+                    {formatCurrency(amount)}
+                  </span>
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function PurchaseList({
   purchases,
   categories,
@@ -478,6 +575,11 @@ export function PurchaseList({
     [],
   );
 
+  const categoryMap = useMemo(
+    () => new Map(categories.map((c) => [c.id, c])),
+    [categories],
+  );
+
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data: filteredPurchases,
@@ -619,6 +721,10 @@ export function PurchaseList({
           Export CSV
         </Button>
       </div>
+      <PurchaseTotals
+        rows={table.getRowModel().rows}
+        categoryMap={categoryMap}
+      />
       <div className="rounded-lg border">
         <Table className="table-fixed">
           <colgroup>
