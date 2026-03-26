@@ -1,13 +1,4 @@
 {
-  "permissions": {
-    "allow": [
-      "Bash(*)"
-    ]
-  },
-  "worktree": {
-    "symlinkDirectories": [
-      "node_modules",
-      ".next"
-    ]
-  }
+  "permissions": { "allow": ["Bash(*)"] },
+  "worktree": { "symlinkDirectories": ["node_modules", ".next"] }
 }
