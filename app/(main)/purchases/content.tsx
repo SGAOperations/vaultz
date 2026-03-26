@@ -25,7 +25,7 @@ import { getAllProcessTemplates } from '@/prisma/services/process-templates';
 import { getPurchasesByDesignation } from '@/prisma/services/purchase';
 import { getUsers } from '@/prisma/services/user';
 
-import { parseDateOnly } from '@/lib/utils';
+import { cn, parseDateOnly } from '@/lib/utils';
 
 import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/page-header';
@@ -52,6 +52,15 @@ import { Skeleton } from '@/components/ui/skeleton';
 interface ContentProps {
   designationId: string;
   designationName: string;
+}
+
+function formatDateLabel(value: string | null) {
+  if (!value) return '';
+  return new Date(value).toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
 }
 
 export function Content({ designationId, designationName }: ContentProps) {
@@ -254,7 +263,7 @@ export function Content({ designationId, designationName }: ContentProps) {
     periodId === 'none'
       ? 'No Period'
       : ((periods ?? []).find((p) => p.id === periodId)?.name ?? 'All Periods');
-
+  const hasDateRangeSelection = !!(dateFrom || dateTo);
   const hasActiveFilters = !!(
     categoryId ||
     allocationGroupId ||
@@ -530,72 +539,63 @@ export function Content({ designationId, designationName }: ContentProps) {
                   className="gap-1.5 rounded-full"
                 >
                   <CalendarRange className="size-3.5" />
-                  {dateFrom || dateTo
-                    ? [dateFrom, dateTo]
-                        .map((d) =>
-                          d
-                            ? new Date(d).toLocaleDateString(undefined, {
-                                month: 'short',
-                                day: 'numeric',
-                                year: 'numeric',
-                              })
-                            : '…',
-                        )
-                        .join(' – ')
-                    : 'Date Range'}
+                  <span className="inline-flex min-w-0 items-center gap-1">
+                    <span className="truncate">
+                      {formatDateLabel(dateFrom)}
+                    </span>
+                    {hasDateRangeSelection ? '-' : 'Date Range'}
+                    <span className="truncate">{formatDateLabel(dateTo)}</span>
+                  </span>
                   <ChevronDown className="size-3.5" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent align="start" className="w-auto p-4">
-                <div className="flex flex-col gap-4">
-                  <div className="flex flex-col gap-1.5">
-                    <span className="text-muted-foreground text-xs font-medium">
-                      From
-                    </span>
-                    <div className="flex items-center gap-1.5">
-                      <DatePicker
-                        value={dateFrom ? new Date(dateFrom) : undefined}
-                        onChange={(d) =>
-                          setDateFrom(d.toISOString().split('T')[0])
-                        }
-                      />
-                      {dateFrom && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          aria-label="Clear from date"
-                          className="size-8 shrink-0"
-                          onClick={() => setDateFrom(null)}
-                        >
-                          <X className="size-3.5" />
-                        </Button>
-                      )}
-                    </div>
+              <PopoverContent align="start" className="w-[22rem] p-3">
+                <div className="grid grid-cols-[2.5rem_minmax(0,1fr)_auto] items-center gap-x-1 gap-y-3">
+                  <span className="text-muted-foreground text-xs font-medium">
+                    From
+                  </span>
+                  <div className="min-w-0">
+                    <DatePicker
+                      value={dateFrom ? new Date(dateFrom) : undefined}
+                      onChange={(d) =>
+                        setDateFrom(d.toISOString().split('T')[0])
+                      }
+                    />
                   </div>
-                  <div className="flex flex-col gap-1.5">
-                    <span className="text-muted-foreground text-xs font-medium">
-                      To
-                    </span>
-                    <div className="flex items-center gap-1.5">
-                      <DatePicker
-                        value={dateTo ? new Date(dateTo) : undefined}
-                        onChange={(d) =>
-                          setDateTo(d.toISOString().split('T')[0])
-                        }
-                      />
-                      {dateTo && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          aria-label="Clear to date"
-                          className="size-8 shrink-0"
-                          onClick={() => setDateTo(null)}
-                        >
-                          <X className="size-3.5" />
-                        </Button>
-                      )}
-                    </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Clear from date"
+                    className={cn(
+                      'size-8 shrink-0',
+                      !dateFrom && 'pointer-events-none invisible',
+                    )}
+                    onClick={() => setDateFrom(null)}
+                  >
+                    <X className="size-3.5" />
+                  </Button>
+
+                  <span className="text-muted-foreground text-xs font-medium">
+                    To
+                  </span>
+                  <div className="min-w-0">
+                    <DatePicker
+                      value={dateTo ? new Date(dateTo) : undefined}
+                      onChange={(d) => setDateTo(d.toISOString().split('T')[0])}
+                    />
                   </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Clear to date"
+                    className={cn(
+                      'size-8 shrink-0',
+                      !dateTo && 'pointer-events-none invisible',
+                    )}
+                    onClick={() => setDateTo(null)}
+                  >
+                    <X className="size-3.5" />
+                  </Button>
                 </div>
               </PopoverContent>
             </Popover>

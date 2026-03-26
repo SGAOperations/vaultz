@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { DayButton, getDefaultClassNames } from 'react-day-picker';
 
 import {
@@ -103,6 +103,7 @@ export function DatePicker({
   onChange: (value: Date) => void;
 }) {
   const date = value ? new Date(value) : undefined;
+  const containerRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [inputValue, setInputValue] = useState(
     date ? formatDateInput(date) : '',
@@ -131,8 +132,27 @@ export function DatePicker({
     setOpen((prev) => !prev);
   };
 
+  useEffect(() => {
+    if (!open) return;
+
+    const handlePointerDownOutside = (event: PointerEvent) => {
+      const target = event.target;
+      if (!(target instanceof Node)) return;
+      if (!containerRef.current?.contains(target)) setOpen(false);
+    };
+
+    document.addEventListener('pointerdown', handlePointerDownOutside, true);
+    return () => {
+      document.removeEventListener(
+        'pointerdown',
+        handlePointerDownOutside,
+        true,
+      );
+    };
+  }, [open]);
+
   return (
-    <div className="relative">
+    <div ref={containerRef} className="relative">
       <Button
         type="button"
         variant="outline"
