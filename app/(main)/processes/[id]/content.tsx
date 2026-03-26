@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { Fragment } from 'react';
 import { useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 
@@ -10,6 +11,7 @@ import {
   ArrowLeft,
   ChevronDown,
   ChevronUp,
+  GitBranch,
   Loader2,
   Pencil,
   Plus,
@@ -19,6 +21,7 @@ import {
 import { z } from 'zod/v4';
 
 import {
+  addBranchStep,
   addProcessStep,
   deleteProcessStep,
   deleteProcessTemplate,
@@ -28,7 +31,7 @@ import {
   updateProcessTemplate,
 } from '@/prisma/services/process-templates';
 
-import { ProcessTemplateWithSteps } from '@/lib/types';
+import { ProcessStepNode, ProcessTemplateWithStepTree } from '@/lib/types';
 import { handleError, isError } from '@/lib/utils';
 
 import { EmptyState } from '@/components/empty-state';
@@ -48,7 +51,17 @@ import { FormDialog } from '@/components/ui/form-dialog';
 import { FormInput } from '@/components/ui/form-input';
 import { FormTextarea } from '@/components/ui/form-textarea';
 
-type LocalStep = { id: string; name: string; description: string };
+type LocalStepNode = {
+  id: string;
+  name: string;
+  description: string;
+  children: LocalStepNode[];
+};
+
+type AddFormState =
+  | { type: 'root' }
+  | { type: 'branch'; siblingStepId: string }
+  | null;
 
 const stepSchema = z.object({
   name: z
@@ -68,31 +81,123 @@ const templateSchema = z.object({
 });
 type TemplateFormData = z.infer<typeof templateSchema>;
 
+function fromStepNode(node: ProcessStepNode): LocalStepNode {
+  return {
+    id: node.id,
+    name: node.name,
+    description: node.description ?? '',
+    children: node.children.map(fromStepNode),
+  };
+}
+
+function updateNodeInTree(
+  nodes: LocalStepNode[],
+  id: string,
+  update: Partial<Omit<LocalStepNode, 'children'>>,
+): LocalStepNode[] {
+  return nodes.map((node) => {
+    if (node.id === id) return { ...node, ...update };
+    return { ...node, children: updateNodeInTree(node.children, id, update) };
+  });
+}
+
+function removeNodeFromTree(
+  nodes: LocalStepNode[],
+  id: string,
+): LocalStepNode[] {
+  return nodes
+    .filter((n) => n.id !== id)
+    .map((n) => ({ ...n, children: removeNodeFromTree(n.children, id) }));
+}
+
+function countNodes(nodes: LocalStepNode[]): number {
+  return nodes.reduce((acc, n) => acc + 1 + countNodes(n.children), 0);
+}
+
+function AddStepForm({
+  label,
+  isMutating,
+  onAdd,
+  onCancel,
+}: {
+  label: string;
+  isMutating: boolean;
+  onAdd: (data: StepFormData) => Promise<void>;
+  onCancel: () => void;
+}) {
+  const form = useForm<StepFormData>({
+    resolver: zodResolver(stepSchema),
+    defaultValues: { name: '', description: '' },
+  });
+
+  return (
+    <Card className="p-4">
+      <FormProvider {...form}>
+        <form
+          onSubmit={form.handleSubmit(onAdd)}
+          className="flex flex-col gap-3"
+        >
+          <p className="text-sm font-medium">{label}</p>
+          <FormInput<StepFormData> name="name" label="Name" autoFocus />
+          <FormTextarea<StepFormData>
+            name="description"
+            label="Description"
+            placeholder="Optional"
+          />
+          <div className="flex gap-2">
+            <Button
+              type="submit"
+              size="sm"
+              disabled={form.formState.isSubmitting || isMutating}
+            >
+              {form.formState.isSubmitting && (
+                <Loader2 className="animate-spin" />
+              )}
+              Add
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={onCancel}
+              disabled={form.formState.isSubmitting}
+            >
+              Cancel
+            </Button>
+          </div>
+        </form>
+      </FormProvider>
+    </Card>
+  );
+}
+
 function StepCard({
-  step,
-  idx,
-  total,
+  node,
+  siblingIdx,
+  siblingCount,
   isMutating,
   onEdit,
   onDelete,
   onMove,
+  onAddBranch,
 }: {
-  step: LocalStep;
-  idx: number;
-  total: number;
+  node: LocalStepNode;
+  siblingIdx: number;
+  siblingCount: number;
   isMutating: boolean;
   onEdit: (id: string, data: StepFormData) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   onMove: (id: string, dir: 'up' | 'down') => Promise<void>;
+  onAddBranch: (stepId: string) => void;
 }) {
   const [editing, setEditing] = useState(false);
   const form = useForm<StepFormData>({
     resolver: zodResolver(stepSchema),
-    defaultValues: { name: step.name, description: step.description },
+    defaultValues: { name: node.name, description: node.description },
   });
 
   async function onSubmit(data: StepFormData) {
-    await onEdit(step.id, data);
+    await onEdit(node.id, data);
     setEditing(false);
   }
 
@@ -144,13 +249,13 @@ function StepCard({
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3">
           <span className="text-muted-foreground bg-muted flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-medium">
-            {idx + 1}
+            {siblingIdx + 1}
           </span>
           <div>
-            <p className="font-medium">{step.name}</p>
-            {step.description && (
+            <p className="font-medium">{node.name}</p>
+            {node.description && (
               <p className="text-muted-foreground text-sm">
-                {step.description}
+                {node.description}
               </p>
             )}
           </div>
@@ -160,8 +265,8 @@ function StepCard({
             size="icon"
             variant="ghost"
             className="size-8"
-            onClick={() => onMove(step.id, 'up')}
-            disabled={idx === 0 || isMutating}
+            onClick={() => onMove(node.id, 'up')}
+            disabled={siblingIdx === 0 || isMutating}
           >
             <ChevronUp className="size-4" />
           </Button>
@@ -169,10 +274,20 @@ function StepCard({
             size="icon"
             variant="ghost"
             className="size-8"
-            onClick={() => onMove(step.id, 'down')}
-            disabled={idx === total - 1 || isMutating}
+            onClick={() => onMove(node.id, 'down')}
+            disabled={siblingIdx === siblingCount - 1 || isMutating}
           >
             <ChevronDown className="size-4" />
+          </Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="size-8"
+            title="Add branch at this level"
+            onClick={() => onAddBranch(node.id)}
+            disabled={isMutating}
+          >
+            <GitBranch className="size-4" />
           </Button>
           <Button
             size="icon"
@@ -187,7 +302,7 @@ function StepCard({
             size="icon"
             variant="ghost"
             className="text-destructive hover:text-destructive size-8"
-            onClick={() => onDelete(step.id)}
+            onClick={() => onDelete(node.id)}
             disabled={isMutating}
           >
             <Trash2 className="size-4" />
@@ -198,84 +313,106 @@ function StepCard({
   );
 }
 
-function AddStepCard({
+function StepGroup({
+  nodes,
+  depth,
   isMutating,
-  onAdd,
-  onCancel,
+  addFormState,
+  onEdit,
+  onDelete,
+  onMove,
+  onAddBranch,
+  onAddFormSubmit,
+  onAddFormCancel,
 }: {
+  nodes: LocalStepNode[];
+  depth: number;
   isMutating: boolean;
-  onAdd: (data: StepFormData) => Promise<void>;
-  onCancel: () => void;
+  addFormState: AddFormState;
+  onEdit: (id: string, data: StepFormData) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
+  onMove: (id: string, dir: 'up' | 'down') => Promise<void>;
+  onAddBranch: (stepId: string) => void;
+  onAddFormSubmit: (data: StepFormData) => Promise<void>;
+  onAddFormCancel: () => void;
 }) {
-  const form = useForm<StepFormData>({
-    resolver: zodResolver(stepSchema),
-    defaultValues: { name: '', description: '' },
-  });
+  const showBranchForm =
+    addFormState?.type === 'branch' &&
+    nodes.some((n) => n.id === addFormState.siblingStepId);
+
+  const groupProps = {
+    isMutating,
+    addFormState,
+    onEdit,
+    onDelete,
+    onMove,
+    onAddBranch,
+    onAddFormSubmit,
+    onAddFormCancel,
+  };
 
   return (
-    <Card className="p-4">
-      <FormProvider {...form}>
-        <form
-          onSubmit={form.handleSubmit(onAdd)}
-          className="flex flex-col gap-3"
-        >
-          <p className="text-sm font-medium">New Step</p>
-          <FormInput<StepFormData> name="name" label="Name" autoFocus />
-          <FormTextarea<StepFormData>
-            name="description"
-            label="Description"
-            placeholder="Optional"
+    <div
+      className={
+        depth > 0
+          ? 'border-muted ml-5 flex flex-col gap-2 border-l-2 pl-4'
+          : 'flex flex-col gap-2'
+      }
+    >
+      {nodes.map((node, idx) => (
+        <Fragment key={node.id}>
+          <StepCard
+            node={node}
+            siblingIdx={idx}
+            siblingCount={nodes.length}
+            isMutating={isMutating || (showBranchForm && !isMutating)}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            onMove={onMove}
+            onAddBranch={onAddBranch}
           />
-          <div className="flex gap-2">
-            <Button
-              type="submit"
-              size="sm"
-              disabled={form.formState.isSubmitting || isMutating}
-            >
-              {form.formState.isSubmitting && (
-                <Loader2 className="animate-spin" />
-              )}
-              Add Step
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={onCancel}
-              disabled={form.formState.isSubmitting}
-            >
-              Cancel
-            </Button>
-          </div>
-        </form>
-      </FormProvider>
-    </Card>
+          {node.children.length > 0 && (
+            <StepGroup
+              nodes={node.children}
+              depth={depth + 1}
+              {...groupProps}
+            />
+          )}
+        </Fragment>
+      ))}
+      {showBranchForm && (
+        <AddStepForm
+          label="New Branch"
+          isMutating={isMutating}
+          onAdd={onAddFormSubmit}
+          onCancel={onAddFormCancel}
+        />
+      )}
+    </div>
   );
 }
 
-export function Content({ template }: { template: ProcessTemplateWithSteps }) {
+export function Content({
+  template,
+}: {
+  template: ProcessTemplateWithStepTree;
+}) {
   const router = useRouter();
   const isDeleted = template.deletedAt !== null;
 
-  const [steps, setSteps] = useState<LocalStep[]>(
-    template.steps.map((s) => ({
-      id: s.id,
-      name: s.name,
-      description: s.description ?? '',
-    })),
+  const [steps, setSteps] = useState<LocalStepNode[]>(
+    template.steps.map(fromStepNode),
   );
   const [isMutating, setIsMutating] = useState(false);
-  const [showAddForm, setShowAddForm] = useState(false);
+  const [addFormState, setAddFormState] = useState<AddFormState>(null);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
 
   async function handleEditStep(stepId: string, data: StepFormData) {
     setIsMutating(true);
-    const prev = [...steps];
-    setSteps((s) =>
-      s.map((step) => (step.id === stepId ? { ...step, ...data } : step)),
-    );
+    const prev = steps;
+    setSteps(updateNodeInTree(steps, stepId, data));
     try {
       await handleError(
         updateProcessStep(stepId, template.id, {
@@ -299,8 +436,8 @@ export function Content({ template }: { template: ProcessTemplateWithSteps }) {
 
   async function handleDeleteStep(stepId: string) {
     setIsMutating(true);
-    const prev = [...steps];
-    setSteps((s) => s.filter((step) => step.id !== stepId));
+    const prev = steps;
+    setSteps(removeNodeFromTree(steps, stepId));
     try {
       await handleError(deleteProcessStep(stepId, template.id), {
         toast: {
@@ -318,14 +455,6 @@ export function Content({ template }: { template: ProcessTemplateWithSteps }) {
 
   async function handleMoveStep(stepId: string, direction: 'up' | 'down') {
     setIsMutating(true);
-    const prev = [...steps];
-    const idx = steps.findIndex((s) => s.id === stepId);
-    const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
-    if (swapIdx >= 0 && swapIdx < steps.length) {
-      const next = [...steps];
-      [next[idx], next[swapIdx]] = [next[swapIdx], next[idx]];
-      setSteps(next);
-    }
     try {
       await handleError(moveProcessStep(template.id, stepId, direction), {
         toast: {
@@ -334,7 +463,6 @@ export function Content({ template }: { template: ProcessTemplateWithSteps }) {
           error: 'Failed to move step',
         },
         onSuccess: () => router.refresh(),
-        onError: () => setSteps(prev),
       });
     } finally {
       setIsMutating(false);
@@ -356,7 +484,33 @@ export function Content({ template }: { template: ProcessTemplateWithSteps }) {
             error: 'Failed to add step',
           },
           onSuccess: () => {
-            setShowAddForm(false);
+            setAddFormState(null);
+            router.refresh();
+          },
+        },
+      );
+    } finally {
+      setIsMutating(false);
+    }
+  }
+
+  async function handleAddBranchSubmit(data: StepFormData) {
+    if (addFormState?.type !== 'branch') return;
+    setIsMutating(true);
+    try {
+      await handleError(
+        addBranchStep(template.id, addFormState.siblingStepId, {
+          name: data.name,
+          description: data.description || undefined,
+        }),
+        {
+          toast: {
+            loading: 'Adding branch...',
+            success: 'Branch added',
+            error: 'Failed to add branch',
+          },
+          onSuccess: () => {
+            setAddFormState(null);
             router.refresh();
           },
         },
@@ -493,8 +647,8 @@ export function Content({ template }: { template: ProcessTemplateWithSteps }) {
             <Button
               size="sm"
               variant="outline"
-              onClick={() => setShowAddForm(true)}
-              disabled={showAddForm || isMutating}
+              onClick={() => setAddFormState({ type: 'root' })}
+              disabled={addFormState !== null || isMutating}
             >
               <Plus className="size-4" />
               Add Step
@@ -504,29 +658,32 @@ export function Content({ template }: { template: ProcessTemplateWithSteps }) {
       />
 
       <div className="flex flex-col gap-2">
-        {steps.length === 0 && !showAddForm && (
+        {countNodes(steps) === 0 && addFormState === null && (
           <EmptyState
             message="No steps yet"
             description="Add steps to define the workflow for this process template"
           />
         )}
-        {steps.map((step, idx) => (
-          <StepCard
-            key={step.id}
-            step={step}
-            idx={idx}
-            total={steps.length}
-            isMutating={isMutating || isDeleted}
-            onEdit={handleEditStep}
-            onDelete={handleDeleteStep}
-            onMove={handleMoveStep}
-          />
-        ))}
-        {showAddForm && !isDeleted && (
-          <AddStepCard
+        <StepGroup
+          nodes={steps}
+          depth={0}
+          isMutating={isMutating || isDeleted}
+          addFormState={addFormState}
+          onEdit={handleEditStep}
+          onDelete={handleDeleteStep}
+          onMove={handleMoveStep}
+          onAddBranch={(stepId) =>
+            setAddFormState({ type: 'branch', siblingStepId: stepId })
+          }
+          onAddFormSubmit={handleAddBranchSubmit}
+          onAddFormCancel={() => setAddFormState(null)}
+        />
+        {addFormState?.type === 'root' && !isDeleted && (
+          <AddStepForm
+            label="New Step"
             isMutating={isMutating}
             onAdd={handleAddStep}
-            onCancel={() => setShowAddForm(false)}
+            onCancel={() => setAddFormState(null)}
           />
         )}
       </div>
