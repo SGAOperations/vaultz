@@ -7,6 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import { SortingState } from '@tanstack/react-table';
 import {
   CalendarDays,
+  CalendarRange,
   ChevronDown,
   Layers,
   Tag,
@@ -24,11 +25,14 @@ import { getAllProcessTemplates } from '@/prisma/services/process-templates';
 import { getPurchasesByDesignation } from '@/prisma/services/purchase';
 import { getUsers } from '@/prisma/services/user';
 
+import { cn, parseDateOnly } from '@/lib/utils';
+
 import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/page-header';
 import { CreatePurchaseDialog } from '@/components/purchase-dialog';
 import { PurchaseList } from '@/components/purchase-list';
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -38,11 +42,25 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface ContentProps {
   designationId: string;
   designationName: string;
+}
+
+function formatDateLabel(value: string | null) {
+  if (!value) return '';
+  return new Date(value).toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
 }
 
 export function Content({ designationId, designationName }: ContentProps) {
@@ -52,6 +70,8 @@ export function Content({ designationId, designationName }: ContentProps) {
   const [allocationGroupId, setAllocationGroupId] =
     useQueryState('allocationGroup');
   const [allocationId, setAllocationId] = useQueryState('allocation');
+  const [dateFrom, setDateFrom] = useQueryState('dateFrom');
+  const [dateTo, setDateTo] = useQueryState('dateTo');
   const [userId, setUserId] = useQueryState('user');
   const [periodId, setPeriodId] = useQueryState('period');
   const [sortField, setSortField] = useQueryState('sort');
@@ -181,6 +201,12 @@ export function Content({ designationId, designationName }: ContentProps) {
 
       if (userId && p.userId !== userId) return false;
 
+      if (dateFrom || dateTo) {
+        const purchaseDate = parseDateOnly(p.purchasedAt);
+        if (dateFrom && purchaseDate < new Date(dateFrom)) return false;
+        if (dateTo && purchaseDate > new Date(dateTo)) return false;
+      }
+
       if (periodId === 'none') {
         const purchasedAt = new Date(p.purchasedAt);
         const inAnyPeriod = (periods ?? []).some(
@@ -211,6 +237,8 @@ export function Content({ designationId, designationName }: ContentProps) {
     periodId,
     periods,
     allocationGroups,
+    dateFrom,
+    dateTo,
     miscAllocationIds,
   ]);
 
@@ -235,11 +263,13 @@ export function Content({ designationId, designationName }: ContentProps) {
     periodId === 'none'
       ? 'No Period'
       : ((periods ?? []).find((p) => p.id === periodId)?.name ?? 'All Periods');
-
+  const hasDateRangeSelection = !!(dateFrom || dateTo);
   const hasActiveFilters = !!(
     categoryId ||
     allocationGroupId ||
     allocationId ||
+    dateFrom ||
+    dateTo ||
     userId ||
     periodId
   );
@@ -501,6 +531,75 @@ export function Content({ designationId, designationName }: ContentProps) {
               </DropdownMenu>
             )}
 
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={dateFrom || dateTo ? 'default' : 'outline'}
+                  size="sm"
+                  className="gap-1.5 rounded-full"
+                >
+                  <CalendarRange className="size-3.5" />
+                  <span className="inline-flex min-w-0 items-center gap-1">
+                    <span className="truncate">
+                      {formatDateLabel(dateFrom)}
+                    </span>
+                    {hasDateRangeSelection ? '-' : 'Date Range'}
+                    <span className="truncate">{formatDateLabel(dateTo)}</span>
+                  </span>
+                  <ChevronDown className="size-3.5" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="start" className="w-[22rem] p-3">
+                <div className="grid grid-cols-[2.5rem_minmax(0,1fr)_auto] items-center gap-x-1 gap-y-3">
+                  <span className="text-muted-foreground text-xs font-medium">
+                    From
+                  </span>
+                  <div className="min-w-0">
+                    <DatePicker
+                      value={dateFrom ? new Date(dateFrom) : undefined}
+                      onChange={(d) =>
+                        setDateFrom(d.toISOString().split('T')[0])
+                      }
+                    />
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Clear from date"
+                    className={cn(
+                      'size-8 shrink-0',
+                      !dateFrom && 'pointer-events-none invisible',
+                    )}
+                    onClick={() => setDateFrom(null)}
+                  >
+                    <X className="size-3.5" />
+                  </Button>
+
+                  <span className="text-muted-foreground text-xs font-medium">
+                    To
+                  </span>
+                  <div className="min-w-0">
+                    <DatePicker
+                      value={dateTo ? new Date(dateTo) : undefined}
+                      onChange={(d) => setDateTo(d.toISOString().split('T')[0])}
+                    />
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Clear to date"
+                    className={cn(
+                      'size-8 shrink-0',
+                      !dateTo && 'pointer-events-none invisible',
+                    )}
+                    onClick={() => setDateTo(null)}
+                  >
+                    <X className="size-3.5" />
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
+
             {hasActiveFilters && (
               <Button
                 variant="ghost"
@@ -510,6 +609,8 @@ export function Content({ designationId, designationName }: ContentProps) {
                   setCategoryId(null);
                   setAllocationGroupId(null);
                   setAllocationId(null);
+                  setDateFrom(null);
+                  setDateTo(null);
                   setUserId(null);
                   setPeriodId(null);
                 }}
