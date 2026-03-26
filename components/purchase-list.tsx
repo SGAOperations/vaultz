@@ -308,42 +308,64 @@ function PurchaseTotals({
     .sort((a, b) => b.amount - a.amount);
 
   return (
-    <div className="bg-muted/20 border-border/60 flex flex-col gap-2 rounded-md border p-2 text-sm">
-      <div className="text-muted-foreground flex flex-wrap items-center gap-2">
-        <span className="bg-background/80 border-border/60 rounded-sm border px-2 py-0.5 font-medium">
-          {totalCount} {totalCount === 1 ? 'purchase' : 'purchases'}
-        </span>
-        <span className="text-foreground bg-background border-border/60 rounded-sm border px-2 py-0.5 font-semibold">
-          {formatCurrency(totalAmount)}
-        </span>
+    <div className="border-border/60 bg-muted/10 flex flex-col gap-2 rounded-md border px-3 py-2 text-sm">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+        <div className="flex items-baseline gap-1.5">
+          <span className="text-muted-foreground/80 text-xs tracking-wide uppercase">
+            purchases
+          </span>
+          <span className="text-foreground font-semibold">{totalCount}</span>
+        </div>
+        <div className="bg-border/50 h-4 w-px" />
+        <div className="flex items-baseline gap-1.5">
+          <span className="text-muted-foreground/80 text-xs tracking-wide uppercase">
+            total spend
+          </span>
+          <span className="text-foreground font-semibold">
+            {formatCurrency(totalAmount)}
+          </span>
+        </div>
         {categoryBreakdown.length > 1 && (
-          <button
-            onClick={() => setShowBreakdown((v) => !v)}
-            className="text-muted-foreground hover:text-foreground bg-background/80 border-border/60 flex items-center gap-1 rounded-sm border px-2 py-0.5 transition-colors"
-          >
-            {categoryBreakdown.length} categories
-            <ChevronDown
-              className={cn(
-                'size-3.5 transition-transform',
-                showBreakdown && 'rotate-180',
-              )}
-            />
-          </button>
+          <>
+            <div className="bg-border/50 h-4 w-px" />
+            <button
+              onClick={() => setShowBreakdown((v) => !v)}
+              className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs font-medium tracking-wide uppercase transition-colors"
+            >
+              categories ({categoryBreakdown.length})
+              <ChevronDown
+                className={cn(
+                  'size-3.5 transition-transform',
+                  showBreakdown && 'rotate-180',
+                )}
+              />
+            </button>
+          </>
         )}
       </div>
       {showBreakdown && categoryBreakdown.length > 1 && (
-        <div className="border-border/60 text-muted-foreground flex flex-wrap items-center gap-2 border-t pt-2">
+        <div className="border-border/60 grid gap-2 border-t pt-2 sm:grid-cols-2 lg:grid-cols-3">
           {categoryBreakdown.map(({ categoryId, name, count, amount }) => (
-            <span
+            <div
               key={categoryId}
-              className="bg-background/80 border-border/60 flex items-center gap-1.5 rounded-sm border px-2 py-0.5"
+              className="bg-background/60 rounded-sm px-2 py-1"
             >
-              <span>{name}</span>
-              <span className="text-muted-foreground/70">{count}</span>
-              <span className="text-foreground/80 font-medium">
-                {formatCurrency(amount)}
-              </span>
-            </span>
+              <div className="text-foreground truncate font-medium">{name}</div>
+              <div className="text-muted-foreground mt-0.5 flex items-center gap-3 text-xs">
+                <span>
+                  Count{' '}
+                  <span className="text-foreground/90 font-medium">
+                    {count}
+                  </span>
+                </span>
+                <span>
+                  Spend{' '}
+                  <span className="text-foreground/90 font-medium">
+                    {formatCurrency(amount)}
+                  </span>
+                </span>
+              </div>
+            </div>
           ))}
         </div>
       )}
