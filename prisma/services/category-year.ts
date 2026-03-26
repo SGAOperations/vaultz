@@ -79,7 +79,7 @@ export async function getCategoriesWithBudgetForYear({
 
   return categories.map((category) => {
     const categoryYear = category.categoryYears[0] ?? null;
-    const budget = categoryYear ? categoryYear.amount.toNumber() : 0;
+    const baseBudget = categoryYear ? categoryYear.amount.toNumber() : 0;
     const spent = category.purchases.reduce(
       (acc, p) => acc + p.amount.toNumber(),
       0,
@@ -92,6 +92,7 @@ export async function getCategoriesWithBudgetForYear({
       (acc, t) => acc + t.amount.toNumber(),
       0,
     );
+    const budget = baseBudget + transfersIn - transfersOut;
     return {
       id: category.id,
       code: category.code,
@@ -101,7 +102,7 @@ export async function getCategoriesWithBudgetForYear({
       categoryYearId: categoryYear?.id ?? null,
       budget,
       spent,
-      available: budget - spent + transfersIn - transfersOut,
+      available: budget - spent,
     };
   });
 }
