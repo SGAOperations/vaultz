@@ -5,7 +5,15 @@ import { useMemo } from 'react';
 import { useYear } from '@/contexts/YearContext';
 import { useQuery } from '@tanstack/react-query';
 import { SortingState } from '@tanstack/react-table';
-import { ChevronDown, Layers, Tag, User, Wallet, X } from 'lucide-react';
+import {
+  CalendarDays,
+  ChevronDown,
+  Layers,
+  Tag,
+  User,
+  Wallet,
+  X,
+} from 'lucide-react';
 import { useQueryState } from 'nuqs';
 
 import { getMiscAllocations } from '@/prisma/services/allocation';
@@ -45,6 +53,7 @@ export function Content({ designationId, designationName }: ContentProps) {
     useQueryState('allocationGroup');
   const [allocationId, setAllocationId] = useQueryState('allocation');
   const [userId, setUserId] = useQueryState('user');
+  const [periodId, setPeriodId] = useQueryState('period');
   const [sortField, setSortField] = useQueryState('sort');
   const [sortOrder, setSortOrder] = useQueryState('order');
 
@@ -172,6 +181,25 @@ export function Content({ designationId, designationName }: ContentProps) {
 
       if (userId && p.userId !== userId) return false;
 
+      if (periodId === 'none') {
+        const purchasedAt = new Date(p.purchasedAt);
+        const inAnyPeriod = (periods ?? []).some(
+          (period) =>
+            purchasedAt >= new Date(period.startDate) &&
+            purchasedAt <= new Date(period.endDate),
+        );
+        if (inAnyPeriod) return false;
+      } else if (periodId) {
+        const period = (periods ?? []).find((p) => p.id === periodId);
+        if (!period) return false;
+        const purchasedAt = new Date(p.purchasedAt);
+        if (
+          purchasedAt < new Date(period.startDate) ||
+          purchasedAt > new Date(period.endDate)
+        )
+          return false;
+      }
+
       return true;
     });
   }, [
@@ -180,6 +208,8 @@ export function Content({ designationId, designationName }: ContentProps) {
     allocationGroupId,
     allocationId,
     userId,
+    periodId,
+    periods,
     allocationGroups,
     miscAllocationIds,
   ]);
@@ -201,11 +231,17 @@ export function Content({ designationId, designationName }: ContentProps) {
     ? `${selectedUser.first} ${selectedUser.last}`
     : 'All Users';
 
+  const periodFilterLabel =
+    periodId === 'none'
+      ? 'No Period'
+      : ((periods ?? []).find((p) => p.id === periodId)?.name ?? 'All Periods');
+
   const hasActiveFilters = !!(
     categoryId ||
     allocationGroupId ||
     allocationId ||
-    userId
+    userId ||
+    periodId
   );
 
   return (
@@ -423,6 +459,48 @@ export function Content({ designationId, designationName }: ContentProps) {
               </DropdownMenuContent>
             </DropdownMenu>
 
+            {(periodsLoading || (periods && periods.length > 0)) && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant={periodId ? 'default' : 'outline'}
+                    size="sm"
+                    className="gap-1.5 rounded-full"
+                    disabled={periodsLoading}
+                  >
+                    <CalendarDays className="size-3.5" />
+                    {periodFilterLabel}
+                    <ChevronDown className="size-3.5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  <DropdownMenuCheckboxItem
+                    checked={!periodId}
+                    onClick={() => setPeriodId(null)}
+                  >
+                    All Periods
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuCheckboxItem
+                    checked={periodId === 'none'}
+                    onClick={() => setPeriodId('none')}
+                  >
+                    No Period
+                  </DropdownMenuCheckboxItem>
+                  {periods && periods.length > 0 && <DropdownMenuSeparator />}
+                  {periods?.map((p) => (
+                    <DropdownMenuCheckboxItem
+                      key={p.id}
+                      checked={periodId === p.id}
+                      onClick={() => setPeriodId(p.id)}
+                    >
+                      {p.name}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+
             {hasActiveFilters && (
               <Button
                 variant="ghost"
@@ -433,6 +511,7 @@ export function Content({ designationId, designationName }: ContentProps) {
                   setAllocationGroupId(null);
                   setAllocationId(null);
                   setUserId(null);
+                  setPeriodId(null);
                 }}
               >
                 <X className="size-3" />
