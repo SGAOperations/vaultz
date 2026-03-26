@@ -308,35 +308,44 @@ function PurchaseTotals({
     .sort((a, b) => b.amount - a.amount);
 
   return (
-    <div className="text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-1 px-1 text-sm">
-      <span className="font-medium">
-        {totalCount} {totalCount === 1 ? 'purchase' : 'purchases'}
-      </span>
-      <span className="text-foreground font-semibold">
-        {formatCurrency(totalAmount)}
-      </span>
-      {categoryBreakdown.length > 1 && (
-        <>
+    <div className="bg-muted/20 border-border/60 flex flex-col gap-2 rounded-md border p-2 text-sm">
+      <div className="text-muted-foreground flex flex-wrap items-center gap-2">
+        <span className="bg-background/80 border-border/60 rounded-sm border px-2 py-0.5 font-medium">
+          {totalCount} {totalCount === 1 ? 'purchase' : 'purchases'}
+        </span>
+        <span className="text-foreground bg-background border-border/60 rounded-sm border px-2 py-0.5 font-semibold">
+          {formatCurrency(totalAmount)}
+        </span>
+        {categoryBreakdown.length > 1 && (
           <button
             onClick={() => setShowBreakdown((v) => !v)}
-            className="text-muted-foreground/60 hover:text-muted-foreground flex items-center gap-0.5 transition-colors"
+            className="text-muted-foreground hover:text-foreground bg-background/80 border-border/60 flex items-center gap-1 rounded-sm border px-2 py-0.5 transition-colors"
           >
             {categoryBreakdown.length} categories
             <ChevronDown
-              className={cn('size-3.5 transition-transform', showBreakdown && 'rotate-180')}
+              className={cn(
+                'size-3.5 transition-transform',
+                showBreakdown && 'rotate-180',
+              )}
             />
           </button>
-          {showBreakdown &&
-            categoryBreakdown.map(({ categoryId, name, count, amount }) => (
-              <span key={categoryId} className="flex items-center gap-1.5">
-                <span>{name}</span>
-                <span className="text-muted-foreground/60">{count}</span>
-                <span className="text-foreground/80 font-medium">
-                  {formatCurrency(amount)}
-                </span>
+        )}
+      </div>
+      {showBreakdown && categoryBreakdown.length > 1 && (
+        <div className="border-border/60 text-muted-foreground flex flex-wrap items-center gap-2 border-t pt-2">
+          {categoryBreakdown.map(({ categoryId, name, count, amount }) => (
+            <span
+              key={categoryId}
+              className="bg-background/80 border-border/60 flex items-center gap-1.5 rounded-sm border px-2 py-0.5"
+            >
+              <span>{name}</span>
+              <span className="text-muted-foreground/70">{count}</span>
+              <span className="text-foreground/80 font-medium">
+                {formatCurrency(amount)}
               </span>
-            ))}
-        </>
+            </span>
+          ))}
+        </div>
       )}
     </div>
   );
@@ -693,7 +702,10 @@ export function PurchaseList({
           Export CSV
         </Button>
       </div>
-      <PurchaseTotals rows={table.getRowModel().rows} categoryMap={categoryMap} />
+      <PurchaseTotals
+        rows={table.getRowModel().rows}
+        categoryMap={categoryMap}
+      />
       <div className="rounded-lg border">
         <Table className="table-fixed">
           <colgroup>
