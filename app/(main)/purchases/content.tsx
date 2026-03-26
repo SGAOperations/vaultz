@@ -189,13 +189,13 @@ export function Content({ designationId, designationName }: ContentProps) {
   const allocationGroupFilterLabel =
     allocationGroupId === 'none'
       ? 'No Allocation Group'
-      : allocationGroups?.find((g) => g.id === allocationGroupId)?.name ??
-        'All Allocation Groups';
+      : (allocationGroups?.find((g) => g.id === allocationGroupId)?.name ??
+        'All Allocation Groups');
   const allocationFilterLabel =
     allocationId === 'none'
       ? 'No Allocation'
-      : allAllocations.find((a) => a.id === allocationId)?.name ??
-        'All Allocations';
+      : (allAllocations.find((a) => a.id === allocationId)?.name ??
+        'All Allocations');
   const selectedUser = users?.find((u) => u.id === userId);
   const userFilterLabel = selectedUser
     ? `${selectedUser.first} ${selectedUser.last}`
