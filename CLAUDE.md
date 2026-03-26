@@ -31,6 +31,14 @@
   - `#123 Add User Authentication`
   - `#456 Fix Navigation Overflow`
   - `#789 Refactor Payment Processing`
+- **Always include `Closes #XXX` in the PR body** so the issue is automatically closed when the PR is merged
+
+### Issue Lifecycle
+
+When asked to work on a ticket:
+
+1. **Assign the issue** to the user using `gh issue edit XXX --add-assignee "@me"`
+2. **When opening a PR**, always include `Closes #XXX` in the PR body — GitHub will close the issue automatically on merge
 
 ## Tech Stack
 
