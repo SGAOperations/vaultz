@@ -209,6 +209,18 @@ export function Content({ designationId, designationName }: ContentProps) {
   const userFilterLabel = selectedUser
     ? `${selectedUser.first} ${selectedUser.last}`
     : 'All Users';
+  const dateRangeLabel =
+    dateFrom || dateTo
+      ? `${dateFrom ? new Date(dateFrom).toLocaleDateString(undefined, {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        }) : 'Date'} - ${dateTo ? new Date(dateTo).toLocaleDateString(undefined, {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        }) : 'Date'}`
+      : 'Date Range';
 
   const hasActiveFilters = !!(
     categoryId ||
@@ -428,28 +440,16 @@ export function Content({ designationId, designationName }: ContentProps) {
                   className="gap-1.5 rounded-full"
                 >
                   <CalendarRange className="size-3.5" />
-                  {dateFrom || dateTo
-                    ? [dateFrom, dateTo]
-                        .map((d) =>
-                          d
-                            ? new Date(d).toLocaleDateString(undefined, {
-                                month: 'short',
-                                day: 'numeric',
-                                year: 'numeric',
-                              })
-                            : '…',
-                        )
-                        .join(' – ')
-                    : 'Date Range'}
+                  {dateRangeLabel}
                   <ChevronDown className="size-3.5" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent align="start" className="w-auto p-4">
-                <div className="flex flex-col gap-4">
-                  <div className="flex flex-col gap-1.5">
-                    <span className="text-muted-foreground text-xs font-medium">
-                      From
-                    </span>
+              <PopoverContent align="start" className="w-[22rem] p-3">
+                <div className="grid grid-cols-[auto_1fr_auto] items-center gap-x-2 gap-y-3">
+                  <span className="text-muted-foreground text-xs font-medium">
+                    From
+                  </span>
+                  <div className="min-w-0">
                     <div className="flex items-center gap-1.5">
                       <DatePicker
                         value={dateFrom ? new Date(dateFrom) : undefined}
@@ -457,23 +457,22 @@ export function Content({ designationId, designationName }: ContentProps) {
                           setDateFrom(d.toISOString().split('T')[0])
                         }
                       />
-                      {dateFrom && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          aria-label="Clear from date"
-                          className="size-8 shrink-0"
-                          onClick={() => setDateFrom(null)}
-                        >
-                          <X className="size-3.5" />
-                        </Button>
-                      )}
                     </div>
                   </div>
-                  <div className="flex flex-col gap-1.5">
-                    <span className="text-muted-foreground text-xs font-medium">
-                      To
-                    </span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Clear from date"
+                    className={`size-8 shrink-0 ${dateFrom ? '' : 'invisible pointer-events-none'}`}
+                    onClick={() => setDateFrom(null)}
+                  >
+                    <X className="size-3.5" />
+                  </Button>
+
+                  <span className="text-muted-foreground text-xs font-medium">
+                    To
+                  </span>
+                  <div className="min-w-0">
                     <div className="flex items-center gap-1.5">
                       <DatePicker
                         value={dateTo ? new Date(dateTo) : undefined}
@@ -481,19 +480,17 @@ export function Content({ designationId, designationName }: ContentProps) {
                           setDateTo(d.toISOString().split('T')[0])
                         }
                       />
-                      {dateTo && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          aria-label="Clear to date"
-                          className="size-8 shrink-0"
-                          onClick={() => setDateTo(null)}
-                        >
-                          <X className="size-3.5" />
-                        </Button>
-                      )}
                     </div>
                   </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Clear to date"
+                    className={`size-8 shrink-0 ${dateTo ? '' : 'invisible pointer-events-none'}`}
+                    onClick={() => setDateTo(null)}
+                  >
+                    <X className="size-3.5" />
+                  </Button>
                 </div>
               </PopoverContent>
             </Popover>
