@@ -250,6 +250,7 @@ export async function getPurchaseProcess(
       id: step.id,
       name: step.name,
       order: step.order,
+      parentStepId: step.parentStepId,
       completion: completion
         ? {
             id: completion.id,
@@ -352,6 +353,7 @@ export async function getBatchPurchaseProcessData(
         id: step.id,
         name: step.name,
         order: step.order,
+        parentStepId: step.parentStepId,
         completion: completion
           ? {
               id: completion.id,

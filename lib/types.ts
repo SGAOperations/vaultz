@@ -122,6 +122,5 @@ export type PurchaseProcessData = {
   processId: string;
   templateId: string;
   templateName: string;
-  currentStepId: string | null;
   steps: PurchaseProcessStep[];
 };
