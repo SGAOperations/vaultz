@@ -43,9 +43,7 @@ export async function getProcessTemplate(
 ): Promise<ProcessTemplateWithSteps | null> {
   return prisma.processTemplate.findUnique({
     where: { id },
-    include: {
-      steps: { where: { deletedAt: null }, orderBy: { order: 'asc' } },
-    },
+    include: { steps: { where: { deletedAt: null } } },
   });
 }
 
@@ -54,14 +52,26 @@ export async function getProcessTemplateAsTree(
 ): Promise<ProcessTemplateWithStepTree | null> {
   const template = await prisma.processTemplate.findUnique({
     where: { id },
-    include: {
-      steps: { where: { deletedAt: null }, orderBy: { order: 'asc' } },
-    },
+    include: { steps: { where: { deletedAt: null } } },
   });
 
   if (!template) return null;
 
   return { ...template, steps: buildStepTree(template.steps) };
+}
+
+function sortByLinkedList(steps: ProcessStep[]): ProcessStep[] {
+  const map = new Map(steps.map((s) => [s.id, s]));
+  const result: ProcessStep[] = [];
+  let current: ProcessStep | undefined = steps.find(
+    (s) => !s.previousStepId || !map.has(s.previousStepId),
+  );
+  while (current) {
+    result.push(current);
+    const next = steps.find((s) => s.previousStepId === current!.id);
+    current = next;
+  }
+  return result;
 }
 
 function buildStepTree(steps: ProcessStep[]): ProcessStepNode[] {
@@ -77,7 +87,7 @@ function buildStepTree(steps: ProcessStep[]): ProcessStepNode[] {
     }
   }
 
-  return roots;
+  return sortByLinkedList(roots as ProcessStep[]) as ProcessStepNode[];
 }
 
 export async function updateProcessTemplate(
@@ -127,20 +137,20 @@ export async function addProcessStep(
   data: { name: string; description?: string; parentStepId?: string },
 ): Promise<ResponseType<ProcessStep>> {
   const step = await prisma.$transaction(async (tx) => {
-    const maxStep = await tx.processStep.findFirst({
+    const lastStep = await tx.processStep.findFirst({
       where: {
         templateId,
         deletedAt: null,
         parentStepId: data.parentStepId ?? null,
+        next: null,
       },
-      orderBy: { order: 'desc' },
     });
     const s = await tx.processStep.create({
       data: {
         templateId,
         name: data.name,
         description: data.description || null,
-        order: maxStep ? maxStep.order + 1 : 0,
+        previousStepId: lastStep?.id ?? null,
         parentStepId: data.parentStepId ?? null,
       },
     });
@@ -165,20 +175,20 @@ export async function addBranchStep(
   if (!sibling) return { error: 'Step not found' };
 
   const step = await prisma.$transaction(async (tx) => {
-    const maxSibling = await tx.processStep.findFirst({
+    const lastSibling = await tx.processStep.findFirst({
       where: {
         templateId,
         deletedAt: null,
         parentStepId: sibling.parentStepId,
+        next: null,
       },
-      orderBy: { order: 'desc' },
     });
     const s = await tx.processStep.create({
       data: {
         templateId,
         name: data.name,
         description: data.description || null,
-        order: maxSibling ? maxSibling.order + 1 : 0,
+        previousStepId: lastSibling?.id ?? null,
         parentStepId: sibling.parentStepId,
       },
     });
@@ -246,29 +256,28 @@ export async function moveProcessStep(
   const step = await prisma.processStep.findUnique({ where: { id: stepId } });
   if (!step) return { error: 'Step not found' };
 
-  // Move only within siblings (same parentStepId)
   const siblings = await prisma.processStep.findMany({
     where: { templateId, parentStepId: step.parentStepId, deletedAt: null },
-    orderBy: { order: 'asc' },
   });
 
-  const idx = siblings.findIndex((s) => s.id === stepId);
+  const sorted = sortByLinkedList(siblings);
+  const idx = sorted.findIndex((s) => s.id === stepId);
   if (idx === -1) return { error: 'Step not found' };
   const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
-  if (swapIdx < 0 || swapIdx >= siblings.length)
+  if (swapIdx < 0 || swapIdx >= sorted.length)
     return { error: 'Cannot move step' };
 
-  const newSiblings = [...siblings];
-  [newSiblings[idx], newSiblings[swapIdx]] = [
-    newSiblings[swapIdx],
-    newSiblings[idx],
-  ];
+  const newOrder = [...sorted];
+  [newOrder[idx], newOrder[swapIdx]] = [newOrder[swapIdx], newOrder[idx]];
+
+  const minIdx = Math.min(idx, swapIdx);
+  const maxIdx = Math.min(Math.max(idx, swapIdx) + 1, newOrder.length - 1);
 
   const template = await prisma.$transaction(async (tx) => {
-    for (let i = 0; i < newSiblings.length; i++)
+    for (let i = minIdx; i <= maxIdx; i++)
       await tx.processStep.update({
-        where: { id: newSiblings[i].id },
-        data: { order: i },
+        where: { id: newOrder[i].id },
+        data: { previousStepId: i === 0 ? null : newOrder[i - 1].id },
       });
     return tx.processTemplate.update({
       where: { id: templateId },

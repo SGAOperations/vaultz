@@ -106,7 +106,7 @@ export type ProcessTemplateWithStepTree = ProcessTemplate & {
 export type PurchaseProcessStep = {
   id: string;
   name: string;
-  order: number;
+  previousStepId: string | null;
   parentStepId: string | null;
   completion: {
     id: string;

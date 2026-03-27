@@ -63,7 +63,13 @@ export async function seedPurchaseProcesses(
     });
     tick('Seeding purchase processes');
 
-    const sortedSteps = [...template.steps].sort((a, b) => a.order - b.order);
+    const sortedSteps: typeof template.steps = [];
+    let current: (typeof template.steps)[number] | undefined =
+      template.steps.find((s) => s.previousStepId === null);
+    while (current) {
+      sortedSteps.push(current);
+      current = template.steps.find((s) => s.previousStepId === current!.id);
+    }
     const completedSteps = sortedSteps.slice(0, plan.stepCutoff);
     await Promise.all(
       completedSteps.map((step) => {

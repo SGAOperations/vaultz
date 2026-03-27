@@ -230,11 +230,7 @@ export async function getPurchaseProcess(
     include: {
       process: {
         include: {
-          template: {
-            include: {
-              steps: { where: { deletedAt: null }, orderBy: { order: 'asc' } },
-            },
-          },
+          template: { include: { steps: { where: { deletedAt: null } } } },
           completions: { where: { deletedAt: null }, include: { step: true } },
         },
       },
@@ -249,7 +245,7 @@ export async function getPurchaseProcess(
     return {
       id: step.id,
       name: step.name,
-      order: step.order,
+      previousStepId: step.previousStepId,
       parentStepId: step.parentStepId,
       completion: completion
         ? {
@@ -328,11 +324,7 @@ export async function getBatchPurchaseProcessData(
       id: true,
       process: {
         include: {
-          template: {
-            include: {
-              steps: { where: { deletedAt: null }, orderBy: { order: 'asc' } },
-            },
-          },
+          template: { include: { steps: { where: { deletedAt: null } } } },
           completions: { where: { deletedAt: null } },
         },
       },
@@ -352,7 +344,7 @@ export async function getBatchPurchaseProcessData(
       return {
         id: step.id,
         name: step.name,
-        order: step.order,
+        previousStepId: step.previousStepId,
         parentStepId: step.parentStepId,
         completion: completion
           ? {
