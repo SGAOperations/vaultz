@@ -100,13 +100,27 @@ function MarkCompleteForm({
 
 type StepStatus = 'completed' | 'bypassed' | 'pending';
 
+function getLinkedListIndex(
+  stepId: string,
+  steps: PurchaseProcessStep[],
+): number {
+  let idx = 0;
+  let current = steps.find((s) => s.id === stepId);
+  while (current?.previousStepId) {
+    current = steps.find((s) => s.id === current!.previousStepId);
+    idx++;
+  }
+  return idx;
+}
+
 export function getStepStatus(
   step: PurchaseProcessStep,
   steps: PurchaseProcessStep[],
 ): StepStatus {
   if (step.completion) return 'completed';
+  const stepIdx = getLinkedListIndex(step.id, steps);
   const hasLaterCompletion = steps.some(
-    (s) => s.order > step.order && s.completion !== null,
+    (s) => getLinkedListIndex(s.id, steps) > stepIdx && s.completion !== null,
   );
   return hasLaterCompletion ? 'bypassed' : 'pending';
 }

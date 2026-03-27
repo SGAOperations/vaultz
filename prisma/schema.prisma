@@ -132,7 +132,6 @@ model ProcessStep {
     id          String    @id @default(uuid())
     name        String
     description String?
-    order       Int
     createdAt   DateTime  @default(now())
     updatedAt   DateTime  @updatedAt
     deletedAt   DateTime?
@@ -142,7 +141,11 @@ model ProcessStep {
 
     parentStepId String?
     parent       ProcessStep?  @relation("StepBranches", fields: [parentStepId], references: [id])
-    children     ProcessStep[] @relation("StepBranches")
+    branches     ProcessStep[] @relation("StepBranches")
+
+    previousStepId String?      @unique
+    previous       ProcessStep? @relation("StepSequence", fields: [previousStepId], references: [id])
+    next           ProcessStep? @relation("StepSequence")
 
     completions PurchaseStepCompletion[]
 }

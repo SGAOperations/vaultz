@@ -97,10 +97,17 @@ export type ProcessTemplateWithSteps = ProcessTemplate & {
   steps: ProcessStep[];
 };
 
+export type ProcessStepNode = ProcessStep & { children: ProcessStepNode[] };
+
+export type ProcessTemplateWithStepTree = ProcessTemplate & {
+  steps: ProcessStepNode[];
+};
+
 export type PurchaseProcessStep = {
   id: string;
   name: string;
-  order: number;
+  previousStepId: string | null;
+  parentStepId: string | null;
   completion: {
     id: string;
     markedAt: Date;
