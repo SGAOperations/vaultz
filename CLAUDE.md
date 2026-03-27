@@ -15,6 +15,7 @@
   - Use imperative mood (add, fix, refactor, not added, fixed, refactored)
   - No colon after issue number
   - Always include `Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>` trailer
+  - **Commit frequently** — each logical unit of work (type changes, migration, service updates, UI changes) should be its own commit rather than one large commit at the end
 
 ### Branches
 
@@ -31,7 +32,8 @@
   - `#123 Add User Authentication`
   - `#456 Fix Navigation Overflow`
   - `#789 Refactor Payment Processing`
-- **Always include `Closes #XXX` in the PR body** so the issue is automatically closed when the PR is merged
+- **Assignees**: Always assign `b-at-neu` (`--assignee "b-at-neu"`)
+- **Issue Linking**: Use `Closes #XXX` for the primary issue. Use plain `#XXX` mentions for related issues — GitHub only recognises `closes`/`fixes`/`resolves` as closing keywords; phrases like "Part of" and "Blocks" are informational only and do not create development links
 
 ### Issue Lifecycle
 
@@ -147,9 +149,17 @@ prisma/
 
 ## Claude-Specific Rules
 
-### Formatting
+### Pre-Push Checks
 
-- **Always run `npx prettier --write .` before committing and pushing** — CI runs a prettier check and will fail if formatting is off
+Before pushing, always run these locally and fix any failures before pushing:
+
+```bash
+npx eslint . --max-warnings=0
+npx prettier --write .
+npx tsc --noEmit
+```
+
+CI runs all three checks and will fail if any are off.
 
 ### Merge Conflicts
 
