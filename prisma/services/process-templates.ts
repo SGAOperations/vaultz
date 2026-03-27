@@ -164,9 +164,41 @@ export async function restoreProcessTemplate(
 
 export async function addProcessStep(
   templateId: string,
-  data: { name: string; description?: string; parentStepId?: string },
+  data: {
+    name: string;
+    description?: string;
+    parentStepId?: string;
+    afterStepId?: string;
+  },
 ): Promise<ResponseType<ProcessStep>> {
   const step = await prisma.$transaction(async (tx) => {
+    let previousStepId: string | null;
+    if (data.afterStepId) {
+      previousStepId = data.afterStepId;
+      // Re-link the step that was after afterStepId to point to the new step
+      const successor = await tx.processStep.findFirst({
+        where: { previousStepId: data.afterStepId, deletedAt: null },
+      });
+      const s = await tx.processStep.create({
+        data: {
+          templateId,
+          name: data.name,
+          description: data.description || null,
+          previousStepId,
+          parentStepId: data.parentStepId ?? null,
+        },
+      });
+      if (successor)
+        await tx.processStep.update({
+          where: { id: successor.id },
+          data: { previousStepId: s.id },
+        });
+      await tx.processTemplate.update({
+        where: { id: templateId },
+        data: { updatedAt: new Date() },
+      });
+      return s;
+    }
     const lastStep = await tx.processStep.findFirst({
       where: {
         templateId,
@@ -257,9 +289,14 @@ export async function deleteProcessStep(
   templateId: string,
 ): Promise<ResponseType<ProcessTemplate>> {
   const template = await prisma.$transaction(async (tx) => {
-    // Re-parent children to the deleted step's parent before soft-deleting
     const step = await tx.processStep.findUnique({ where: { id: stepId } });
     if (step) {
+      // Re-link successor to point to deleted step's predecessor
+      await tx.processStep.updateMany({
+        where: { previousStepId: stepId, deletedAt: null },
+        data: { previousStepId: step.previousStepId },
+      });
+      // Re-parent children to the deleted step's parent
       await tx.processStep.updateMany({
         where: { parentStepId: stepId, deletedAt: null },
         data: { parentStepId: step.parentStepId },
