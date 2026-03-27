@@ -6,7 +6,6 @@ import { ProcessStep, ProcessTemplate } from '@/prisma/client';
 
 import prisma from '@/lib/prisma';
 import {
-  ProcessStepNode,
   ProcessStepSequence,
   ProcessTemplateWithSequence,
   ProcessTemplateWithStepCount,
