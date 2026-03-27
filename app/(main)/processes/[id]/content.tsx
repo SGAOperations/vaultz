@@ -30,10 +30,7 @@ import {
   updateProcessTemplate,
 } from '@/prisma/services/process-templates';
 
-import {
-  ProcessStepNode,
-  ProcessTemplateWithSequence,
-} from '@/lib/types';
+import { ProcessStepNode, ProcessTemplateWithSequence } from '@/lib/types';
 import { handleError, isError } from '@/lib/utils';
 
 import { EmptyState } from '@/components/empty-state';
@@ -185,10 +182,7 @@ function StepCard({
   const [editing, setEditing] = useState(false);
   const form = useForm<StepFormData>({
     resolver: zodResolver(stepSchema),
-    defaultValues: {
-      name: step.name,
-      description: step.description ?? '',
-    },
+    defaultValues: { name: step.name, description: step.description ?? '' },
   });
 
   async function onSubmit(data: StepFormData) {
@@ -318,7 +312,7 @@ function StepCard({
         <div className="ml-6 flex flex-col gap-4 border-l-2 border-dashed pl-4">
           {step.branches.map((branch, branchIdx) => (
             <div key={branchIdx} className="flex flex-col gap-2">
-              <p className="text-muted-foreground text-xs font-semibold uppercase tracking-wide">
+              <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
                 Branch {branchIdx + 1}
               </p>
               <SequenceList
@@ -341,7 +335,7 @@ function StepCard({
       {showBranchForm && (
         <div className="ml-6 border-l-2 border-dashed pl-4">
           <div className="flex flex-col gap-2">
-            <p className="text-muted-foreground text-xs font-semibold uppercase tracking-wide">
+            <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
               New Branch
             </p>
             <AddStepForm
