@@ -97,10 +97,19 @@ export type ProcessTemplateWithSteps = ProcessTemplate & {
   steps: ProcessStep[];
 };
 
-export type ProcessStepNode = ProcessStep & { children: ProcessStepNode[] };
+export type ProcessStepNode = {
+  id: string;
+  name: string;
+  description: string | null;
+  parentStepId: string | null;
+  previousStepId: string | null;
+  branches: ProcessStepSequence[];
+};
 
-export type ProcessTemplateWithStepTree = ProcessTemplate & {
-  steps: ProcessStepNode[];
+export type ProcessStepSequence = ProcessStepNode[];
+
+export type ProcessTemplateWithSequence = ProcessTemplate & {
+  rootSequence: ProcessStepSequence;
 };
 
 export type PurchaseProcessStep = {

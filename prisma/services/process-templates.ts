@@ -7,8 +7,9 @@ import { ProcessStep, ProcessTemplate } from '@/prisma/client';
 import prisma from '@/lib/prisma';
 import {
   ProcessStepNode,
+  ProcessStepSequence,
+  ProcessTemplateWithSequence,
   ProcessTemplateWithStepCount,
-  ProcessTemplateWithStepTree,
   ProcessTemplateWithSteps,
 } from '@/lib/types';
 import { ResponseType } from '@/lib/utils';
@@ -47,9 +48,9 @@ export async function getProcessTemplate(
   });
 }
 
-export async function getProcessTemplateAsTree(
+export async function getProcessTemplateAsSequence(
   id: string,
-): Promise<ProcessTemplateWithStepTree | null> {
+): Promise<ProcessTemplateWithSequence | null> {
   const template = await prisma.processTemplate.findUnique({
     where: { id },
     include: { steps: { where: { deletedAt: null } } },
@@ -57,7 +58,7 @@ export async function getProcessTemplateAsTree(
 
   if (!template) return null;
 
-  return { ...template, steps: buildStepTree(template.steps) };
+  return { ...template, rootSequence: buildSequence(template.steps, null) };
 }
 
 function sortByLinkedList(steps: ProcessStep[]): ProcessStep[] {
@@ -74,20 +75,50 @@ function sortByLinkedList(steps: ProcessStep[]): ProcessStep[] {
   return result;
 }
 
-function buildStepTree(steps: ProcessStep[]): ProcessStepNode[] {
-  const map = new Map<string, ProcessStepNode>();
-  for (const step of steps) map.set(step.id, { ...step, children: [] });
+function buildSequence(
+  allSteps: ProcessStep[],
+  parentStepId: string | null,
+): ProcessStepSequence {
+  const siblings = allSteps.filter((s) => s.parentStepId === parentStepId);
+  const sorted = sortByLinkedList(siblings);
+  return sorted.map((step) => ({
+    id: step.id,
+    name: step.name,
+    description: step.description,
+    parentStepId: step.parentStepId,
+    previousStepId: step.previousStepId,
+    branches: buildBranches(allSteps, step.id),
+  }));
+}
 
-  const roots: ProcessStepNode[] = [];
-  for (const node of map.values()) {
-    if (node.parentStepId === null) {
-      roots.push(node);
-    } else {
-      map.get(node.parentStepId)?.children.push(node);
+function buildBranches(
+  allSteps: ProcessStep[],
+  parentStepId: string,
+): ProcessStepSequence[] {
+  const branchSteps = allSteps.filter((s) => s.parentStepId === parentStepId);
+  if (branchSteps.length === 0) return [];
+
+  const branchIds = new Set(branchSteps.map((s) => s.id));
+  const branchStarts = branchSteps.filter(
+    (s) => !s.previousStepId || !branchIds.has(s.previousStepId),
+  );
+
+  return branchStarts.map((start) => {
+    const sequence: ProcessStepSequence = [];
+    let current: ProcessStep | undefined = start;
+    while (current) {
+      sequence.push({
+        id: current.id,
+        name: current.name,
+        description: current.description,
+        parentStepId: current.parentStepId,
+        previousStepId: current.previousStepId,
+        branches: buildBranches(allSteps, current.id),
+      });
+      current = branchSteps.find((s) => s.previousStepId === current!.id);
     }
-  }
-
-  return sortByLinkedList(roots as ProcessStep[]) as ProcessStepNode[];
+    return sequence;
+  });
 }
 
 export async function updateProcessTemplate(
