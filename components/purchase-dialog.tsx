@@ -194,6 +194,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
     !!(purchase && purchase.yearId !== activeYearId),
   );
   const [userCreateOpen, setUserCreateOpen] = useState(false);
+
   const userForm = useForm<UserFormData>({
     resolver: zodResolver(userSchema),
     defaultValues: { first: '', last: '' },
@@ -435,7 +436,23 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
       // Reset state when closing
       setIsEditing(isCreateMode);
       setConfirmDelete(false);
-      form.reset();
+      if (purchase) {
+        form.reset({
+          userId: purchase.userId,
+          categoryId: purchase.categoryId,
+          allocationId: purchase.allocationId || '',
+          yearId: purchase.yearId,
+          processTemplateId: purchase.process?.templateId ?? '',
+          description: purchase.description,
+          amount: purchase.amount,
+          purchasedAt: parseDateOnly(purchase.purchasedAt),
+          receipts: purchase.receipts,
+          excludeFromTotal: purchase.excludeFromTotal,
+          notes: purchase.notes ?? '',
+        });
+      } else {
+        form.reset();
+      }
       setReceiptsToDisplay(purchase?.receipts || []);
       setFilesUploaded([]);
       setShowAdvanced(!!(purchase && purchase.yearId !== activeYearId));
@@ -768,6 +785,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                             className="resize-none"
                             rows={3}
                             {...field}
+                            value={field.value ?? ''}
                           />
                         </FormControl>
                         <FormMessage />
@@ -1189,7 +1207,26 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
               </div>
 
               <div className="flex gap-2">
-                <Button onClick={() => setIsEditing(true)} className="flex-1">
+                <Button
+                  onClick={() => {
+                    form.reset({
+                      userId: purchase!.userId,
+                      categoryId: purchase!.categoryId,
+                      allocationId: purchase!.allocationId || '',
+                      yearId: purchase!.yearId,
+                      processTemplateId: purchase!.process?.templateId ?? '',
+                      description: purchase!.description,
+                      amount: purchase!.amount,
+                      purchasedAt: parseDateOnly(purchase!.purchasedAt),
+                      receipts: purchase!.receipts,
+                      excludeFromTotal: purchase!.excludeFromTotal,
+                      notes: purchase!.notes ?? '',
+                    });
+                    setReceiptsToDisplay(purchase!.receipts);
+                    setIsEditing(true);
+                  }}
+                  className="flex-1"
+                >
                   <Pencil className="mr-2 h-4 w-4" />
                   Edit
                 </Button>
