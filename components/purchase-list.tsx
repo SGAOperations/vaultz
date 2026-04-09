@@ -282,7 +282,10 @@ function PurchaseTotals({
 }) {
   const [showBreakdown, setShowBreakdown] = useState(false);
   const totalCount = rows.length;
-  const totalAmount = rows.reduce((sum, r) => sum + r.original.amount, 0);
+  const totalAmount = rows.reduce(
+    (sum, r) => sum + (r.original.excludeFromTotal ? 0 : r.original.amount),
+    0,
+  );
 
   const byCategory = new Map<
     string,
