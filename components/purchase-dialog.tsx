@@ -194,6 +194,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
     !!(purchase && purchase.yearId !== activeYearId),
   );
   const [userCreateOpen, setUserCreateOpen] = useState(false);
+
   const userForm = useForm<UserFormData>({
     resolver: zodResolver(userSchema),
     defaultValues: { first: '', last: '' },
@@ -244,7 +245,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
 
   const form = useForm({
     resolver: zodResolver(schema),
-    defaultValues: {
+    values: {
       userId: purchase?.userId || '',
       categoryId:
         purchase?.categoryId ||
