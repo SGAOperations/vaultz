@@ -1200,10 +1200,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
               </div>
 
               <div className="flex gap-2">
-                <Button
-                  onClick={() => setIsEditing(true)}
-                  className="flex-1"
-                >
+                <Button onClick={() => setIsEditing(true)} className="flex-1">
                   <Pencil className="mr-2 h-4 w-4" />
                   Edit
                 </Button>
