@@ -318,6 +318,10 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
             error: 'Failed to create purchase',
           },
           onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['purchases'] });
+            queryClient.invalidateQueries({
+              queryKey: ['categories-available'],
+            });
             form.reset();
             setFilesUploaded([]);
             setReceiptsToDisplay([]);
@@ -339,6 +343,10 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
             error: 'Failed to update purchase',
           },
           onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['purchases'] });
+            queryClient.invalidateQueries({
+              queryKey: ['categories-available'],
+            });
             setIsEditing(false);
             setOpen(false);
           },
@@ -362,6 +370,8 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
         error: 'Failed to delete purchase',
       },
       onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['purchases'] });
+        queryClient.invalidateQueries({ queryKey: ['categories-available'] });
         setOpen(false);
       },
     });
