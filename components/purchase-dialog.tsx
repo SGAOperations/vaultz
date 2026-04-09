@@ -194,6 +194,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
     !!(purchase && purchase.yearId !== activeYearId),
   );
   const [userCreateOpen, setUserCreateOpen] = useState(false);
+
   const userForm = useForm<UserFormData>({
     resolver: zodResolver(userSchema),
     defaultValues: { first: '', last: '' },
@@ -244,7 +245,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
 
   const form = useForm({
     resolver: zodResolver(schema),
-    defaultValues: {
+    values: {
       userId: purchase?.userId || '',
       categoryId:
         purchase?.categoryId ||
@@ -317,6 +318,10 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
             error: 'Failed to create purchase',
           },
           onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['purchases'] });
+            queryClient.invalidateQueries({
+              queryKey: ['categories-available'],
+            });
             form.reset();
             setFilesUploaded([]);
             setReceiptsToDisplay([]);
@@ -338,6 +343,10 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
             error: 'Failed to update purchase',
           },
           onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['purchases'] });
+            queryClient.invalidateQueries({
+              queryKey: ['categories-available'],
+            });
             setIsEditing(false);
             setOpen(false);
           },
@@ -361,6 +370,8 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
         error: 'Failed to delete purchase',
       },
       onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['purchases'] });
+        queryClient.invalidateQueries({ queryKey: ['categories-available'] });
         setOpen(false);
       },
     });

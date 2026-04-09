@@ -17,7 +17,7 @@ export async function getDashboardStatsByDesignation(
       select: { amount: true },
     }),
     prisma.purchase.findMany({
-      where: { category: { designationId }, yearId },
+      where: { category: { designationId }, yearId, excludeFromTotal: false },
       select: { amount: true },
     }),
   ]);
@@ -42,7 +42,7 @@ export async function getPurchasesByMonthForDesignation(
   yearId: string,
 ) {
   const purchases = await prisma.purchase.findMany({
-    where: { category: { designationId }, yearId },
+    where: { category: { designationId }, yearId, excludeFromTotal: false },
     select: { amount: true, purchasedAt: true },
     orderBy: [{ purchasedAt: 'asc' }, { createdAt: 'asc' }],
   });
@@ -89,7 +89,10 @@ export async function getSpendingByCategoryForDesignation(
         where: { deletedAt: null, yearId },
         select: { amount: true },
       },
-      purchases: { where: { yearId }, select: { amount: true } },
+      purchases: {
+        where: { yearId, excludeFromTotal: false },
+        select: { amount: true },
+      },
       transfersFrom: {
         where: { deletedAt: null, yearId },
         select: { amount: true },
