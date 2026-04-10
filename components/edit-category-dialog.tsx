@@ -75,7 +75,11 @@ export function EditCategoryDialog({
         success: 'Spending category updated successfully',
         error: 'Failed to update spending category',
       },
-      onSuccess: () => {
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({
+          queryKey: ['categories-budget'],
+        });
+        router.refresh();
         setOpen(false);
       },
     });
