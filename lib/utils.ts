@@ -7,8 +7,10 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 function formatAbsoluteNumber(value: number) {
-  const rounded = Math.round(value * 100) / 100;
-  return rounded.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
 }
 
 export function formatNumber(value: number) {
