@@ -56,11 +56,18 @@ interface ContentProps {
 
 function formatDateLabel(value: string | null) {
   if (!value) return '';
-  return new Date(value).toLocaleDateString(undefined, {
+  return parseDateOnly(value).toLocaleDateString(undefined, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
   });
+}
+
+function formatDateOnly(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 export function Content({ designationId, designationName }: ContentProps) {
@@ -203,8 +210,8 @@ export function Content({ designationId, designationName }: ContentProps) {
 
       if (dateFrom || dateTo) {
         const purchaseDate = parseDateOnly(p.purchasedAt);
-        if (dateFrom && purchaseDate < new Date(dateFrom)) return false;
-        if (dateTo && purchaseDate > new Date(dateTo)) return false;
+        if (dateFrom && purchaseDate < parseDateOnly(dateFrom)) return false;
+        if (dateTo && purchaseDate > parseDateOnly(dateTo)) return false;
       }
 
       if (periodId === 'none') {
@@ -556,10 +563,8 @@ export function Content({ designationId, designationName }: ContentProps) {
                   </span>
                   <div className="min-w-0">
                     <DatePicker
-                      value={dateFrom ? new Date(dateFrom) : undefined}
-                      onChange={(d) =>
-                        setDateFrom(d.toISOString().split('T')[0])
-                      }
+                      value={dateFrom ? parseDateOnly(dateFrom) : undefined}
+                      onChange={(d) => setDateFrom(formatDateOnly(d))}
                     />
                   </div>
                   <Button
@@ -580,8 +585,8 @@ export function Content({ designationId, designationName }: ContentProps) {
                   </span>
                   <div className="min-w-0">
                     <DatePicker
-                      value={dateTo ? new Date(dateTo) : undefined}
-                      onChange={(d) => setDateTo(d.toISOString().split('T')[0])}
+                      value={dateTo ? parseDateOnly(dateTo) : undefined}
+                      onChange={(d) => setDateTo(formatDateOnly(d))}
                     />
                   </div>
                   <Button

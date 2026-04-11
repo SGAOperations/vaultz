@@ -243,6 +243,12 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
     [purchase, years],
   );
 
+  const purchasedAt = purchase?.purchasedAt;
+  const initialPurchasedAt = useMemo(
+    () => (purchasedAt ? parseDateOnly(purchasedAt) : new Date()),
+    [purchasedAt],
+  );
+
   const form = useForm({
     resolver: zodResolver(schema),
     values: {
@@ -256,7 +262,7 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
       processTemplateId: purchase?.process?.templateId ?? '',
       description: purchase?.description || '',
       amount: purchase?.amount || 0,
-      purchasedAt: purchase ? parseDateOnly(purchase.purchasedAt) : new Date(),
+      purchasedAt: initialPurchasedAt,
       receipts: purchase?.receipts || [],
       excludeFromTotal: purchase?.excludeFromTotal || false,
       notes: purchase?.notes ?? '',
