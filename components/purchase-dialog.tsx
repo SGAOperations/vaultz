@@ -243,10 +243,10 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
     [purchase, years],
   );
 
+  const purchasedAt = purchase?.purchasedAt;
   const initialPurchasedAt = useMemo(
-    () => (purchase ? parseDateOnly(purchase.purchasedAt) : new Date()),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [purchase?.purchasedAt],
+    () => (purchasedAt ? parseDateOnly(purchasedAt) : new Date()),
+    [purchasedAt],
   );
 
   const form = useForm({
