@@ -4,7 +4,7 @@ import typescriptConfig from 'eslint-config-next/typescript';
 const eslintConfig = [
   ...coreWebVitalsConfig,
   ...typescriptConfig,
-  { ignores: ['.next/*', 'prisma/client/*'] },
+  { ignores: ['.next/*', 'prisma/client/*', '.claude/*'] },
 ];
 
 export default eslintConfig;
