@@ -1,12 +1,12 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
 import { Loader2, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { z } from 'zod/v4';
 
 import { deleteCategory, updateCategory } from '@/prisma/services/category';
@@ -54,7 +54,6 @@ export function EditCategoryDialog({
   trigger: React.ReactNode;
   categoryYearId?: string;
 }) {
-  const router = useRouter();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState<boolean>(false);
   const [confirmDelete, setConfirmDelete] = useState<boolean>(false);
@@ -79,7 +78,6 @@ export function EditCategoryDialog({
         await queryClient.invalidateQueries({
           queryKey: ['categories-budget'],
         });
-        router.refresh();
         setOpen(false);
       },
     });
@@ -154,7 +152,13 @@ export function EditCategoryDialog({
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+          <form
+            onSubmit={form.handleSubmit(onSubmit, (errors) => {
+              const first = Object.values(errors)[0];
+              if (first?.message) toast.error(String(first.message));
+            })}
+            className="space-y-8"
+          >
             <FormField
               control={form.control}
               name="name"
