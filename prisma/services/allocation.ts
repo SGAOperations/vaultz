@@ -144,7 +144,10 @@ export async function deleteAllocation(
         'Cannot delete an allocation that has purchases. Remove all purchases first.',
     };
 
-  await prisma.allocation.update({ where: { id }, data: { deletedAt: new Date() } });
+  await prisma.allocation.update({
+    where: { id },
+    data: { deletedAt: new Date() },
+  });
 
   revalidatePath('/allocation-groups');
 }

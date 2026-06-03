@@ -32,7 +32,11 @@ export async function getPurchasesByDesignation({
   yearId: string;
 }): Promise<PurchaseWithUser[]> {
   const purchases = await prisma.purchase.findMany({
-    where: { yearId, deletedAt: null, category: { designationId, deletedAt: null } },
+    where: {
+      yearId,
+      deletedAt: null,
+      category: { designationId, deletedAt: null },
+    },
     orderBy: [{ purchasedAt: 'desc' }, { createdAt: 'desc' }],
     include: { user: true, process: { select: { templateId: true } } },
   });
