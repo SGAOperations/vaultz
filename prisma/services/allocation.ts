@@ -57,6 +57,7 @@ export async function getAllocationById({
     where: { id },
     include: {
       purchases: {
+        where: { deletedAt: null },
         orderBy: [{ purchasedAt: 'desc' }, { createdAt: 'desc' }],
         include: { user: true, process: { select: { templateId: true } } },
       },
@@ -83,12 +84,14 @@ export async function getMiscAllocations(
   const allocations = await prisma.allocation.findMany({
     where: {
       allocationGroupId: null,
+      deletedAt: null,
       ...(designationId && { designationId }),
       ...(periodId && { periodId }),
       ...(yearId && { period: { yearId } }),
     },
     include: {
       purchases: {
+        where: { deletedAt: null },
         orderBy: [{ purchasedAt: 'desc' }, { createdAt: 'desc' }],
         include: { user: true, process: { select: { templateId: true } } },
       },
@@ -130,7 +133,7 @@ export async function deleteAllocation(
 ): Promise<ResponseType<void>> {
   const allocation = await prisma.allocation.findUnique({
     where: { id },
-    include: { purchases: { take: 1 } },
+    include: { purchases: { where: { deletedAt: null }, take: 1 } },
   });
 
   if (!allocation) return { error: 'Allocation not found.' };
@@ -141,7 +144,10 @@ export async function deleteAllocation(
         'Cannot delete an allocation that has purchases. Remove all purchases first.',
     };
 
-  await prisma.allocation.delete({ where: { id } });
+  await prisma.allocation.update({
+    where: { id },
+    data: { deletedAt: new Date() },
+  });
 
   revalidatePath('/allocation-groups');
 }
@@ -158,7 +164,7 @@ export async function copyAllocationsFromPeriod({
   includeCarryover: boolean;
 }): Promise<ResponseType<{ count: number }>> {
   const sourceAllocations = await prisma.allocation.findMany({
-    where: { periodId: fromPeriodId },
+    where: { periodId: fromPeriodId, deletedAt: null },
     include: { purchases: { where: { excludeFromTotal: false } } },
   });
 
