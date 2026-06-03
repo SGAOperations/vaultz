@@ -53,7 +53,7 @@ export async function getYearComparisonData({
           select: { yearId: true, amount: true },
         },
         purchases: {
-          where: { excludeFromTotal: false, yearId: { in: yearIds } },
+          where: { excludeFromTotal: false, yearId: { in: yearIds }, deletedAt: null },
           select: { amount: true, yearId: true },
         },
         transfersTo: {
