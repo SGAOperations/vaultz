@@ -25,6 +25,7 @@ export async function getAllDesignations(): Promise<
         categories: {
           select: {
             purchases: {
+              where: { deletedAt: null },
               orderBy: [{ purchasedAt: 'desc' }, { createdAt: 'desc' }],
               include: {
                 user: true,
@@ -76,6 +77,7 @@ export async function getDesignation({
       categories: {
         select: {
           purchases: {
+            where: { deletedAt: null },
             orderBy: [{ purchasedAt: 'desc' }, { createdAt: 'desc' }],
             include: { user: true, process: { select: { templateId: true } } },
           },
