@@ -214,7 +214,10 @@ export async function updatePurchase({
 export async function deletePurchase(
   id: string,
 ): Promise<ResponseType<Purchase>> {
-  const purchase = await prisma.purchase.delete({ where: { id } });
+  const purchase = await prisma.purchase.update({
+    where: { id },
+    data: { deletedAt: new Date() },
+  });
 
   revalidatePath('/');
   revalidatePath('/designation');
