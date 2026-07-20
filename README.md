@@ -76,6 +76,8 @@ Create a `.env` file in the root of the project and set the following:
 ```env
 DATABASE_URL=postgresql://admin:admin@localhost:5432/vaultz
 UPLOADTHING_TOKEN=<your_uploadthing_token>
+VAULTZ_ACCESS_CODE=<shared passphrase>
+VAULTZ_ACCESS_SECRET=<random signing secret>
 ```
 
 3. **Start the local database:**
