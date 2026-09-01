@@ -8,6 +8,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   CheckCircle2,
   Circle,
+  GitBranch,
   Loader2,
   SkipForward,
   Undo2,
@@ -134,6 +135,46 @@ function StepStatusBadge({ status }: { status: StepStatus }) {
   );
 }
 
+function BranchPicker({
+  children,
+  onPick,
+  onDismiss,
+}: {
+  children: PurchaseProcessStep[];
+  onPick: (step: PurchaseProcessStep) => void;
+  onDismiss: () => void;
+}) {
+  return (
+    <div className="animate-in slide-in-from-top-1 fade-in-0 flex flex-col gap-2 border-t px-3 py-2.5 duration-200">
+      <p className="text-muted-foreground flex items-center gap-1.5 text-xs font-medium">
+        <GitBranch className="size-3" />
+        Choose next step
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {children.map((child) => (
+          <Button
+            key={child.id}
+            size="sm"
+            variant="outline"
+            className="h-7 px-3 text-xs"
+            onClick={() => onPick(child)}
+          >
+            {child.name}
+          </Button>
+        ))}
+        <Button
+          size="sm"
+          variant="ghost"
+          className="text-muted-foreground h-7 px-3 text-xs"
+          onClick={onDismiss}
+        >
+          Decide later
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 const PURCHASE_PROCESS_KEY = (purchaseId: string) => [
   'purchase-process',
   purchaseId,
@@ -149,6 +190,9 @@ export function ProcessProgress({
   const queryClient = useQueryClient();
   const [mutatingStepId, setMutatingStepId] = useState<string | null>(null);
   const [expandedStepId, setExpandedStepId] = useState<string | null>(null);
+  const [branchPickerParentId, setBranchPickerParentId] = useState<
+    string | null
+  >(null);
 
   const { data, isLoading } = useQuery({
     queryKey: PURCHASE_PROCESS_KEY(purchaseId),
@@ -197,6 +241,11 @@ export function ProcessProgress({
             ),
           });
           setExpandedStepId(null);
+          const stepChildren = data.steps.filter(
+            (s) => s.parentStepId === step.id,
+          );
+          if (stepChildren.length === 1) setExpandedStepId(stepChildren[0].id);
+          else if (stepChildren.length > 1) setBranchPickerParentId(step.id);
         },
       },
     );
@@ -221,6 +270,7 @@ export function ProcessProgress({
             s.id === stepId ? { ...s, completion: null } : s,
           ),
         });
+        setBranchPickerParentId(null);
       },
     });
     void result;
@@ -324,6 +374,18 @@ export function ProcessProgress({
                       onCancel={() => setExpandedStepId(null)}
                     />
                   </div>
+                )}
+                {branchPickerParentId === step.id && (
+                  <BranchPicker
+                    children={data.steps.filter(
+                      (s) => s.parentStepId === step.id,
+                    )}
+                    onPick={(child) => {
+                      setBranchPickerParentId(null);
+                      setExpandedStepId(child.id);
+                    }}
+                    onDismiss={() => setBranchPickerParentId(null)}
+                  />
                 )}
               </div>
             );
