@@ -37,6 +37,7 @@ function FormInput<TFieldValues extends FieldValues>({
   ...inputProps
 }: FormInputProps<TFieldValues>) {
   const form = useFormContext<TFieldValues>();
+  const [displayValue, setDisplayValue] = React.useState('');
 
   return (
     <FormField
@@ -54,6 +55,18 @@ function FormInput<TFieldValues extends FieldValues>({
                 <Input
                   {...inputProps}
                   {...field}
+                  value={displayValue || Number(field.value || 0).toFixed(2)}
+                  onFocus={() =>
+                    setDisplayValue(Number(field.value || 0).toFixed(2))
+                  }
+                  onChange={(e) => {
+                    setDisplayValue(e.target.value);
+                    field.onChange(e.target.value);
+                  }}
+                  onBlur={() => {
+                    setDisplayValue('');
+                    field.onBlur();
+                  }}
                   className={cn('rounded-l-none', inputProps.className)}
                 />
               </div>
