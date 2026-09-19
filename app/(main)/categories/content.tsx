@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useYear } from '@/contexts/YearContext';
 import { useQuery } from '@tanstack/react-query';
 import {
+  ArrowRight,
   CreditCard,
   Hash,
   Pencil,
@@ -77,7 +78,9 @@ export function Content({ designationId }: ContentProps) {
     <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
       {categories.map((category) => {
         const { budget, spent, available } = category;
-        const hasBudget = category.categoryYearId !== null;
+        // A rollover category with no stored row still has a real budget:
+        // whatever last year ended with.
+        const hasBudget = category.categoryYearId !== null || category.derived;
 
         return (
           <div key={category.id} className="group relative h-full">
@@ -117,6 +120,12 @@ export function Content({ designationId }: ContentProps) {
                       </span>
                     </span>
                   </div>
+                  {category.derived && (
+                    <div className="bg-primary/10 text-primary flex items-center gap-2 rounded-full px-3 py-1.5">
+                      <ArrowRight className="size-4" />
+                      <span className="text-sm font-medium">Carried over</span>
+                    </div>
+                  )}
                   {hasBudget ? (
                     <>
                       <div className="bg-muted flex items-center gap-2 rounded-full px-3 py-1.5">

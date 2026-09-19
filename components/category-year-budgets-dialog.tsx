@@ -11,7 +11,7 @@ import { z } from 'zod/v4';
 import { BudgetResetBehavior } from '@/prisma/client';
 import { getCategoriesByDesignation } from '@/prisma/services/category';
 import {
-  getNewYearSuggestions,
+  getRolloverSuggestions,
   setYearBudgetsForDesignation,
 } from '@/prisma/services/category-year';
 
@@ -42,14 +42,14 @@ const schema = z.object({
     z.object({
       categoryId: z.string(),
       name: z.string(),
-      amount: z.coerce.number<number>().min(0, 'Must be ≥ 0'),
+      amount: z.coerce.number<number>(),
     }),
   ),
 });
 
 type FormData = z.infer<typeof schema>;
 
-type RolloverHintData = { prevBudget: number; unused: number };
+type RolloverHintData = { prevAvailable: number; prevYearName: string };
 
 interface CategoryYearBudgetsDialogProps {
   trigger: React.ReactNode;
@@ -57,8 +57,6 @@ interface CategoryYearBudgetsDialogProps {
   yearId: string;
   yearName: string;
   budgetResetBehavior: BudgetResetBehavior;
-  prevYearId?: string;
-  prevYearName?: string;
 }
 
 export function CategoryYearBudgetsDialog({
@@ -67,14 +65,13 @@ export function CategoryYearBudgetsDialog({
   yearId,
   yearName,
   budgetResetBehavior,
-  prevYearId,
-  prevYearName,
 }: CategoryYearBudgetsDialogProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [rolloverHints, setRolloverHints] = useState<
     Map<string, RolloverHintData>
   >(new Map());
+  const [prevYearName, setPrevYearName] = useState<string | null>(null);
 
   const isRollover = budgetResetBehavior === 'ROLLOVER';
 
@@ -97,6 +94,7 @@ export function CategoryYearBudgetsDialog({
       setLoading(true);
       replace([]);
       setRolloverHints(new Map());
+      setPrevYearName(null);
     } else {
       form.reset();
     }
@@ -107,12 +105,13 @@ export function CategoryYearBudgetsDialog({
     let cancelled = false;
 
     async function load() {
-      if (isRollover && prevYearId) {
-        const suggestions = await getNewYearSuggestions({
+      if (isRollover) {
+        const { prevYear, suggestions } = await getRolloverSuggestions({
           designationId,
-          prevYearId,
+          yearId,
         });
         if (cancelled) return;
+        setPrevYearName(prevYear?.name ?? null);
         replace(
           suggestions.map((s) => ({
             categoryId: s.categoryId,
@@ -124,7 +123,10 @@ export function CategoryYearBudgetsDialog({
           new Map(
             suggestions.map((s) => [
               s.categoryId,
-              { prevBudget: s.prevBudget, unused: s.unused },
+              {
+                prevAvailable: s.prevAvailable,
+                prevYearName: prevYear?.name ?? '',
+              },
             ]),
           ),
         );
@@ -146,7 +148,7 @@ export function CategoryYearBudgetsDialog({
     return () => {
       cancelled = true;
     };
-  }, [open, isRollover, prevYearId, designationId, replace]);
+  }, [open, isRollover, yearId, designationId, replace]);
 
   async function onSubmit(data: FormData) {
     const result = await handleError(
@@ -181,8 +183,8 @@ export function CategoryYearBudgetsDialog({
           <DialogTitle>Set Budgets — {yearName}</DialogTitle>
           <DialogDescription>
             {isRollover
-              ? `ROLLOVER: suggested amounts include unused budget from ${prevYearName ?? 'the previous year'}.`
-              : 'RESET: enter fresh budgets for each category.'}
+              ? `Rollover: these amounts already apply automatically. Saving pins them to ${yearName}, so later edits to ${prevYearName ?? 'the previous year'} no longer move them.`
+              : 'Reset: enter fresh budgets for each category.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -214,15 +216,15 @@ export function CategoryYearBudgetsDialog({
                           {isRollover && hint && (
                             <span className="text-muted-foreground flex items-center gap-1 text-xs">
                               <TrendingUp className="size-3" />
-                              prev {formatCurrency(hint.prevBudget)} +{' '}
-                              {formatCurrency(hint.unused)} unused
+                              {hint.prevYearName || 'previous year'} ended at{' '}
+                              {formatCurrency(hint.prevAvailable)}
                             </span>
                           )}
                         </div>
                         <FormControl>
                           <Input
                             type="number"
-                            min={0}
+                            min={isRollover ? undefined : 0}
                             step="0.01"
                             placeholder="0.00"
                             {...f}
@@ -257,7 +259,7 @@ export function CategoryYearBudgetsDialog({
                   disabled={isSubmitting || fields.length === 0}
                 >
                   {isSubmitting && <Loader2 className="animate-spin" />}
-                  Save Budgets
+                  {isRollover ? `Pin to ${yearName}` : 'Save Budgets'}
                 </Button>
               </div>
             </form>

@@ -44,6 +44,11 @@ export type CategoryBudgetAcrossYears = {
   yearBudgets: YearBudgetEntry[];
 };
 
+export type RolloverSuggestions = {
+  prevYear: { id: string; name: string } | null;
+  suggestions: RolloverSuggestion[];
+};
+
 export type RolloverSuggestion = {
   categoryId: string;
   name: string;
@@ -146,7 +151,7 @@ export async function getRolloverSuggestions({
 }: {
   designationId: string;
   yearId: string;
-}): Promise<RolloverSuggestion[]> {
+}): Promise<RolloverSuggestions> {
   const { categories, years } = await getCategoryBudgetHistories({
     designationId,
   });
@@ -154,20 +159,23 @@ export async function getRolloverSuggestions({
   const index = years.findIndex((y) => y.id === yearId);
   const prevYear = index > 0 ? years[index - 1] : null;
 
-  return categories.map((category) => {
-    const target = category.years.get(yearId) ?? emptyYearBudget(yearId);
-    const prev =
-      (prevYear && category.years.get(prevYear.id)) ?? emptyYearBudget('');
+  return {
+    prevYear,
+    suggestions: categories.map((category) => {
+      const target = category.years.get(yearId) ?? emptyYearBudget(yearId);
+      const prev =
+        (prevYear && category.years.get(prevYear.id)) ?? emptyYearBudget('');
 
-    return {
-      categoryId: category.id,
-      name: category.name,
-      prevBudget: prev.budget,
-      prevSpent: prev.spent,
-      prevAvailable: prev.available,
-      suggestedAmount: target.grant ?? target.carriedIn,
-    };
-  });
+      return {
+        categoryId: category.id,
+        name: category.name,
+        prevBudget: prev.budget,
+        prevSpent: prev.spent,
+        prevAvailable: prev.available,
+        suggestedAmount: target.grant ?? target.carriedIn,
+      };
+    }),
+  };
 }
 
 export async function setYearBudgetsForDesignation({
@@ -246,7 +254,10 @@ export async function applyRolloverForYear({
       error: `${designation.name} resets each year, so there is nothing to roll over.`,
     };
 
-  const suggestions = await getRolloverSuggestions({ designationId, yearId });
+  const { suggestions } = await getRolloverSuggestions({
+    designationId,
+    yearId,
+  });
   if (suggestions.length === 0) return { applied: 0 };
 
   const result = await setYearBudgetsForDesignation({

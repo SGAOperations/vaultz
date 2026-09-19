@@ -2,8 +2,9 @@
 
 import { useDesignation } from '@/contexts/DesignationContext';
 import { useYear } from '@/contexts/YearContext';
-import { Plus } from 'lucide-react';
+import { Plus, Wallet } from 'lucide-react';
 
+import { CategoryYearBudgetsDialog } from '@/components/category-year-budgets-dialog';
 import { CreateCategoryDialog } from '@/components/create-category-dialog';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
@@ -27,6 +28,20 @@ export default function CategoriesPage() {
         description={description}
         actions={
           <div className="flex gap-2">
+            {selectedYear && (
+              <CategoryYearBudgetsDialog
+                designationId={selectedDesignation.id}
+                yearId={selectedYear.id}
+                yearName={selectedYear.name}
+                budgetResetBehavior={selectedDesignation.budgetResetBehavior}
+                trigger={
+                  <Button size="sm" variant="outline">
+                    <Wallet className="size-4" />
+                    Set Budgets
+                  </Button>
+                }
+              />
+            )}
             <CreateCategoryDialog
               designationId={selectedDesignation.id}
               yearId={selectedYear?.id}
