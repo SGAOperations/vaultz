@@ -3,9 +3,14 @@
 import { revalidatePath } from 'next/cache';
 
 import { Decimal } from '@/prisma/client/runtime/client';
+import {
+  emptyYearBudget,
+  getCategoryBudgetHistories,
+  hasYearActivity,
+} from '@/prisma/services/budget-engine';
 
 import prisma from '@/lib/prisma';
-import { ResponseType } from '@/lib/utils';
+import { ResponseType, isError } from '@/lib/utils';
 
 export type CategoryBudgetForYear = {
   id: string;
@@ -17,6 +22,10 @@ export type CategoryBudgetForYear = {
   budget: number;
   spent: number;
   available: number;
+  /** Balance carried forward from the previous year (0 unless ROLLOVER). */
+  carriedIn: number;
+  /** True when the budget is carried forward rather than stored. */
+  derived: boolean;
 };
 
 export type YearBudgetEntry = {
@@ -24,6 +33,7 @@ export type YearBudgetEntry = {
   yearName: string;
   amount: number;
   spent: number;
+  derived: boolean;
 };
 
 export type CategoryBudgetAcrossYears = {
@@ -32,6 +42,15 @@ export type CategoryBudgetAcrossYears = {
   ledgerCode: string;
   name: string;
   yearBudgets: YearBudgetEntry[];
+};
+
+export type RolloverSuggestion = {
+  categoryId: string;
+  name: string;
+  prevBudget: number;
+  prevSpent: number;
+  prevAvailable: number;
+  suggestedAmount: number;
 };
 
 export async function getCategoriesNotInYear({
@@ -59,52 +78,27 @@ export async function getCategoriesWithBudgetForYear({
   designationId: string;
   yearId: string;
 }): Promise<CategoryBudgetForYear[]> {
-  const categories = await prisma.category.findMany({
-    where: {
-      designationId,
-      deletedAt: null,
-      categoryYears: { some: { yearId, deletedAt: null } },
-    },
-    include: {
-      categoryYears: { where: { yearId, deletedAt: null } },
-      purchases: {
-        where: { yearId, excludeFromTotal: false },
-        select: { amount: true },
-      },
-      transfersTo: { where: { yearId }, select: { amount: true } },
-      transfersFrom: { where: { yearId }, select: { amount: true } },
-    },
-    orderBy: { code: 'asc' },
-  });
+  const { categories } = await getCategoryBudgetHistories({ designationId });
 
-  return categories.map((category) => {
-    const categoryYear = category.categoryYears[0] ?? null;
-    const baseBudget = categoryYear ? categoryYear.amount.toNumber() : 0;
-    const spent = category.purchases.reduce(
-      (acc, p) => acc + p.amount.toNumber(),
-      0,
-    );
-    const transfersIn = category.transfersTo.reduce(
-      (acc, t) => acc + t.amount.toNumber(),
-      0,
-    );
-    const transfersOut = category.transfersFrom.reduce(
-      (acc, t) => acc + t.amount.toNumber(),
-      0,
-    );
-    const budget = baseBudget + transfersIn - transfersOut;
-    return {
+  return categories
+    .map((category) => ({
+      category,
+      year: category.years.get(yearId) ?? emptyYearBudget(yearId),
+    }))
+    .filter(({ year }) => hasYearActivity(year))
+    .map(({ category, year }) => ({
       id: category.id,
       code: category.code,
       ledgerCode: category.ledgerCode,
       name: category.name,
       designationId: category.designationId,
-      categoryYearId: categoryYear?.id ?? null,
-      budget,
-      spent,
-      available: budget - spent,
-    };
-  });
+      categoryYearId: year.categoryYearId,
+      budget: year.budget,
+      spent: year.spent,
+      available: year.available,
+      carriedIn: year.carriedIn,
+      derived: year.derived,
+    }));
 }
 
 export async function getCategoryBudgetsAcrossYears({
@@ -115,100 +109,63 @@ export async function getCategoryBudgetsAcrossYears({
   categories: CategoryBudgetAcrossYears[];
   years: Array<{ id: string; name: string }>;
 }> {
-  const [categories, years] = await Promise.all([
-    prisma.category.findMany({
-      where: { designationId, deletedAt: null },
-      include: {
-        categoryYears: {
-          where: { deletedAt: null },
-          select: { yearId: true, amount: true },
-        },
-        purchases: {
-          where: { excludeFromTotal: false },
-          select: { amount: true, yearId: true },
-        },
-      },
-      orderBy: { code: 'asc' },
-    }),
-    prisma.year.findMany({
-      where: { deletedAt: null },
-      orderBy: { startDate: 'asc' },
-    }),
-  ]);
+  const { categories, years } = await getCategoryBudgetHistories({
+    designationId,
+  });
 
-  const categoryBudgets = categories.map((category) => {
-    const yearBudgets: YearBudgetEntry[] = years.map((year) => {
-      const cy = category.categoryYears.find((cy) => cy.yearId === year.id);
-      const spent = category.purchases
-        .filter((p) => p.yearId === year.id)
-        .reduce((acc, p) => acc + p.amount.toNumber(), 0);
-      return {
-        yearId: year.id,
-        yearName: year.name,
-        amount: cy ? cy.amount.toNumber() : 0,
-        spent,
-      };
-    });
-    return {
+  return {
+    categories: categories.map((category) => ({
       id: category.id,
       code: category.code,
       ledgerCode: category.ledgerCode,
       name: category.name,
-      yearBudgets,
-    };
-  });
-
-  return {
-    categories: categoryBudgets,
+      yearBudgets: years.map((year) => {
+        const resolved =
+          category.years.get(year.id) ?? emptyYearBudget(year.id);
+        return {
+          yearId: year.id,
+          yearName: year.name,
+          amount: resolved.budget,
+          spent: resolved.spent,
+          derived: resolved.derived,
+        };
+      }),
+    })),
     years: years.map((y) => ({ id: y.id, name: y.name })),
   };
 }
 
-export async function getNewYearSuggestions({
+/**
+ * Opening balances a ROLLOVER designation should start `yearId` with, based on
+ * where the previous year ended. Used to pre-fill the budget dialog and by
+ * `applyRolloverForYear` to store the values explicitly.
+ */
+export async function getRolloverSuggestions({
   designationId,
-  prevYearId,
+  yearId,
 }: {
   designationId: string;
-  prevYearId: string;
-}): Promise<
-  Array<{
-    categoryId: string;
-    name: string;
-    prevBudget: number;
-    prevSpent: number;
-    unused: number;
-    suggestedAmount: number;
-  }>
-> {
-  const categories = await prisma.category.findMany({
-    where: { designationId, deletedAt: null },
-    include: {
-      categoryYears: {
-        where: { yearId: prevYearId, deletedAt: null },
-        select: { amount: true },
-      },
-      purchases: {
-        where: { yearId: prevYearId, excludeFromTotal: false },
-        select: { amount: true },
-      },
-    },
-    orderBy: { code: 'asc' },
+  yearId: string;
+}): Promise<RolloverSuggestion[]> {
+  const { categories, years } = await getCategoryBudgetHistories({
+    designationId,
   });
 
+  const index = years.findIndex((y) => y.id === yearId);
+  const prevYear = index > 0 ? years[index - 1] : null;
+
   return categories.map((category) => {
-    const prevBudget = category.categoryYears[0]?.amount.toNumber() ?? 0;
-    const prevSpent = category.purchases.reduce(
-      (acc, p) => acc + p.amount.toNumber(),
-      0,
-    );
-    const unused = Math.max(0, prevBudget - prevSpent);
+    const target = category.years.get(yearId) ?? emptyYearBudget(yearId);
+    const prev =
+      (prevYear && category.years.get(prevYear.id)) ?? emptyYearBudget('');
+
     return {
       categoryId: category.id,
       name: category.name,
-      prevBudget,
-      prevSpent,
-      unused,
-      suggestedAmount: prevBudget + unused,
+      prevBudget: prev.budget,
+      prevSpent: prev.spent,
+      prevAvailable: prev.available,
+      suggestedAmount: target.grant ?? target.carriedIn,
     };
   });
 }
@@ -233,7 +190,7 @@ export async function setYearBudgetsForDesignation({
 
   if (isPastYear) {
     const purchaseCount = await prisma.purchase.count({
-      where: { yearId, category: { designationId } },
+      where: { yearId, category: { designationId }, deletedAt: null },
     });
     if (purchaseCount > 0)
       return {
@@ -263,6 +220,46 @@ export async function setYearBudgetsForDesignation({
   );
 
   revalidatePath('/categories');
+}
+
+/**
+ * Stores the carried-forward balances for a ROLLOVER designation as explicit
+ * `CategoryYear` rows, pinning them so later edits to the previous year no
+ * longer move them. Balances already read correctly without this — it is for
+ * locking a year in, and is safe to run more than once.
+ */
+export async function applyRolloverForYear({
+  designationId,
+  yearId,
+}: {
+  designationId: string;
+  yearId: string;
+}): Promise<ResponseType<{ applied: number }>> {
+  const designation = await prisma.designation.findUnique({
+    where: { id: designationId },
+    select: { name: true, budgetResetBehavior: true },
+  });
+  if (!designation)
+    return { error: 'The selected designation does not exist.' };
+  if (designation.budgetResetBehavior !== 'ROLLOVER')
+    return {
+      error: `${designation.name} resets each year, so there is nothing to roll over.`,
+    };
+
+  const suggestions = await getRolloverSuggestions({ designationId, yearId });
+  if (suggestions.length === 0) return { applied: 0 };
+
+  const result = await setYearBudgetsForDesignation({
+    designationId,
+    yearId,
+    budgets: suggestions.map((s) => ({
+      categoryId: s.categoryId,
+      amount: s.suggestedAmount,
+    })),
+  });
+  if (isError(result)) return result;
+
+  return { applied: suggestions.length };
 }
 
 export async function deleteCategoryYear(
@@ -297,7 +294,7 @@ export async function updateCategoryYearBudget({
   today.setHours(0, 0, 0, 0);
   if (!force && year.endDate < today) {
     const purchaseCount = await prisma.purchase.count({
-      where: { categoryId, yearId },
+      where: { categoryId, yearId, deletedAt: null },
     });
     if (purchaseCount > 0)
       return {

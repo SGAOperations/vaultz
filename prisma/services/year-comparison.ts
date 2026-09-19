@@ -1,5 +1,10 @@
 'use server';
 
+import {
+  emptyYearBudget,
+  getCategoryBudgetHistories,
+} from '@/prisma/services/budget-engine';
+
 import prisma from '@/lib/prisma';
 
 export type YearComparisonYearData = {
@@ -43,106 +48,64 @@ export async function getYearComparisonData({
 }): Promise<YearComparisonData> {
   if (yearIds.length === 0) return { overview: [], categories: [], years: [] };
 
-  const [categories, years] = await Promise.all([
-    prisma.category.findMany({
-      where: { deletedAt: null, ...(designationId ? { designationId } : {}) },
-      include: {
-        designation: true,
-        categoryYears: {
-          where: { deletedAt: null, yearId: { in: yearIds } },
-          select: { yearId: true, amount: true },
-        },
-        purchases: {
-          where: {
-            excludeFromTotal: false,
-            yearId: { in: yearIds },
-            deletedAt: null,
-          },
-          select: { amount: true, yearId: true },
-        },
-        transfersTo: {
-          where: { deletedAt: null, yearId: { in: yearIds } },
-          select: { amount: true, yearId: true },
-        },
-        transfersFrom: {
-          where: { deletedAt: null, yearId: { in: yearIds } },
-          select: { amount: true, yearId: true },
-        },
-      },
-      orderBy: { code: 'asc' },
-    }),
-    prisma.year.findMany({
-      where: { deletedAt: null, id: { in: yearIds } },
-      orderBy: { startDate: 'asc' },
-    }),
+  const [{ categories, years }, designations] = await Promise.all([
+    getCategoryBudgetHistories({ designationId }),
+    prisma.designation.findMany({ select: { id: true, name: true } }),
   ]);
 
-  const orderedYearIds = years.map((y) => y.id);
+  const designationNames = new Map(designations.map((d) => [d.id, d.name]));
+  const selectedYears = years.filter((year) => yearIds.includes(year.id));
 
   const categoryData: YearComparisonCategoryData[] = categories.map(
-    (category) => {
-      const yearData: YearComparisonYearData[] = orderedYearIds.map(
-        (yearId) => {
-          const year = years.find((y) => y.id === yearId);
-          const cy = category.categoryYears.find((cy) => cy.yearId === yearId);
-          const baseBudget = cy ? cy.amount.toNumber() : 0;
-          const spent = category.purchases
-            .filter((p) => p.yearId === yearId)
-            .reduce((acc, p) => acc + p.amount.toNumber(), 0);
-          const transfersIn = category.transfersTo
-            .filter((t) => t.yearId === yearId)
-            .reduce((acc, t) => acc + t.amount.toNumber(), 0);
-          const transfersOut = category.transfersFrom
-            .filter((t) => t.yearId === yearId)
-            .reduce((acc, t) => acc + t.amount.toNumber(), 0);
-          const budget = baseBudget + transfersIn - transfersOut;
-          return {
-            yearId,
-            yearName: year?.name ?? '',
-            budget,
-            spent,
-            available: budget - spent,
-            utilization: budget > 0 ? (spent / budget) * 100 : 0,
-          };
-        },
-      );
-      return {
-        id: category.id,
-        code: category.code,
-        name: category.name,
-        designationId: category.designationId,
-        designationName: category.designation.name,
-        years: yearData,
-      };
-    },
+    (category) => ({
+      id: category.id,
+      code: category.code,
+      name: category.name,
+      designationId: category.designationId,
+      designationName: designationNames.get(category.designationId) ?? '',
+      years: selectedYears.map((year) => {
+        const resolved =
+          category.years.get(year.id) ?? emptyYearBudget(year.id);
+        return {
+          yearId: year.id,
+          yearName: year.name,
+          budget: resolved.budget,
+          spent: resolved.spent,
+          available: resolved.available,
+          utilization:
+            resolved.budget > 0 ? (resolved.spent / resolved.budget) * 100 : 0,
+        };
+      }),
+    }),
   );
 
   const activeCategories = categoryData.filter((cat) =>
-    cat.years.some((y) => y.budget > 0 || y.spent > 0),
+    cat.years.some((y) => y.budget !== 0 || y.spent !== 0),
   );
 
-  const overview: YearComparisonOverview[] = orderedYearIds.map((yearId) => {
-    const year = years.find((y) => y.id === yearId);
-    const totalBudget = activeCategories.reduce((acc, cat) => {
-      const y = cat.years.find((y) => y.yearId === yearId);
-      return acc + (y?.budget ?? 0);
-    }, 0);
-    const totalSpent = activeCategories.reduce((acc, cat) => {
-      const y = cat.years.find((y) => y.yearId === yearId);
-      return acc + (y?.spent ?? 0);
-    }, 0);
+  const overview: YearComparisonOverview[] = selectedYears.map((year) => {
+    const totals = activeCategories.reduce(
+      (acc, cat) => {
+        const y = cat.years.find((y) => y.yearId === year.id);
+        return {
+          budget: acc.budget + (y?.budget ?? 0),
+          spent: acc.spent + (y?.spent ?? 0),
+        };
+      },
+      { budget: 0, spent: 0 },
+    );
     return {
-      yearId,
-      yearName: year?.name ?? '',
-      totalBudget,
-      totalSpent,
-      utilization: totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0,
+      yearId: year.id,
+      yearName: year.name,
+      totalBudget: totals.budget,
+      totalSpent: totals.spent,
+      utilization: totals.budget > 0 ? (totals.spent / totals.budget) * 100 : 0,
     };
   });
 
   return {
     overview,
     categories: activeCategories,
-    years: years.map((y) => ({ id: y.id, name: y.name })),
+    years: selectedYears.map((y) => ({ id: y.id, name: y.name })),
   };
 }

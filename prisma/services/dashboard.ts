@@ -1,5 +1,11 @@
 'use server';
 
+import {
+  emptyYearBudget,
+  getCategoryBudgetHistories,
+  hasYearActivity,
+} from '@/prisma/services/budget-engine';
+
 import prisma from '@/lib/prisma';
 import { parseDateOnly } from '@/lib/utils';
 
@@ -7,35 +13,28 @@ export async function getDashboardStatsByDesignation(
   designationId: string,
   yearId: string,
 ) {
-  const [categoryYears, purchases] = await Promise.all([
-    prisma.categoryYear.findMany({
-      where: {
-        category: { designationId, deletedAt: null },
-        deletedAt: null,
-        yearId,
-      },
-      select: { amount: true },
-    }),
-    prisma.purchase.findMany({
+  const [{ categories }, totalPurchases] = await Promise.all([
+    getCategoryBudgetHistories({ designationId }),
+    prisma.purchase.count({
       where: {
         category: { designationId },
         yearId,
         excludeFromTotal: false,
         deletedAt: null,
       },
-      select: { amount: true },
     }),
   ]);
 
-  const totalBudget = categoryYears.reduce(
-    (sum, c) => sum + c.amount.toNumber(),
-    0,
-  );
-  const totalSpent = purchases.reduce((sum, p) => sum + p.amount.toNumber(), 0);
+  const active = categories
+    .map((category) => category.years.get(yearId) ?? emptyYearBudget(yearId))
+    .filter(hasYearActivity);
+
+  const totalBudget = active.reduce((sum, year) => sum + year.budget, 0);
+  const totalSpent = active.reduce((sum, year) => sum + year.spent, 0);
 
   return {
-    totalCategories: categoryYears.length,
-    totalPurchases: purchases.length,
+    totalCategories: active.length,
+    totalPurchases,
     totalBudget,
     totalSpent,
     remaining: totalBudget - totalSpent,
@@ -91,48 +90,15 @@ export async function getSpendingByCategoryForDesignation(
   designationId: string,
   yearId: string,
 ) {
-  const categories = await prisma.category.findMany({
-    where: { designationId, deletedAt: null },
-    select: {
-      name: true,
-      categoryYears: {
-        where: { deletedAt: null, yearId },
-        select: { amount: true },
-      },
-      purchases: {
-        where: { yearId, excludeFromTotal: false, deletedAt: null },
-        select: { amount: true },
-      },
-      transfersFrom: {
-        where: { deletedAt: null, yearId },
-        select: { amount: true },
-      },
-      transfersTo: {
-        where: { deletedAt: null, yearId },
-        select: { amount: true },
-      },
-    },
-  });
+  const { categories } = await getCategoryBudgetHistories({ designationId });
 
   return categories.map((category) => {
-    const baseBudget = category.categoryYears.reduce(
-      (sum, cy) => sum + cy.amount.toNumber(),
-      0,
-    );
-    const purchases = category.purchases.reduce(
-      (sum, p) => sum + p.amount.toNumber(),
-      0,
-    );
-    const outgoing = category.transfersFrom.reduce(
-      (sum, t) => sum + t.amount.toNumber(),
-      0,
-    );
-    const incoming = category.transfersTo.reduce(
-      (sum, t) => sum + t.amount.toNumber(),
-      0,
-    );
-    const budget = baseBudget + incoming - outgoing;
-    const spent = purchases;
-    return { name: category.name, budget, spent, remaining: budget - spent };
+    const year = category.years.get(yearId) ?? emptyYearBudget(yearId);
+    return {
+      name: category.name,
+      budget: year.budget,
+      spent: year.spent,
+      remaining: year.available,
+    };
   });
 }
