@@ -1,6 +1,8 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import { TriangleAlert } from 'lucide-react';
+import { toast } from 'sonner';
 import { z } from 'zod/v4';
 
 import { createAllocation } from '@/prisma/services/allocation';
@@ -28,11 +30,14 @@ export function CreateAllocationDialog({
   trigger,
   designationId,
   allocationGroupId,
+  queryKey,
 }: {
   trigger: React.ReactNode;
   designationId: string;
   allocationGroupId?: string;
+  queryKey?: unknown[];
 }) {
+  const queryClient = useQueryClient();
   const { isInactivePeriod, isInactiveYear, selectedPeriod, selectedYear } =
     useInactiveSession();
   const isInactiveSession = isInactivePeriod || isInactiveYear;
@@ -43,8 +48,18 @@ export function CreateAllocationDialog({
   ].filter(Boolean);
 
   async function onSubmit(data: FormData): Promise<boolean> {
+    if (!selectedPeriod) {
+      toast.error('Select a period before creating an allocation');
+      return false;
+    }
+
     const result = await handleError(
-      createAllocation({ ...data, designationId, allocationGroupId }),
+      createAllocation({
+        ...data,
+        designationId,
+        allocationGroupId,
+        periodId: selectedPeriod.id,
+      }),
       {
         toast: {
           loading: 'Creating allocation...',
@@ -53,7 +68,12 @@ export function CreateAllocationDialog({
         },
       },
     );
-    return !isError(result);
+
+    if (isError(result)) return false;
+
+    if (queryKey) await queryClient.invalidateQueries({ queryKey });
+
+    return true;
   }
 
   return (
