@@ -164,22 +164,19 @@ export async function getCategoryBudgetsAcrossYears({
   };
 }
 
-export async function getNewYearSuggestions({
-  designationId,
-  prevYearId,
-}: {
-  designationId: string;
-  prevYearId: string;
-}): Promise<
-  Array<{
-    categoryId: string;
-    name: string;
-    prevBudget: number;
-    prevSpent: number;
-    unused: number;
-    suggestedAmount: number;
-  }>
-> {
+type CarryForwardEntry = {
+  categoryId: string;
+  name: string;
+  prevBudget: number;
+  prevSpent: number;
+  remaining: number;
+  suggestedAmount: number;
+};
+
+async function computeCarryForward(
+  designationId: string,
+  prevYearId: string,
+): Promise<CarryForwardEntry[]> {
   const categories = await prisma.category.findMany({
     where: { designationId, deletedAt: null },
     include: {
@@ -188,29 +185,114 @@ export async function getNewYearSuggestions({
         select: { amount: true },
       },
       purchases: {
-        where: { yearId: prevYearId, excludeFromTotal: false },
+        where: { yearId: prevYearId, excludeFromTotal: false, deletedAt: null },
+        select: { amount: true },
+      },
+      transfersTo: {
+        where: { yearId: prevYearId, deletedAt: null },
+        select: { amount: true },
+      },
+      transfersFrom: {
+        where: { yearId: prevYearId, deletedAt: null },
         select: { amount: true },
       },
     },
     orderBy: { code: 'asc' },
   });
 
+  const sum = (rows: { amount: Decimal }[]) =>
+    rows.reduce((acc, row) => acc + row.amount.toNumber(), 0);
+
   return categories.map((category) => {
-    const prevBudget = category.categoryYears[0]?.amount.toNumber() ?? 0;
-    const prevSpent = category.purchases.reduce(
-      (acc, p) => acc + p.amount.toNumber(),
+    const prevBudget =
+      (category.categoryYears[0]?.amount.toNumber() ?? 0) +
+      sum(category.transfersTo) -
+      sum(category.transfersFrom);
+    const prevSpent = sum(category.purchases);
+    const remaining = Math.max(
       0,
+      Math.round((prevBudget - prevSpent) * 100) / 100,
     );
-    const unused = Math.max(0, prevBudget - prevSpent);
+
     return {
       categoryId: category.id,
       name: category.name,
       prevBudget,
       prevSpent,
-      unused,
-      suggestedAmount: prevBudget + unused,
+      remaining,
+      suggestedAmount: remaining,
     };
   });
+}
+
+export async function getNewYearSuggestions({
+  designationId,
+  prevYearId,
+}: {
+  designationId: string;
+  prevYearId: string;
+}): Promise<CarryForwardEntry[]> {
+  return computeCarryForward(designationId, prevYearId);
+}
+
+/**
+ * Seeds budgets for a newly created year on every ROLLOVER designation by
+ * carrying each category's unspent balance forward from the preceding year.
+ * Categories that already have a budget for the new year are left untouched.
+ */
+export async function rolloverBudgetsForYear({
+  yearId,
+}: {
+  yearId: string;
+}): Promise<ResponseType<{ designations: number; categories: number }>> {
+  const year = await prisma.year.findFirst({
+    where: { id: yearId, deletedAt: null },
+    select: { id: true, startDate: true },
+  });
+  if (!year) return { error: 'The selected year does not exist.' };
+
+  const prevYear = await prisma.year.findFirst({
+    where: { deletedAt: null, endDate: { lt: year.startDate } },
+    orderBy: { endDate: 'desc' },
+    select: { id: true },
+  });
+  if (!prevYear) return { designations: 0, categories: 0 };
+
+  const designations = await prisma.designation.findMany({
+    where: { budgetResetBehavior: 'ROLLOVER' },
+    select: { id: true },
+  });
+
+  const existing = await prisma.categoryYear.findMany({
+    where: { yearId, deletedAt: null },
+    select: { categoryId: true },
+  });
+  const alreadyBudgeted = new Set(existing.map((row) => row.categoryId));
+
+  const rows: Array<{ categoryId: string; amount: number }> = [];
+  for (const designation of designations) {
+    const entries = await computeCarryForward(designation.id, prevYear.id);
+    for (const entry of entries) {
+      if (alreadyBudgeted.has(entry.categoryId)) continue;
+      rows.push({
+        categoryId: entry.categoryId,
+        amount: entry.suggestedAmount,
+      });
+    }
+  }
+
+  if (rows.length > 0)
+    await prisma.categoryYear.createMany({
+      data: rows.map(({ categoryId, amount }) => ({
+        categoryId,
+        yearId,
+        amount: new Decimal(amount),
+      })),
+    });
+
+  revalidatePath('/categories');
+
+  return { designations: designations.length, categories: rows.length };
 }
 
 export async function setYearBudgetsForDesignation({
