@@ -59,10 +59,23 @@ type LocalStepNode = {
 };
 type LocalStepSequence = LocalStepNode[];
 
-type AddFormState =
+// 'branch' starts a new parallel branch off parentStepId, 'sequence' appends to
+// the branch that already hangs off it
+type AddTarget =
   | { type: 'root' }
   | { type: 'branch'; parentStepId: string }
-  | null;
+  | { type: 'sequence'; parentStepId: string; afterStepId: string };
+type AddFormState = AddTarget | null;
+
+function isSameTarget(a: AddFormState, b: AddTarget): boolean {
+  if (a === null || a.type !== b.type) return false;
+  if (a.type === 'root') return true;
+  if (a.type === 'branch' && b.type === 'branch')
+    return a.parentStepId === b.parentStepId;
+  if (a.type === 'sequence' && b.type === 'sequence')
+    return a.parentStepId === b.parentStepId && a.afterStepId === b.afterStepId;
+  return false;
+}
 
 const stepSchema = z.object({
   name: z
@@ -159,9 +172,9 @@ function StepCard({
   onEdit,
   onDelete,
   onMove,
-  onAddBranch,
+  onOpenAddForm,
   onCancelAdd,
-  onAddBranchSubmit,
+  onSubmitAdd,
 }: {
   step: LocalStepNode;
   idx: number;
@@ -172,12 +185,9 @@ function StepCard({
   onEdit: (id: string, data: StepFormData) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   onMove: (id: string, dir: 'up' | 'down') => Promise<void>;
-  onAddBranch: (stepId: string) => void;
+  onOpenAddForm: (target: AddTarget) => void;
   onCancelAdd: () => void;
-  onAddBranchSubmit: (
-    siblingStepId: string,
-    data: StepFormData,
-  ) => Promise<void>;
+  onSubmitAdd: (target: AddTarget, data: StepFormData) => Promise<void>;
 }) {
   const [editing, setEditing] = useState(false);
   const form = useForm<StepFormData>({
@@ -190,10 +200,8 @@ function StepCard({
     setEditing(false);
   }
 
-  const showBranchForm =
-    addFormState !== null &&
-    addFormState.type === 'branch' &&
-    addFormState.parentStepId === step.id;
+  const branchTarget: AddTarget = { type: 'branch', parentStepId: step.id };
+  const showBranchForm = isSameTarget(addFormState, branchTarget);
 
   if (editing)
     return (
@@ -288,8 +296,8 @@ function StepCard({
                 size="icon"
                 variant="ghost"
                 className="size-8"
-                onClick={() => onAddBranch(step.id)}
-                disabled={isMutating || addFormState !== null}
+                onClick={() => onOpenAddForm(branchTarget)}
+                disabled={isMutating || showBranchForm}
                 title="Add Branch"
               >
                 <GitBranch className="size-4" />
@@ -310,25 +318,54 @@ function StepCard({
 
       {step.branches.length > 0 && (
         <div className="ml-6 flex flex-col gap-4 border-l-2 border-dashed pl-4">
-          {step.branches.map((branch, branchIdx) => (
-            <div key={branchIdx} className="flex flex-col gap-2">
-              <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
-                Branch {branchIdx + 1}
-              </p>
-              <SequenceList
-                sequence={branch}
-                isMutating={isMutating}
-                isDeleted={isDeleted}
-                addFormState={addFormState}
-                onEdit={onEdit}
-                onDelete={onDelete}
-                onMove={onMove}
-                onAddBranch={onAddBranch}
-                onCancelAdd={onCancelAdd}
-                onAddBranchSubmit={onAddBranchSubmit}
-              />
-            </div>
-          ))}
+          {step.branches.map((branch, branchIdx) => {
+            const appendTarget: AddTarget = {
+              type: 'sequence',
+              parentStepId: step.id,
+              afterStepId: branch[branch.length - 1].id,
+            };
+            const showAppendForm = isSameTarget(addFormState, appendTarget);
+
+            return (
+              <div key={branch[0].id} className="flex flex-col gap-2">
+                <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+                  Branch {branchIdx + 1}
+                </p>
+                <SequenceList
+                  sequence={branch}
+                  isMutating={isMutating}
+                  isDeleted={isDeleted}
+                  addFormState={addFormState}
+                  onEdit={onEdit}
+                  onDelete={onDelete}
+                  onMove={onMove}
+                  onOpenAddForm={onOpenAddForm}
+                  onCancelAdd={onCancelAdd}
+                  onSubmitAdd={onSubmitAdd}
+                />
+                {showAppendForm && (
+                  <AddStepForm
+                    label="New Step"
+                    isMutating={isMutating}
+                    onAdd={(data) => onSubmitAdd(appendTarget, data)}
+                    onCancel={onCancelAdd}
+                  />
+                )}
+                {!isDeleted && !showAppendForm && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-muted-foreground self-start"
+                    onClick={() => onOpenAddForm(appendTarget)}
+                    disabled={isMutating}
+                  >
+                    <Plus className="size-4" />
+                    Add Step
+                  </Button>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -341,7 +378,7 @@ function StepCard({
             <AddStepForm
               label="New Branch Step"
               isMutating={isMutating}
-              onAdd={(data) => onAddBranchSubmit(step.id, data)}
+              onAdd={(data) => onSubmitAdd(branchTarget, data)}
               onCancel={onCancelAdd}
             />
           </div>
@@ -359,9 +396,9 @@ function SequenceList({
   onEdit,
   onDelete,
   onMove,
-  onAddBranch,
+  onOpenAddForm,
   onCancelAdd,
-  onAddBranchSubmit,
+  onSubmitAdd,
 }: {
   sequence: LocalStepSequence;
   isMutating: boolean;
@@ -370,12 +407,9 @@ function SequenceList({
   onEdit: (id: string, data: StepFormData) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   onMove: (id: string, dir: 'up' | 'down') => Promise<void>;
-  onAddBranch: (stepId: string) => void;
+  onOpenAddForm: (target: AddTarget) => void;
   onCancelAdd: () => void;
-  onAddBranchSubmit: (
-    siblingStepId: string,
-    data: StepFormData,
-  ) => Promise<void>;
+  onSubmitAdd: (target: AddTarget, data: StepFormData) => Promise<void>;
 }) {
   return (
     <div className="flex flex-col gap-2">
@@ -391,9 +425,9 @@ function SequenceList({
           onEdit={onEdit}
           onDelete={onDelete}
           onMove={onMove}
-          onAddBranch={onAddBranch}
+          onOpenAddForm={onOpenAddForm}
           onCancelAdd={onCancelAdd}
-          onAddBranchSubmit={onAddBranchSubmit}
+          onSubmitAdd={onSubmitAdd}
         />
       ))}
     </div>
@@ -433,18 +467,53 @@ export function Content({
     });
   }
 
+  function relinkSequence(seq: LocalStepSequence): LocalStepSequence {
+    return seq.map((node, i) => ({
+      ...node,
+      previousStepId: i === 0 ? null : seq[i - 1].id,
+    }));
+  }
+
+  // Deleting a step re-links its predecessor to its successor and takes the
+  // branches hanging off it with it, which is what the server does
   function removeNodeFromSequence(
     seq: LocalStepSequence,
     stepId: string,
   ): LocalStepSequence {
-    return seq
-      .filter((node) => node.id !== stepId)
-      .map((node) => ({
-        ...node,
-        branches: node.branches.map((branch) =>
-          removeNodeFromSequence(branch, stepId),
-        ),
-      }));
+    if (seq.some((node) => node.id === stepId))
+      return relinkSequence(seq.filter((node) => node.id !== stepId));
+
+    return seq.map((node) => ({
+      ...node,
+      branches: node.branches
+        .map((branch) => removeNodeFromSequence(branch, stepId))
+        .filter((branch) => branch.length > 0),
+    }));
+  }
+
+  function moveNodeInSequence(
+    seq: LocalStepSequence,
+    stepId: string,
+    direction: 'up' | 'down',
+  ): LocalStepSequence {
+    const idx = seq.findIndex((node) => node.id === stepId);
+    if (idx !== -1) {
+      const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+      if (swapIdx < 0 || swapIdx >= seq.length) return seq;
+      const reordered = [...seq];
+      [reordered[idx], reordered[swapIdx]] = [
+        reordered[swapIdx],
+        reordered[idx],
+      ];
+      return relinkSequence(reordered);
+    }
+
+    return seq.map((node) => ({
+      ...node,
+      branches: node.branches.map((branch) =>
+        moveNodeInSequence(branch, stepId, direction),
+      ),
+    }));
   }
 
   async function handleEditStep(stepId: string, data: StepFormData) {
@@ -499,6 +568,8 @@ export function Content({
 
   async function handleMoveStep(stepId: string, direction: 'up' | 'down') {
     setIsMutating(true);
+    const prev = rootSequence;
+    setRootSequence((seq) => moveNodeInSequence(seq, stepId, direction));
     try {
       await handleError(moveProcessStep(template.id, stepId, direction), {
         toast: {
@@ -507,54 +578,47 @@ export function Content({
           error: 'Failed to move step',
         },
         onSuccess: () => router.refresh(),
+        onError: () => setRootSequence(prev),
       });
     } finally {
       setIsMutating(false);
     }
   }
 
-  async function handleAddRootStep(data: StepFormData) {
-    setIsMutating(true);
-    try {
-      await handleError(
-        addProcessStep(template.id, {
-          name: data.name,
-          description: data.description || undefined,
-        }),
-        {
-          toast: {
-            loading: 'Adding step...',
-            success: 'Step added',
-            error: 'Failed to add step',
-          },
-          onSuccess: () => {
-            setAddFormState(null);
-            router.refresh();
-          },
-        },
-      );
-    } finally {
-      setIsMutating(false);
-    }
-  }
+  async function handleAddStep(target: AddTarget, data: StepFormData) {
+    const step = {
+      name: data.name,
+      description: data.description || undefined,
+    };
 
-  async function handleAddBranchStep(
-    siblingStepId: string,
-    data: StepFormData,
-  ) {
     setIsMutating(true);
     try {
       await handleError(
-        addBranchStep(template.id, siblingStepId, {
-          name: data.name,
-          description: data.description || undefined,
-        }),
+        target.type === 'branch'
+          ? addBranchStep(template.id, target.parentStepId, step)
+          : addProcessStep(
+              template.id,
+              target.type === 'sequence'
+                ? {
+                    ...step,
+                    parentStepId: target.parentStepId,
+                    afterStepId: target.afterStepId,
+                  }
+                : step,
+            ),
         {
-          toast: {
-            loading: 'Adding branch...',
-            success: 'Branch added',
-            error: 'Failed to add branch',
-          },
+          toast:
+            target.type === 'branch'
+              ? {
+                  loading: 'Adding branch...',
+                  success: 'Branch added',
+                  error: 'Failed to add branch',
+                }
+              : {
+                  loading: 'Adding step...',
+                  success: 'Step added',
+                  error: 'Failed to add step',
+                },
           onSuccess: () => {
             setAddFormState(null);
             router.refresh();
@@ -696,7 +760,7 @@ export function Content({
               size="sm"
               variant="outline"
               onClick={() => setAddFormState({ type: 'root' })}
-              disabled={addFormState !== null || isMutating}
+              disabled={addFormState?.type === 'root' || isMutating}
             >
               <Plus className="size-4" />
               Add Step
@@ -721,18 +785,16 @@ export function Content({
           onEdit={handleEditStep}
           onDelete={handleDeleteStep}
           onMove={handleMoveStep}
-          onAddBranch={(stepId) =>
-            setAddFormState({ type: 'branch', parentStepId: stepId })
-          }
+          onOpenAddForm={setAddFormState}
           onCancelAdd={() => setAddFormState(null)}
-          onAddBranchSubmit={handleAddBranchStep}
+          onSubmitAdd={handleAddStep}
         />
 
         {addFormState?.type === 'root' && !isDeleted && (
           <AddStepForm
             label="New Step"
             isMutating={isMutating}
-            onAdd={handleAddRootStep}
+            onAdd={(data) => handleAddStep({ type: 'root' }, data)}
             onCancel={() => setAddFormState(null)}
           />
         )}
