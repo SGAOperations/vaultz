@@ -292,7 +292,8 @@ function PurchaseTotals({
     { name: string; count: number; amount: number }
   >();
   for (const row of rows) {
-    const { categoryId, amount } = row.original;
+    const { categoryId, amount, excludeFromTotal } = row.original;
+    if (excludeFromTotal) continue;
     const existing = byCategory.get(categoryId);
     if (existing) {
       existing.count += 1;

@@ -21,13 +21,17 @@ export async function getAllAllocationGroups(
       where: designationId ? { designationId } : undefined,
       include: {
         allocations: {
-          where: periodId
-            ? { periodId }
-            : yearId
-              ? { period: { yearId } }
-              : undefined,
+          where: {
+            deletedAt: null,
+            ...(periodId
+              ? { periodId }
+              : yearId
+                ? { period: { yearId } }
+                : undefined),
+          },
           include: {
             purchases: {
+              where: { deletedAt: null },
               orderBy: [{ purchasedAt: 'desc' }, { createdAt: 'desc' }],
               include: {
                 user: true,
@@ -62,6 +66,7 @@ export async function getAllocationGroup({
       allocations: {
         include: {
           purchases: {
+            where: { deletedAt: null },
             orderBy: [{ purchasedAt: 'desc' }, { createdAt: 'desc' }],
             include: { user: true, process: { select: { templateId: true } } },
           },
@@ -99,9 +104,10 @@ export async function getAllocationGroupWithStats({
     include: {
       designation: true,
       allocations: {
-        where: periodId ? { periodId } : undefined,
+        where: periodId ? { periodId, deletedAt: null } : { deletedAt: null },
         include: {
           purchases: {
+            where: { deletedAt: null },
             orderBy: [{ purchasedAt: 'desc' }, { createdAt: 'desc' }],
             include: { user: true, process: { select: { templateId: true } } },
           },
