@@ -102,6 +102,23 @@ function chainContaining(steps: ProcessStep[], stepId: string): ProcessStep[] {
   return chain;
 }
 
+// previousStepId is a plain unique index that soft-deleted rows keep occupying,
+// so the slot has to be released before another step can claim it. Returns the
+// live step that held it, if any, so the caller can re-link it.
+async function releasePreviousStepSlot(
+  tx: Prisma.TransactionClient,
+  previousStepId: string,
+): Promise<string | null> {
+  const holder = await tx.processStep.findUnique({ where: { previousStepId } });
+  if (!holder) return null;
+
+  await tx.processStep.update({
+    where: { id: holder.id },
+    data: { previousStepId: null },
+  });
+  return holder.deletedAt ? null : holder.id;
+}
+
 function buildSequence(
   allSteps: ProcessStep[],
   parentStepId: string | null,
@@ -207,18 +224,6 @@ export async function addProcessStep(
 
     if (data.afterStepId) {
       previousStepId = data.afterStepId;
-      // previousStepId is a plain unique index, so whoever currently points at
-      // afterStepId has to release the slot before the new step can claim it
-      const holder = await tx.processStep.findUnique({
-        where: { previousStepId: data.afterStepId },
-      });
-      if (holder) {
-        await tx.processStep.update({
-          where: { id: holder.id },
-          data: { previousStepId: null },
-        });
-        if (!holder.deletedAt) successorId = holder.id;
-      }
     } else {
       // The `next` relation filter ignores deletedAt, so a soft-deleted
       // successor would still make its predecessor look like a non-tail
@@ -228,6 +233,9 @@ export async function addProcessStep(
       });
       previousStepId = sortByLinkedList(siblings).at(-1)?.id ?? null;
     }
+
+    if (previousStepId)
+      successorId = await releasePreviousStepSlot(tx, previousStepId);
 
     const created = await tx.processStep.create({
       data: {
