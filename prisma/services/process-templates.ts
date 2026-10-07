@@ -2,16 +2,22 @@
 
 import { revalidatePath } from 'next/cache';
 
-import { ProcessStep, ProcessTemplate } from '@/prisma/client';
+import { Prisma, ProcessStep, ProcessTemplate } from '@/prisma/client';
 
 import prisma from '@/lib/prisma';
 import {
   ProcessStepSequence,
   ProcessTemplateWithSequence,
   ProcessTemplateWithStepCount,
-  ProcessTemplateWithSteps,
 } from '@/lib/types';
 import { ResponseType } from '@/lib/utils';
+
+// Branch order is otherwise whatever the database happens to return, which lets
+// the same template render "Branch 1" and "Branch 2" swapped between loads
+const STEP_ORDER = [
+  { createdAt: 'asc' },
+  { id: 'asc' },
+] satisfies Prisma.ProcessStepOrderByWithRelationInput[];
 
 export async function getAllProcessTemplates(
   activeOnly = false,
@@ -38,21 +44,12 @@ export async function createProcessTemplate(data: {
   return template;
 }
 
-export async function getProcessTemplate(
-  id: string,
-): Promise<ProcessTemplateWithSteps | null> {
-  return prisma.processTemplate.findUnique({
-    where: { id },
-    include: { steps: { where: { deletedAt: null } } },
-  });
-}
-
 export async function getProcessTemplateAsSequence(
   id: string,
 ): Promise<ProcessTemplateWithSequence | null> {
   const template = await prisma.processTemplate.findUnique({
     where: { id },
-    include: { steps: { where: { deletedAt: null } } },
+    include: { steps: { where: { deletedAt: null }, orderBy: STEP_ORDER } },
   });
 
   if (!template) return null;
@@ -72,6 +69,54 @@ function sortByLinkedList(steps: ProcessStep[]): ProcessStep[] {
     current = next;
   }
   return result;
+}
+
+// Every branch of a parent shares that parent's id in parentStepId, so a
+// sibling set can hold several independent chains. This walks back to the head
+// of the one chain `stepId` belongs to and then forward to its tail.
+function chainContaining(steps: ProcessStep[], stepId: string): ProcessStep[] {
+  const byId = new Map(steps.map((s) => [s.id, s]));
+  const byPrevious = new Map<string, ProcessStep>();
+  for (const s of steps)
+    if (s.previousStepId) byPrevious.set(s.previousStepId, s);
+
+  let head = byId.get(stepId);
+  if (!head) return [];
+
+  const visited = new Set<string>([head.id]);
+  while (head.previousStepId) {
+    const previous = byId.get(head.previousStepId);
+    if (!previous || visited.has(previous.id)) break;
+    visited.add(previous.id);
+    head = previous;
+  }
+
+  const chain: ProcessStep[] = [];
+  const walked = new Set<string>();
+  let current: ProcessStep | undefined = head;
+  while (current && !walked.has(current.id)) {
+    walked.add(current.id);
+    chain.push(current);
+    current = byPrevious.get(current.id);
+  }
+  return chain;
+}
+
+// previousStepId is a plain unique index that soft-deleted rows keep occupying,
+// so the slot has to be released before another step can claim it. Returns the
+// live step that held it, if any, so the caller can re-link it.
+async function releasePreviousStepSlot(
+  tx: Prisma.TransactionClient,
+  previousStepId: string,
+): Promise<string | null> {
+  const holder = await tx.processStep.findUnique({ where: { previousStepId } });
+  if (!holder) return null;
+
+  await tx.processStep.update({
+    where: { id: holder.id },
+    data: { previousStepId: null },
+  });
+  return holder.deletedAt ? null : holder.id;
 }
 
 function buildSequence(
@@ -171,56 +216,48 @@ export async function addProcessStep(
     afterStepId?: string;
   },
 ): Promise<ResponseType<ProcessStep>> {
+  const parentStepId = data.parentStepId ?? null;
+
   const step = await prisma.$transaction(async (tx) => {
-    let previousStepId: string | null;
+    let previousStepId: string | null = null;
+    let successorId: string | null = null;
+
     if (data.afterStepId) {
       previousStepId = data.afterStepId;
-      // Re-link the step that was after afterStepId to point to the new step
-      const successor = await tx.processStep.findFirst({
-        where: { previousStepId: data.afterStepId, deletedAt: null },
+    } else {
+      // The `next` relation filter ignores deletedAt, so a soft-deleted
+      // successor would still make its predecessor look like a non-tail
+      const siblings = await tx.processStep.findMany({
+        where: { templateId, deletedAt: null, parentStepId },
+        orderBy: STEP_ORDER,
       });
-      const s = await tx.processStep.create({
-        data: {
-          templateId,
-          name: data.name,
-          description: data.description || null,
-          previousStepId,
-          parentStepId: data.parentStepId ?? null,
-        },
-      });
-      if (successor)
-        await tx.processStep.update({
-          where: { id: successor.id },
-          data: { previousStepId: s.id },
-        });
-      await tx.processTemplate.update({
-        where: { id: templateId },
-        data: { updatedAt: new Date() },
-      });
-      return s;
+      previousStepId = sortByLinkedList(siblings).at(-1)?.id ?? null;
     }
-    const lastStep = await tx.processStep.findFirst({
-      where: {
-        templateId,
-        deletedAt: null,
-        parentStepId: data.parentStepId ?? null,
-        next: null,
-      },
-    });
-    const s = await tx.processStep.create({
+
+    if (previousStepId)
+      successorId = await releasePreviousStepSlot(tx, previousStepId);
+
+    const created = await tx.processStep.create({
       data: {
         templateId,
         name: data.name,
         description: data.description || null,
-        previousStepId: lastStep?.id ?? null,
-        parentStepId: data.parentStepId ?? null,
+        previousStepId,
+        parentStepId,
       },
     });
+
+    if (successorId)
+      await tx.processStep.update({
+        where: { id: successorId },
+        data: { previousStepId: created.id },
+      });
+
     await tx.processTemplate.update({
       where: { id: templateId },
       data: { updatedAt: new Date() },
     });
-    return s;
+    return created;
   });
   revalidatePath(`/processes/${templateId}`);
   return step;
@@ -228,30 +265,17 @@ export async function addProcessStep(
 
 export async function addBranchStep(
   templateId: string,
-  siblingStepId: string,
+  parentStepId: string,
   data: { name: string; description?: string },
 ): Promise<ResponseType<ProcessStep>> {
-  const sibling = await prisma.processStep.findUnique({
-    where: { id: siblingStepId },
-  });
-  if (!sibling) return { error: 'Step not found' };
-
   const step = await prisma.$transaction(async (tx) => {
-    const lastSibling = await tx.processStep.findFirst({
-      where: {
-        templateId,
-        deletedAt: null,
-        parentStepId: sibling.parentStepId,
-        next: null,
-      },
-    });
     const s = await tx.processStep.create({
       data: {
         templateId,
         name: data.name,
         description: data.description || null,
-        previousStepId: lastSibling?.id ?? null,
-        parentStepId: sibling.parentStepId,
+        previousStepId: null,
+        parentStepId,
       },
     });
     await tx.processTemplate.update({
@@ -290,22 +314,48 @@ export async function deleteProcessStep(
 ): Promise<ResponseType<ProcessTemplate>> {
   const template = await prisma.$transaction(async (tx) => {
     const step = await tx.processStep.findUnique({ where: { id: stepId } });
+
     if (step) {
-      // Re-link successor to point to deleted step's predecessor
-      await tx.processStep.updateMany({
+      const liveSteps = await tx.processStep.findMany({
+        where: { templateId, deletedAt: null },
+        select: { id: true, parentStepId: true },
+      });
+
+      // A branch exists only as a continuation of the step it hangs off, so it
+      // goes with that step. Promoting it to the parent instead would drop a
+      // second head into the parent sequence, which the renderer discards.
+      const doomed = new Set([stepId]);
+      for (let grew = true; grew; ) {
+        grew = false;
+        for (const s of liveSteps)
+          if (
+            s.parentStepId &&
+            doomed.has(s.parentStepId) &&
+            !doomed.has(s.id)
+          ) {
+            doomed.add(s.id);
+            grew = true;
+          }
+      }
+
+      const successor = await tx.processStep.findFirst({
         where: { previousStepId: stepId, deletedAt: null },
-        data: { previousStepId: step.previousStepId },
       });
-      // Re-parent children to the deleted step's parent
+
+      // Deleted rows keep occupying their unique previousStepId slot, so clear
+      // it as part of the soft delete before handing it to the successor
       await tx.processStep.updateMany({
-        where: { parentStepId: stepId, deletedAt: null },
-        data: { parentStepId: step.parentStepId },
+        where: { id: { in: [...doomed] } },
+        data: { previousStepId: null, deletedAt: new Date() },
       });
+
+      if (successor)
+        await tx.processStep.update({
+          where: { id: successor.id },
+          data: { previousStepId: step.previousStepId },
+        });
     }
-    await tx.processStep.update({
-      where: { id: stepId },
-      data: { deletedAt: new Date() },
-    });
+
     return tx.processTemplate.update({
       where: { id: templateId },
       data: { updatedAt: new Date() },
@@ -325,9 +375,12 @@ export async function moveProcessStep(
 
   const siblings = await prisma.processStep.findMany({
     where: { templateId, parentStepId: step.parentStepId, deletedAt: null },
+    orderBy: STEP_ORDER,
   });
 
-  const sorted = sortByLinkedList(siblings);
+  // Siblings span every branch of the parent, so reordering has to stay inside
+  // the single chain this step belongs to
+  const sorted = chainContaining(siblings, stepId);
   const idx = sorted.findIndex((s) => s.id === stepId);
   if (idx === -1) return { error: 'Step not found' };
   const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
@@ -337,14 +390,18 @@ export async function moveProcessStep(
   const newOrder = [...sorted];
   [newOrder[idx], newOrder[swapIdx]] = [newOrder[swapIdx], newOrder[idx]];
 
-  const minIdx = Math.min(idx, swapIdx);
-  const maxIdx = Math.min(Math.max(idx, swapIdx) + 1, newOrder.length - 1);
-
   const template = await prisma.$transaction(async (tx) => {
-    for (let i = minIdx; i <= maxIdx; i++)
+    // previousStepId is a plain, non-deferrable unique index. Writing the new
+    // links one row at a time collides with the links still in place, so the
+    // whole chain is released first and then rebuilt.
+    await tx.processStep.updateMany({
+      where: { id: { in: newOrder.map((s) => s.id) } },
+      data: { previousStepId: null },
+    });
+    for (let i = 1; i < newOrder.length; i++)
       await tx.processStep.update({
         where: { id: newOrder[i].id },
-        data: { previousStepId: i === 0 ? null : newOrder[i - 1].id },
+        data: { previousStepId: newOrder[i - 1].id },
       });
     return tx.processTemplate.update({
       where: { id: templateId },

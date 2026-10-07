@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
-import { getProcessTemplate } from '@/prisma/services/process-templates';
+import { getProcessTemplateAsSequence } from '@/prisma/services/process-templates';
 
 import { Content } from './content';
 
@@ -13,7 +13,7 @@ export default async function ProcessTemplatePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const template = await getProcessTemplate(id);
+  const template = await getProcessTemplateAsSequence(id);
   if (!template) notFound();
   // Use updatedAt as key so the component remounts (resetting local step state)
   // whenever the server confirms a step mutation via router.refresh()
