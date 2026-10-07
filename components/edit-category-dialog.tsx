@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -45,6 +46,18 @@ const schema = z.object({
   name: z.string().min(1, 'Please enter a category name'),
 });
 
+// A category's name and code are rendered by every list that reads categories,
+// so an edit has to invalidate all of them, not just the budget table.
+const CATEGORY_QUERY_KEYS = [
+  ['categories-budget'],
+  ['categories'],
+  ['categories-available'],
+  ['categories-with-available'],
+  ['dashboard-stats'],
+  ['dashboard-purchases'],
+  ['dashboard-spending'],
+];
+
 export function EditCategoryDialog({
   category,
   trigger,
@@ -54,18 +67,35 @@ export function EditCategoryDialog({
   trigger: React.ReactNode;
   categoryYearId?: string;
 }) {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState<boolean>(false);
   const [confirmDelete, setConfirmDelete] = useState<boolean>(false);
-  const form = useForm<z.infer<typeof schema>>({
-    resolver: zodResolver(schema),
-    defaultValues: {
+
+  // `values` (not `defaultValues`) so the form picks up the category prop after
+  // a save instead of showing the pre-edit values the next time it is opened.
+  const values = useMemo(
+    () => ({
       code: category.code,
       ledgerCode: category.ledgerCode,
       name: category.name,
-    },
+    }),
+    [category.code, category.ledgerCode, category.name],
+  );
+
+  const form = useForm<z.infer<typeof schema>>({
+    resolver: zodResolver(schema),
+    values,
   });
   const isSubmitting = form.formState.isSubmitting;
+
+  async function invalidateCategoryQueries() {
+    await Promise.all(
+      CATEGORY_QUERY_KEYS.map((queryKey) =>
+        queryClient.invalidateQueries({ queryKey }),
+      ),
+    );
+  }
 
   async function onSubmit(data: z.infer<typeof schema>) {
     await handleError(updateCategory({ id: category.id, ...data }), {
@@ -75,9 +105,7 @@ export function EditCategoryDialog({
         error: 'Failed to update spending category',
       },
       onSuccess: async () => {
-        await queryClient.invalidateQueries({
-          queryKey: ['categories-budget'],
-        });
+        await invalidateCategoryQueries();
         setOpen(false);
       },
     });
@@ -97,9 +125,7 @@ export function EditCategoryDialog({
           error: 'Failed to remove category from year',
         },
         onSuccess: async () => {
-          await queryClient.invalidateQueries({
-            queryKey: ['categories-budget'],
-          });
+          await invalidateCategoryQueries();
           setOpen(false);
         },
       });
@@ -110,10 +136,11 @@ export function EditCategoryDialog({
           success: 'Spending category deleted successfully',
           error: 'Failed to delete spending category',
         },
-        onSuccess: () => {
+        onSuccess: async () => {
+          await invalidateCategoryQueries();
           setOpen(false);
           // Navigate to the parent designation page
-          router.push(`/designation`);
+          router.push('/designation');
         },
       });
     }
@@ -122,7 +149,7 @@ export function EditCategoryDialog({
   function handleCancel() {
     handleOpenChange(false);
     setConfirmDelete(false);
-    form.reset();
+    form.reset(values);
   }
 
   function handleCancelDelete() {
@@ -131,10 +158,8 @@ export function EditCategoryDialog({
 
   function handleOpenChange(newOpen: boolean) {
     setOpen(newOpen);
-    if (!newOpen) {
-      setConfirmDelete(false);
-      form.reset();
-    }
+    setConfirmDelete(false);
+    form.reset(values);
   }
 
   return (
