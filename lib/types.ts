@@ -6,7 +6,6 @@ import {
   Category as PrismaCategory,
   Purchase as PrismaPurchase,
   Transfer as PrismaTransfer,
-  ProcessStep,
   ProcessTemplate,
   User,
   Year,
@@ -92,10 +91,6 @@ export type TransferWithYear = Omit<PrismaTransfer, 'amount'> & {
 };
 
 export type ProcessTemplateWithStepCount = ProcessTemplate & { steps: number };
-
-export type ProcessTemplateWithSteps = ProcessTemplate & {
-  steps: ProcessStep[];
-};
 
 export type ProcessStepNode = {
   id: string;
