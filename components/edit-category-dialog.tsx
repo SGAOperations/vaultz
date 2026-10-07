@@ -7,7 +7,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
 import { Loader2, Trash2 } from 'lucide-react';
-import { toast } from 'sonner';
 import { z } from 'zod/v4';
 
 import { deleteCategory, updateCategory } from '@/prisma/services/category';
@@ -177,13 +176,7 @@ export function EditCategoryDialog({
         </DialogHeader>
 
         <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(onSubmit, (errors) => {
-              const first = Object.values(errors)[0];
-              if (first?.message) toast.error(String(first.message));
-            })}
-            className="space-y-8"
-          >
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <FormField
               control={form.control}
               name="name"
