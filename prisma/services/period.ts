@@ -7,6 +7,8 @@ import { Period, Year } from '@/prisma/client';
 import prisma from '@/lib/prisma';
 import { ResponseType } from '@/lib/utils';
 
+import { rolloverBudgetsForYear } from './category-year';
+
 function getStartOfToday(): Date {
   const now = new Date();
   return new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -113,7 +115,12 @@ export async function createYear({
 
   const year = await prisma.year.create({ data: { name, startDate, endDate } });
 
+  // Rollover designations carry their unspent balance into every new year,
+  // regardless of which designation the year happened to be created from.
+  await rolloverBudgetsForYear({ yearId: year.id });
+
   revalidatePath('/periods');
+  revalidatePath('/categories');
 
   return year;
 }
