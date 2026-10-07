@@ -27,6 +27,21 @@ interface FormInputProps<TFieldValues extends FieldValues> extends Omit<
   numbersOnly?: boolean;
 }
 
+/**
+ * Renders a form value as the text shown in a currency input when it is not
+ * focused. Anything that is not a usable amount — unset, empty, unparseable
+ * text such as `abc` or `1,234`, or the zero every amount field defaults to —
+ * renders as an empty string so the field's placeholder stays visible instead
+ * of a misleading `0.00` or a literal `NaN`.
+ */
+function formatCurrencyValue(value: unknown): string {
+  if (value === null || value === undefined || value === '') return '';
+  const parsed =
+    typeof value === 'number' ? value : Number(String(value).trim());
+  if (!Number.isFinite(parsed) || parsed === 0) return '';
+  return parsed.toFixed(2);
+}
+
 function FormInput<TFieldValues extends FieldValues>({
   name,
   label,
@@ -34,10 +49,14 @@ function FormInput<TFieldValues extends FieldValues>({
   currency,
   prefix,
   numbersOnly,
+  onFocus,
+  onChange,
+  onBlur,
   ...inputProps
 }: FormInputProps<TFieldValues>) {
   const form = useFormContext<TFieldValues>();
-  const [displayValue, setDisplayValue] = React.useState('');
+  // `null` means "not being edited": the formatted form value is shown instead.
+  const [editingValue, setEditingValue] = React.useState<string | null>(null);
 
   return (
     <FormField
@@ -55,17 +74,20 @@ function FormInput<TFieldValues extends FieldValues>({
                 <Input
                   {...inputProps}
                   {...field}
-                  value={displayValue || Number(field.value || 0).toFixed(2)}
-                  onFocus={() =>
-                    setDisplayValue(Number(field.value || 0).toFixed(2))
-                  }
-                  onChange={(e) => {
-                    setDisplayValue(e.target.value);
-                    field.onChange(e.target.value);
+                  value={editingValue ?? formatCurrencyValue(field.value)}
+                  onFocus={(e) => {
+                    setEditingValue(formatCurrencyValue(field.value));
+                    onFocus?.(e);
                   }}
-                  onBlur={() => {
-                    setDisplayValue('');
+                  onChange={(e) => {
+                    setEditingValue(e.target.value);
+                    field.onChange(e.target.value);
+                    onChange?.(e);
+                  }}
+                  onBlur={(e) => {
+                    setEditingValue(null);
                     field.onBlur();
+                    onBlur?.(e);
                   }}
                   className={cn('rounded-l-none', inputProps.className)}
                 />
@@ -79,17 +101,34 @@ function FormInput<TFieldValues extends FieldValues>({
                   {...inputProps}
                   {...field}
                   className={cn('rounded-l-none', inputProps.className)}
+                  onFocus={onFocus}
                   onChange={(e) => {
-                    let value = e.target.value;
-                    if (numbersOnly) {
-                      value = value.replace(/\D/g, '');
-                    }
+                    const value = numbersOnly
+                      ? e.target.value.replace(/\D/g, '')
+                      : e.target.value;
                     field.onChange(value);
+                    onChange?.(e);
+                  }}
+                  onBlur={(e) => {
+                    field.onBlur();
+                    onBlur?.(e);
                   }}
                 />
               </div>
             ) : (
-              <Input {...inputProps} {...field} />
+              <Input
+                {...inputProps}
+                {...field}
+                onFocus={onFocus}
+                onChange={(e) => {
+                  field.onChange(e);
+                  onChange?.(e);
+                }}
+                onBlur={(e) => {
+                  field.onBlur();
+                  onBlur?.(e);
+                }}
+              />
             )}
           </FormControl>
           {description && <FormDescription>{description}</FormDescription>}
