@@ -13,6 +13,7 @@ export async function getLatestPurchases(
 ): Promise<PurchaseWithUser[]> {
   const purchases = await prisma.purchase.findMany({
     take: limit,
+    where: { deletedAt: null },
     orderBy: [{ purchasedAt: 'desc' }, { createdAt: 'desc' }],
     include: { user: true, process: { select: { templateId: true } } },
   });
@@ -31,7 +32,11 @@ export async function getPurchasesByDesignation({
   yearId: string;
 }): Promise<PurchaseWithUser[]> {
   const purchases = await prisma.purchase.findMany({
-    where: { yearId, category: { designationId, deletedAt: null } },
+    where: {
+      yearId,
+      deletedAt: null,
+      category: { designationId, deletedAt: null },
+    },
     orderBy: [{ purchasedAt: 'desc' }, { createdAt: 'desc' }],
     include: { user: true, process: { select: { templateId: true } } },
   });
@@ -214,7 +219,10 @@ export async function updatePurchase({
 export async function deletePurchase(
   id: string,
 ): Promise<ResponseType<Purchase>> {
-  const purchase = await prisma.purchase.delete({ where: { id } });
+  const purchase = await prisma.purchase.update({
+    where: { id },
+    data: { deletedAt: new Date() },
+  });
 
   revalidatePath('/');
   revalidatePath('/designation');
@@ -226,7 +234,7 @@ export async function getPurchaseProcess(
   purchaseId: string,
 ): Promise<PurchaseProcessData | null> {
   const purchase = await prisma.purchase.findUnique({
-    where: { id: purchaseId },
+    where: { id: purchaseId, deletedAt: null },
     include: {
       process: {
         include: {
@@ -322,7 +330,7 @@ export async function getBatchPurchaseProcessData(
   if (purchaseIds.length === 0) return {};
 
   const purchases = await prisma.purchase.findMany({
-    where: { id: { in: purchaseIds } },
+    where: { id: { in: purchaseIds }, deletedAt: null },
     select: {
       id: true,
       process: {

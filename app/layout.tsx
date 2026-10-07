@@ -1,6 +1,7 @@
 import { NextSSRPlugin } from '@uploadthing/react/next-ssr-plugin';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
+import { headers } from 'next/headers';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
 
 import { extractRouterConfig } from 'uploadthing/server';
@@ -32,6 +33,32 @@ export const metadata: Metadata = {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  // The passphrase gate (see proxy.ts) tags every request with the current
+  // pathname so /access can render a minimal shell instead of the full app
+  // chrome + data fetches below.
+  const isAccessPage = (await headers()).get('x-pathname') === '/access';
+
+  if (isAccessPage) {
+    return (
+      <html lang="en">
+        <body className={cn('w-full font-sans antialiased', inter.variable)}>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            {children}
+            <Toaster
+              richColors
+              toastOptions={{ classNames: { description: 'line-clamp-2' } }}
+            />
+          </ThemeProvider>
+        </body>
+      </html>
+    );
+  }
+
   const [firstDesignation, activeYear, activePeriod] = await Promise.all([
     getFirstDesignation(),
     getActiveYear(),
