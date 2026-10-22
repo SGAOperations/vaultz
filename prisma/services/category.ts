@@ -164,7 +164,8 @@ export async function updateCategory({
     data: { code, ledgerCode, name },
   });
 
-  revalidatePath('/category');
+  revalidatePath('/category/[categoryId]', 'page');
+  revalidatePath('/categories');
   revalidatePath('/designation');
 
   return category;
@@ -176,7 +177,8 @@ export async function deleteCategory(id: string): Promise<ResponseType<void>> {
     data: { deletedAt: new Date() },
   });
 
-  revalidatePath('/category');
+  revalidatePath('/category/[categoryId]', 'page');
+  revalidatePath('/categories');
   revalidatePath('/designation');
 }
 

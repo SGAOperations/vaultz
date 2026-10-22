@@ -17,21 +17,18 @@ export async function createAllocation({
   amount: number;
   designationId: string;
   allocationGroupId?: string;
-  periodId?: string;
+  periodId: string;
 }): Promise<ResponseType<Allocation>> {
-  let resolvedPeriodId = periodId;
-  if (!resolvedPeriodId) {
-    const period = await prisma.period.findFirst({
-      where: { deletedAt: null },
-      orderBy: { startDate: 'desc' },
-    });
-    if (!period)
-      return {
-        error:
-          'No active period found. Please create a period before adding allocations.',
-      } satisfies ErrorType;
-    resolvedPeriodId = period.id;
-  }
+  const period = await prisma.period.findFirst({
+    where: { id: periodId, deletedAt: null },
+    select: { id: true },
+  });
+
+  if (!period)
+    return {
+      error:
+        'The selected period no longer exists. Pick a different period and try again.',
+    } satisfies ErrorType;
 
   const allocation = await prisma.allocation.create({
     data: {
@@ -39,7 +36,7 @@ export async function createAllocation({
       amount,
       designationId,
       allocationGroupId,
-      periodId: resolvedPeriodId,
+      periodId: period.id,
     },
   });
 

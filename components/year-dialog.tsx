@@ -10,17 +10,14 @@ import {
 
 import { useDesignation } from '@/contexts/DesignationContext';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { Loader2, Trash2 } from 'lucide-react';
 import { z } from 'zod/v4';
 
 import { Year } from '@/prisma/client';
 import { getCategoriesByDesignation } from '@/prisma/services/category';
-import {
-  getNewYearSuggestions,
-  setYearBudgetsForDesignation,
-} from '@/prisma/services/category-year';
-import { createYear, getAllYears, updateYear } from '@/prisma/services/period';
+import { setYearBudgetsForDesignation } from '@/prisma/services/category-year';
+import { createYear, updateYear } from '@/prisma/services/period';
 
 import { handleError, parseDateOnly } from '@/lib/utils';
 
@@ -82,11 +79,6 @@ export function YearDialog({
 
   const { selectedDesignation } = useDesignation();
   const queryClient = useQueryClient();
-
-  const { data: years = [] } = useQuery({
-    queryKey: ['years'],
-    queryFn: getAllYears,
-  });
 
   const yearForm = useForm<YearFormData>({
     resolver: zodResolver(yearSchema),
@@ -183,53 +175,13 @@ export function YearDialog({
         }
 
         if (selectedDesignation.budgetResetBehavior === 'ROLLOVER') {
-          // Automatic: calculate and save budgets without any user input
-          const newYearStart = new Date(newYear.startDate);
-          const prevYear = [...years]
-            .filter((y) => new Date(y.endDate) < newYearStart)
-            .sort(
-              (a, b) =>
-                new Date(b.endDate).getTime() - new Date(a.endDate).getTime(),
-            )[0];
-
-          let budgets: Array<{ categoryId: string; amount: number }>;
-          if (prevYear) {
-            const suggestions = await getNewYearSuggestions({
-              designationId: selectedDesignation.id,
-              prevYearId: prevYear.id,
-            });
-            budgets = suggestions.map((s) => ({
-              categoryId: s.categoryId,
-              amount: s.suggestedAmount,
-            }));
-          } else {
-            const categories = await getCategoriesByDesignation({
-              designationId: selectedDesignation.id,
-            });
-            budgets = categories.map((c) => ({ categoryId: c.id, amount: 0 }));
-          }
-
-          await handleError(
-            setYearBudgetsForDesignation({
-              designationId: selectedDesignation.id,
-              yearId: newYear.id,
-              budgets,
-            }),
-            {
-              toast: {
-                loading: 'Rolling over budgets...',
-                success: 'Budgets rolled over automatically',
-                error: 'Failed to roll over budgets',
-              },
-              onSuccess: async () => {
-                await queryClient.invalidateQueries({
-                  queryKey: ['categories-budget'],
-                });
-                await queryClient.invalidateQueries({ queryKey: ['years'] });
-                handleOpenChange(false);
-              },
-            },
-          );
+          // createYear already carried balances forward for every ROLLOVER
+          // designation, so there is nothing to collect from the user here.
+          await queryClient.invalidateQueries({
+            queryKey: ['categories-budget'],
+          });
+          await queryClient.invalidateQueries({ queryKey: ['years'] });
+          handleOpenChange(false);
         } else {
           // RESET: go to budget step
           setLoadingBudgets(true);

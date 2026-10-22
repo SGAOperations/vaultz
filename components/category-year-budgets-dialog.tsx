@@ -49,7 +49,7 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
-type RolloverHintData = { prevBudget: number; unused: number };
+type RolloverHintData = { prevBudget: number; prevSpent: number };
 
 interface CategoryYearBudgetsDialogProps {
   trigger: React.ReactNode;
@@ -124,7 +124,7 @@ export function CategoryYearBudgetsDialog({
           new Map(
             suggestions.map((s) => [
               s.categoryId,
-              { prevBudget: s.prevBudget, unused: s.unused },
+              { prevBudget: s.prevBudget, prevSpent: s.prevSpent },
             ]),
           ),
         );
@@ -181,7 +181,7 @@ export function CategoryYearBudgetsDialog({
           <DialogTitle>Set Budgets — {yearName}</DialogTitle>
           <DialogDescription>
             {isRollover
-              ? `ROLLOVER: suggested amounts include unused budget from ${prevYearName ?? 'the previous year'}.`
+              ? `ROLLOVER: suggested amounts carry forward the unspent balance from ${prevYearName ?? 'the previous year'}.`
               : 'RESET: enter fresh budgets for each category.'}
           </DialogDescription>
         </DialogHeader>
@@ -214,8 +214,8 @@ export function CategoryYearBudgetsDialog({
                           {isRollover && hint && (
                             <span className="text-muted-foreground flex items-center gap-1 text-xs">
                               <TrendingUp className="size-3" />
-                              prev {formatCurrency(hint.prevBudget)} +{' '}
-                              {formatCurrency(hint.unused)} unused
+                              {formatCurrency(hint.prevBudget)} budget −{' '}
+                              {formatCurrency(hint.prevSpent)} spent
                             </span>
                           )}
                         </div>

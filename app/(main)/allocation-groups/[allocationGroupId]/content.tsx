@@ -80,6 +80,11 @@ export function Content({ allocationGroupId }: ContentProps) {
               }
               designationId={allocationGroup.designationId}
               allocationGroupId={allocationGroup.id}
+              queryKey={[
+                'allocation-group',
+                allocationGroupId,
+                selectedPeriod?.id,
+              ]}
             />
           </div>
         }
