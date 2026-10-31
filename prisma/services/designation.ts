@@ -4,21 +4,28 @@ import { revalidatePath } from 'next/cache';
 
 import { BudgetResetBehavior, Designation } from '@/prisma/client';
 
+import { requireCapability } from '@/lib/permissions';
 import prisma from '@/lib/prisma';
 import { DesignationWithPurchases } from '@/lib/types';
 import { ResponseType } from '@/lib/utils';
 
 export async function getDesignations(): Promise<Designation[]> {
+  await requireCapability('view');
+
   return await prisma.designation.findMany({ orderBy: { name: 'asc' } });
 }
 
 export async function getFirstDesignation(): Promise<Designation | null> {
+  await requireCapability('view');
+
   return await prisma.designation.findFirst({ orderBy: { name: 'asc' } });
 }
 
 export async function getAllDesignations(): Promise<
   DesignationWithPurchases[]
 > {
+  await requireCapability('view');
+
   return (
     await prisma.designation.findMany({
       include: {
@@ -71,6 +78,8 @@ export async function getDesignation({
 }: {
   id: string;
 }): Promise<DesignationWithPurchases | null> {
+  await requireCapability('view');
+
   const designation = await prisma.designation.findUnique({
     where: { id },
     include: {
@@ -127,6 +136,8 @@ export async function createDesignation({
   name: string;
   budgetResetBehavior: BudgetResetBehavior;
 }): Promise<ResponseType<Designation>> {
+  await requireCapability('edit');
+
   const designation = await prisma.designation.create({
     data: { code, name, budgetResetBehavior },
   });
@@ -148,6 +159,8 @@ export async function updateDesignation({
   code: string;
   budgetResetBehavior: BudgetResetBehavior;
 }): Promise<ResponseType<Designation>> {
+  await requireCapability('edit');
+
   const designation = await prisma.designation.update({
     where: { id },
     data: { name, code, budgetResetBehavior },

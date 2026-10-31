@@ -22,6 +22,7 @@ import { CreateAllocationDialog } from '@/components/create-allocation-dialog';
 import { EditAllocationDialog } from '@/components/edit-allocation-dialog';
 import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/page-header';
+import { EditOnly } from '@/components/providers/capabilities-provider';
 import { CreatePurchaseDialog } from '@/components/purchase-dialog';
 import { SectionHeader } from '@/components/section-header';
 import { StatCards } from '@/components/stat-card';
@@ -64,28 +65,32 @@ export function Content({ allocationGroupId }: ContentProps) {
         description={description}
         actions={
           <div className="flex gap-2">
-            <CreatePurchaseDialog allocationGroups={[allocationGroup]} />
+            <EditOnly>
+              <CreatePurchaseDialog allocationGroups={[allocationGroup]} />
+            </EditOnly>
             <Link href={`/purchases?allocationGroup=${allocationGroupId}`}>
               <Button variant="outline" className="gap-2">
                 <ShoppingCart className="size-4" />
                 View Purchases
               </Button>
             </Link>
-            <CreateAllocationDialog
-              trigger={
-                <Button variant="outline" className="gap-2">
-                  <Layers className="size-4" />
-                  Create Allocation
-                </Button>
-              }
-              designationId={allocationGroup.designationId}
-              allocationGroupId={allocationGroup.id}
-              queryKey={[
-                'allocation-group',
-                allocationGroupId,
-                selectedPeriod?.id,
-              ]}
-            />
+            <EditOnly>
+              <CreateAllocationDialog
+                trigger={
+                  <Button variant="outline" className="gap-2">
+                    <Layers className="size-4" />
+                    Create Allocation
+                  </Button>
+                }
+                designationId={allocationGroup.designationId}
+                allocationGroupId={allocationGroup.id}
+                queryKey={[
+                  'allocation-group',
+                  allocationGroupId,
+                  selectedPeriod?.id,
+                ]}
+              />
+            </EditOnly>
           </div>
         }
       />
@@ -169,25 +174,27 @@ export function Content({ allocationGroupId }: ContentProps) {
                   </div>
                 </Card>
               </Link>
-              <div className="absolute top-3 right-3">
-                <EditAllocationDialog
-                  allocation={allocation}
-                  queryKey={[
-                    'allocation-group',
-                    allocationGroupId,
-                    selectedPeriod?.id,
-                  ]}
-                  trigger={
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="size-8 opacity-0 transition-opacity group-hover:opacity-100"
-                    >
-                      <Pencil className="size-4" />
-                    </Button>
-                  }
-                />
-              </div>
+              <EditOnly>
+                <div className="absolute top-3 right-3">
+                  <EditAllocationDialog
+                    allocation={allocation}
+                    queryKey={[
+                      'allocation-group',
+                      allocationGroupId,
+                      selectedPeriod?.id,
+                    ]}
+                    trigger={
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-8 opacity-0 transition-opacity group-hover:opacity-100"
+                      >
+                        <Pencil className="size-4" />
+                      </Button>
+                    }
+                  />
+                </div>
+              </EditOnly>
             </div>
           ))}
         </div>

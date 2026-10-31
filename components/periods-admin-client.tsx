@@ -13,6 +13,7 @@ import { handleError } from '@/lib/utils';
 
 import { CopyAllocationsDialog } from '@/components/copy-allocations-dialog';
 import { PeriodDialog } from '@/components/period-dialog';
+import { EditOnly } from '@/components/providers/capabilities-provider';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -78,28 +79,30 @@ function PeriodRow({ period, years }: { period: Period; years: Year[] }) {
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
-        <PeriodDialog period={period} years={years}>
-          <Button variant="ghost" size="icon">
-            <Pencil className="size-4" />
-            <span className="sr-only">Edit period</span>
-          </Button>
-        </PeriodDialog>
+      <EditOnly>
+        <div className="flex items-center gap-2">
+          <PeriodDialog period={period} years={years}>
+            <Button variant="ghost" size="icon">
+              <Pencil className="size-4" />
+              <span className="sr-only">Edit period</span>
+            </Button>
+          </PeriodDialog>
 
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleDelete}
-          disabled={deleting}
-        >
-          {deleting ? (
-            <Loader2 className="size-4 animate-spin" />
-          ) : (
-            <Trash2 className="size-4" />
-          )}
-          <span className="sr-only">Delete period</span>
-        </Button>
-      </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleDelete}
+            disabled={deleting}
+          >
+            {deleting ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Trash2 className="size-4" />
+            )}
+            <span className="sr-only">Delete period</span>
+          </Button>
+        </div>
+      </EditOnly>
     </div>
   );
 }
@@ -179,24 +182,26 @@ function YearCard({
               </p>
             </div>
 
-            <div className="flex items-center gap-2">
-              <YearDialog year={year}>
-                <Button variant="outline" size="sm" className="gap-1.5">
-                  <Pencil className="size-3.5" />
-                  Edit
-                </Button>
-              </YearDialog>
+            <EditOnly>
+              <div className="flex items-center gap-2">
+                <YearDialog year={year}>
+                  <Button variant="outline" size="sm" className="gap-1.5">
+                    <Pencil className="size-3.5" />
+                    Edit
+                  </Button>
+                </YearDialog>
 
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-1.5"
-                onClick={() => setConfirmOpen(true)}
-              >
-                <Trash2 className="size-3.5" />
-                Delete
-              </Button>
-            </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => setConfirmOpen(true)}
+                >
+                  <Trash2 className="size-3.5" />
+                  Delete
+                </Button>
+              </div>
+            </EditOnly>
           </div>
         </CardHeader>
 
@@ -209,20 +214,22 @@ function YearCard({
             ))
           )}
 
-          <PeriodDialog
-            years={allYears}
-            defaultYearId={year.id}
-            onCreated={handlePeriodCreated}
-          >
-            <Button
-              variant="outline"
-              size="sm"
-              className="mt-2 gap-1.5 self-start"
+          <EditOnly>
+            <PeriodDialog
+              years={allYears}
+              defaultYearId={year.id}
+              onCreated={handlePeriodCreated}
             >
-              <Plus className="size-3.5" />
-              Add Period
-            </Button>
-          </PeriodDialog>
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-2 gap-1.5 self-start"
+              >
+                <Plus className="size-3.5" />
+                Add Period
+              </Button>
+            </PeriodDialog>
+          </EditOnly>
         </CardContent>
       </Card>
 

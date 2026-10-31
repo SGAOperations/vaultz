@@ -1,5 +1,6 @@
 'use server';
 
+import { requireCapability } from '@/lib/permissions';
 import prisma from '@/lib/prisma';
 
 export type YearComparisonYearData = {
@@ -41,6 +42,8 @@ export async function getYearComparisonData({
   yearIds: string[];
   designationId?: string;
 }): Promise<YearComparisonData> {
+  await requireCapability('view');
+
   if (yearIds.length === 0) return { overview: [], categories: [], years: [] };
 
   const [categories, years] = await Promise.all([

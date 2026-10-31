@@ -8,6 +8,7 @@ import { getTransfersByCategory } from '@/prisma/services/transfer';
 
 import { CategoryActionsMenu } from '@/components/category-actions-menu';
 import { PageHeader } from '@/components/page-header';
+import { EditOnly } from '@/components/providers/capabilities-provider';
 import { CreatePurchaseDialog } from '@/components/purchase-dialog';
 import { PurchaseList } from '@/components/purchase-list';
 import { SectionHeader } from '@/components/section-header';
@@ -50,10 +51,12 @@ export default async function CategoryPage({
         title={category.name}
         description={`SC${category.code} · DN${category.designation.code}`}
         actions={
-          <div className="flex gap-2">
-            <CreatePurchaseDialog categories={[category]} />
-            <CategoryActionsMenu category={category} />
-          </div>
+          <EditOnly>
+            <div className="flex gap-2">
+              <CreatePurchaseDialog categories={[category]} />
+              <CategoryActionsMenu category={category} />
+            </div>
+          </EditOnly>
         }
       />
 

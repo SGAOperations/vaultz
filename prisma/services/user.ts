@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 
 import { User } from '@/prisma/client';
 
+import { requireCapability } from '@/lib/permissions';
 import prisma from '@/lib/prisma';
 import { UserWithPurchases, UserWithPurchasesAndCategory } from '@/lib/types';
 import { ResponseType } from '@/lib/utils';
@@ -15,6 +16,8 @@ export async function createUser({
   first: string;
   last: string;
 }): Promise<ResponseType<User>> {
+  await requireCapability('edit');
+
   const data = await prisma.user.create({ data: { first, last } });
 
   revalidatePath(`/users`);
@@ -23,6 +26,8 @@ export async function createUser({
 }
 
 export async function getUsers(): Promise<User[]> {
+  await requireCapability('view');
+
   return prisma.user.findMany({
     where: { deletedAt: null },
     orderBy: { last: 'asc' },
@@ -30,6 +35,8 @@ export async function getUsers(): Promise<User[]> {
 }
 
 export async function getUsersWithPurchases(): Promise<UserWithPurchases[]> {
+  await requireCapability('view');
+
   return (
     await prisma.user.findMany({
       where: { deletedAt: null },
@@ -58,6 +65,8 @@ export async function updateUser({
   last: string;
   id: string;
 }): Promise<ResponseType<User>> {
+  await requireCapability('edit');
+
   const data = await prisma.user.update({
     where: { id, deletedAt: null },
     data: { first, last },
@@ -69,6 +78,8 @@ export async function updateUser({
 }
 
 export async function deleteUser({ id }: { id: string }) {
+  await requireCapability('edit');
+
   const data = await prisma.user.update({
     where: { id, deletedAt: null },
     data: { deletedAt: new Date() },
@@ -84,6 +95,8 @@ export async function getUserById({
 }: {
   id: string;
 }): Promise<UserWithPurchasesAndCategory | null> {
+  await requireCapability('view');
+
   const user = await prisma.user.findUnique({
     where: { id, deletedAt: null },
     include: {

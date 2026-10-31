@@ -7,6 +7,7 @@ import { Plus } from 'lucide-react';
 import { getCategoriesWithAvailableAmount } from '@/prisma/services/category';
 
 import { PageHeader } from '@/components/page-header';
+import { EditOnly } from '@/components/providers/capabilities-provider';
 import { TransferDialog } from '@/components/transfer-dialog';
 import { Button } from '@/components/ui/button';
 
@@ -32,15 +33,17 @@ export default function TransfersPage() {
         title="Transfer History"
         description={`${selectedDesignation.name} · DN${selectedDesignation.code}`}
         actions={
-          <TransferDialog
-            categories={categories}
-            trigger={
-              <Button>
-                <Plus className="size-4" />
-                New Transfer
-              </Button>
-            }
-          />
+          <EditOnly>
+            <TransferDialog
+              categories={categories}
+              trigger={
+                <Button>
+                  <Plus className="size-4" />
+                  New Transfer
+                </Button>
+              }
+            />
+          </EditOnly>
         }
       />
       <Content designationId={selectedDesignation.id} />
