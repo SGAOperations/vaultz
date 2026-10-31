@@ -1,6 +1,7 @@
-import { createSgaProxy } from '@nusgaops/sgauth/proxy';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+
+import { createSgaProxy } from '@nusgaops/sgauth/proxy';
 
 import { ACCESS_COOKIE_NAME, verifyAccessCookieValue } from '@/lib/access-gate';
 import { isSgauthEnabled } from '@/lib/sgauth';

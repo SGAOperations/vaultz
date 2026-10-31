@@ -80,6 +80,22 @@ VAULTZ_ACCESS_CODE=<shared passphrase>
 VAULTZ_ACCESS_SECRET=<random signing secret>
 ```
 
+To sign in with SGAuth instead of the shared passphrase, also set:
+
+```env
+SGAUTH_ENABLED=true
+SGAUTH_URL=http://auth.sga.localhost:3000
+SGAUTH_COOKIE_NAME=sgauth-local.session_token
+```
+
+| Environment      | `SGAUTH_URL`                           | `SGAUTH_COOKIE_NAME`                |
+| ---------------- | -------------------------------------- | ----------------------------------- |
+| Production       | `https://auth.northeasternsga.com`     | `__Secure-sgauth.session_token`     |
+| Dev and previews | `https://auth-dev.northeasternsga.com` | `__Secure-sgauth-dev.session_token` |
+| Local            | `http://auth.sga.localhost:3000`       | `sgauth-local.session_token`        |
+
+With SGAuth enabled, every page except `/api/uploadthing` and `/health` redirects signed-out visitors to SGAuth sign-in, which sends them back afterwards. Unset `SGAUTH_ENABLED` to roll back to the passphrase gate.
+
 3. **Start the local database:**
 
 ```bash
