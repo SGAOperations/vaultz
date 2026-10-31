@@ -100,11 +100,11 @@ With SGAuth enabled, every page except `/api/uploadthing` and `/health` redirect
 
 With SGAuth enabled, VaultZ decides access from the user's SGA positions. SGAuth only supplies the positions. The map lives in `lib/permissions.ts`, the only place position keys appear in the code. Keys come from the curated list in SGAOperations/auth (`prisma/seed/positions.json`).
 
-| Capability | Positions                                                                       | Allows                       |
-| ---------- | ------------------------------------------------------------------------------- | ---------------------------- |
-| `edit`     | `vice-president-of-operational-affairs`, `comptroller`                          | every create, update, delete |
-| `view`     | everyone with `edit`, plus `student-body-president`, `executive-vice-president` | every page and read          |
-| none       | any other position, or no positions                                             | nothing: a "No access" page  |
+| Capability | Positions                                                                                                                                                  | Allows                       |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| `edit`     | `executive-vice-president`, `vice-president-of-operational-affairs`, `comptroller`                                                                         | every create, update, delete |
+| `view`     | everyone with `edit`, plus `student-body-president`, `speaker-of-the-senate`, `senator`, `parliamentarian`, and every other `vice-president-of-*` position | every page and read          |
+| none       | any other position, or no positions                                                                                                                        | nothing: a "No access" page  |
 
 Every server action in `prisma/services/` calls `requireCapability('view' | 'edit')` first, and receipt uploads require `edit`. Under the passphrase gate everything stays allowed.
 
