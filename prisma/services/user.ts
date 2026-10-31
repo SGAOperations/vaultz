@@ -12,13 +12,17 @@ import { ResponseType } from '@/lib/utils';
 export async function createUser({
   first,
   last,
+  email,
 }: {
   first: string;
   last: string;
+  email?: string;
 }): Promise<ResponseType<User>> {
   await requireCapability('edit');
 
-  const data = await prisma.user.create({ data: { first, last } });
+  const data = await prisma.user.create({
+    data: { first, last, email: email || null },
+  });
 
   revalidatePath(`/users`);
 
@@ -59,17 +63,19 @@ export async function getUsersWithPurchases(): Promise<UserWithPurchases[]> {
 export async function updateUser({
   first,
   last,
+  email,
   id,
 }: {
   first: string;
   last: string;
+  email?: string;
   id: string;
 }): Promise<ResponseType<User>> {
   await requireCapability('edit');
 
   const data = await prisma.user.update({
     where: { id, deletedAt: null },
-    data: { first, last },
+    data: { first, last, email: email || null },
   });
 
   revalidatePath(`/users`);
