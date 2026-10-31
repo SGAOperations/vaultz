@@ -1,12 +1,22 @@
+import { createSgaProxy } from '@nusgaops/sgauth/proxy';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 import { ACCESS_COOKIE_NAME, verifyAccessCookieValue } from '@/lib/access-gate';
+import { isSgauthEnabled } from '@/lib/sgauth';
 
-// Gates every route behind a single shared passphrase cookie. This is a
-// temporary stopgap (no per-user identity or permissions) meant to keep
-// casual/unauthorized visitors out until real per-user auth is built.
+// Only checks that the SGAuth cookie is present; requireSession() in the root
+// layout validates it.
+const sgaProxy = createSgaProxy({
+  publicPaths: ['/api/uploadthing', '/health'],
+});
+
+// Without SGAuth, gates every route behind a single shared passphrase cookie.
+// This is a temporary stopgap (no per-user identity or permissions) meant to
+// keep casual/unauthorized visitors out until the SGAuth cutover.
 export function proxy(request: NextRequest) {
+  if (isSgauthEnabled()) return sgaProxy(request);
+
   const { pathname, search } = request.nextUrl;
 
   const requestHeaders = new Headers(request.headers);
