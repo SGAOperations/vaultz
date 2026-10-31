@@ -3,6 +3,7 @@ import { CreditCard, RefreshCw } from 'lucide-react';
 import { Designation } from '@/prisma/client';
 
 import { EditDesignationDialog } from '@/components/edit-designation-dialog';
+import { EditOnly } from '@/components/providers/capabilities-provider';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -24,17 +25,19 @@ export function DesignationCard({ designation }: { designation: Designation }) {
               </p>
             </div>
           </div>
-          <EditDesignationDialog
-            designationId={id}
-            name={name}
-            code={code}
-            budgetResetBehavior={budgetResetBehavior}
-            trigger={
-              <Button variant="outline" size="sm">
-                Edit
-              </Button>
-            }
-          />
+          <EditOnly>
+            <EditDesignationDialog
+              designationId={id}
+              name={name}
+              code={code}
+              budgetResetBehavior={budgetResetBehavior}
+              trigger={
+                <Button variant="outline" size="sm">
+                  Edit
+                </Button>
+              }
+            />
+          </EditOnly>
         </div>
       </CardHeader>
       <CardContent className="pt-0">

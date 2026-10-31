@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 
 import { AllocationGroup } from '@/prisma/client';
 
+import { requireCapability } from '@/lib/permissions';
 import prisma from '@/lib/prisma';
 import {
   AllocationGroupWithAllocations,
@@ -16,6 +17,8 @@ export async function getAllAllocationGroups(
   periodId?: string,
   yearId?: string,
 ): Promise<AllocationGroupWithAllocations[]> {
+  await requireCapability('view');
+
   return (
     await prisma.allocationGroup.findMany({
       where: designationId ? { designationId } : undefined,
@@ -60,6 +63,8 @@ export async function getAllocationGroup({
 }: {
   id: string;
 }): Promise<AllocationGroupWithAllocations | null> {
+  await requireCapability('view');
+
   const allocationGroup = await prisma.allocationGroup.findUnique({
     where: { id: id },
     include: {
@@ -99,6 +104,8 @@ export async function getAllocationGroupWithStats({
   id: string;
   periodId?: string;
 }): Promise<AllocationGroupWithStats | null> {
+  await requireCapability('view');
+
   const allocationGroup = await prisma.allocationGroup.findUnique({
     where: { id },
     include: {
@@ -156,6 +163,8 @@ export async function createAllocationGroup(data: {
   name: string;
   designationId: string;
 }): Promise<ResponseType<AllocationGroup>> {
+  await requireCapability('edit');
+
   const allocationGroup = await prisma.allocationGroup.create({
     data: { name: data.name, designationId: data.designationId },
   });

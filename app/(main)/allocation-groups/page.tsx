@@ -10,6 +10,7 @@ import { Plus } from 'lucide-react';
 import { CreateAllocationGroupDialog } from '@/components/create-allocation-group-dialog';
 import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/page-header';
+import { EditOnly } from '@/components/providers/capabilities-provider';
 import { Button } from '@/components/ui/button';
 
 import { Content } from './content';
@@ -28,15 +29,17 @@ export default function AllocationGroups() {
         description={`Organize and manage your budget allocations · DN${selectedDesignation.code}${selectedYear?.name ? ` · ${selectedYear.name}` : ''}${selectedPeriod?.name ? ` · ${selectedPeriod.name}` : ''}`}
         actions={
           selectedPeriod && (
-            <CreateAllocationGroupDialog
-              designationId={selectedDesignation.id}
-              trigger={
-                <Button className="gap-2 shadow-sm">
-                  <Plus className="size-4" />
-                  Create Allocation Group
-                </Button>
-              }
-            />
+            <EditOnly>
+              <CreateAllocationGroupDialog
+                designationId={selectedDesignation.id}
+                trigger={
+                  <Button className="gap-2 shadow-sm">
+                    <Plus className="size-4" />
+                    Create Allocation Group
+                  </Button>
+                }
+              />
+            </EditOnly>
           )
         }
       />

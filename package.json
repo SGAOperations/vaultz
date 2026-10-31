@@ -1,12 +1,12 @@
 {
   "name": "vaultz",
-  "version": "2.7.7",
+  "version": "2.8.0",
   "private": true,
   "engines": {
     "node": ">=24.22.1 <25"
   },
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev --turbopack -p 3001",
     "build": "prisma generate && next build",
     "start": "next start",
     "prettier:check": "prettier . --check",
@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
+    "@nusgaops/sgauth": "0.2.0",
     "@prisma/adapter-pg": "^7.7.0",
     "@prisma/client": "^7.7.0",
     "@radix-ui/react-checkbox": "^1.3.3",

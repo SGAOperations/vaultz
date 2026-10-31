@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 
 import { Decimal } from '@/prisma/client/runtime/client';
 
+import { requireCapability } from '@/lib/permissions';
 import prisma from '@/lib/prisma';
 import {
   Category,
@@ -29,6 +30,8 @@ export async function createCategory({
   yearId?: string;
   amount?: number;
 }): Promise<ResponseType<Category>> {
+  await requireCapability('edit');
+
   const existing = await prisma.category.findFirst({
     where: { designationId, code, deletedAt: null },
   });
@@ -60,6 +63,8 @@ export async function getCategoryById({
 }: {
   id: string;
 }): Promise<CategoryWithPurchases | null> {
+  await requireCapability('view');
+
   const category = await prisma.category.findUnique({
     where: { id, deletedAt: null },
     include: {
@@ -93,6 +98,8 @@ export async function getCategoriesByDesignation({
 }): Promise<
   (CategoryWithDesignation & { categoryYears: CategoryYearRecord[] })[]
 > {
+  await requireCapability('view');
+
   const categories = await prisma.category.findMany({
     where: { designationId, deletedAt: null },
     include: {
@@ -115,6 +122,8 @@ export async function getCategoriesWithPurchasesByDesignation({
 }: {
   designationId: string;
 }): Promise<CategoryWithPurchases[]> {
+  await requireCapability('view');
+
   const categories = await prisma.category.findMany({
     where: { designationId, deletedAt: null },
     include: {
@@ -141,6 +150,8 @@ export async function getCategoriesWithPurchasesByDesignation({
 }
 
 export async function getAllCategories(): Promise<CategoryWithDesignation[]> {
+  await requireCapability('view');
+
   const categories = await prisma.category.findMany({
     where: { deletedAt: null },
     include: { designation: true },
@@ -159,6 +170,8 @@ export async function updateCategory({
   ledgerCode: string;
   name: string;
 }): Promise<ResponseType<Category>> {
+  await requireCapability('edit');
+
   const category = await prisma.category.update({
     where: { id },
     data: { code, ledgerCode, name },
@@ -172,6 +185,8 @@ export async function updateCategory({
 }
 
 export async function deleteCategory(id: string): Promise<ResponseType<void>> {
+  await requireCapability('edit');
+
   await prisma.category.update({
     where: { id },
     data: { deletedAt: new Date() },
@@ -187,6 +202,8 @@ export async function getCategoriesWithAvailableAmount({
 }: {
   designationId: string;
 }): Promise<CategoryWithAvailableAmountAndYears[]> {
+  await requireCapability('view');
+
   const categories = await prisma.category.findMany({
     where: { designationId, deletedAt: null },
     include: {

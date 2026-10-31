@@ -6,6 +6,7 @@ import { Plus } from 'lucide-react';
 
 import { CreateCategoryDialog } from '@/components/create-category-dialog';
 import { PageHeader } from '@/components/page-header';
+import { EditOnly } from '@/components/providers/capabilities-provider';
 import { Button } from '@/components/ui/button';
 
 import { Content } from './content';
@@ -27,17 +28,19 @@ export default function CategoriesPage() {
         description={description}
         actions={
           <div className="flex gap-2">
-            <CreateCategoryDialog
-              designationId={selectedDesignation.id}
-              yearId={selectedYear?.id}
-              yearName={selectedYear?.name}
-              trigger={
-                <Button size="sm">
-                  <Plus className="size-4" />
-                  New Category
-                </Button>
-              }
-            />
+            <EditOnly>
+              <CreateCategoryDialog
+                designationId={selectedDesignation.id}
+                yearId={selectedYear?.id}
+                yearName={selectedYear?.name}
+                trigger={
+                  <Button size="sm">
+                    <Plus className="size-4" />
+                    New Category
+                  </Button>
+                }
+              />
+            </EditOnly>
           </div>
         }
       />

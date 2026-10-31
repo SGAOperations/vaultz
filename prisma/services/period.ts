@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 
 import { Period, Year } from '@/prisma/client';
 
+import { requireCapability } from '@/lib/permissions';
 import prisma from '@/lib/prisma';
 import { ResponseType } from '@/lib/utils';
 
@@ -15,6 +16,8 @@ function getStartOfToday(): Date {
 }
 
 export async function getActiveYear(): Promise<Year | null> {
+  await requireCapability('view');
+
   const today = getStartOfToday();
 
   return await prisma.year.findFirst({
@@ -29,6 +32,8 @@ export async function getActiveYear(): Promise<Year | null> {
 export async function getActivePeriod(): Promise<
   (Period & { year: Year }) | null
 > {
+  await requireCapability('view');
+
   const today = getStartOfToday();
 
   return await prisma.period.findFirst({
@@ -44,6 +49,8 @@ export async function getActivePeriod(): Promise<
 }
 
 export async function getActivePeriods(): Promise<(Period & { year: Year })[]> {
+  await requireCapability('view');
+
   const today = getStartOfToday();
 
   return await prisma.period.findMany({
@@ -59,6 +66,8 @@ export async function getActivePeriods(): Promise<(Period & { year: Year })[]> {
 }
 
 export async function getAllYears(): Promise<Year[]> {
+  await requireCapability('view');
+
   return await prisma.year.findMany({
     where: { deletedAt: null },
     orderBy: { startDate: 'desc' },
@@ -69,6 +78,8 @@ export async function getPeriodsForYear(
   yearId: string,
   includeDeleted = false,
 ): Promise<Period[]> {
+  await requireCapability('view');
+
   return await prisma.period.findMany({
     where: { yearId, ...(includeDeleted ? {} : { deletedAt: null }) },
     orderBy: { startDate: 'asc' },
@@ -76,6 +87,8 @@ export async function getPeriodsForYear(
 }
 
 export async function getAllPeriods(): Promise<Period[]> {
+  await requireCapability('view');
+
   return await prisma.period.findMany({
     where: { deletedAt: null },
     orderBy: { startDate: 'desc' },
@@ -85,6 +98,8 @@ export async function getAllPeriods(): Promise<Period[]> {
 export type YearWithPeriods = Year & { periods: Period[] };
 
 export async function getYearsWithPeriods(): Promise<YearWithPeriods[]> {
+  await requireCapability('view');
+
   return prisma.year.findMany({
     where: { deletedAt: null },
     orderBy: { startDate: 'desc' },
@@ -103,6 +118,8 @@ export async function createYear({
   startDate: Date;
   endDate: Date;
 }): Promise<ResponseType<Year>> {
+  await requireCapability('edit');
+
   const overlapping = await prisma.year.findFirst({
     where: {
       deletedAt: null,
@@ -136,6 +153,8 @@ export async function updateYear({
   startDate: Date;
   endDate: Date;
 }): Promise<ResponseType<Year>> {
+  await requireCapability('edit');
+
   const overlapping = await prisma.year.findFirst({
     where: {
       deletedAt: null,
@@ -162,6 +181,8 @@ export async function deleteYear({
 }: {
   id: string;
 }): Promise<ResponseType<Year>> {
+  await requireCapability('edit');
+
   const purchaseCount = await prisma.purchase.count({ where: { yearId: id } });
 
   if (purchaseCount > 0)
@@ -197,6 +218,8 @@ export async function createPeriod({
   startDate: Date;
   endDate: Date;
 }): Promise<ResponseType<Period>> {
+  await requireCapability('edit');
+
   const period = await prisma.period.create({
     data: { name, yearId, startDate, endDate },
   });
@@ -219,6 +242,8 @@ export async function updatePeriod({
   startDate: Date;
   endDate: Date;
 }): Promise<ResponseType<Period>> {
+  await requireCapability('edit');
+
   const period = await prisma.period.update({
     where: { id, deletedAt: null },
     data: { name, yearId, startDate, endDate },
@@ -234,6 +259,8 @@ export async function deletePeriod({
 }: {
   id: string;
 }): Promise<ResponseType<Period>> {
+  await requireCapability('edit');
+
   const allocationCount = await prisma.allocation.count({
     where: { periodId: id },
   });

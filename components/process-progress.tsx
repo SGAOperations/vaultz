@@ -23,6 +23,7 @@ import {
 import { PurchaseProcessData, PurchaseProcessStep } from '@/lib/types';
 import { handleError, parseDateOnly } from '@/lib/utils';
 
+import { useCanEdit } from '@/components/providers/capabilities-provider';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -147,6 +148,7 @@ export function ProcessProgress({
   onDataChange?: (data: PurchaseProcessData | null) => void;
 }) {
   const queryClient = useQueryClient();
+  const canEdit = useCanEdit();
   const [mutatingStepId, setMutatingStepId] = useState<string | null>(null);
   const [expandedStepId, setExpandedStepId] = useState<string | null>(null);
 
@@ -280,7 +282,7 @@ export function ProcessProgress({
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
                     <StepStatusBadge status={status} />
-                    {status === 'completed' && step.completion && (
+                    {canEdit && status === 'completed' && step.completion && (
                       <Button
                         size="sm"
                         variant="ghost"
@@ -298,23 +300,24 @@ export function ProcessProgress({
                         Undo
                       </Button>
                     )}
-                    {(status === 'pending' || status === 'bypassed') && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-6 px-2 text-xs"
-                        disabled={mutatingStepId !== null}
-                        onClick={() => {
-                          if (expandedStepId === step.id) {
-                            setExpandedStepId(null);
-                          } else {
-                            setExpandedStepId(step.id);
-                          }
-                        }}
-                      >
-                        Mark Complete
-                      </Button>
-                    )}
+                    {canEdit &&
+                      (status === 'pending' || status === 'bypassed') && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-6 px-2 text-xs"
+                          disabled={mutatingStepId !== null}
+                          onClick={() => {
+                            if (expandedStepId === step.id) {
+                              setExpandedStepId(null);
+                            } else {
+                              setExpandedStepId(step.id);
+                            }
+                          }}
+                        >
+                          Mark Complete
+                        </Button>
+                      )}
                   </div>
                 </div>
                 {expandedStepId === step.id && (

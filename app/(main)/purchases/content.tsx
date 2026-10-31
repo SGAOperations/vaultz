@@ -29,6 +29,7 @@ import { cn, parseDateOnly } from '@/lib/utils';
 
 import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/page-header';
+import { EditOnly } from '@/components/providers/capabilities-provider';
 import { CreatePurchaseDialog } from '@/components/purchase-dialog';
 import { PurchaseList } from '@/components/purchase-list';
 import { Button } from '@/components/ui/button';
@@ -291,7 +292,9 @@ export function Content({ designationId, designationName }: ContentProps) {
             : designationName
         }
         actions={
-          <CreatePurchaseDialog defaultCategoryId={categoryId ?? undefined} />
+          <EditOnly>
+            <CreatePurchaseDialog defaultCategoryId={categoryId ?? undefined} />
+          </EditOnly>
         }
       />
 

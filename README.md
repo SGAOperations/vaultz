@@ -80,6 +80,34 @@ VAULTZ_ACCESS_CODE=<shared passphrase>
 VAULTZ_ACCESS_SECRET=<random signing secret>
 ```
 
+To sign in with SGAuth instead of the shared passphrase, also set:
+
+```env
+SGAUTH_ENABLED=true
+SGAUTH_URL=http://auth.sga.localhost:3000
+SGAUTH_COOKIE_NAME=sgauth-local.session_token
+```
+
+| Environment      | `SGAUTH_URL`                           | `SGAUTH_COOKIE_NAME`                |
+| ---------------- | -------------------------------------- | ----------------------------------- |
+| Production       | `https://auth.northeasternsga.com`     | `__Secure-sgauth.session_token`     |
+| Dev and previews | `https://auth-dev.northeasternsga.com` | `__Secure-sgauth-dev.session_token` |
+| Local            | `http://auth.sga.localhost:3000`       | `sgauth-local.session_token`        |
+
+With SGAuth enabled, every page except `/api/uploadthing` and `/health` redirects signed-out visitors to SGAuth sign-in, which sends them back afterwards. Unset `SGAUTH_ENABLED` to roll back to the passphrase gate.
+
+### Permissions
+
+With SGAuth enabled, VaultZ decides access from the user's SGA positions. SGAuth only supplies the positions. The map lives in `lib/permissions.ts`, the only place position keys appear in the code. Keys come from the curated list in SGAOperations/auth (`prisma/seed/positions.json`).
+
+| Capability | Positions                                                                       | Allows                       |
+| ---------- | ------------------------------------------------------------------------------- | ---------------------------- |
+| `edit`     | `vice-president-of-operational-affairs`, `comptroller`                          | every create, update, delete |
+| `view`     | everyone with `edit`, plus `student-body-president`, `executive-vice-president` | every page and read          |
+| none       | any other position, or no positions                                             | nothing: a "No access" page  |
+
+Every server action in `prisma/services/` calls `requireCapability('view' | 'edit')` first, and receipt uploads require `edit`. Under the passphrase gate everything stays allowed.
+
 3. **Start the local database:**
 
 ```bash
@@ -104,7 +132,18 @@ npm run prisma:seed
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open [http://vaultz.sga.localhost:3001](http://vaultz.sga.localhost:3001) in your browser. With SGAuth enabled, never use bare `localhost`: the local session cookie is scoped to `sga.localhost`. Chrome and Edge resolve `*.localhost` on their own; Firefox needs `vaultz.sga.localhost` and `auth.sga.localhost` in `network.dns.localDomains`, and Safari may need a hosts-file entry.
+
+### Dev and Preview Environments
+
+| Host                             | Branch      | SGAuth                                                                |
+| -------------------------------- | ----------- | --------------------------------------------------------------------- |
+| `finance.northeasternsga.com`    | `main`      | production, once `SGAUTH_ENABLED` is set for Production               |
+| `vaultz-dev.northeasternsga.com` | `dev`       | dev SGAuth (`auth-dev`), env vars set on Preview for the `dev` branch |
+| `*.vercel.app` previews          | PR branches | none: shows an "SSO unavailable on this host" page when SGAuth is on  |
+| `vaultz.sga.localhost:3001`      | local       | local SGAuth on `auth.sga.localhost:3000`, no registry entry needed   |
+
+The SGAuth cookie only reaches `northeasternsga.com` hosts, so preview the `dev` branch on `vaultz-dev.northeasternsga.com`. Sign in to dev SGAuth requires unlocking the `auth-dev` preview gate once per browser.
 
 ### Available Scripts
 

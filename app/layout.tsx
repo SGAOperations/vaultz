@@ -13,9 +13,13 @@ import { receiptFileRouter } from '@/app/api/uploadthing/core';
 import { getFirstDesignation } from '@/prisma/services/designation';
 import { getActivePeriod, getActiveYear } from '@/prisma/services/period';
 
+import { getCapabilities } from '@/lib/permissions';
+import { SSO_UNAVAILABLE_PATH } from '@/lib/sgauth';
 import { cn } from '@/lib/utils';
 
 import { Header } from '@/components/header';
+import { NoAccess } from '@/components/no-access';
+import { CapabilitiesProvider } from '@/components/providers/capabilities-provider';
 import { DesignationProviderWrapper } from '@/components/providers/designation-provider-wrapper';
 import { PeriodProviderWrapper } from '@/components/providers/period-provider-wrapper';
 import { QueryProvider } from '@/components/providers/query-provider';
@@ -33,12 +37,21 @@ export const metadata: Metadata = {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  // The passphrase gate (see proxy.ts) tags every request with the current
-  // pathname so /access can render a minimal shell instead of the full app
-  // chrome + data fetches below.
-  const isAccessPage = (await headers()).get('x-pathname') === '/access';
+  // proxy.ts tags requests with the current pathname so /access and
+  // /sso-unavailable can render a minimal shell instead of the full app
+  // chrome + session check + data fetches below.
+  const pathname = (await headers()).get('x-pathname');
+  const isBarePage =
+    pathname === '/access' || pathname === SSO_UNAVAILABLE_PATH;
 
-  if (isAccessPage) {
+  // Server actions enforce capabilities themselves; this only swaps the app
+  // for an explanation when the user holds no VaultZ position at all.
+  const capabilities = isBarePage
+    ? { view: true, edit: false }
+    : await getCapabilities();
+  const hasAccess = capabilities.view;
+
+  if (isBarePage || !hasAccess) {
     return (
       <html lang="en">
         <body className={cn('w-full font-sans antialiased', inter.variable)}>
@@ -48,7 +61,7 @@ export default async function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            {children}
+            {hasAccess ? children : <NoAccess />}
             <Toaster
               richColors
               toastOptions={{ classNames: { description: 'line-clamp-2' } }}
@@ -84,28 +97,30 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
           <QueryProvider>
-            <NuqsAdapter>
-              <DesignationProviderWrapper
-                initialDesignation={initialDesignation}
-              >
-                <YearProviderWrapper initialYear={initialYear}>
-                  <PeriodProviderWrapper initialPeriod={initialPeriod}>
-                    <main className="mx-auto flex w-full flex-col items-center 2xl:w-4/5">
-                      <div className="bg-background sticky top-0 z-50 w-full px-3 pt-3">
-                        <Header />
-                      </div>
-                      <div className="w-full px-3 pb-3">{children}</div>
-                    </main>
-                    <Toaster
-                      richColors
-                      toastOptions={{
-                        classNames: { description: 'line-clamp-2' },
-                      }}
-                    />
-                  </PeriodProviderWrapper>
-                </YearProviderWrapper>
-              </DesignationProviderWrapper>
-            </NuqsAdapter>
+            <CapabilitiesProvider canEdit={capabilities.edit}>
+              <NuqsAdapter>
+                <DesignationProviderWrapper
+                  initialDesignation={initialDesignation}
+                >
+                  <YearProviderWrapper initialYear={initialYear}>
+                    <PeriodProviderWrapper initialPeriod={initialPeriod}>
+                      <main className="mx-auto flex w-full flex-col items-center 2xl:w-4/5">
+                        <div className="bg-background sticky top-0 z-50 w-full px-3 pt-3">
+                          <Header />
+                        </div>
+                        <div className="w-full px-3 pb-3">{children}</div>
+                      </main>
+                      <Toaster
+                        richColors
+                        toastOptions={{
+                          classNames: { description: 'line-clamp-2' },
+                        }}
+                      />
+                    </PeriodProviderWrapper>
+                  </YearProviderWrapper>
+                </DesignationProviderWrapper>
+              </NuqsAdapter>
+            </CapabilitiesProvider>
           </QueryProvider>
         </ThemeProvider>
       </body>

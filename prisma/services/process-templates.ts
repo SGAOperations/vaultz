@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 
 import { ProcessStep, ProcessTemplate } from '@/prisma/client';
 
+import { requireCapability } from '@/lib/permissions';
 import prisma from '@/lib/prisma';
 import {
   ProcessTemplateWithStepCount,
@@ -14,6 +15,8 @@ import { ResponseType } from '@/lib/utils';
 export async function getAllProcessTemplates(
   activeOnly = false,
 ): Promise<ProcessTemplateWithStepCount[]> {
+  await requireCapability('view');
+
   const templates = await prisma.processTemplate.findMany({
     where: activeOnly ? { deletedAt: null } : undefined,
     include: { _count: { select: { steps: { where: { deletedAt: null } } } } },
@@ -27,6 +30,8 @@ export async function createProcessTemplate(data: {
   name: string;
   description?: string;
 }): Promise<ResponseType<ProcessTemplate>> {
+  await requireCapability('edit');
+
   const template = await prisma.processTemplate.create({
     data: { name: data.name, description: data.description || null },
   });
@@ -39,6 +44,8 @@ export async function createProcessTemplate(data: {
 export async function getProcessTemplate(
   id: string,
 ): Promise<ProcessTemplateWithSteps | null> {
+  await requireCapability('view');
+
   return prisma.processTemplate.findUnique({
     where: { id },
     include: {
@@ -51,6 +58,8 @@ export async function updateProcessTemplate(
   id: string,
   data: { name: string; description?: string },
 ): Promise<ResponseType<ProcessTemplate>> {
+  await requireCapability('edit');
+
   const template = await prisma.processTemplate.update({
     where: { id },
     data: { name: data.name, description: data.description || null },
@@ -64,6 +73,8 @@ export async function updateProcessTemplate(
 export async function deleteProcessTemplate(
   id: string,
 ): Promise<ResponseType<ProcessTemplate>> {
+  await requireCapability('edit');
+
   const template = await prisma.processTemplate.update({
     where: { id },
     data: { deletedAt: new Date() },
@@ -78,6 +89,8 @@ export async function deleteProcessTemplate(
 export async function restoreProcessTemplate(
   id: string,
 ): Promise<ResponseType<ProcessTemplate>> {
+  await requireCapability('edit');
+
   const template = await prisma.processTemplate.update({
     where: { id },
     data: { deletedAt: null },
@@ -93,6 +106,8 @@ export async function addProcessStep(
   templateId: string,
   data: { name: string; description?: string },
 ): Promise<ResponseType<ProcessStep>> {
+  await requireCapability('edit');
+
   const step = await prisma.$transaction(async (tx) => {
     const maxStep = await tx.processStep.findFirst({
       where: { templateId, deletedAt: null },
@@ -121,6 +136,8 @@ export async function updateProcessStep(
   templateId: string,
   data: { name: string; description?: string },
 ): Promise<ResponseType<ProcessStep>> {
+  await requireCapability('edit');
+
   const step = await prisma.$transaction(async (tx) => {
     const s = await tx.processStep.update({
       where: { id: stepId },
@@ -140,6 +157,8 @@ export async function deleteProcessStep(
   stepId: string,
   templateId: string,
 ): Promise<ResponseType<ProcessTemplate>> {
+  await requireCapability('edit');
+
   const template = await prisma.$transaction(async (tx) => {
     await tx.processStep.update({
       where: { id: stepId },
@@ -159,6 +178,8 @@ export async function moveProcessStep(
   stepId: string,
   direction: 'up' | 'down',
 ): Promise<ResponseType<ProcessTemplate>> {
+  await requireCapability('edit');
+
   const steps = await prisma.processStep.findMany({
     where: { templateId, deletedAt: null },
     orderBy: { order: 'asc' },
