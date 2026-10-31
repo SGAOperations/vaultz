@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 
+import { requireCapability } from '@/lib/permissions';
 import prisma from '@/lib/prisma';
 import { Allocation, AllocationWithPurchases } from '@/lib/types';
 import { ErrorType, ResponseType } from '@/lib/utils';
@@ -19,6 +20,8 @@ export async function createAllocation({
   allocationGroupId?: string;
   periodId: string;
 }): Promise<ResponseType<Allocation>> {
+  await requireCapability('edit');
+
   const period = await prisma.period.findFirst({
     where: { id: periodId, deletedAt: null },
     select: { id: true },
@@ -50,6 +53,8 @@ export async function getAllocationById({
 }: {
   id: string;
 }): Promise<AllocationWithPurchases | null> {
+  await requireCapability('view');
+
   const allocation = await prisma.allocation.findUnique({
     where: { id },
     include: {
@@ -78,6 +83,8 @@ export async function getMiscAllocations(
   periodId?: string,
   yearId?: string,
 ): Promise<AllocationWithPurchases[]> {
+  await requireCapability('view');
+
   const allocations = await prisma.allocation.findMany({
     where: {
       allocationGroupId: null,
@@ -115,6 +122,8 @@ export async function updateAllocation({
   name: string;
   amount: number;
 }): Promise<ResponseType<Allocation>> {
+  await requireCapability('edit');
+
   const allocation = await prisma.allocation.update({
     where: { id },
     data: { name, amount },
@@ -128,6 +137,8 @@ export async function updateAllocation({
 export async function deleteAllocation(
   id: string,
 ): Promise<ResponseType<void>> {
+  await requireCapability('edit');
+
   const allocation = await prisma.allocation.findUnique({
     where: { id },
     include: { purchases: { where: { deletedAt: null }, take: 1 } },
@@ -160,6 +171,8 @@ export async function copyAllocationsFromPeriod({
   copyAmounts: boolean;
   includeCarryover: boolean;
 }): Promise<ResponseType<{ count: number }>> {
+  await requireCapability('edit');
+
   const sourceAllocations = await prisma.allocation.findMany({
     where: { periodId: fromPeriodId, deletedAt: null },
     include: { purchases: { where: { excludeFromTotal: false } } },

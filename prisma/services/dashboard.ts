@@ -1,5 +1,6 @@
 'use server';
 
+import { requireCapability } from '@/lib/permissions';
 import prisma from '@/lib/prisma';
 import { parseDateOnly } from '@/lib/utils';
 
@@ -7,6 +8,8 @@ export async function getDashboardStatsByDesignation(
   designationId: string,
   yearId: string,
 ) {
+  await requireCapability('view');
+
   const [categoryYears, purchases] = await Promise.all([
     prisma.categoryYear.findMany({
       where: {
@@ -46,6 +49,8 @@ export async function getPurchasesByMonthForDesignation(
   designationId: string,
   yearId: string,
 ) {
+  await requireCapability('view');
+
   const purchases = await prisma.purchase.findMany({
     where: {
       category: { designationId },
@@ -91,6 +96,8 @@ export async function getSpendingByCategoryForDesignation(
   designationId: string,
   yearId: string,
 ) {
+  await requireCapability('view');
+
   const categories = await prisma.category.findMany({
     where: { designationId, deletedAt: null },
     select: {

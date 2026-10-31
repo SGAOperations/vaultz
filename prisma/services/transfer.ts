@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 
 import { Decimal } from '@/prisma/client/runtime/client';
 
+import { requireCapability } from '@/lib/permissions';
 import prisma from '@/lib/prisma';
 import { TransferWithYear } from '@/lib/types';
 import { ErrorType, ResponseType } from '@/lib/utils';
@@ -21,6 +22,8 @@ export async function createTransfer({
   notes?: string;
   yearId: string;
 }): Promise<ResponseType<{ id: string }>> {
+  await requireCapability('edit');
+
   const year = await prisma.year.findFirst({
     where: { id: yearId, deletedAt: null },
   });
@@ -61,6 +64,8 @@ export async function createTransfer({
 export async function getTransfersByCategory(
   categoryId: string,
 ): Promise<TransferWithYear[]> {
+  await requireCapability('view');
+
   const transfers = await prisma.transfer.findMany({
     where: {
       deletedAt: null,
@@ -79,6 +84,8 @@ export async function getTransfersByCategory(
 export async function getTransfersByDesignation(
   designationId: string,
 ): Promise<TransferWithYear[]> {
+  await requireCapability('view');
+
   const transfers = await prisma.transfer.findMany({
     where: {
       deletedAt: null,

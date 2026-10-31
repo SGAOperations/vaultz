@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 
 import { Decimal } from '@/prisma/client/runtime/client';
 
+import { requireCapability } from '@/lib/permissions';
 import prisma from '@/lib/prisma';
 import { Purchase, PurchaseProcessData, PurchaseWithUser } from '@/lib/types';
 import { ErrorType, ResponseType } from '@/lib/utils';
@@ -11,6 +12,8 @@ import { ErrorType, ResponseType } from '@/lib/utils';
 export async function getLatestPurchases(
   limit: number = 10,
 ): Promise<PurchaseWithUser[]> {
+  await requireCapability('view');
+
   const purchases = await prisma.purchase.findMany({
     take: limit,
     where: { deletedAt: null },
@@ -31,6 +34,8 @@ export async function getPurchasesByDesignation({
   designationId: string;
   yearId: string;
 }): Promise<PurchaseWithUser[]> {
+  await requireCapability('view');
+
   const purchases = await prisma.purchase.findMany({
     where: {
       yearId,
@@ -72,6 +77,8 @@ export async function createPurchase({
   yearId: string;
   processTemplateId?: string;
 }): Promise<ResponseType<Purchase>> {
+  await requireCapability('edit');
+
   const year = await prisma.year.findUnique({
     where: { id: yearId, deletedAt: null },
   });
@@ -162,6 +169,8 @@ export async function updatePurchase({
   processTemplateId?: string;
   yearId?: string;
 }): Promise<ResponseType<Purchase>> {
+  await requireCapability('edit');
+
   if (yearId) {
     const year = await prisma.year.findUnique({
       where: { id: yearId, deletedAt: null },
@@ -219,6 +228,8 @@ export async function updatePurchase({
 export async function deletePurchase(
   id: string,
 ): Promise<ResponseType<Purchase>> {
+  await requireCapability('edit');
+
   const purchase = await prisma.purchase.update({
     where: { id },
     data: { deletedAt: new Date() },
@@ -233,6 +244,8 @@ export async function deletePurchase(
 export async function getPurchaseProcess(
   purchaseId: string,
 ): Promise<PurchaseProcessData | null> {
+  await requireCapability('view');
+
   const purchase = await prisma.purchase.findUnique({
     where: { id: purchaseId, deletedAt: null },
     include: {
@@ -282,6 +295,8 @@ export async function markStepComplete(
   stepId: string,
   options?: { completionDate?: Date | null; notes?: string | null },
 ): Promise<ResponseType<{ id: string }>> {
+  await requireCapability('edit');
+
   const existing = await prisma.purchaseStepCompletion.findFirst({
     where: { purchaseProcessId, stepId, deletedAt: null },
   });
@@ -307,6 +322,8 @@ export async function markStepComplete(
 export async function unmarkStepComplete(
   completionId: string,
 ): Promise<ResponseType<{ id: string }>> {
+  await requireCapability('edit');
+
   const completion = await prisma.purchaseStepCompletion.findUnique({
     where: { id: completionId },
   });
@@ -327,6 +344,8 @@ export async function unmarkStepComplete(
 export async function getBatchPurchaseProcessData(
   purchaseIds: string[],
 ): Promise<Record<string, PurchaseProcessData | null>> {
+  await requireCapability('view');
+
   if (purchaseIds.length === 0) return {};
 
   const purchases = await prisma.purchase.findMany({

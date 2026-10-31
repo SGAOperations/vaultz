@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 
 import { Decimal } from '@/prisma/client/runtime/client';
 
+import { requireCapability } from '@/lib/permissions';
 import prisma from '@/lib/prisma';
 import { ResponseType } from '@/lib/utils';
 
@@ -41,6 +42,8 @@ export async function getCategoriesNotInYear({
   designationId: string;
   yearId: string;
 }): Promise<{ id: string; code: string; ledgerCode: string; name: string }[]> {
+  await requireCapability('view');
+
   return prisma.category.findMany({
     where: {
       designationId,
@@ -59,6 +62,8 @@ export async function getCategoriesWithBudgetForYear({
   designationId: string;
   yearId: string;
 }): Promise<CategoryBudgetForYear[]> {
+  await requireCapability('view');
+
   const categories = await prisma.category.findMany({
     where: {
       designationId,
@@ -115,6 +120,8 @@ export async function getCategoryBudgetsAcrossYears({
   categories: CategoryBudgetAcrossYears[];
   years: Array<{ id: string; name: string }>;
 }> {
+  await requireCapability('view');
+
   const [categories, years] = await Promise.all([
     prisma.category.findMany({
       where: { designationId, deletedAt: null },
@@ -232,6 +239,8 @@ export async function getNewYearSuggestions({
   designationId: string;
   prevYearId: string;
 }): Promise<CarryForwardEntry[]> {
+  await requireCapability('view');
+
   return computeCarryForward(designationId, prevYearId);
 }
 
@@ -245,6 +254,8 @@ export async function rolloverBudgetsForYear({
 }: {
   yearId: string;
 }): Promise<ResponseType<{ designations: number; categories: number }>> {
+  await requireCapability('edit');
+
   const year = await prisma.year.findFirst({
     where: { id: yearId, deletedAt: null },
     select: { id: true, startDate: true },
@@ -304,6 +315,8 @@ export async function setYearBudgetsForDesignation({
   yearId: string;
   budgets: Array<{ categoryId: string; amount: number }>;
 }): Promise<ResponseType<void>> {
+  await requireCapability('edit');
+
   const year = await prisma.year.findUnique({
     where: { id: yearId, deletedAt: null },
   });
@@ -350,6 +363,8 @@ export async function setYearBudgetsForDesignation({
 export async function deleteCategoryYear(
   id: string,
 ): Promise<ResponseType<void>> {
+  await requireCapability('edit');
+
   await prisma.categoryYear.update({
     where: { id },
     data: { deletedAt: new Date() },
@@ -369,6 +384,8 @@ export async function updateCategoryYearBudget({
   amount: number;
   force?: boolean;
 }): Promise<ResponseType<void>> {
+  await requireCapability('edit');
+
   const year = await prisma.year.findUnique({
     where: { id: yearId, deletedAt: null },
     select: { endDate: true, name: true },
