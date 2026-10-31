@@ -9,11 +9,27 @@ export type Capability = 'view' | 'edit';
 // The only place SGAuth position keys appear in VaultZ. Keys come from the
 // curated list in SGAOperations/auth (prisma/seed/positions.json). Anyone
 // holding none of these positions has no access at all.
-const EDITORS = ['vice-president-of-operational-affairs', 'comptroller'];
+const EDITORS = [
+  'executive-vice-president',
+  'vice-president-of-operational-affairs',
+  'comptroller',
+];
+
+const VIEWERS = [
+  'student-body-president',
+  'speaker-of-the-senate',
+  'parliamentarian',
+  'vice-president-of-academic-affairs',
+  'vice-president-of-campus-affairs',
+  'vice-president-of-diversity-equity-and-inclusion',
+  'vice-president-of-external-affairs',
+  'vice-president-of-student-involvement',
+  'vice-president-of-student-success',
+];
 
 const CAPABILITY_POSITIONS: Record<Capability, readonly string[]> = {
   edit: EDITORS,
-  view: [...EDITORS, 'student-body-president', 'executive-vice-president'],
+  view: [...EDITORS, ...VIEWERS],
 };
 
 export function hasCapability(
