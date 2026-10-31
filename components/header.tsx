@@ -18,6 +18,7 @@ import {
   ShoppingCart,
   Tag,
   TriangleAlert,
+  UserRound,
   Users,
   Workflow,
 } from 'lucide-react';
@@ -64,7 +65,11 @@ const navDropdowns = [
   },
 ];
 
-export function Header() {
+interface HeaderProps {
+  account: { name: string; accountUrl: string; signOutUrl: string };
+}
+
+export function Header({ account }: HeaderProps) {
   const pathname = usePathname();
   const {
     isInactiveYear,
@@ -176,6 +181,29 @@ export function Header() {
 
         <div className="flex items-center gap-2">
           <ContextSwitcher />
+          <DropdownMenu modal={false}>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="hover:bg-nav-hover gap-1.5"
+              >
+                <UserRound className="size-4" />
+                <span className="hidden max-w-32 truncate md:inline">
+                  {account.name}
+                </span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem asChild>
+                <a href={account.accountUrl}>Your SGAuth account</a>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <a href={account.signOutUrl}>Sign out</a>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="icon" className="md:hidden">
