@@ -14,6 +14,7 @@ import { getFirstDesignation } from '@/prisma/services/designation';
 import { getActivePeriod, getActiveYear } from '@/prisma/services/period';
 
 import { getCapabilities } from '@/lib/permissions';
+import { SSO_UNAVAILABLE_PATH } from '@/lib/sgauth';
 import { cn } from '@/lib/utils';
 
 import { Header } from '@/components/header';
@@ -36,19 +37,21 @@ export const metadata: Metadata = {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  // The passphrase gate (see proxy.ts) tags every request with the current
-  // pathname so /access can render a minimal shell instead of the full app
-  // chrome + data fetches below.
-  const isAccessPage = (await headers()).get('x-pathname') === '/access';
+  // proxy.ts tags requests with the current pathname so /access and
+  // /sso-unavailable can render a minimal shell instead of the full app
+  // chrome + session check + data fetches below.
+  const pathname = (await headers()).get('x-pathname');
+  const isBarePage =
+    pathname === '/access' || pathname === SSO_UNAVAILABLE_PATH;
 
   // Server actions enforce capabilities themselves; this only swaps the app
   // for an explanation when the user holds no VaultZ position at all.
-  const capabilities = isAccessPage
+  const capabilities = isBarePage
     ? { view: true, edit: false }
     : await getCapabilities();
   const hasAccess = capabilities.view;
 
-  if (isAccessPage || !hasAccess) {
+  if (isBarePage || !hasAccess) {
     return (
       <html lang="en">
         <body className={cn('w-full font-sans antialiased', inter.variable)}>

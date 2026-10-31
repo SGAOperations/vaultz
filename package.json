@@ -1,9 +1,12 @@
 {
   "name": "vaultz",
-  "version": "2.7.6",
+  "version": "2.7.7",
   "private": true,
+  "engines": {
+    "node": ">=24.22.1 <25"
+  },
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev --turbopack -p 3001",
     "build": "prisma generate && next build",
     "start": "next start",
     "prettier:check": "prettier . --check",
