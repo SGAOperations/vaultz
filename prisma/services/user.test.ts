@@ -1,5 +1,5 @@
 import type { SgaSession } from '@nusgaops/sgauth';
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createUser } from '@/prisma/services/user';
 
@@ -33,12 +33,6 @@ function sessionWith(...keys: string[]): SgaSession {
     },
   };
 }
-
-// Branches that still have the passphrase flag bypass permissions unless it is
-// set. Remove this once the flag is gone (#748).
-beforeAll(() => {
-  process.env.SGAUTH_ENABLED = 'true';
-});
 
 describe('createUser (gated server action)', () => {
   beforeEach(() => {

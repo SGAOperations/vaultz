@@ -1,5 +1,5 @@
 import type { SgaSession } from '@nusgaops/sgauth';
-import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import {
   ForbiddenError,
@@ -49,12 +49,6 @@ function sessionWith(...keys: string[]): SgaSession {
     },
   };
 }
-
-// Branches that still have the passphrase flag bypass permissions unless it is
-// set. Remove this once the flag is gone (#748).
-beforeAll(() => {
-  process.env.SGAUTH_ENABLED = 'true';
-});
 
 describe('hasCapability', () => {
   it.each(EDITOR_POSITIONS)('grants view and edit to %s', (position) => {
