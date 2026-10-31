@@ -37,12 +37,11 @@ export const metadata: Metadata = {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  // proxy.ts tags requests with the current pathname so /access and
-  // /sso-unavailable can render a minimal shell instead of the full app
-  // chrome + session check + data fetches below.
+  // proxy.ts tags requests with the current pathname so /sso-unavailable can
+  // render a minimal shell instead of the full app chrome + session check +
+  // data fetches below.
   const pathname = (await headers()).get('x-pathname');
-  const isBarePage =
-    pathname === '/access' || pathname === SSO_UNAVAILABLE_PATH;
+  const isBarePage = pathname === SSO_UNAVAILABLE_PATH;
 
   // Server actions enforce capabilities themselves; this only swaps the app
   // for an explanation when the user holds no VaultZ position at all.

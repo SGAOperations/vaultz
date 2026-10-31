@@ -2,8 +2,6 @@ import { requireSession } from '@nusgaops/sgauth/next';
 
 import { type MaybeSession, hasAnyPosition } from '@nusgaops/sgauth';
 
-import { isSgauthEnabled } from '@/lib/sgauth';
-
 export type Capability = 'view' | 'edit';
 
 // The only place SGAuth position keys appear in VaultZ. Keys come from the
@@ -47,18 +45,13 @@ export class ForbiddenError extends Error {
   }
 }
 
-// Every server action calls this first. Under the passphrase gate there is no
-// per-user identity, so everything stays allowed until the SGAuth cutover.
+// Every server action calls this first.
 export async function requireCapability(capability: Capability): Promise<void> {
-  if (!isSgauthEnabled()) return;
-
   const session = await requireSession();
   if (!hasCapability(session, capability)) throw new ForbiddenError(capability);
 }
 
 export async function getCapabilities(): Promise<Record<Capability, boolean>> {
-  if (!isSgauthEnabled()) return { view: true, edit: true };
-
   const session = await requireSession();
   return {
     view: hasCapability(session, 'view'),

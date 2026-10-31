@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { createSgaProxy } from '@nusgaops/sgauth/proxy';
 
-import { ACCESS_COOKIE_NAME, verifyAccessCookieValue } from '@/lib/access-gate';
-import { SSO_UNAVAILABLE_PATH, isSgauthEnabled } from '@/lib/sgauth';
+import { SSO_UNAVAILABLE_PATH } from '@/lib/sgauth';
 
 // Only checks that the SGAuth cookie is present; requireSession() in the root
 // layout validates it.
@@ -25,40 +24,19 @@ function withDevHost(request: NextRequest): NextRequest {
   );
 }
 
-// Without SGAuth, gates every route behind a single shared passphrase cookie.
-// This is a temporary stopgap (no per-user identity or permissions) meant to
-// keep casual/unauthorized visitors out until the SGAuth cutover.
 export function proxy(request: NextRequest) {
-  if (isSgauthEnabled()) {
-    // The SGAuth cookie is scoped to northeasternsga.com, so the browser never
-    // sends it to *.vercel.app and sign-in would redirect forever.
-    const hostname = request.headers.get('host')?.split(':')[0] ?? '';
-    if (hostname.endsWith('.vercel.app')) {
-      const requestHeaders = new Headers(request.headers);
-      requestHeaders.set('x-pathname', SSO_UNAVAILABLE_PATH);
-      return NextResponse.rewrite(new URL(SSO_UNAVAILABLE_PATH, request.url), {
-        request: { headers: requestHeaders },
-      });
-    }
-
-    return sgaProxy(withDevHost(request));
+  // The SGAuth cookie is scoped to northeasternsga.com, so the browser never
+  // sends it to *.vercel.app and sign-in would redirect forever.
+  const hostname = request.headers.get('host')?.split(':')[0] ?? '';
+  if (hostname.endsWith('.vercel.app')) {
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set('x-pathname', SSO_UNAVAILABLE_PATH);
+    return NextResponse.rewrite(new URL(SSO_UNAVAILABLE_PATH, request.url), {
+      request: { headers: requestHeaders },
+    });
   }
 
-  const { pathname, search } = request.nextUrl;
-
-  const requestHeaders = new Headers(request.headers);
-  requestHeaders.set('x-pathname', pathname);
-  const passThrough = { request: { headers: requestHeaders } };
-
-  if (pathname === '/access') return NextResponse.next(passThrough);
-
-  if (verifyAccessCookieValue(request.cookies.get(ACCESS_COOKIE_NAME)?.value)) {
-    return NextResponse.next(passThrough);
-  }
-
-  const accessUrl = new URL('/access', request.url);
-  accessUrl.searchParams.set('from', pathname + search);
-  return NextResponse.redirect(accessUrl);
+  return sgaProxy(withDevHost(request));
 }
 
 export const config = {

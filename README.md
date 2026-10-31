@@ -76,14 +76,6 @@ Create a `.env` file in the root of the project and set the following:
 ```env
 DATABASE_URL=postgresql://admin:admin@localhost:5432/vaultz
 UPLOADTHING_TOKEN=<your_uploadthing_token>
-VAULTZ_ACCESS_CODE=<shared passphrase>
-VAULTZ_ACCESS_SECRET=<random signing secret>
-```
-
-To sign in with SGAuth instead of the shared passphrase, also set:
-
-```env
-SGAUTH_ENABLED=true
 SGAUTH_URL=http://auth.sga.localhost:3000
 SGAUTH_COOKIE_NAME=sgauth-local.session_token
 ```
@@ -94,11 +86,11 @@ SGAUTH_COOKIE_NAME=sgauth-local.session_token
 | Dev and previews | `https://auth-dev.northeasternsga.com` | `__Secure-sgauth-dev.session_token` |
 | Local            | `http://auth.sga.localhost:3000`       | `sgauth-local.session_token`        |
 
-With SGAuth enabled, every page except `/api/uploadthing` and `/health` redirects signed-out visitors to SGAuth sign-in, which sends them back afterwards. Unset `SGAUTH_ENABLED` to roll back to the passphrase gate.
+Every page except `/api/uploadthing` and `/health` redirects signed-out visitors to SGAuth sign-in, which sends them back afterwards.
 
 ### Permissions
 
-With SGAuth enabled, VaultZ decides access from the user's SGA positions. SGAuth only supplies the positions. The map lives in `lib/permissions.ts`, the only place position keys appear in the code. Keys come from the curated list in SGAOperations/auth (`prisma/seed/positions.json`).
+VaultZ decides access from the user's SGA positions. SGAuth only supplies the positions. The map lives in `lib/permissions.ts`, the only place position keys appear in the code. Keys come from the curated list in SGAOperations/auth (`prisma/seed/positions.json`).
 
 | Capability | Positions                                                                                                                                                  | Allows                       |
 | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
@@ -106,9 +98,7 @@ With SGAuth enabled, VaultZ decides access from the user's SGA positions. SGAuth
 | `view`     | everyone with `edit`, plus `student-body-president`, `speaker-of-the-senate`, `senator`, `parliamentarian`, and every other `vice-president-of-*` position | every page and read          |
 | none       | any other position, or no positions                                                                                                                        | nothing: a "No access" page  |
 
-Every server action in `prisma/services/` calls `requireCapability('view' | 'edit')` first, and receipt uploads require `edit`. Under the passphrase gate everything stays allowed.
-
-3. **Start the local database:**
+Every server action in `prisma/services/` calls `requireCapability('view' | 'edit')` first, and receipt uploads require `edit`. 3. **Start the local database:**
 
 ```bash
 npm run db:start
@@ -138,7 +128,7 @@ Open [http://vaultz.sga.localhost:3001](http://vaultz.sga.localhost:3001) in you
 
 | Host                             | Branch      | SGAuth                                                                |
 | -------------------------------- | ----------- | --------------------------------------------------------------------- |
-| `finance.northeasternsga.com`    | `main`      | production, once `SGAUTH_ENABLED` is set for Production               |
+| `finance.northeasternsga.com`    | `main`      | production                                                            |
 | `vaultz-dev.northeasternsga.com` | `dev`       | dev SGAuth (`auth-dev`), env vars set on Preview for the `dev` branch |
 | `*.vercel.app` previews          | PR branches | none: shows an "SSO unavailable on this host" page when SGAuth is on  |
 | `vaultz.sga.localhost:3001`      | local       | local SGAuth on `auth.sga.localhost:3000`, no registry entry needed   |
