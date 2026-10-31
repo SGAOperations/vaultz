@@ -18,6 +18,7 @@ const EDITORS = [
 const VIEWERS = [
   'student-body-president',
   'speaker-of-the-senate',
+  'senator',
   'parliamentarian',
   'vice-president-of-academic-affairs',
   'vice-president-of-campus-affairs',
