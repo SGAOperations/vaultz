@@ -1,3 +1,4 @@
+import { accountUrl, logoutUrl, requireSession } from '@nusgaops/sgauth/next';
 import { NextSSRPlugin } from '@uploadthing/react/next-ssr-plugin';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
@@ -12,14 +13,16 @@ import { receiptFileRouter } from '@/app/api/uploadthing/core';
 
 import { getFirstDesignation } from '@/prisma/services/designation';
 import { getActivePeriod, getActiveYear } from '@/prisma/services/period';
+import { ensurePurchaserForSession } from '@/prisma/services/purchaser';
 
 import { getCapabilities } from '@/lib/permissions';
-import { SSO_UNAVAILABLE_PATH } from '@/lib/sgauth';
+import { SSO_UNAVAILABLE_PATH, appOrigin } from '@/lib/sgauth';
 import { cn } from '@/lib/utils';
 
 import { Header } from '@/components/header';
 import { NoAccess } from '@/components/no-access';
 import { CapabilitiesProvider } from '@/components/providers/capabilities-provider';
+import { CurrentUserProvider } from '@/components/providers/current-user-provider';
 import { DesignationProviderWrapper } from '@/components/providers/designation-provider-wrapper';
 import { PeriodProviderWrapper } from '@/components/providers/period-provider-wrapper';
 import { QueryProvider } from '@/components/providers/query-provider';
@@ -37,12 +40,12 @@ export const metadata: Metadata = {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  // proxy.ts tags requests with the current pathname so /access and
-  // /sso-unavailable can render a minimal shell instead of the full app
-  // chrome + session check + data fetches below.
-  const pathname = (await headers()).get('x-pathname');
-  const isBarePage =
-    pathname === '/access' || pathname === SSO_UNAVAILABLE_PATH;
+  // proxy.ts tags requests with the current pathname so /sso-unavailable can
+  // render a minimal shell instead of the full app chrome + session check +
+  // data fetches below.
+  const requestHeaders = await headers();
+  const pathname = requestHeaders.get('x-pathname');
+  const isBarePage = pathname === SSO_UNAVAILABLE_PATH;
 
   // Server actions enforce capabilities themselves; this only swaps the app
   // for an explanation when the user holds no VaultZ position at all.
@@ -72,11 +75,20 @@ export default async function RootLayout({
     );
   }
 
-  const [firstDesignation, activeYear, activePeriod] = await Promise.all([
-    getFirstDesignation(),
-    getActiveYear(),
-    getActivePeriod(),
-  ]);
+  const session = await requireSession();
+  const account = {
+    name: session.user.preferredName ?? session.user.name,
+    accountUrl: accountUrl(),
+    signOutUrl: logoutUrl(appOrigin(requestHeaders.get('host') ?? '')),
+  };
+
+  const [purchaser, firstDesignation, activeYear, activePeriod] =
+    await Promise.all([
+      ensurePurchaserForSession(session),
+      getFirstDesignation(),
+      getActiveYear(),
+      getActivePeriod(),
+    ]);
 
   const initialDesignation = firstDesignation;
   const initialYear = activeYear
@@ -97,30 +109,32 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
           <QueryProvider>
-            <CapabilitiesProvider canEdit={capabilities.edit}>
-              <NuqsAdapter>
-                <DesignationProviderWrapper
-                  initialDesignation={initialDesignation}
-                >
-                  <YearProviderWrapper initialYear={initialYear}>
-                    <PeriodProviderWrapper initialPeriod={initialPeriod}>
-                      <main className="mx-auto flex w-full flex-col items-center 2xl:w-4/5">
-                        <div className="bg-background sticky top-0 z-50 w-full px-3 pt-3">
-                          <Header />
-                        </div>
-                        <div className="w-full px-3 pb-3">{children}</div>
-                      </main>
-                      <Toaster
-                        richColors
-                        toastOptions={{
-                          classNames: { description: 'line-clamp-2' },
-                        }}
-                      />
-                    </PeriodProviderWrapper>
-                  </YearProviderWrapper>
-                </DesignationProviderWrapper>
-              </NuqsAdapter>
-            </CapabilitiesProvider>
+            <CurrentUserProvider userId={purchaser.id}>
+              <CapabilitiesProvider canEdit={capabilities.edit}>
+                <NuqsAdapter>
+                  <DesignationProviderWrapper
+                    initialDesignation={initialDesignation}
+                  >
+                    <YearProviderWrapper initialYear={initialYear}>
+                      <PeriodProviderWrapper initialPeriod={initialPeriod}>
+                        <main className="mx-auto flex w-full flex-col items-center 2xl:w-4/5">
+                          <div className="bg-background sticky top-0 z-50 w-full px-3 pt-3">
+                            <Header account={account} />
+                          </div>
+                          <div className="w-full px-3 pb-3">{children}</div>
+                        </main>
+                        <Toaster
+                          richColors
+                          toastOptions={{
+                            classNames: { description: 'line-clamp-2' },
+                          }}
+                        />
+                      </PeriodProviderWrapper>
+                    </YearProviderWrapper>
+                  </DesignationProviderWrapper>
+                </NuqsAdapter>
+              </CapabilitiesProvider>
+            </CurrentUserProvider>
           </QueryProvider>
         </ThemeProvider>
       </body>
