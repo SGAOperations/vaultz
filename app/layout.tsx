@@ -1,4 +1,3 @@
-import { requireSession } from '@nusgaops/sgauth/next';
 import { NextSSRPlugin } from '@uploadthing/react/next-ssr-plugin';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
@@ -14,10 +13,11 @@ import { receiptFileRouter } from '@/app/api/uploadthing/core';
 import { getFirstDesignation } from '@/prisma/services/designation';
 import { getActivePeriod, getActiveYear } from '@/prisma/services/period';
 
-import { isSgauthEnabled } from '@/lib/sgauth';
+import { getCapabilities } from '@/lib/permissions';
 import { cn } from '@/lib/utils';
 
 import { Header } from '@/components/header';
+import { NoAccess } from '@/components/no-access';
 import { DesignationProviderWrapper } from '@/components/providers/designation-provider-wrapper';
 import { PeriodProviderWrapper } from '@/components/providers/period-provider-wrapper';
 import { QueryProvider } from '@/components/providers/query-provider';
@@ -40,7 +40,11 @@ export default async function RootLayout({
   // chrome + data fetches below.
   const isAccessPage = (await headers()).get('x-pathname') === '/access';
 
-  if (isAccessPage) {
+  // Server actions enforce capabilities themselves; this only swaps the app
+  // for an explanation when the user holds no VaultZ position at all.
+  const hasAccess = isAccessPage || (await getCapabilities()).view;
+
+  if (isAccessPage || !hasAccess) {
     return (
       <html lang="en">
         <body className={cn('w-full font-sans antialiased', inter.variable)}>
@@ -50,7 +54,7 @@ export default async function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            {children}
+            {hasAccess ? children : <NoAccess />}
             <Toaster
               richColors
               toastOptions={{ classNames: { description: 'line-clamp-2' } }}
@@ -60,8 +64,6 @@ export default async function RootLayout({
       </html>
     );
   }
-
-  if (isSgauthEnabled()) await requireSession();
 
   const [firstDesignation, activeYear, activePeriod] = await Promise.all([
     getFirstDesignation(),
