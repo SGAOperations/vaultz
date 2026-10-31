@@ -1,3 +1,7 @@
+import { redirect } from 'next/navigation';
+
+import { isSgauthEnabled } from '@/lib/sgauth';
+
 import { AccessForm } from '@/components/access-form';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -10,6 +14,8 @@ export default async function AccessPage({
 }: {
   searchParams: Promise<{ from?: string }>;
 }) {
+  if (isSgauthEnabled()) redirect('/');
+
   const { from } = await searchParams;
   const redirectTo = from && isSafeRedirectPath(from) ? from : '/';
 

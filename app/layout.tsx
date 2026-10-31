@@ -1,3 +1,4 @@
+import { requireSession } from '@nusgaops/sgauth/next';
 import { NextSSRPlugin } from '@uploadthing/react/next-ssr-plugin';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
@@ -13,6 +14,7 @@ import { receiptFileRouter } from '@/app/api/uploadthing/core';
 import { getFirstDesignation } from '@/prisma/services/designation';
 import { getActivePeriod, getActiveYear } from '@/prisma/services/period';
 
+import { isSgauthEnabled } from '@/lib/sgauth';
 import { cn } from '@/lib/utils';
 
 import { Header } from '@/components/header';
@@ -58,6 +60,8 @@ export default async function RootLayout({
       </html>
     );
   }
+
+  if (isSgauthEnabled()) await requireSession();
 
   const [firstDesignation, activeYear, activePeriod] = await Promise.all([
     getFirstDesignation(),
