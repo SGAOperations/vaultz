@@ -60,6 +60,7 @@ import {
   parseDateOnly,
 } from '@/lib/utils';
 
+import { useCurrentUserId } from '@/components/providers/current-user-provider';
 import {
   Dialog,
   DialogContent,
@@ -250,10 +251,11 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
     [purchasedAt],
   );
 
+  const currentUserId = useCurrentUserId();
   const form = useForm({
     resolver: zodResolver(schema),
     values: {
-      userId: purchase?.userId || '',
+      userId: purchase?.userId || currentUserId || '',
       categoryId:
         purchase?.categoryId ||
         defaultCategoryId ||

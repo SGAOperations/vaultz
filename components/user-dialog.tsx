@@ -32,6 +32,7 @@ const schema = z.object({
     .string()
     .min(2, 'Must be at least 2 characters')
     .max(50, 'Cannot be longer than 50 characters'),
+  email: z.union([z.email('Enter a valid email'), z.literal('')]).optional(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -46,7 +47,11 @@ export function UserDialog({
   const [open, setOpen] = useState<boolean>(false);
   const form = useForm({
     resolver: zodResolver(schema),
-    defaultValues: { first: user?.first || '', last: user?.last || '' },
+    defaultValues: {
+      first: user?.first || '',
+      last: user?.last || '',
+      email: user?.email || '',
+    },
   });
   const isSubmitting = form.formState.isSubmitting;
 
@@ -101,6 +106,11 @@ export function UserDialog({
               name="last"
               label="Last Name"
               placeholder="Travolta"
+            />
+            <FormInput<FormData>
+              name="email"
+              label="SGA Email"
+              placeholder="john@northeastern.edu"
             />
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="animate-spin" />}
