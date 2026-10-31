@@ -6,6 +6,7 @@ import { CreateDesignationDialog } from '@/components/create-designation-dialog'
 import { DesignationCard } from '@/components/designation-card';
 import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/page-header';
+import { EditOnly } from '@/components/providers/capabilities-provider';
 import { Button } from '@/components/ui/button';
 
 export default async function DesignationsPage() {
@@ -17,14 +18,16 @@ export default async function DesignationsPage() {
         title="Designations"
         description="Configure your financial designations and their budget behavior"
         actions={
-          <CreateDesignationDialog
-            trigger={
-              <Button className="gap-2 shadow-sm">
-                <Plus className="size-4" />
-                Create Designation
-              </Button>
-            }
-          />
+          <EditOnly>
+            <CreateDesignationDialog
+              trigger={
+                <Button className="gap-2 shadow-sm">
+                  <Plus className="size-4" />
+                  Create Designation
+                </Button>
+              }
+            />
+          </EditOnly>
         }
       />
 

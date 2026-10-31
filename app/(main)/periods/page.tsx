@@ -7,6 +7,7 @@ import { getYearsWithPeriods } from '@/prisma/services/period';
 import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/page-header';
 import { PeriodsAdminClient } from '@/components/periods-admin-client';
+import { EditOnly } from '@/components/providers/capabilities-provider';
 import { Button } from '@/components/ui/button';
 import { YearDialog } from '@/components/year-dialog';
 
@@ -21,12 +22,14 @@ export default async function PeriodsAdminPage() {
         title="Years & Periods"
         description="Manage fiscal years and their sub-periods"
         actions={
-          <YearDialog>
-            <Button className="gap-2">
-              <Plus className="size-4" />
-              Add Year
-            </Button>
-          </YearDialog>
+          <EditOnly>
+            <YearDialog>
+              <Button className="gap-2">
+                <Plus className="size-4" />
+                Add Year
+              </Button>
+            </YearDialog>
+          </EditOnly>
         }
       />
 

@@ -33,6 +33,10 @@ import { handleError, isError } from '@/lib/utils';
 
 import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/page-header';
+import {
+  EditOnly,
+  useCanEdit,
+} from '@/components/providers/capabilities-provider';
 import { SectionHeader } from '@/components/section-header';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -155,44 +159,46 @@ function StepCard({
             )}
           </div>
         </div>
-        <div className="flex shrink-0 gap-1">
-          <Button
-            size="icon"
-            variant="ghost"
-            className="size-8"
-            onClick={() => onMove(step.id, 'up')}
-            disabled={idx === 0 || isMutating}
-          >
-            <ChevronUp className="size-4" />
-          </Button>
-          <Button
-            size="icon"
-            variant="ghost"
-            className="size-8"
-            onClick={() => onMove(step.id, 'down')}
-            disabled={idx === total - 1 || isMutating}
-          >
-            <ChevronDown className="size-4" />
-          </Button>
-          <Button
-            size="icon"
-            variant="ghost"
-            className="size-8"
-            onClick={() => setEditing(true)}
-            disabled={isMutating}
-          >
-            <Pencil className="size-4" />
-          </Button>
-          <Button
-            size="icon"
-            variant="ghost"
-            className="text-destructive hover:text-destructive size-8"
-            onClick={() => onDelete(step.id)}
-            disabled={isMutating}
-          >
-            <Trash2 className="size-4" />
-          </Button>
-        </div>
+        <EditOnly>
+          <div className="flex shrink-0 gap-1">
+            <Button
+              size="icon"
+              variant="ghost"
+              className="size-8"
+              onClick={() => onMove(step.id, 'up')}
+              disabled={idx === 0 || isMutating}
+            >
+              <ChevronUp className="size-4" />
+            </Button>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="size-8"
+              onClick={() => onMove(step.id, 'down')}
+              disabled={idx === total - 1 || isMutating}
+            >
+              <ChevronDown className="size-4" />
+            </Button>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="size-8"
+              onClick={() => setEditing(true)}
+              disabled={isMutating}
+            >
+              <Pencil className="size-4" />
+            </Button>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="text-destructive hover:text-destructive size-8"
+              onClick={() => onDelete(step.id)}
+              disabled={isMutating}
+            >
+              <Trash2 className="size-4" />
+            </Button>
+          </div>
+        </EditOnly>
       </div>
     </Card>
   );
@@ -255,6 +261,7 @@ function AddStepCard({
 
 export function Content({ template }: { template: ProcessTemplateWithSteps }) {
   const router = useRouter();
+  const canEdit = useCanEdit();
   const isDeleted = template.deletedAt !== null;
 
   const [steps, setSteps] = useState<LocalStep[]>(
@@ -426,7 +433,7 @@ export function Content({ template }: { template: ProcessTemplateWithSteps }) {
                 Back
               </Button>
             </Link>
-            {!isDeleted && (
+            {canEdit && !isDeleted && (
               <FormDialog
                 key={template.updatedAt.toString()}
                 trigger={
@@ -457,7 +464,7 @@ export function Content({ template }: { template: ProcessTemplateWithSteps }) {
                 />
               </FormDialog>
             )}
-            {isDeleted ? (
+            {!canEdit ? null : isDeleted ? (
               <Button
                 variant="outline"
                 size="sm"
@@ -489,6 +496,7 @@ export function Content({ template }: { template: ProcessTemplateWithSteps }) {
       <SectionHeader
         title="Steps"
         actions={
+          canEdit &&
           !isDeleted && (
             <Button
               size="sm"

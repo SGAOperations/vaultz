@@ -6,6 +6,7 @@ import { getUsersWithPurchases } from '@/prisma/services/user';
 
 import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/page-header';
+import { EditOnly } from '@/components/providers/capabilities-provider';
 import { Button } from '@/components/ui/button';
 import { UserCard } from '@/components/user-card';
 import { UserDialog } from '@/components/user-dialog';
@@ -21,12 +22,14 @@ export default async function UserOverview() {
         title="Users"
         description="Manage team members and track their spending"
         actions={
-          <UserDialog user={undefined}>
-            <Button className="gap-2">
-              <Plus className="size-4" />
-              Add User
-            </Button>
-          </UserDialog>
+          <EditOnly>
+            <UserDialog user={undefined}>
+              <Button className="gap-2">
+                <Plus className="size-4" />
+                Add User
+              </Button>
+            </UserDialog>
+          </EditOnly>
         }
       />
 

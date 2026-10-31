@@ -19,6 +19,7 @@ import { cn, formatNumber } from '@/lib/utils';
 
 import { EditCategoryDialog } from '@/components/edit-category-dialog';
 import { EmptyState } from '@/components/empty-state';
+import { EditOnly } from '@/components/providers/capabilities-provider';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -164,24 +165,26 @@ export function Content({ designationId }: ContentProps) {
                 </div>
               </Card>
             </Link>
-            <div
-              className="absolute top-3 right-3"
-              onClick={(e) => e.preventDefault()}
-            >
-              <EditCategoryDialog
-                category={category}
-                categoryYearId={category.categoryYearId ?? undefined}
-                trigger={
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="size-8 opacity-0 transition-opacity group-hover:opacity-100"
-                  >
-                    <Pencil className="size-3.5" />
-                  </Button>
-                }
-              />
-            </div>
+            <EditOnly>
+              <div
+                className="absolute top-3 right-3"
+                onClick={(e) => e.preventDefault()}
+              >
+                <EditCategoryDialog
+                  category={category}
+                  categoryYearId={category.categoryYearId ?? undefined}
+                  trigger={
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="size-8 opacity-0 transition-opacity group-hover:opacity-100"
+                    >
+                      <Pencil className="size-3.5" />
+                    </Button>
+                  }
+                />
+              </div>
+            </EditOnly>
           </div>
         );
       })}

@@ -71,6 +71,7 @@ import {
 
 import { DateTime } from './date-time';
 import { ProcessProgress } from './process-progress';
+import { EditOnly } from './providers/capabilities-provider';
 import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
 import { Combobox } from './ui/combobox';
@@ -1205,12 +1206,14 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                 />
               </div>
 
-              <div className="flex gap-2">
-                <Button onClick={() => setIsEditing(true)} className="flex-1">
-                  <Pencil className="mr-2 h-4 w-4" />
-                  Edit
-                </Button>
-              </div>
+              <EditOnly>
+                <div className="flex gap-2">
+                  <Button onClick={() => setIsEditing(true)} className="flex-1">
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Edit
+                  </Button>
+                </div>
+              </EditOnly>
             </>
           )}
         </DialogContent>
