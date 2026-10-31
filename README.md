@@ -120,7 +120,18 @@ npm run prisma:seed
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open [http://vaultz.sga.localhost:3001](http://vaultz.sga.localhost:3001) in your browser. With SGAuth enabled, never use bare `localhost`: the local session cookie is scoped to `sga.localhost`. Chrome and Edge resolve `*.localhost` on their own; Firefox needs `vaultz.sga.localhost` and `auth.sga.localhost` in `network.dns.localDomains`, and Safari may need a hosts-file entry.
+
+### Dev and Preview Environments
+
+| Host                             | Branch      | SGAuth                                                                |
+| -------------------------------- | ----------- | --------------------------------------------------------------------- |
+| `finance.northeasternsga.com`    | `main`      | production, once `SGAUTH_ENABLED` is set for Production               |
+| `vaultz-dev.northeasternsga.com` | `dev`       | dev SGAuth (`auth-dev`), env vars set on Preview for the `dev` branch |
+| `*.vercel.app` previews          | PR branches | none: shows an "SSO unavailable on this host" page when SGAuth is on  |
+| `vaultz.sga.localhost:3001`      | local       | local SGAuth on `auth.sga.localhost:3000`, no registry entry needed   |
+
+The SGAuth cookie only reaches `northeasternsga.com` hosts, so preview the `dev` branch on `vaultz-dev.northeasternsga.com`. Sign in to dev SGAuth requires unlocking the `auth-dev` preview gate once per browser.
 
 ### Available Scripts
 
