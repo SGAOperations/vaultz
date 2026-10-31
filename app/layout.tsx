@@ -18,6 +18,7 @@ import { cn } from '@/lib/utils';
 
 import { Header } from '@/components/header';
 import { NoAccess } from '@/components/no-access';
+import { CapabilitiesProvider } from '@/components/providers/capabilities-provider';
 import { DesignationProviderWrapper } from '@/components/providers/designation-provider-wrapper';
 import { PeriodProviderWrapper } from '@/components/providers/period-provider-wrapper';
 import { QueryProvider } from '@/components/providers/query-provider';
@@ -42,7 +43,10 @@ export default async function RootLayout({
 
   // Server actions enforce capabilities themselves; this only swaps the app
   // for an explanation when the user holds no VaultZ position at all.
-  const hasAccess = isAccessPage || (await getCapabilities()).view;
+  const capabilities = isAccessPage
+    ? { view: true, edit: false }
+    : await getCapabilities();
+  const hasAccess = capabilities.view;
 
   if (isAccessPage || !hasAccess) {
     return (
@@ -90,28 +94,30 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
           <QueryProvider>
-            <NuqsAdapter>
-              <DesignationProviderWrapper
-                initialDesignation={initialDesignation}
-              >
-                <YearProviderWrapper initialYear={initialYear}>
-                  <PeriodProviderWrapper initialPeriod={initialPeriod}>
-                    <main className="mx-auto flex w-full flex-col items-center 2xl:w-4/5">
-                      <div className="bg-background sticky top-0 z-50 w-full px-3 pt-3">
-                        <Header />
-                      </div>
-                      <div className="w-full px-3 pb-3">{children}</div>
-                    </main>
-                    <Toaster
-                      richColors
-                      toastOptions={{
-                        classNames: { description: 'line-clamp-2' },
-                      }}
-                    />
-                  </PeriodProviderWrapper>
-                </YearProviderWrapper>
-              </DesignationProviderWrapper>
-            </NuqsAdapter>
+            <CapabilitiesProvider canEdit={capabilities.edit}>
+              <NuqsAdapter>
+                <DesignationProviderWrapper
+                  initialDesignation={initialDesignation}
+                >
+                  <YearProviderWrapper initialYear={initialYear}>
+                    <PeriodProviderWrapper initialPeriod={initialPeriod}>
+                      <main className="mx-auto flex w-full flex-col items-center 2xl:w-4/5">
+                        <div className="bg-background sticky top-0 z-50 w-full px-3 pt-3">
+                          <Header />
+                        </div>
+                        <div className="w-full px-3 pb-3">{children}</div>
+                      </main>
+                      <Toaster
+                        richColors
+                        toastOptions={{
+                          classNames: { description: 'line-clamp-2' },
+                        }}
+                      />
+                    </PeriodProviderWrapper>
+                  </YearProviderWrapper>
+                </DesignationProviderWrapper>
+              </NuqsAdapter>
+            </CapabilitiesProvider>
           </QueryProvider>
         </ThemeProvider>
       </body>
