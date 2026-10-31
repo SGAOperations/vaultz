@@ -1,3 +1,4 @@
+import { requireSession } from '@nusgaops/sgauth/next';
 import { NextSSRPlugin } from '@uploadthing/react/next-ssr-plugin';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
@@ -13,6 +14,7 @@ import { receiptFileRouter } from '@/app/api/uploadthing/core';
 import { getFirstDesignation } from '@/prisma/services/designation';
 import { getActivePeriod, getActiveYear } from '@/prisma/services/period';
 
+import { SSO_UNAVAILABLE_PATH, isSgauthEnabled } from '@/lib/sgauth';
 import { cn } from '@/lib/utils';
 
 import { Header } from '@/components/header';
@@ -33,12 +35,14 @@ export const metadata: Metadata = {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  // The passphrase gate (see proxy.ts) tags every request with the current
-  // pathname so /access can render a minimal shell instead of the full app
-  // chrome + data fetches below.
-  const isAccessPage = (await headers()).get('x-pathname') === '/access';
+  // proxy.ts tags requests with the current pathname so /access and
+  // /sso-unavailable can render a minimal shell instead of the full app
+  // chrome + session check + data fetches below.
+  const pathname = (await headers()).get('x-pathname');
+  const isBarePage =
+    pathname === '/access' || pathname === SSO_UNAVAILABLE_PATH;
 
-  if (isAccessPage) {
+  if (isBarePage) {
     return (
       <html lang="en">
         <body className={cn('w-full font-sans antialiased', inter.variable)}>
@@ -58,6 +62,8 @@ export default async function RootLayout({
       </html>
     );
   }
+
+  if (isSgauthEnabled()) await requireSession();
 
   const [firstDesignation, activeYear, activePeriod] = await Promise.all([
     getFirstDesignation(),
