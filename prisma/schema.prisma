@@ -184,7 +184,20 @@ model AllocationGroup {
     designationId String
     designation   Designation @relation(fields: [designationId], references: [id])
 
-    allocations Allocation[]
+    allocations    Allocation[]
+    positionAccess PositionDivisionAccess[]
+}
+
+model PositionDivisionAccess {
+    id          String   @id @default(uuid())
+    positionKey String
+    createdAt   DateTime @default(now())
+
+    allocationGroupId String
+    allocationGroup   AllocationGroup @relation(fields: [allocationGroupId], references: [id], onDelete: Cascade)
+
+    @@unique([positionKey, allocationGroupId])
+    @@index([positionKey])
 }
 
 model Allocation {
