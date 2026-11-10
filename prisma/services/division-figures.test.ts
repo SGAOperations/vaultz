@@ -96,7 +96,7 @@ describe('getDivisionFigures', () => {
   });
 
   it('filters by year and excludes deleted and excluded-from-total rows', async () => {
-    requireSession.mockResolvedValue(sessionWith('senator'));
+    requireSession.mockResolvedValue(sessionWith('parliamentarian'));
     prisma.allocationGroup.findMany.mockResolvedValue([]);
 
     await getDivisionFigures('year-1');
@@ -118,7 +118,7 @@ describe('getDivisionFigures', () => {
   });
 
   it('restricts to the given allocation group ids', async () => {
-    requireSession.mockResolvedValue(sessionWith('senator'));
+    requireSession.mockResolvedValue(sessionWith('parliamentarian'));
     prisma.allocationGroup.findMany.mockResolvedValue([]);
 
     await getDivisionFigures('year-1', ['group-events']);
@@ -129,7 +129,7 @@ describe('getDivisionFigures', () => {
   });
 
   it('totals allocations and purchases per division', async () => {
-    requireSession.mockResolvedValue(sessionWith('senator'));
+    requireSession.mockResolvedValue(sessionWith('parliamentarian'));
     prisma.allocationGroup.findMany.mockResolvedValue(sampleGroups);
 
     const figures = await getDivisionFigures('year-1');

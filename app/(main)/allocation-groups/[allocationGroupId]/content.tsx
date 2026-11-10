@@ -16,7 +16,7 @@ import {
 
 import { getAllocationGroupWithStats } from '@/prisma/services/allocation-groups';
 
-import { cn, formatNumber } from '@/lib/utils';
+import { cn, formatCurrency, formatNumber } from '@/lib/utils';
 
 import { CreateAllocationDialog } from '@/components/create-allocation-dialog';
 import { EditAllocationDialog } from '@/components/edit-allocation-dialog';
@@ -104,6 +104,21 @@ export function Content({ allocationGroupId }: ContentProps) {
           total={allocationGroup.totalAmount}
           spent={allocationGroup.totalSpent}
         />
+        {allocationGroup.openRequestCount > 0 && (
+          <p className="text-muted-foreground text-sm">
+            <Link href="/requests" className="text-primary hover:underline">
+              {allocationGroup.openRequestCount} open purchase{' '}
+              {allocationGroup.openRequestCount === 1 ? 'request' : 'requests'}
+            </Link>{' '}
+            commit {formatCurrency(allocationGroup.totalCommitted)}, leaving{' '}
+            {formatCurrency(
+              allocationGroup.totalAmount -
+                allocationGroup.totalSpent -
+                allocationGroup.totalCommitted,
+            )}{' '}
+            available.
+          </p>
+        )}
       </div>
 
       <SectionHeader title="Allocations" />
