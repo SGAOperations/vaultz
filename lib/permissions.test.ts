@@ -3,7 +3,9 @@ import { describe, expect, it, vi } from 'vitest';
 
 import {
   ForbiddenError,
+  allowedRequestActions,
   hasCapability,
+  isRequestApprover,
   requireCapability,
 } from '@/lib/permissions';
 
@@ -17,7 +19,9 @@ const EDITOR_POSITIONS = [
   'comptroller',
 ];
 
-const VIEWER_POSITIONS = [
+// Leadership positions that used to be view-only. They now reach VaultZ only
+// through the request page, when listed as requester positions.
+const LEADERSHIP_POSITIONS = [
   'student-body-president',
   'speaker-of-the-senate',
   'senator',
@@ -58,10 +62,10 @@ describe('hasCapability', () => {
     expect(hasCapability(session, 'edit')).toBe(true);
   });
 
-  it.each(VIEWER_POSITIONS)('grants view only to %s', (position) => {
+  it.each(LEADERSHIP_POSITIONS)('denies view and edit to %s', (position) => {
     const session = sessionWith(position);
 
-    expect(hasCapability(session, 'view')).toBe(true);
+    expect(hasCapability(session, 'view')).toBe(false);
     expect(hasCapability(session, 'edit')).toBe(false);
   });
 
@@ -92,17 +96,116 @@ describe('requireCapability', () => {
     await expect(requireCapability('edit')).resolves.toBeUndefined();
   });
 
-  it('rejects a viewer who tries to edit', async () => {
-    requireSession.mockResolvedValue(sessionWith('senator'));
+  it('rejects a leadership position that tries to view', async () => {
+    requireSession.mockResolvedValue(
+      sessionWith('vice-president-of-campus-affairs'),
+    );
 
-    await expect(requireCapability('edit')).rejects.toBeInstanceOf(
+    await expect(requireCapability('view')).rejects.toBeInstanceOf(
       ForbiddenError,
     );
   });
+});
 
-  it('allows a viewer to view', async () => {
-    requireSession.mockResolvedValue(sessionWith('senator'));
+describe('allowedRequestActions', () => {
+  const comptroller = sessionWith('comptroller');
+  const vpoa = sessionWith('vice-president-of-operational-affairs');
+  const evp = sessionWith('executive-vice-president');
+  const requester = sessionWith('vice-president-of-campus-affairs');
 
-    await expect(requireCapability('view')).resolves.toBeUndefined();
+  it('lets the Comptroller approve, reject or escalate a pending request', () => {
+    expect(
+      allowedRequestActions({
+        session: comptroller,
+        status: 'PENDING',
+        isOwner: false,
+      }).sort(),
+    ).toEqual(['approve', 'escalate', 'reject']);
+  });
+
+  it('hides approve and reject from the Comptroller once escalated', () => {
+    expect(
+      allowedRequestActions({
+        session: comptroller,
+        status: 'ESCALATED',
+        isOwner: false,
+      }).sort(),
+    ).toEqual(['resend', 'return']);
+  });
+
+  it.each(['PENDING', 'ESCALATED'] as const)(
+    'lets the VPOA approve or reject a %s request',
+    (status) => {
+      expect(
+        allowedRequestActions({ session: vpoa, status, isOwner: false }).sort(),
+      ).toEqual(['approve', 'reject']);
+    },
+  );
+
+  it.each(['PENDING', 'ESCALATED', 'APPROVED'] as const)(
+    'gives the EVP nothing on a %s request',
+    (status) => {
+      expect(
+        allowedRequestActions({ session: evp, status, isOwner: false }),
+      ).toEqual([]);
+    },
+  );
+
+  it('lets the owner edit or cancel only while pending', () => {
+    expect(
+      allowedRequestActions({
+        session: requester,
+        status: 'PENDING',
+        isOwner: true,
+      }).sort(),
+    ).toEqual(['cancel', 'edit']);
+    expect(
+      allowedRequestActions({
+        session: requester,
+        status: 'ESCALATED',
+        isOwner: true,
+      }),
+    ).toEqual([]);
+  });
+
+  it('gives a non-owner requester nothing', () => {
+    expect(
+      allowedRequestActions({
+        session: requester,
+        status: 'PENDING',
+        isOwner: false,
+      }),
+    ).toEqual([]);
+  });
+
+  it.each(['APPROVED', 'REJECTED', 'CANCELLED'] as const)(
+    'allows nothing on a %s request, even for the VPOA',
+    (status) => {
+      expect(
+        allowedRequestActions({ session: vpoa, status, isOwner: true }),
+      ).toEqual([]);
+    },
+  );
+
+  it('lets a Comptroller who owns the request act as both', () => {
+    expect(
+      allowedRequestActions({
+        session: comptroller,
+        status: 'PENDING',
+        isOwner: true,
+      }).sort(),
+    ).toEqual(['approve', 'cancel', 'edit', 'escalate', 'reject']);
+  });
+});
+
+describe('isRequestApprover', () => {
+  it('is true only for the Comptroller and the VPOA', () => {
+    expect(isRequestApprover(sessionWith('comptroller'))).toBe(true);
+    expect(
+      isRequestApprover(sessionWith('vice-president-of-operational-affairs')),
+    ).toBe(true);
+    expect(isRequestApprover(sessionWith('executive-vice-president'))).toBe(
+      false,
+    );
   });
 });
