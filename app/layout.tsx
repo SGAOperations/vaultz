@@ -1,4 +1,4 @@
-import { accountUrl, logoutUrl, requireSession } from '@nusgaops/sgauth/next';
+import { accountUrl, logoutUrl } from '@nusgaops/sgauth/next';
 import { NextSSRPlugin } from '@uploadthing/react/next-ssr-plugin';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
@@ -13,13 +13,12 @@ import { receiptFileRouter } from '@/app/api/uploadthing/core';
 
 import { getFirstDesignation } from '@/prisma/services/designation';
 import { getActivePeriod, getActiveYear } from '@/prisma/services/period';
-import { ensurePurchaserForSession } from '@/prisma/services/purchaser';
+import { getRequestAccess } from '@/prisma/services/request-access';
 
-import { getCapabilities } from '@/lib/permissions';
 import { SSO_UNAVAILABLE_PATH, appOrigin } from '@/lib/sgauth';
 import { cn } from '@/lib/utils';
 
-import { Header } from '@/components/header';
+import { Header, RequesterHeader } from '@/components/header';
 import { NoAccess } from '@/components/no-access';
 import { CapabilitiesProvider } from '@/components/providers/capabilities-provider';
 import { CurrentUserProvider } from '@/components/providers/current-user-provider';
@@ -48,13 +47,12 @@ export default async function RootLayout({
   const isBarePage = pathname === SSO_UNAVAILABLE_PATH;
 
   // Server actions enforce capabilities themselves; this only swaps the app
-  // for an explanation when the user holds no VaultZ position at all.
-  const capabilities = isBarePage
-    ? { view: true, edit: false }
-    : await getCapabilities();
-  const hasAccess = capabilities.view;
+  // for an explanation when the user holds no VaultZ position at all, or for
+  // the request-only shell when they can only submit purchase requests.
+  const access = isBarePage ? null : await getRequestAccess();
+  const hasAccess = isBarePage || !!access?.canRequest;
 
-  if (isBarePage || !hasAccess) {
+  if (isBarePage || !access || !hasAccess) {
     return (
       <html lang="en">
         <body className={cn('w-full font-sans antialiased', inter.variable)}>
@@ -75,20 +73,50 @@ export default async function RootLayout({
     );
   }
 
-  const session = await requireSession();
+  const { session, user: purchaser } = access;
   const account = {
     name: session.user.preferredName ?? session.user.name,
     accountUrl: accountUrl(),
     signOutUrl: logoutUrl(appOrigin(requestHeaders.get('host') ?? '')),
   };
 
-  const [purchaser, firstDesignation, activeYear, activePeriod] =
-    await Promise.all([
-      ensurePurchaserForSession(session),
-      getFirstDesignation(),
-      getActiveYear(),
-      getActivePeriod(),
-    ]);
+  if (!access.canView)
+    return (
+      <html lang="en">
+        <body className={cn('w-full font-sans antialiased', inter.variable)}>
+          <NextSSRPlugin
+            routerConfig={extractRouterConfig(receiptFileRouter)}
+          />
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <CurrentUserProvider userId={purchaser.id}>
+              <CapabilitiesProvider canEdit={false}>
+                <main className="mx-auto flex w-full flex-col items-center 2xl:w-4/5">
+                  <div className="bg-background sticky top-0 z-50 w-full px-3 pt-3">
+                    <RequesterHeader account={account} />
+                  </div>
+                  <div className="w-full px-3 pb-3">{children}</div>
+                </main>
+                <Toaster
+                  richColors
+                  toastOptions={{ classNames: { description: 'line-clamp-2' } }}
+                />
+              </CapabilitiesProvider>
+            </CurrentUserProvider>
+          </ThemeProvider>
+        </body>
+      </html>
+    );
+
+  const [firstDesignation, activeYear, activePeriod] = await Promise.all([
+    getFirstDesignation(),
+    getActiveYear(),
+    getActivePeriod(),
+  ]);
 
   const initialDesignation = firstDesignation;
   const initialYear = activeYear
@@ -110,7 +138,7 @@ export default async function RootLayout({
         >
           <QueryProvider>
             <CurrentUserProvider userId={purchaser.id}>
-              <CapabilitiesProvider canEdit={capabilities.edit}>
+              <CapabilitiesProvider canEdit={access.canEdit}>
                 <NuqsAdapter>
                   <DesignationProviderWrapper
                     initialDesignation={initialDesignation}
