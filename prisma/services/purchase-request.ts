@@ -12,7 +12,6 @@ import { Decimal } from '@/prisma/client/runtime/client';
 import {
   RequestAccess,
   canUseDivision,
-  getRequestAccess,
   requireRequestAccess,
 } from '@/prisma/services/request-access';
 
@@ -680,12 +679,4 @@ async function notifyVpoa(
   ]);
 
   return result.ok;
-}
-
-export async function getMyRequestAccess(): Promise<{
-  canRequest: boolean;
-  canView: boolean;
-}> {
-  const access = await getRequestAccess();
-  return { canRequest: access.canRequest, canView: access.canView };
 }
