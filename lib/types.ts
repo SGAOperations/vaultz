@@ -115,3 +115,16 @@ export type PurchaseProcessData = {
   templateName: string;
   steps: PurchaseProcessStep[];
 };
+
+export type DivisionFigures = {
+  allocationGroupId: string;
+  name: string;
+  designationId: string;
+  designationCode: string;
+  designationName: string;
+  allocatedTotal: number;
+  spentTotal: number;
+  remaining: number;
+  notReimbursedCount: number;
+  noExpenseReportCount: number;
+};
