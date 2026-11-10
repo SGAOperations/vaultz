@@ -22,7 +22,6 @@ const EDITOR_POSITIONS = [
 const VIEWER_POSITIONS = [
   'student-body-president',
   'speaker-of-the-senate',
-  'senator',
   'parliamentarian',
   'vice-president-of-academic-affairs',
   'vice-president-of-campus-affairs',
@@ -67,6 +66,13 @@ describe('hasCapability', () => {
     expect(hasCapability(session, 'edit')).toBe(false);
   });
 
+  it('denies both capabilities to a senator', () => {
+    const session = sessionWith('senator');
+
+    expect(hasCapability(session, 'view')).toBe(false);
+    expect(hasCapability(session, 'edit')).toBe(false);
+  });
+
   it('denies both capabilities to a position outside the map', () => {
     const session = sessionWith('director-of-campus-services');
 
@@ -95,7 +101,7 @@ describe('requireCapability', () => {
   });
 
   it('rejects a viewer who tries to edit', async () => {
-    requireSession.mockResolvedValue(sessionWith('senator'));
+    requireSession.mockResolvedValue(sessionWith('parliamentarian'));
 
     await expect(requireCapability('edit')).rejects.toBeInstanceOf(
       ForbiddenError,
@@ -103,7 +109,7 @@ describe('requireCapability', () => {
   });
 
   it('allows a viewer to view', async () => {
-    requireSession.mockResolvedValue(sessionWith('senator'));
+    requireSession.mockResolvedValue(sessionWith('parliamentarian'));
 
     await expect(requireCapability('view')).resolves.toBeUndefined();
   });

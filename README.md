@@ -100,12 +100,12 @@ Every page except `/api/uploadthing` and `/health` redirects signed-out visitors
 
 VaultZ decides access from the user's SGA positions. SGAuth only supplies the positions. The map lives in `lib/permissions.ts`, the only place position keys appear in the code. Keys come from the curated list in SGAOperations/auth (`prisma/seed/positions.json`).
 
-| Capability | Positions                                                                                                                                                  | Allows                       |
-| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
-| `edit`     | `executive-vice-president`, `vice-president-of-operational-affairs`, `comptroller`                                                                         | every create, update, delete |
-| `view`     | everyone with `edit`, plus `student-body-president`, `speaker-of-the-senate`, `senator`, `parliamentarian`, and every other `vice-president-of-*` position | every page and read          |
-| requester  | positions listed under Requests → Settings (`RequesterPosition`), seeded with every `edit` and `view` position                                             | submitting purchase requests |
-| none       | any other position, or no positions                                                                                                                        | nothing: a "No access" page  |
+| Capability | Positions                                                                                                                                       | Allows                       |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| `edit`     | `executive-vice-president`, `vice-president-of-operational-affairs`, `comptroller`                                                              | every create, update, delete |
+| `view`     | everyone with `edit`, plus `student-body-president`, `speaker-of-the-senate`, `parliamentarian`, and every other `vice-president-of-*` position | every page and read          |
+| requester  | positions listed under Requests → Settings (`RequesterPosition`), seeded with every `edit` and `view` position                                  | submitting purchase requests |
+| none       | any other position, or no positions                                                                                                             | nothing: a "No access" page  |
 
 Requesters submit against the divisions mapped to their position (`PositionDivisionAccess`); editors can submit against any division. A listed position without `view` sees only the request page. Viewers can read every request.
 
