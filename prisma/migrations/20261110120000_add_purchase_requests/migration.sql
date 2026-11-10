@@ -101,10 +101,16 @@ ALTER TABLE "PurchaseRequestEvent" ADD CONSTRAINT "PurchaseRequestEvent_requestI
 ALTER TABLE "PurchaseRequestEvent" ADD CONSTRAINT "PurchaseRequestEvent_actorId_fkey" FOREIGN KEY ("actorId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 
--- Seed the leadership positions that previously had view-only access, so they
--- can reach the request page. Editors manage this list in the app.
+-- Seed every current VaultZ position (editors and viewers) as a requester
+-- position. Editors manage this list in the app.
 INSERT INTO "RequesterPosition" ("id", "positionKey") VALUES
+    (gen_random_uuid()::text, 'executive-vice-president'),
+    (gen_random_uuid()::text, 'vice-president-of-operational-affairs'),
+    (gen_random_uuid()::text, 'comptroller'),
     (gen_random_uuid()::text, 'student-body-president'),
+    (gen_random_uuid()::text, 'speaker-of-the-senate'),
+    (gen_random_uuid()::text, 'senator'),
+    (gen_random_uuid()::text, 'parliamentarian'),
     (gen_random_uuid()::text, 'vice-president-of-academic-affairs'),
     (gen_random_uuid()::text, 'vice-president-of-campus-affairs'),
     (gen_random_uuid()::text, 'vice-president-of-diversity-equity-and-inclusion'),
