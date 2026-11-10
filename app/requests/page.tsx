@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 
-import { Plus, Settings2 } from 'lucide-react';
+import { Settings2 } from 'lucide-react';
 
 import {
   getRequestFormOptions,
@@ -70,12 +70,7 @@ export default async function PurchaseRequestsPage({
                 </Button>
               </Link>
             )}
-            <RequestDialog options={formOptions}>
-              <Button className="gap-2">
-                <Plus className="size-4" />
-                New Request
-              </Button>
-            </RequestDialog>
+            <RequestDialog options={formOptions} />
           </>
         }
       />

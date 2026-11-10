@@ -1,11 +1,11 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { ReactNode, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { FormProvider, useForm, useWatch } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, X } from 'lucide-react';
+import { Loader2, Pencil, Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { twMerge } from 'tailwind-merge';
 
@@ -50,7 +50,6 @@ import { BudgetPanel } from './budget-panel';
 interface RequestDialogProps {
   options: RequestFormOptions;
   request?: PurchaseRequestDetail;
-  children: ReactNode;
 }
 
 function defaultsFor(request?: PurchaseRequestDetail): PurchaseRequestInput {
@@ -65,11 +64,9 @@ function defaultsFor(request?: PurchaseRequestDetail): PurchaseRequestInput {
   };
 }
 
-export function RequestDialog({
-  options,
-  request,
-  children,
-}: RequestDialogProps) {
+// Renders its own trigger: Radix's asChild drops trigger elements passed in
+// from a server component before their client chunk has loaded.
+export function RequestDialog({ options, request }: RequestDialogProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [divisionId, setDivisionId] = useState(
@@ -143,7 +140,19 @@ export function RequestDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+      <DialogTrigger asChild>
+        {request ? (
+          <Button variant="outline">
+            <Pencil />
+            Edit
+          </Button>
+        ) : (
+          <Button className="gap-2">
+            <Plus className="size-4" />
+            New Request
+          </Button>
+        )}
+      </DialogTrigger>
 
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>

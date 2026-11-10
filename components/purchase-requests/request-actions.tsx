@@ -7,7 +7,6 @@ import {
   ArrowUpRight,
   Check,
   Loader2,
-  Pencil,
   RotateCcw,
   Send,
   Undo2,
@@ -263,12 +262,7 @@ export function RequestActions({
   return (
     <div className="flex flex-wrap gap-2">
       {can('edit') && formOptions && (
-        <RequestDialog options={formOptions} request={request}>
-          <Button variant="outline">
-            <Pencil />
-            Edit
-          </Button>
-        </RequestDialog>
+        <RequestDialog options={formOptions} request={request} />
       )}
       {visible.map((action) => {
         const entry = configs[action];
