@@ -8,9 +8,14 @@ import {
   Transfer as PrismaTransfer,
   ProcessStep,
   ProcessTemplate,
+  PurchaseRequestEventType,
+  PurchaseRequestStatus,
   User,
   Year,
 } from '@/prisma/client';
+
+import type { RequestAction } from '@/lib/permissions';
+import type { AllocationBudget } from '@/lib/purchase-request';
 
 export type Purchase = Omit<PrismaPurchase, 'amount'> & { amount: number };
 
@@ -114,4 +119,61 @@ export type PurchaseProcessData = {
   templateId: string;
   templateName: string;
   steps: PurchaseProcessStep[];
+};
+
+export type PersonName = { id: string; first: string; last: string };
+
+export type PurchaseRequestSummary = {
+  id: string;
+  amount: number;
+  description: string;
+  status: PurchaseRequestStatus;
+  createdAt: Date;
+  updatedAt: Date;
+  escalationNotifyError: string | null;
+  requester: PersonName;
+  purchaser: PersonName;
+  category: { id: string; name: string; code: string };
+  allocation: {
+    id: string;
+    name: string;
+    allocationGroup: { id: string; name: string } | null;
+  };
+};
+
+export type PurchaseRequestEventRecord = {
+  id: string;
+  type: PurchaseRequestEventType;
+  note: string | null;
+  createdAt: Date;
+  actor: PersonName | null;
+};
+
+export type PurchaseRequestDetail = PurchaseRequestSummary & {
+  notes: string | null;
+  attachments: string[];
+  decidedAt: Date | null;
+  decisionNote: string | null;
+  decidedBy: PersonName | null;
+  escalatedAt: Date | null;
+  escalationNotifiedAt: Date | null;
+  purchaseId: string | null;
+  events: PurchaseRequestEventRecord[];
+  allowedActions: RequestAction[];
+  budget: AllocationBudget;
+};
+
+export type RequestFormDivision = {
+  id: string;
+  name: string;
+  designationId: string;
+  designationLabel: string;
+  allocations: { id: string; name: string; periodName: string }[];
+  categories: { id: string; name: string; code: string }[];
+};
+
+export type RequestFormOptions = {
+  year: { id: string; name: string } | null;
+  divisions: RequestFormDivision[];
+  purchasers: PersonName[];
 };
