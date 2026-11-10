@@ -46,6 +46,10 @@ The application is organized around fiscal years, each with a start and end date
 
 Process templates define multi-step approval or workflow sequences (e.g., reimbursement approval). Each template has ordered steps, and a process can be attached to a purchase to track completion of each step.
 
+### Purchase Requests
+
+Requester positions submit purchase requests against their divisions' allocations. Every request must name an E-Board purchaser: a user marked as one under Requests → Settings. The Comptroller approves, rejects or escalates each request. Escalating sends the VPOA a Slack DM from the SGAssist bot and hides the Comptroller's approve and reject until they return the request. The VPOA can decide any open request. Approving creates a purchase for the purchaser, dated that day, for the requested amount. The request keeps the original amount if the purchase is edited later. Open requests count as committed against their allocation, so requesters and approvers see a warning when a request exceeds the available balance. Every change is recorded in the request's history.
+
 ### Users
 
 Users represent individuals who make purchases. Each user has a profile and a full history of their associated purchases.
@@ -78,7 +82,11 @@ DATABASE_URL=postgresql://admin:admin@localhost:5432/vaultz
 UPLOADTHING_TOKEN=<your_uploadthing_token>
 SGAUTH_URL=http://auth.sga.localhost:3000
 SGAUTH_COOKIE_NAME=sgauth-local.session_token
+SLACK_BOT_TOKEN=<sgassist_bot_token>
+SLACK_VPOA_USER_ID=<vpoa_slack_member_id>
 ```
+
+`SLACK_BOT_TOKEN` is the SGAssist bot token (it needs the `chat:write` scope) and `SLACK_VPOA_USER_ID` is the VPOA's Slack member id. Without them, escalation still works, but the Slack message fails and can be resent from the request page.
 
 | Environment      | `SGAUTH_URL`                           | `SGAUTH_COOKIE_NAME`                |
 | ---------------- | -------------------------------------- | ----------------------------------- |
@@ -92,13 +100,18 @@ Every page except `/api/uploadthing` and `/health` redirects signed-out visitors
 
 VaultZ decides access from the user's SGA positions. SGAuth only supplies the positions. The map lives in `lib/permissions.ts`, the only place position keys appear in the code. Keys come from the curated list in SGAOperations/auth (`prisma/seed/positions.json`).
 
-| Capability | Positions                                                                                                                                                  | Allows                       |
-| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
-| `edit`     | `executive-vice-president`, `vice-president-of-operational-affairs`, `comptroller`                                                                         | every create, update, delete |
-| `view`     | everyone with `edit`, plus `student-body-president`, `speaker-of-the-senate`, `senator`, `parliamentarian`, and every other `vice-president-of-*` position | every page and read          |
-| none       | any other position, or no positions                                                                                                                        | nothing: a "No access" page  |
+| Capability | Positions                                                                                                                                       | Allows                       |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| `edit`     | `executive-vice-president`, `vice-president-of-operational-affairs`, `comptroller`                                                              | every create, update, delete |
+| `view`     | everyone with `edit`, plus `student-body-president`, `speaker-of-the-senate`, `parliamentarian`, and every other `vice-president-of-*` position | every page and read          |
+| requester  | positions listed under Requests → Settings (`RequesterPosition`), seeded with every `edit` and `view` position                                  | submitting purchase requests |
+| none       | any other position, or no positions                                                                                                             | nothing: a "No access" page  |
 
-Every server action in `prisma/services/` calls `requireCapability('view' | 'edit')` first, and receipt uploads require `edit`. 3. **Start the local database:**
+Requesters submit against the divisions mapped to their position (`PositionDivisionAccess`); editors can submit against any division. A listed position without `view` sees only the request page. Viewers can read every request.
+
+Request decisions are separate from `edit`: the Comptroller approves, rejects or escalates pending requests, and the VPOA can approve or reject any open request. The EVP has no request powers.
+
+Every server action in `prisma/services/` calls `requireCapability('view' | 'edit')` or, for purchase requests, `requireRequestAccess()` first. Receipt uploads require `edit`; request attachments require request access. 3. **Start the local database:**
 
 ```bash
 npm run db:start

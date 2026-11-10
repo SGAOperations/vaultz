@@ -1,220 +1,321 @@
 generator client {
-    provider = "prisma-client-js"
-    output   = "client"
+  provider = "prisma-client-js"
+  output   = "client"
 }
 
 datasource db {
-    provider = "postgresql"
+  provider = "postgresql"
 }
 
 enum BudgetResetBehavior {
-    RESET
-    ROLLOVER
+  RESET
+  ROLLOVER
 }
 
 model Year {
-    id        String    @id @default(uuid())
-    name      String
-    startDate DateTime  @db.Date
-    endDate   DateTime  @db.Date
-    createdAt DateTime  @default(now())
-    updatedAt DateTime  @updatedAt
-    deletedAt DateTime?
+  id        String    @id @default(uuid())
+  name      String
+  startDate DateTime  @db.Date
+  endDate   DateTime  @db.Date
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
-    periods       Period[]
-    categoryYears CategoryYear[]
-    purchases     Purchase[]
-    transfers     Transfer[]
+  periods          Period[]
+  categoryYears    CategoryYear[]
+  purchases        Purchase[]
+  transfers        Transfer[]
+  purchaseRequests PurchaseRequest[]
 }
 
 model Period {
-    id        String    @id @default(uuid())
-    name      String
-    startDate DateTime  @db.Date
-    endDate   DateTime  @db.Date
-    createdAt DateTime  @default(now())
-    updatedAt DateTime  @updatedAt
-    deletedAt DateTime?
+  id        String    @id @default(uuid())
+  name      String
+  startDate DateTime  @db.Date
+  endDate   DateTime  @db.Date
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
-    yearId String
-    year   Year   @relation(fields: [yearId], references: [id])
+  yearId String
+  year   Year   @relation(fields: [yearId], references: [id])
 
-    allocations Allocation[]
+  allocations Allocation[]
 }
 
 model CategoryYear {
-    id        String    @id @default(uuid())
-    amount    Decimal
-    createdAt DateTime  @default(now())
-    updatedAt DateTime  @updatedAt
-    deletedAt DateTime?
+  id        String    @id @default(uuid())
+  amount    Decimal
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
-    categoryId String
-    category   Category @relation(fields: [categoryId], references: [id])
-    yearId     String
-    year       Year     @relation(fields: [yearId], references: [id])
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+  yearId     String
+  year       Year     @relation(fields: [yearId], references: [id])
 }
 
 model User {
-    id           String    @id @default(uuid())
-    first        String
-    last         String
-    email        String?
-    sgauthUserId String?   @unique
-    createdAt    DateTime  @default(now())
-    deletedAt    DateTime?
+  id                String    @id @default(uuid())
+  first             String
+  last              String
+  email             String?
+  sgauthUserId      String?   @unique
+  isEBoardPurchaser Boolean   @default(false)
+  createdAt         DateTime  @default(now())
+  deletedAt         DateTime?
 
-    purchases Purchase[]
+  purchases          Purchase[]
+  requestsMade       PurchaseRequest[]      @relation("RequestRequester")
+  requestsPurchasing PurchaseRequest[]      @relation("RequestPurchaser")
+  requestsDecided    PurchaseRequest[]      @relation("RequestDecider")
+  requestEvents      PurchaseRequestEvent[]
 }
 
 model Designation {
-    id                  String              @id @default(uuid())
-    code                String
-    name                String
-    budgetResetBehavior BudgetResetBehavior @default(RESET)
+  id                  String              @id @default(uuid())
+  code                String
+  name                String
+  budgetResetBehavior BudgetResetBehavior @default(RESET)
 
-    categories       Category[]
-    allocations      Allocation[]
-    allocationGroups AllocationGroup[]
+  categories       Category[]
+  allocations      Allocation[]
+  allocationGroups AllocationGroup[]
 }
 
 model Category {
-    id         String    @id @default(uuid())
-    code       String
-    ledgerCode String
-    name       String
-    deletedAt  DateTime?
+  id         String    @id @default(uuid())
+  code       String
+  ledgerCode String
+  name       String
+  deletedAt  DateTime?
 
-    designationId String
-    designation   Designation @relation(fields: [designationId], references: [id])
+  designationId String
+  designation   Designation @relation(fields: [designationId], references: [id])
 
-    categoryYears CategoryYear[]
-    purchases     Purchase[]
-    transfersFrom Transfer[]    @relation("TransfersFrom")
-    transfersTo   Transfer[]    @relation("TransfersTo")
+  categoryYears    CategoryYear[]
+  purchases        Purchase[]
+  purchaseRequests PurchaseRequest[]
+  transfersFrom    Transfer[]        @relation("TransfersFrom")
+  transfersTo      Transfer[]        @relation("TransfersTo")
 }
 
 model Purchase {
-    id                   String   @id @default(uuid())
-    amount               Decimal
-    description          String
-    notes                String?
-    createdAt            DateTime @default(now())
-    purchasedAt          DateTime @db.Date
-    receipts             String[]
-    excludeFromTotal     Boolean  @default(false)
-    expenseReportCreated Boolean  @default(false)
-    reimbursed           Boolean  @default(false)
-    deletedAt            DateTime?
+  id                   String    @id @default(uuid())
+  amount               Decimal
+  description          String
+  notes                String?
+  createdAt            DateTime  @default(now())
+  purchasedAt          DateTime  @db.Date
+  receipts             String[]
+  excludeFromTotal     Boolean   @default(false)
+  expenseReportCreated Boolean   @default(false)
+  reimbursed           Boolean   @default(false)
+  deletedAt            DateTime?
 
-    categoryId   String
-    category     Category        @relation(fields: [categoryId], references: [id])
-    allocationId String?
-    allocation   Allocation?     @relation(fields: [allocationId], references: [id])
-    userId       String
-    user         User            @relation(fields: [userId], references: [id])
-    yearId       String
-    year         Year            @relation(fields: [yearId], references: [id])
+  categoryId   String
+  category     Category    @relation(fields: [categoryId], references: [id])
+  allocationId String?
+  allocation   Allocation? @relation(fields: [allocationId], references: [id])
+  userId       String
+  user         User        @relation(fields: [userId], references: [id])
+  yearId       String
+  year         Year        @relation(fields: [yearId], references: [id])
 
-    process PurchaseProcess?
+  process PurchaseProcess?
+  request PurchaseRequest?
 }
 
 model ProcessTemplate {
-    id          String    @id @default(uuid())
-    name        String
-    description String?
-    createdAt   DateTime  @default(now())
-    updatedAt   DateTime  @updatedAt
-    deletedAt   DateTime?
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
 
-    steps    ProcessStep[]
-    processes PurchaseProcess[]
+  steps     ProcessStep[]
+  processes PurchaseProcess[]
 }
 
 model ProcessStep {
-    id          String    @id @default(uuid())
-    name        String
-    description String?
-    order       Int
-    createdAt   DateTime  @default(now())
-    updatedAt   DateTime  @updatedAt
-    deletedAt   DateTime?
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  order       Int
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
 
-    templateId  String
-    template    ProcessTemplate @relation(fields: [templateId], references: [id])
+  templateId String
+  template   ProcessTemplate @relation(fields: [templateId], references: [id])
 
-    completions PurchaseStepCompletion[]
+  completions PurchaseStepCompletion[]
 }
 
 model PurchaseProcess {
-    id         String    @id @default(uuid())
-    startedAt  DateTime  @default(now())
-    createdAt  DateTime  @default(now())
-    updatedAt  DateTime  @updatedAt
-    deletedAt  DateTime?
+  id        String    @id @default(uuid())
+  startedAt DateTime  @default(now())
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
-    purchaseId String          @unique
-    purchase   Purchase        @relation(fields: [purchaseId], references: [id])
-    templateId String
-    template   ProcessTemplate @relation(fields: [templateId], references: [id])
+  purchaseId String          @unique
+  purchase   Purchase        @relation(fields: [purchaseId], references: [id])
+  templateId String
+  template   ProcessTemplate @relation(fields: [templateId], references: [id])
 
-    completions PurchaseStepCompletion[]
+  completions PurchaseStepCompletion[]
 }
 
 model PurchaseStepCompletion {
-    id                   String    @id @default(uuid())
-    completed            Boolean   @default(false)
-    markedAt             DateTime
-    completionDate DateTime? @db.Date
-    notes                String?
-    createdAt            DateTime  @default(now())
-    updatedAt            DateTime  @updatedAt
-    deletedAt            DateTime?
+  id             String    @id @default(uuid())
+  completed      Boolean   @default(false)
+  markedAt       DateTime
+  completionDate DateTime? @db.Date
+  notes          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
 
-    purchaseProcessId String
-    purchaseProcess   PurchaseProcess @relation(fields: [purchaseProcessId], references: [id])
-    stepId            String
-    step              ProcessStep     @relation(fields: [stepId], references: [id])
+  purchaseProcessId String
+  purchaseProcess   PurchaseProcess @relation(fields: [purchaseProcessId], references: [id])
+  stepId            String
+  step              ProcessStep     @relation(fields: [stepId], references: [id])
 }
 
 model AllocationGroup {
-    id   String @id @default(uuid())
-    name String
+  id   String @id @default(uuid())
+  name String
 
-    designationId String
-    designation   Designation @relation(fields: [designationId], references: [id])
+  designationId String
+  designation   Designation @relation(fields: [designationId], references: [id])
 
-    allocations Allocation[]
+  allocations    Allocation[]
+  positionAccess PositionDivisionAccess[]
+}
+
+model PositionDivisionAccess {
+  id          String   @id @default(uuid())
+  positionKey String
+  createdAt   DateTime @default(now())
+
+  allocationGroupId String
+  allocationGroup   AllocationGroup @relation(fields: [allocationGroupId], references: [id], onDelete: Cascade)
+
+  @@unique([positionKey, allocationGroupId])
+  @@index([positionKey])
 }
 
 model Allocation {
-    id        String    @id @default(uuid())
-    name      String
-    amount    Decimal
-    deletedAt DateTime?
+  id        String    @id @default(uuid())
+  name      String
+  amount    Decimal
+  deletedAt DateTime?
 
-    designationId     String
-    designation       Designation      @relation(fields: [designationId], references: [id])
-    allocationGroupId String?
-    allocationGroup   AllocationGroup? @relation(fields: [allocationGroupId], references: [id])
-    periodId          String
-    period            Period           @relation(fields: [periodId], references: [id])
+  designationId     String
+  designation       Designation      @relation(fields: [designationId], references: [id])
+  allocationGroupId String?
+  allocationGroup   AllocationGroup? @relation(fields: [allocationGroupId], references: [id])
+  periodId          String
+  period            Period           @relation(fields: [periodId], references: [id])
 
-    purchases Purchase[]
+  purchases        Purchase[]
+  purchaseRequests PurchaseRequest[]
 }
 
 model Transfer {
-    id        String    @id @default(uuid())
-    amount    Decimal
-    notes     String?
-    createdAt DateTime  @default(now())
-    updatedAt DateTime  @updatedAt
-    deletedAt DateTime?
+  id        String    @id @default(uuid())
+  amount    Decimal
+  notes     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
-    fromCategoryId String
-    fromCategory   Category @relation("TransfersFrom", fields: [fromCategoryId], references: [id])
-    toCategoryId   String
-    toCategory     Category @relation("TransfersTo", fields: [toCategoryId], references: [id])
-    yearId         String
-    year           Year     @relation(fields: [yearId], references: [id])
+  fromCategoryId String
+  fromCategory   Category @relation("TransfersFrom", fields: [fromCategoryId], references: [id])
+  toCategoryId   String
+  toCategory     Category @relation("TransfersTo", fields: [toCategoryId], references: [id])
+  yearId         String
+  year           Year     @relation(fields: [yearId], references: [id])
+}
+
+enum PurchaseRequestStatus {
+  PENDING
+  ESCALATED
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum PurchaseRequestEventType {
+  SUBMITTED
+  EDITED
+  CANCELLED
+  APPROVED
+  REJECTED
+  ESCALATED
+  RETURNED
+  NOTIFIED
+  NOTIFY_FAILED
+}
+
+model PurchaseRequest {
+  id          String                @id @default(uuid())
+  amount      Decimal
+  description String
+  notes       String?
+  attachments String[]
+  status      PurchaseRequestStatus @default(PENDING)
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+  deletedAt   DateTime?
+
+  decidedAt             DateTime?
+  decisionNote          String?
+  escalatedAt           DateTime?
+  escalationNotifiedAt  DateTime?
+  escalationNotifyError String?
+
+  requesterId  String
+  requester    User       @relation("RequestRequester", fields: [requesterId], references: [id])
+  purchaserId  String
+  purchaser    User       @relation("RequestPurchaser", fields: [purchaserId], references: [id])
+  decidedById  String?
+  decidedBy    User?      @relation("RequestDecider", fields: [decidedById], references: [id])
+  categoryId   String
+  category     Category   @relation(fields: [categoryId], references: [id])
+  allocationId String
+  allocation   Allocation @relation(fields: [allocationId], references: [id])
+  yearId       String
+  year         Year       @relation(fields: [yearId], references: [id])
+  purchaseId   String?    @unique
+  purchase     Purchase?  @relation(fields: [purchaseId], references: [id])
+
+  events PurchaseRequestEvent[]
+
+  @@index([status])
+  @@index([requesterId])
+  @@index([allocationId])
+}
+
+model PurchaseRequestEvent {
+  id        String                   @id @default(uuid())
+  type      PurchaseRequestEventType
+  note      String?
+  createdAt DateTime                 @default(now())
+
+  requestId String
+  request   PurchaseRequest @relation(fields: [requestId], references: [id])
+  actorId   String?
+  actor     User?           @relation(fields: [actorId], references: [id])
+
+  @@index([requestId])
+}
+
+model RequesterPosition {
+  id          String   @id @default(uuid())
+  positionKey String   @unique
+  createdAt   DateTime @default(now())
 }
