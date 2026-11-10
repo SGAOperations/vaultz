@@ -109,7 +109,6 @@ INSERT INTO "RequesterPosition" ("id", "positionKey") VALUES
     (gen_random_uuid()::text, 'comptroller'),
     (gen_random_uuid()::text, 'student-body-president'),
     (gen_random_uuid()::text, 'speaker-of-the-senate'),
-    (gen_random_uuid()::text, 'senator'),
     (gen_random_uuid()::text, 'parliamentarian'),
     (gen_random_uuid()::text, 'vice-president-of-academic-affairs'),
     (gen_random_uuid()::text, 'vice-president-of-campus-affairs'),
