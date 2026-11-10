@@ -46,7 +46,7 @@ export default async function PurchaseRequestPage({
   params: Promise<{ id: string }>;
 }) {
   const access = await getRequestAccess();
-  if (!access.canRequest) return null;
+  if (!access.canUseRequests) return null;
 
   const { id } = await params;
   const request = await getPurchaseRequest(id);
@@ -54,7 +54,9 @@ export default async function PurchaseRequestPage({
 
   const isOpen = request.status === 'PENDING' || request.status === 'ESCALATED';
   const [formOptions, templates] = await Promise.all([
-    request.allowedActions.includes('edit') ? getRequestFormOptions() : null,
+    request.allowedActions.includes('edit') && access.canRequest
+      ? getRequestFormOptions()
+      : null,
     request.allowedActions.includes('approve') &&
     isRequestApprover(access.session)
       ? getAllProcessTemplates(true)

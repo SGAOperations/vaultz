@@ -33,7 +33,7 @@ export default async function PurchaseRequestsPage({
   searchParams: Promise<{ view?: string }>;
 }) {
   const access = await getRequestAccess();
-  if (!access.canRequest) return null;
+  if (!access.canUseRequests) return null;
 
   const { view } = await searchParams;
   const tab: Tab = !access.canView
@@ -44,7 +44,7 @@ export default async function PurchaseRequestsPage({
 
   const [requests, formOptions] = await Promise.all([
     listPurchaseRequests({ scope: tab === 'mine' ? 'mine' : 'all' }),
-    getRequestFormOptions(),
+    access.canRequest ? getRequestFormOptions() : null,
   ]);
   const shown =
     tab === 'open'
@@ -70,7 +70,7 @@ export default async function PurchaseRequestsPage({
                 </Button>
               </Link>
             )}
-            <RequestDialog options={formOptions} />
+            {formOptions && <RequestDialog options={formOptions} />}
           </>
         }
       />

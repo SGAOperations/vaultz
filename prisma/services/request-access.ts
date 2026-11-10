@@ -14,14 +14,17 @@ export interface RequestAccess {
   user: User;
   canView: boolean;
   canEdit: boolean;
+  // Can submit requests: holds a position listed in RequesterPosition.
   canRequest: boolean;
+  // Can open the request page: a viewer (reads every request) or a requester.
+  canUseRequests: boolean;
   // Allocation group (division) ids the user may request against.
   divisionIds: 'all' | string[];
 }
 
-// Editors can request against every division. Other positions need a row in
-// RequesterPosition to submit, and only see divisions mapped to them through
-// PositionDivisionAccess.
+// Submitting needs a position listed in RequesterPosition. Editors can request
+// against every division; everyone else only against the divisions mapped to
+// their positions through PositionDivisionAccess.
 export const getRequestAccess = cache(async (): Promise<RequestAccess> => {
   const session = await requireSession();
   const canView = hasCapability(session, 'view');
@@ -30,12 +33,10 @@ export const getRequestAccess = cache(async (): Promise<RequestAccess> => {
 
   const [user, requesterPositions, divisionRows] = await Promise.all([
     ensurePurchaserForSession(session),
-    canView
-      ? Promise.resolve(0)
-      : prisma.requesterPosition.count({
-          where: { positionKey: { in: positionKeys } },
-        }),
-    canView
+    prisma.requesterPosition.count({
+      where: { positionKey: { in: positionKeys } },
+    }),
+    canEdit
       ? Promise.resolve([])
       : prisma.positionDivisionAccess.findMany({
           where: { positionKey: { in: positionKeys } },
@@ -48,8 +49,9 @@ export const getRequestAccess = cache(async (): Promise<RequestAccess> => {
     user,
     canView,
     canEdit,
-    canRequest: canView || requesterPositions > 0,
-    divisionIds: canView
+    canRequest: requesterPositions > 0,
+    canUseRequests: canView || requesterPositions > 0,
+    divisionIds: canEdit
       ? 'all'
       : [...new Set(divisionRows.map((r) => r.allocationGroupId))],
   };
@@ -57,7 +59,13 @@ export const getRequestAccess = cache(async (): Promise<RequestAccess> => {
 
 export async function requireRequestAccess(): Promise<RequestAccess> {
   const access = await getRequestAccess();
-  if (!access.canRequest) throw new ForbiddenError('use purchase requests');
+  if (!access.canUseRequests) throw new ForbiddenError('use purchase requests');
+  return access;
+}
+
+export async function requireSubmitAccess(): Promise<RequestAccess> {
+  const access = await getRequestAccess();
+  if (!access.canRequest) throw new ForbiddenError('submit purchase requests');
   return access;
 }
 

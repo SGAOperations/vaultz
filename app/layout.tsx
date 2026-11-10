@@ -50,7 +50,7 @@ export default async function RootLayout({
   // for an explanation when the user holds no VaultZ position at all, or for
   // the request-only shell when they can only submit purchase requests.
   const access = isBarePage ? null : await getRequestAccess();
-  const hasAccess = isBarePage || !!access?.canRequest;
+  const hasAccess = isBarePage || !!access?.canUseRequests;
 
   if (isBarePage || !access || !hasAccess) {
     return (

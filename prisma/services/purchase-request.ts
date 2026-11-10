@@ -13,6 +13,7 @@ import {
   RequestAccess,
   canUseDivision,
   requireRequestAccess,
+  requireSubmitAccess,
 } from '@/prisma/services/request-access';
 
 import { RequestAction, allowedRequestActions } from '@/lib/permissions';
@@ -281,7 +282,7 @@ export async function getPurchaseRequest(
 }
 
 export async function getRequestFormOptions(): Promise<RequestFormOptions> {
-  const access = await requireRequestAccess();
+  const access = await requireSubmitAccess();
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -361,7 +362,7 @@ export async function getRequestBudget({
   allocationId: string;
   excludeRequestId?: string;
 }): Promise<ResponseType<AllocationBudget>> {
-  const access = await requireRequestAccess();
+  const access = await requireSubmitAccess();
   const allocation = await prisma.allocation.findFirst({
     where: { id: allocationId, deletedAt: null },
     select: { allocationGroupId: true },
@@ -375,7 +376,7 @@ export async function getRequestBudget({
 export async function createPurchaseRequest(
   input: PurchaseRequestInput,
 ): Promise<ResponseType<{ id: string }>> {
-  const access = await requireRequestAccess();
+  const access = await requireSubmitAccess();
   const validated = await validateInput(access, input);
   if ('error' in validated) return validated;
   const { data, yearId } = validated;

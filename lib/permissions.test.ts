@@ -19,9 +19,7 @@ const EDITOR_POSITIONS = [
   'comptroller',
 ];
 
-// Leadership positions that used to be view-only. They now reach VaultZ only
-// through the request page, when listed as requester positions.
-const LEADERSHIP_POSITIONS = [
+const VIEWER_POSITIONS = [
   'student-body-president',
   'speaker-of-the-senate',
   'senator',
@@ -62,10 +60,10 @@ describe('hasCapability', () => {
     expect(hasCapability(session, 'edit')).toBe(true);
   });
 
-  it.each(LEADERSHIP_POSITIONS)('denies view and edit to %s', (position) => {
+  it.each(VIEWER_POSITIONS)('grants view only to %s', (position) => {
     const session = sessionWith(position);
 
-    expect(hasCapability(session, 'view')).toBe(false);
+    expect(hasCapability(session, 'view')).toBe(true);
     expect(hasCapability(session, 'edit')).toBe(false);
   });
 
@@ -96,14 +94,18 @@ describe('requireCapability', () => {
     await expect(requireCapability('edit')).resolves.toBeUndefined();
   });
 
-  it('rejects a leadership position that tries to view', async () => {
-    requireSession.mockResolvedValue(
-      sessionWith('vice-president-of-campus-affairs'),
-    );
+  it('rejects a viewer who tries to edit', async () => {
+    requireSession.mockResolvedValue(sessionWith('senator'));
 
-    await expect(requireCapability('view')).rejects.toBeInstanceOf(
+    await expect(requireCapability('edit')).rejects.toBeInstanceOf(
       ForbiddenError,
     );
+  });
+
+  it('allows a viewer to view', async () => {
+    requireSession.mockResolvedValue(sessionWith('senator'));
+
+    await expect(requireCapability('view')).resolves.toBeUndefined();
   });
 });
 

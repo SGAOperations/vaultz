@@ -7,17 +7,30 @@ import type { PurchaseRequestStatus } from '@/prisma/client';
 export type Capability = 'view' | 'edit';
 
 // The only place SGAuth position keys appear in VaultZ. Keys come from the
-// curated list in SGAOperations/auth (prisma/seed/positions.json). Leadership
-// positions outside this list only reach the request page, and only when an
-// editor has added them as requester positions in the database.
+// curated list in SGAOperations/auth (prisma/seed/positions.json). Anyone
+// holding none of these positions can only use purchase requests, and only
+// when an editor has listed their position as a requester position.
 export const COMPTROLLER = 'comptroller';
 export const VPOA = 'vice-president-of-operational-affairs';
 
 const EDITORS = ['executive-vice-president', VPOA, COMPTROLLER];
 
+const VIEWERS = [
+  'student-body-president',
+  'speaker-of-the-senate',
+  'senator',
+  'parliamentarian',
+  'vice-president-of-academic-affairs',
+  'vice-president-of-campus-affairs',
+  'vice-president-of-diversity-equity-and-inclusion',
+  'vice-president-of-external-affairs',
+  'vice-president-of-student-involvement',
+  'vice-president-of-student-success',
+];
+
 const CAPABILITY_POSITIONS: Record<Capability, readonly string[]> = {
   edit: EDITORS,
-  view: EDITORS,
+  view: [...EDITORS, ...VIEWERS],
 };
 
 export function hasCapability(

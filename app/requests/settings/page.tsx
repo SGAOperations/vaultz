@@ -50,8 +50,8 @@ export default async function RequestSettingsPage() {
             <CardTitle>Requester positions</CardTitle>
             <CardDescription>
               Holders of these SGAuth positions can submit requests against the
-              divisions mapped to their position. This is their only access to
-              VaultZ. Editors can always submit.
+              divisions mapped to their position (editors: any division).
+              Positions without view access see only the request page.
             </CardDescription>
           </CardHeader>
           <CardContent>
