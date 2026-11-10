@@ -75,6 +75,9 @@ export type AllocationGroupWithStats = AllocationGroup & {
   allocations: AllocationWithStats[];
   totalAmount: number;
   totalSpent: number;
+  // Open purchase requests against the group's allocations.
+  totalCommitted: number;
+  openRequestCount: number;
 };
 
 export type PurchaseWithUserAndCategory = Purchase & {
