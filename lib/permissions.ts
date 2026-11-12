@@ -4,6 +4,8 @@ import { type MaybeSession, hasAnyPosition } from '@nusgaops/sgauth';
 
 import type { PurchaseRequestStatus } from '@/prisma/client';
 
+import prisma from '@/lib/prisma';
+
 export type Capability = 'view' | 'edit';
 
 // The only place SGAuth position keys appear in VaultZ. Keys come from the
@@ -112,4 +114,31 @@ export function allowedRequestActions({
 
 export function isRequestApprover(session: MaybeSession): boolean {
   return hasAnyPosition(session, [COMPTROLLER, VPOA]);
+}
+
+export type VisibleDivisions = 'all' | string[];
+
+// Editors see every division. Other viewers see only the divisions mapped to
+// their view-capable positions; unmapped divisions stay hidden.
+export async function resolveVisibleDivisionIds(
+  session: MaybeSession,
+): Promise<VisibleDivisions> {
+  if (!hasCapability(session, 'view')) throw new ForbiddenError('view');
+  if (hasCapability(session, 'edit')) return 'all';
+
+  const positionKeys = (session?.positions ?? [])
+    .map((position) => position.key)
+    .filter((key) => CAPABILITY_POSITIONS.view.includes(key));
+
+  const mappings = await prisma.positionDivisionAccess.findMany({
+    where: { positionKey: { in: positionKeys } },
+    select: { allocationGroupId: true },
+  });
+
+  return [...new Set(mappings.map((mapping) => mapping.allocationGroupId))];
+}
+
+export async function getVisibleDivisionIds(): Promise<VisibleDivisions> {
+  const session = await requireSession();
+  return resolveVisibleDivisionIds(session);
 }
