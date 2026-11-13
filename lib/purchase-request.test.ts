@@ -45,6 +45,7 @@ describe('purchaseRequestInputSchema', () => {
     allocationId: 'a',
     categoryId: 'c',
     purchaserId: 'p',
+    processTemplateId: 't',
     notes: '',
     attachments: [],
   };
@@ -56,6 +57,13 @@ describe('purchaseRequestInputSchema', () => {
   it.each(['0', '-5', '1.234'])('rejects an amount of %s', (amount) => {
     expect(
       purchaseRequestInputSchema.safeParse({ ...valid, amount }).success,
+    ).toBe(false);
+  });
+
+  it('requires a purchasing method', () => {
+    expect(
+      purchaseRequestInputSchema.safeParse({ ...valid, processTemplateId: '' })
+        .success,
     ).toBe(false);
   });
 

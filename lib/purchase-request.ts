@@ -22,11 +22,16 @@ export const purchaseRequestInputSchema = z.object({
   allocationId: z.string().min(1, 'Select an allocation'),
   categoryId: z.string().min(1, 'Select a category'),
   purchaserId: z.string().min(1, 'Select an E-Board purchaser'),
+  processTemplateId: z.string().min(1, 'Select a purchasing method'),
   notes: z.string().trim().max(2000, 'Cannot be longer than 2000 characters'),
   attachments: z.array(z.string()).max(5, 'Attach at most 5 files'),
 });
 
 export type PurchaseRequestInput = z.infer<typeof purchaseRequestInputSchema>;
+
+// Every request is submitted, approved and paid on this condition.
+export const PURCHASER_RULE =
+  'The E-Board purchaser named on this request must make the purchase. If it is found that a non-E-Board member made the purchase, the approval is automatically void.';
 
 export const OPEN_REQUEST_STATUSES: PurchaseRequestStatus[] = [
   'PURCHASER_REVIEW',
@@ -43,6 +48,7 @@ export const REQUEST_STATUS_LABELS: Record<PurchaseRequestStatus, string> = {
   APPROVED: 'Approved',
   REJECTED: 'Rejected',
   CANCELLED: 'Cancelled',
+  REVOKED: 'Revoked',
 };
 
 export const REQUEST_EVENT_LABELS: Record<PurchaseRequestEventType, string> = {
@@ -57,6 +63,9 @@ export const REQUEST_EVENT_LABELS: Record<PurchaseRequestEventType, string> = {
   RETURNED: 'Returned to the Comptroller',
   NOTIFIED: 'VPOA notified on Slack',
   NOTIFY_FAILED: 'Slack notification failed',
+  RECODED: 'Coding corrected',
+  SIGNED_OFF: 'Signed off by the VPOA',
+  REVOKED: 'Approval revoked by the VPOA',
 };
 
 export interface AllocationBudget {

@@ -6,33 +6,35 @@ import { ReactNode, useState } from 'react';
 import {
   ArrowUpRight,
   BadgeCheck,
-  Check,
+  Ban,
   CornerUpLeft,
   Loader2,
   RotateCcw,
   Send,
+  ShieldCheck,
   Undo2,
   X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import {
-  approvePurchaseRequest,
   cancelPurchaseRequest,
   escalatePurchaseRequest,
   purchaserApprovePurchaseRequest,
   rejectPurchaseRequest,
   resendEscalationNotice,
   returnPurchaseRequest,
+  revokePurchaseRequest,
   sendBackPurchaseRequest,
+  signOffPurchaseRequest,
 } from '@/prisma/services/purchase-request';
 
 import { RequestAction } from '@/lib/permissions';
+import { PURCHASER_RULE } from '@/lib/purchase-request';
 import { PurchaseRequestDetail, RequestFormOptions } from '@/lib/types';
 import { ErrorType, cn, handleError, isError } from '@/lib/utils';
 
 import { Button } from '@/components/ui/button';
-import { Combobox } from '@/components/ui/combobox';
 import {
   Dialog,
   DialogContent,
@@ -45,12 +47,14 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 
+import { ApprovalOptions, ApproveDialog } from './approve-dialog';
 import { RequestDialog } from './request-dialog';
 
 interface RequestActionsProps {
   request: PurchaseRequestDetail;
   formOptions: RequestFormOptions | null;
-  processTemplates: { id: string; name: string }[];
+  approvalOptions: ApprovalOptions | null;
+  isVpoa: boolean;
 }
 
 interface ConfirmConfig {
@@ -60,35 +64,27 @@ interface ConfirmConfig {
   noteLabel?: string;
   noteRequired?: boolean;
   destructive?: boolean;
-  withTemplate?: boolean;
-  run: (input: {
-    note: string;
-    processTemplateId: string;
-  }) => Promise<ErrorType | object>;
+  run: (input: { note: string }) => Promise<ErrorType | object>;
   success: string;
 }
 
 function ConfirmDialog({
   config,
-  processTemplates,
   children,
 }: {
   config: ConfirmConfig;
-  processTemplates: { id: string; name: string }[];
   children: ReactNode;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [note, setNote] = useState('');
-  const [processTemplateId, setProcessTemplateId] = useState('');
   const [busy, setBusy] = useState(false);
 
   async function confirm() {
     setBusy(true);
-    const result = await handleError(
-      config.run({ note: note.trim(), processTemplateId }),
-      { toast: { loading: 'Working...', success: config.success } },
-    ).finally(() => setBusy(false));
+    const result = await handleError(config.run({ note: note.trim() }), {
+      toast: { loading: 'Working...', success: config.success },
+    }).finally(() => setBusy(false));
     if (isError(result)) return;
 
     if ('notified' in result && result.notified === false)
@@ -108,24 +104,6 @@ function ConfirmDialog({
           <DialogTitle>{config.title}</DialogTitle>
           <DialogDescription>{config.description}</DialogDescription>
         </DialogHeader>
-        {config.withTemplate && processTemplates.length > 0 && (
-          <div className="flex flex-col gap-2">
-            <Label>Process template (optional)</Label>
-            <Combobox
-              name="process template"
-              value={processTemplateId}
-              onChange={setProcessTemplateId}
-              data={[
-                {
-                  items: processTemplates.map((t) => ({
-                    label: t.name,
-                    value: t.id,
-                  })),
-                },
-              ]}
-            />
-          </div>
-        )}
         {config.noteLabel && (
           <div className="flex flex-col gap-2">
             <Label htmlFor="request-action-note">{config.noteLabel}</Label>
@@ -157,15 +135,12 @@ function ConfirmDialog({
 export function RequestActions({
   request,
   formOptions,
-  processTemplates,
+  approvalOptions,
+  isVpoa,
 }: RequestActionsProps) {
   const { id } = request;
   const can = (action: RequestAction) =>
     request.allowedActions.includes(action);
-
-  const beforePurchaser =
-    request.status === 'PURCHASER_REVIEW' ||
-    request.status === 'NEEDS_REVISION';
 
   const configs: Partial<
     Record<
@@ -173,22 +148,31 @@ export function RequestActions({
       { icon: ReactNode; label: string; config: ConfirmConfig }
     >
   > = {
-    approve: {
-      icon: <Check />,
-      label: 'Approve',
+    signOff: {
+      icon: <ShieldCheck />,
+      label: 'Sign off',
       config: {
-        title: 'Approve request',
-        description: `${beforePurchaser ? "This skips the E-Board purchaser's approval. " : ''}Approving creates a purchase for the E-Board purchaser, dated today, for the requested amount. Edit the purchase later if the actual amount or date differs.`,
-        confirmLabel: 'Approve',
-        noteLabel: 'Note (optional)',
-        withTemplate: true,
-        run: ({ note, processTemplateId }) =>
-          approvePurchaseRequest({
-            id,
-            note,
-            processTemplateId: processTemplateId || undefined,
-          }),
-        success: 'Request approved and purchase created',
+        title: 'Sign off on this purchase',
+        description:
+          'Confirms your approval of the Comptroller-approved purchase. This completes the request.',
+        confirmLabel: 'Sign off',
+        run: () => signOffPurchaseRequest(id),
+        success: 'Signed off',
+      },
+    },
+    revoke: {
+      icon: <Ban />,
+      label: 'Revoke approval',
+      config: {
+        title: 'Revoke approval',
+        description:
+          'Cancels the approval and voids its purchase. If the purchase has already been made, revoking it here does not undo it. The Comptroller, purchaser and requester are notified.',
+        confirmLabel: 'Revoke',
+        noteLabel: 'Reason',
+        noteRequired: true,
+        destructive: true,
+        run: ({ note }) => revokePurchaseRequest({ id, reason: note }),
+        success: 'Approval revoked',
       },
     },
     purchaserApprove: {
@@ -196,8 +180,7 @@ export function RequestActions({
       label: 'Approve as purchaser',
       config: {
         title: 'Approve as E-Board purchaser',
-        description:
-          'Confirms you will make this purchase. The request then goes to the Comptroller, and the requester can no longer edit it.',
+        description: `Confirms you will make this purchase yourself. ${PURCHASER_RULE} The request then goes to the Comptroller, and the requester can no longer edit it.`,
         confirmLabel: 'Approve',
         noteLabel: 'Note (optional)',
         run: ({ note }) => purchaserApprovePurchaseRequest({ id, note }),
@@ -286,43 +269,47 @@ export function RequestActions({
 
   const order: RequestAction[] = [
     'purchaserApprove',
-    'approve',
+    'signOff',
     'sendBack',
     'escalate',
     'return',
     'resend',
     'cancel',
     'reject',
+    'revoke',
   ];
   const visible = order.filter((a) => can(a));
-  if (visible.length === 0 && !can('edit')) return null;
+  if (visible.length === 0 && !can('edit') && !can('approve')) return null;
 
   return (
     <div className="flex flex-wrap gap-2">
       {can('edit') && formOptions && (
         <RequestDialog options={formOptions} request={request} />
       )}
+      {can('approve') && approvalOptions && (
+        <ApproveDialog
+          request={request}
+          options={approvalOptions}
+          isVpoa={isVpoa}
+        />
+      )}
       {visible.map((action) => {
         const entry = configs[action];
         if (!entry) return null;
         return (
-          <ConfirmDialog
-            key={action}
-            config={entry.config}
-            processTemplates={processTemplates}
-          >
+          <ConfirmDialog key={action} config={entry.config}>
             <Button
               variant={
-                action === 'approve' || action === 'purchaserApprove'
+                action === 'purchaserApprove' || action === 'signOff'
                   ? 'default'
-                  : action === 'reject'
+                  : action === 'reject' || action === 'revoke'
                     ? 'ghost'
                     : entry.config.destructive
                       ? 'destructive'
                       : 'outline'
               }
               className={cn(
-                action === 'reject' &&
+                (action === 'reject' || action === 'revoke') &&
                   'text-destructive hover:text-destructive',
               )}
             >

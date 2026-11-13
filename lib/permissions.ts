@@ -71,24 +71,29 @@ export type RequestAction =
   | 'reject'
   | 'escalate'
   | 'return'
-  | 'resend';
+  | 'resend'
+  | 'signOff'
+  | 'revoke';
 
 // A request first waits on its E-Board purchaser, then on the Comptroller,
 // who can escalate it to the VPOA (hiding their own decisions until they
 // return it). The VPOA can decide any open request at any stage. Every
 // reviewer's default decline is sending it back for revision; rejecting ends
-// it. The requester can edit or cancel until the purchaser approves. The EVP
+// it. The requester can edit or cancel until the purchaser approves. The VPOA
+// signs off on every approved request after the fact, or revokes it. The EVP
 // has no request powers.
 export function allowedRequestActions({
   session,
   status,
   isOwner,
   isPurchaser,
+  isSignedOff = false,
 }: {
   session: MaybeSession;
   status: PurchaseRequestStatus;
   isOwner: boolean;
   isPurchaser: boolean;
+  isSignedOff?: boolean;
 }): RequestAction[] {
   const isComptroller = hasAnyPosition(session, [COMPTROLLER]);
   const isVpoa = hasAnyPosition(session, [VPOA]);
@@ -111,6 +116,8 @@ export function allowedRequestActions({
   if (isVpoa && status !== 'NEEDS_REVISION' && isOpenStatus(status))
     add('approve', 'sendBack', 'reject');
   if (isVpoa && status === 'NEEDS_REVISION') add('approve', 'reject');
+
+  if (isVpoa && status === 'APPROVED' && !isSignedOff) add('signOff', 'revoke');
 
   return [...actions];
 }

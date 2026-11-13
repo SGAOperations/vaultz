@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 
+import { hasAnyPosition } from '@nusgaops/sgauth';
 import { Settings2 } from 'lucide-react';
 
 import {
@@ -9,6 +10,7 @@ import {
 } from '@/prisma/services/purchase-request';
 import { getRequestAccess } from '@/prisma/services/request-access';
 
+import { VPOA } from '@/lib/permissions';
 import { OPEN_REQUEST_STATUSES } from '@/lib/purchase-request';
 import { cn } from '@/lib/utils';
 
@@ -21,6 +23,7 @@ export const metadata: Metadata = { title: 'Purchase Requests' };
 
 const TABS = [
   { key: 'open', label: 'Open' },
+  { key: 'signoff', label: 'Awaiting my sign-off' },
   { key: 'all', label: 'All' },
   { key: 'mine', label: 'Mine' },
 ] as const;
@@ -36,9 +39,11 @@ export default async function PurchaseRequestsPage({
   if (!access.canUseRequests) return null;
 
   const { view } = await searchParams;
+  const isVpoa = hasAnyPosition(access.session, [VPOA]);
+  const tabs = TABS.filter((t) => t.key !== 'signoff' || isVpoa);
   const tab: Tab = !access.canView
     ? 'mine'
-    : TABS.some((t) => t.key === view)
+    : tabs.some((t) => t.key === view)
       ? (view as Tab)
       : 'open';
 
@@ -49,7 +54,11 @@ export default async function PurchaseRequestsPage({
   const shown =
     tab === 'open'
       ? requests.filter((r) => OPEN_REQUEST_STATUSES.includes(r.status))
-      : requests;
+      : tab === 'signoff'
+        ? requests.filter(
+            (r) => r.status === 'APPROVED' && r.signedOffAt === null,
+          )
+        : requests;
 
   return (
     <div className="flex w-full flex-col gap-4">
@@ -77,7 +86,7 @@ export default async function PurchaseRequestsPage({
 
       {access.canView && (
         <nav className="bg-muted flex w-fit gap-1 rounded-lg p-1">
-          {TABS.map(({ key, label }) => (
+          {tabs.map(({ key, label }) => (
             <Link
               key={key}
               href={`/requests?view=${key}`}
@@ -100,7 +109,9 @@ export default async function PurchaseRequestsPage({
         emptyMessage={
           tab === 'open'
             ? 'No requests waiting on a decision'
-            : 'No purchase requests yet'
+            : tab === 'signoff'
+              ? 'Nothing awaiting your sign-off'
+              : 'No purchase requests yet'
         }
       />
     </div>

@@ -155,6 +155,10 @@ export type PurchaseRequestSummary = {
     name: string;
     allocationGroup: { id: string; name: string } | null;
   };
+  purchasingMethod: { id: string; name: string } | null;
+  // Set once the VPOA signs off; set without a signer for approvals that
+  // predate sign-off.
+  signedOffAt: Date | null;
 };
 
 export type PurchaseRequestEventRecord = {
@@ -171,6 +175,7 @@ export type PurchaseRequestDetail = PurchaseRequestSummary & {
   decidedAt: Date | null;
   decisionNote: string | null;
   decidedBy: PersonName | null;
+  signedOffBy: PersonName | null;
   escalatedAt: Date | null;
   escalationNotifiedAt: Date | null;
   purchaseId: string | null;
@@ -192,4 +197,5 @@ export type RequestFormOptions = {
   year: { id: string; name: string } | null;
   divisions: RequestFormDivision[];
   purchasers: PersonName[];
+  purchasingMethods: { id: string; name: string; description: string | null }[];
 };

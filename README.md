@@ -48,13 +48,14 @@ Process templates define multi-step approval or workflow sequences (e.g., reimbu
 
 ### Purchase Requests
 
-Requester positions submit purchase requests against their divisions' allocations. Every request must name an E-Board purchaser: a user marked as one under Requests → Settings. A request moves through these stages:
+Requester positions submit purchase requests against their divisions' allocations. Every request must name an E-Board purchaser (a user marked as one under Requests → Settings) and a purchasing method: one of the process templates offered as a method, also chosen under Requests → Settings. Before a request is submitted or resubmitted, the requester must acknowledge that the named E-Board purchaser has to make the purchase, and that the approval is automatically void if a non-E-Board member is found to have made it. The acknowledgment is recorded in the request's history. A request moves through these stages:
 
 1. **Awaiting purchaser.** The E-Board purchaser approves it, or sends it back for revision. A requester who names themselves as purchaser skips this stage.
-2. **Pending.** The Comptroller approves it, sends it back, or escalates it. Escalating sends the VPOA a Slack DM and hides the Comptroller's decisions until they return the request.
+2. **Pending.** The Comptroller approves it, sends it back, or escalates it. Escalating sends the VPOA a Slack DM and hides the Comptroller's decisions until they return the request. Approving is also the Comptroller's financial review: they can correct the allocation, category and purchasing method, and attach conditions for the purchaser.
 3. **Needs revision.** A sent-back request shows the reviewer's note. When the requester edits it, it goes back through the purchaser, then the Comptroller.
+4. **Approved, awaiting VPOA sign-off.** The approval creates the purchase right away, so the purchaser can go ahead. The VPOA then signs off, or revokes the approval, which voids the purchase. The VPOA's own approval counts as their sign-off.
 
-Sending back is every reviewer's default way to decline; rejecting outright ends the request and is a separate, less prominent action. The VPOA can approve, send back or reject at any open stage. The requester can edit or cancel only until the purchaser approves. Approving creates a purchase for the purchaser, dated that day, for the requested amount. The request keeps the original amount if the purchase is edited later. Open requests count as committed against their allocation, so requesters and reviewers see a warning when a request exceeds the available balance. Every change is recorded in the request's history.
+Sending back is every reviewer's default way to decline; rejecting outright ends the request and is a separate, less prominent action. The VPOA can approve, send back or reject at any open stage. The requester can edit or cancel only until the purchaser approves. Approving creates a purchase for the purchaser, dated that day, for the requested amount, and starts the request's purchasing method as its process; the approver can switch the method first. The request keeps the original amount if the purchase is edited later. Open requests count as committed against their allocation, so requesters and reviewers see a warning when a request exceeds the available balance. Every change is recorded in the request's history.
 
 ### Users
 
@@ -95,14 +96,17 @@ SLACK_BOT_TOKEN=<sgassist_bot_token>
 
 The bot sends these DMs, never about the recipient's own action:
 
-| Event                                                | Recipient   |
-| ---------------------------------------------------- | ----------- |
-| A request awaits the purchaser (submitted or edited) | Purchaser   |
-| A request awaiting the purchaser is cancelled        | Purchaser   |
-| A request reaches Pending                            | Comptroller |
-| A request is escalated                               | VPOA        |
-| The VPOA approves or rejects a request               | Comptroller |
-| A request is sent back, approved or rejected         | Requester   |
+| Event                                                | Recipient                            |
+| ---------------------------------------------------- | ------------------------------------ |
+| A request awaits the purchaser (submitted or edited) | Purchaser                            |
+| A request awaiting the purchaser is cancelled        | Purchaser                            |
+| A request reaches Pending                            | Comptroller                          |
+| A request is escalated                               | VPOA                                 |
+| The Comptroller approves a request (sign-off needed) | VPOA                                 |
+| The VPOA approves or rejects a request               | Comptroller                          |
+| A request is sent back, approved or rejected         | Requester                            |
+| A request is approved (with any conditions)          | Purchaser                            |
+| An approval is revoked                               | Comptroller, purchaser and requester |
 
 | Environment      | `SGAUTH_URL`                           | `SGAUTH_COOKIE_NAME`                |
 | ---------------- | -------------------------------------- | ----------------------------------- |

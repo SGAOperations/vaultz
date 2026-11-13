@@ -5,6 +5,7 @@ import { FormEvent, useState } from 'react';
 
 import { Loader2, Plus, Trash2 } from 'lucide-react';
 
+import { setPurchasingMethod } from '@/prisma/services/process-templates';
 import {
   addRequesterPosition,
   removeRequesterPosition,
@@ -125,6 +126,54 @@ export function EBoardPurchaserList({
                 </span>
               )}
             </span>
+          </label>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+export function PurchasingMethodList({
+  templates,
+}: {
+  templates: { id: string; name: string; isPurchasingMethod: boolean }[];
+}) {
+  const router = useRouter();
+
+  async function toggle(id: string, isPurchasingMethod: boolean) {
+    const result = await handleError(
+      setPurchasingMethod({ id, isPurchasingMethod }),
+      {
+        toast: {
+          loading: 'Saving...',
+          success: isPurchasingMethod
+            ? 'Offered as a purchasing method'
+            : 'No longer offered as a purchasing method',
+        },
+      },
+    );
+    if (!isError(result)) router.refresh();
+  }
+
+  if (templates.length === 0)
+    return (
+      <p className="text-muted-foreground text-sm">
+        No process templates yet. Create them under Settings → Processes.
+      </p>
+    );
+
+  return (
+    <ul className="grid gap-1 rounded-lg border p-2 sm:grid-cols-2">
+      {templates.map((template) => (
+        <li key={template.id}>
+          <label className="hover:bg-muted flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm">
+            <Checkbox
+              checked={template.isPurchasingMethod}
+              onCheckedChange={(checked) =>
+                toggle(template.id, checked === true)
+              }
+            />
+            {template.name}
           </label>
         </li>
       ))}

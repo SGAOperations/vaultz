@@ -74,6 +74,7 @@ model User {
   requestsMade       PurchaseRequest[]      @relation("RequestRequester")
   requestsPurchasing PurchaseRequest[]      @relation("RequestPurchaser")
   requestsDecided    PurchaseRequest[]      @relation("RequestDecider")
+  requestsSignedOff  PurchaseRequest[]      @relation("RequestSignOff")
   requestEvents      PurchaseRequestEvent[]
 }
 
@@ -132,15 +133,18 @@ model Purchase {
 }
 
 model ProcessTemplate {
-  id          String    @id @default(uuid())
-  name        String
-  description String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
+  id                 String    @id @default(uuid())
+  name               String
+  description        String?
+  // Offered to requesters as a way to make a purchase.
+  isPurchasingMethod Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  deletedAt          DateTime?
 
-  steps     ProcessStep[]
-  processes PurchaseProcess[]
+  steps            ProcessStep[]
+  processes        PurchaseProcess[]
+  purchaseRequests PurchaseRequest[]
 }
 
 model ProcessStep {
@@ -253,6 +257,7 @@ enum PurchaseRequestStatus {
   APPROVED
   REJECTED
   CANCELLED
+  REVOKED
 }
 
 enum PurchaseRequestEventType {
@@ -267,6 +272,9 @@ enum PurchaseRequestEventType {
   RETURNED
   NOTIFIED
   NOTIFY_FAILED
+  RECODED
+  SIGNED_OFF
+  REVOKED
 }
 
 model PurchaseRequest {
@@ -286,20 +294,29 @@ model PurchaseRequest {
   escalationNotifiedAt  DateTime?
   escalationNotifyError String?
 
-  requesterId  String
-  requester    User       @relation("RequestRequester", fields: [requesterId], references: [id])
-  purchaserId  String
-  purchaser    User       @relation("RequestPurchaser", fields: [purchaserId], references: [id])
-  decidedById  String?
-  decidedBy    User?      @relation("RequestDecider", fields: [decidedById], references: [id])
-  categoryId   String
-  category     Category   @relation(fields: [categoryId], references: [id])
-  allocationId String
-  allocation   Allocation @relation(fields: [allocationId], references: [id])
-  yearId       String
-  year         Year       @relation(fields: [yearId], references: [id])
-  purchaseId   String?    @unique
-  purchase     Purchase?  @relation(fields: [purchaseId], references: [id])
+  // The VPOA's sign-off, which follows the Comptroller's approval. Requests
+  // approved before sign-off existed have a time but no signer.
+  signedOffAt   DateTime?
+  signedOffById String?
+  signedOffBy   User?     @relation("RequestSignOff", fields: [signedOffById], references: [id])
+
+  requesterId       String
+  requester         User             @relation("RequestRequester", fields: [requesterId], references: [id])
+  purchaserId       String
+  purchaser         User             @relation("RequestPurchaser", fields: [purchaserId], references: [id])
+  decidedById       String?
+  decidedBy         User?            @relation("RequestDecider", fields: [decidedById], references: [id])
+  categoryId        String
+  category          Category         @relation(fields: [categoryId], references: [id])
+  allocationId      String
+  allocation        Allocation       @relation(fields: [allocationId], references: [id])
+  yearId            String
+  year              Year             @relation(fields: [yearId], references: [id])
+  // The purchasing method; nullable only for requests made before it existed.
+  processTemplateId String?
+  processTemplate   ProcessTemplate? @relation(fields: [processTemplateId], references: [id])
+  purchaseId        String?          @unique
+  purchase          Purchase?        @relation(fields: [purchaseId], references: [id])
 
   events PurchaseRequestEvent[]
 
