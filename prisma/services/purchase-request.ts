@@ -25,6 +25,7 @@ import {
   RequestAction,
   VPOA,
   allowedRequestActions,
+  isRequestApprover,
 } from '@/lib/permissions';
 import prisma from '@/lib/prisma';
 import {
@@ -81,6 +82,7 @@ function toSummary(request: RequestWithSummary): PurchaseRequestSummary {
     category: request.category,
     allocation: request.allocation,
     purchasingMethod: request.processTemplate,
+    signedOffAt: request.signedOffAt,
   };
 }
 
@@ -96,13 +98,17 @@ function canSee(access: RequestAccess, request: Parties): boolean {
 
 function actionsFor(
   access: RequestAccess,
-  request: Parties & { status: PurchaseRequestStatus },
+  request: Parties & {
+    status: PurchaseRequestStatus;
+    signedOffAt: Date | null;
+  },
 ): RequestAction[] {
   return allowedRequestActions({
     session: access.session,
     status: request.status,
     isOwner: request.requesterId === access.user.id,
     isPurchaser: request.purchaserId === access.user.id,
+    isSignedOff: request.signedOffAt !== null,
   });
 }
 
@@ -282,6 +288,7 @@ export async function getPurchaseRequest(
     include: {
       ...summaryInclude,
       decidedBy: { select: personSelect },
+      signedOffBy: { select: personSelect },
       events: {
         orderBy: { createdAt: 'asc' },
         include: { actor: { select: personSelect } },
@@ -301,6 +308,7 @@ export async function getPurchaseRequest(
     decidedAt: request.decidedAt,
     decisionNote: request.decisionNote,
     decidedBy: request.decidedBy,
+    signedOffBy: request.signedOffBy,
     escalatedAt: request.escalatedAt,
     escalationNotifiedAt: request.escalationNotifiedAt,
     purchaseId: request.purchaseId,
@@ -318,7 +326,35 @@ export async function getPurchaseRequest(
 
 export async function getRequestFormOptions(): Promise<RequestFormOptions> {
   const access = await requireSubmitAccess();
+  return buildFormOptions(access.divisionIds);
+}
 
+// What an approver can recode a request to: every division's allocations and
+// categories this year, and every active process template.
+export async function getApprovalOptions(): Promise<
+  ResponseType<{
+    divisions: RequestFormOptions['divisions'];
+    methods: { id: string; name: string }[];
+  }>
+> {
+  const access = await requireRequestAccess();
+  if (!isRequestApprover(access.session))
+    return { error: 'Only the Comptroller and the VPOA approve requests.' };
+
+  const [options, methods] = await Promise.all([
+    buildFormOptions('all'),
+    prisma.processTemplate.findMany({
+      where: { deletedAt: null },
+      select: { id: true, name: true },
+      orderBy: { name: 'asc' },
+    }),
+  ]);
+  return { divisions: options.divisions, methods };
+}
+
+async function buildFormOptions(
+  divisionIds: RequestAccess['divisionIds'],
+): Promise<RequestFormOptions> {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const year = await prisma.year.findFirst({
@@ -334,9 +370,7 @@ export async function getRequestFormOptions(): Promise<RequestFormOptions> {
     year
       ? prisma.allocationGroup.findMany({
           where:
-            access.divisionIds === 'all'
-              ? undefined
-              : { id: { in: access.divisionIds } },
+            divisionIds === 'all' ? undefined : { id: { in: divisionIds } },
           orderBy: { name: 'asc' },
           include: {
             designation: {
@@ -634,31 +668,40 @@ export async function approvePurchaseRequest({
   id,
   note,
   processTemplateId,
+  categoryId,
+  allocationId,
 }: {
   id: string;
   note?: string;
   processTemplateId?: string;
+  categoryId?: string;
+  allocationId?: string;
 }): Promise<ResponseType<{ id: string; purchaseId: string }>> {
   const loaded = await loadForAction(id, 'approve');
   if ('error' in loaded) return loaded;
   const { access, request } = loaded;
 
-  // The approver can switch the request's purchasing method before approving.
-  const templateId = processTemplateId || request.processTemplateId;
-  if (templateId) {
-    const template = await prisma.processTemplate.findFirst({
-      where: { id: templateId, deletedAt: null },
-      select: { id: true },
-    });
-    if (!template)
-      return {
-        error:
-          'That purchasing method no longer exists. Choose another before approving.',
-      };
-  }
+  const coding = await resolveCoding(request, {
+    processTemplateId,
+    categoryId,
+    allocationId,
+  });
+  if ('error' in coding) return coding;
 
+  // The VPOA's own approval is their sign-off.
+  const isVpoa = hasAnyPosition(access.session, [VPOA]);
   const now = new Date();
   const purchaseId = await prisma.$transaction(async (tx) => {
+    if (coding.changes.length > 0)
+      await tx.purchaseRequestEvent.create({
+        data: {
+          requestId: id,
+          type: 'RECODED',
+          actorId: access.user.id,
+          note: coding.changes.join('\n'),
+        },
+      });
+
     const ok = await transition(tx, {
       id,
       from: request.status,
@@ -670,6 +713,11 @@ export async function approvePurchaseRequest({
         decidedById: access.user.id,
         decidedAt: now,
         decisionNote: note || null,
+        categoryId: coding.categoryId,
+        allocationId: coding.allocationId,
+        yearId: coding.yearId,
+        processTemplateId: coding.templateId,
+        ...(isVpoa && { signedOffAt: now, signedOffById: access.user.id }),
       },
     });
     if (!ok) return null;
@@ -679,16 +727,18 @@ export async function approvePurchaseRequest({
     const purchase = await tx.purchase.create({
       data: {
         userId: request.purchaserId,
-        categoryId: request.categoryId,
-        allocationId: request.allocationId,
-        yearId: request.yearId,
+        categoryId: coding.categoryId,
+        allocationId: coding.allocationId,
+        yearId: coding.yearId,
         description: request.description,
         amount: request.amount,
         notes: request.notes,
         purchasedAt: now,
         receipts: [],
-        ...(templateId && {
-          process: { create: { templateId, startedAt: now } },
+        ...(coding.templateId && {
+          process: {
+            create: { templateId: coding.templateId, startedAt: now },
+          },
         }),
       },
       select: { id: true },
@@ -701,15 +751,193 @@ export async function approvePurchaseRequest({
   });
   if (!purchaseId) return STALE_ERROR;
 
+  const approvalNotices: Notice[] = [
+    ...(isVpoa
+      ? decisionNotices(access, request, 'approved', note)
+      : [
+          ...vpoaNotice(access, 'Purchase approved, needs your sign-off'),
+          ...requesterNotice(
+            access,
+            request,
+            'Your purchase request was approved',
+            note,
+          ),
+        ]),
+    ...purchaserNotice(
+      access,
+      request,
+      'Purchase approved, you can go ahead',
+      note,
+    ),
+  ];
   await queueNotices(
     access,
     id,
-    decisionNotices(access, request, 'approved', note),
+    approvalNotices.map((n) => ({ ...n, noteLabel: 'Conditions' })),
   );
   revalidateRequest(id);
   revalidatePath('/');
   revalidatePath('/purchases');
   return { id, purchaseId };
+}
+
+// Applies an approver's coding corrections and describes what changed.
+async function resolveCoding(
+  request: RequestWithSummary,
+  input: {
+    processTemplateId?: string;
+    categoryId?: string;
+    allocationId?: string;
+  },
+): Promise<
+  ResponseType<{
+    categoryId: string;
+    allocationId: string;
+    yearId: string;
+    templateId: string | null;
+    changes: string[];
+  }>
+> {
+  const allocationId = input.allocationId || request.allocationId;
+  const categoryId = input.categoryId || request.categoryId;
+  const templateId = input.processTemplateId || request.processTemplateId;
+
+  const [allocation, category, template] = await Promise.all([
+    prisma.allocation.findFirst({
+      where: { id: allocationId, deletedAt: null },
+      select: {
+        name: true,
+        designationId: true,
+        period: { select: { yearId: true } },
+      },
+    }),
+    prisma.category.findFirst({
+      where: { id: categoryId, deletedAt: null },
+      select: { code: true, name: true, designationId: true },
+    }),
+    templateId
+      ? prisma.processTemplate.findFirst({
+          where: { id: templateId, deletedAt: null },
+          select: { name: true },
+        })
+      : null,
+  ]);
+  if (!allocation) return { error: 'That allocation no longer exists.' };
+  if (!category || category.designationId !== allocation.designationId)
+    return { error: "That category does not belong to the allocation's fund." };
+  if (templateId && !template)
+    return {
+      error:
+        'That purchasing method no longer exists. Choose another before approving.',
+    };
+
+  const changes: string[] = [];
+  if (allocationId !== request.allocationId)
+    changes.push(`Allocation: ${request.allocation.name} → ${allocation.name}`);
+  if (categoryId !== request.categoryId)
+    changes.push(
+      `Category: ${request.category.code} ${request.category.name} → ${category.code} ${category.name}`,
+    );
+  if (templateId !== request.processTemplateId)
+    changes.push(
+      `Purchasing method: ${request.processTemplate?.name ?? 'Not set'} → ${template?.name ?? 'Not set'}`,
+    );
+
+  return {
+    categoryId,
+    allocationId,
+    yearId: allocation.period.yearId,
+    templateId,
+    changes,
+  };
+}
+
+export async function signOffPurchaseRequest(
+  id: string,
+): Promise<ResponseType<{ id: string }>> {
+  const loaded = await loadForAction(id, 'signOff');
+  if ('error' in loaded) return loaded;
+  const { access } = loaded;
+
+  const ok = await prisma.$transaction(async (tx) => {
+    const { count } = await tx.purchaseRequest.updateMany({
+      where: { id, status: 'APPROVED', signedOffAt: null, deletedAt: null },
+      data: { signedOffAt: new Date(), signedOffById: access.user.id },
+    });
+    if (count !== 1) return false;
+    await tx.purchaseRequestEvent.create({
+      data: { requestId: id, type: 'SIGNED_OFF', actorId: access.user.id },
+    });
+    return true;
+  });
+  if (!ok) return STALE_ERROR;
+
+  revalidateRequest(id);
+  return { id };
+}
+
+// Cancels an approval the VPOA won't sign off on and voids its purchase.
+export async function revokePurchaseRequest({
+  id,
+  reason,
+}: {
+  id: string;
+  reason: string;
+}): Promise<ResponseType<{ id: string }>> {
+  if (!reason.trim()) return { error: 'Give a reason for revoking it.' };
+
+  const loaded = await loadForAction(id, 'revoke');
+  if ('error' in loaded) return loaded;
+  const { access, request } = loaded;
+  const now = new Date();
+
+  const ok = await prisma.$transaction(async (tx) => {
+    const { count } = await tx.purchaseRequest.updateMany({
+      where: { id, status: 'APPROVED', signedOffAt: null, deletedAt: null },
+      data: { status: 'REVOKED' },
+    });
+    if (count !== 1) return false;
+    await tx.purchaseRequestEvent.create({
+      data: {
+        requestId: id,
+        type: 'REVOKED',
+        actorId: access.user.id,
+        note: reason.trim(),
+      },
+    });
+    if (request.purchaseId)
+      await tx.purchase.updateMany({
+        where: { id: request.purchaseId, deletedAt: null },
+        data: { deletedAt: now },
+      });
+    return true;
+  });
+  if (!ok) return STALE_ERROR;
+
+  await queueNotices(access, id, [
+    ...comptrollerNotice(
+      access,
+      'Purchase approval revoked',
+      '',
+      reason.trim(),
+    ),
+    ...purchaserNotice(
+      access,
+      request,
+      'Purchase approval revoked, do not make this purchase',
+      reason.trim(),
+    ),
+    ...requesterNotice(
+      access,
+      request,
+      'Your purchase request approval was revoked',
+      reason.trim(),
+    ),
+  ]);
+  revalidateRequest(id);
+  revalidatePath('/');
+  revalidatePath('/purchases');
+  return { id };
 }
 
 export async function rejectPurchaseRequest({
@@ -849,6 +1077,7 @@ function requestMessage(
   request: RequestForMessage,
   url: string,
   note?: string | null,
+  noteLabel = 'Note',
 ): string {
   const division = request.allocation.allocationGroup?.name ?? 'No division';
   return [
@@ -857,15 +1086,16 @@ function requestMessage(
     `Division: ${escapeSlackText(division)} · ${escapeSlackText(request.allocation.name)}`,
     `Requested by ${personName(request.requester)} · Purchaser ${personName(request.purchaser)}`,
     `Purchasing method: ${escapeSlackText(request.processTemplate?.name ?? 'Not set')}`,
-    ...(note ? [`Note: ${escapeSlackText(note)}`] : []),
+    ...(note ? [`${noteLabel}: ${escapeSlackText(note)}`] : []),
     `<${url}|View in VaultZ>`,
   ].join('\n');
 }
 
 interface Notice {
-  to: 'comptroller' | 'requester' | 'purchaser';
+  to: 'comptroller' | 'vpoa' | 'requester' | 'purchaser';
   headline: string;
   note?: string | null;
+  noteLabel?: string;
 }
 
 // A request skips the purchaser step when its requester is the purchaser.
@@ -900,6 +1130,7 @@ function comptrollerNotice(
   access: RequestAccess,
   title: string,
   byline = '',
+  note?: string | null,
 ): Notice[] {
   if (hasAnyPosition(access.session, [COMPTROLLER])) return [];
   const by = byline ? `${byline} by` : 'by';
@@ -907,6 +1138,17 @@ function comptrollerNotice(
     {
       to: 'comptroller',
       headline: `*${title}*, ${by} ${personName(access.user)}`,
+      note,
+    },
+  ];
+}
+
+function vpoaNotice(access: RequestAccess, title: string): Notice[] {
+  if (hasAnyPosition(access.session, [VPOA])) return [];
+  return [
+    {
+      to: 'vpoa',
+      headline: `*${title}*, approved by ${personName(access.user)}`,
     },
   ];
 }
@@ -915,10 +1157,15 @@ function purchaserNotice(
   access: RequestAccess,
   request: { purchaserId: string },
   title: string,
+  note?: string | null,
 ): Notice[] {
   if (request.purchaserId === access.user.id) return [];
   return [
-    { to: 'purchaser', headline: `*${title}* by ${personName(access.user)}` },
+    {
+      to: 'purchaser',
+      headline: `*${title}* by ${personName(access.user)}`,
+      note,
+    },
   ];
 }
 
@@ -1008,6 +1255,7 @@ async function sendToOfficeHolder(
 
 const NOTICE_LABELS: Record<Notice['to'], string> = {
   comptroller: 'Comptroller',
+  vpoa: 'VPOA',
   requester: 'Requester',
   purchaser: 'Purchaser',
 };
@@ -1035,18 +1283,26 @@ async function queueNotices(
     if (!request) return;
 
     for (const notice of notices) {
-      const text = requestMessage(notice.headline, request, url, notice.note);
+      const text = requestMessage(
+        notice.headline,
+        request,
+        url,
+        notice.note,
+        notice.noteLabel,
+      );
       const label = NOTICE_LABELS[notice.to];
       const result =
         notice.to === 'comptroller'
           ? await sendToOfficeHolder(COMPTROLLER, 'Comptroller', text)
-          : await sendToEmail(
-              notice.to === 'requester'
-                ? request.requester.email
-                : request.purchaser.email,
-              label,
-              text,
-            );
+          : notice.to === 'vpoa'
+            ? await sendToOfficeHolder(VPOA, 'VPOA', text)
+            : await sendToEmail(
+                notice.to === 'requester'
+                  ? request.requester.email
+                  : request.purchaser.email,
+                label,
+                text,
+              );
       if (!result.ok)
         await prisma.purchaseRequestEvent.create({
           data: {
