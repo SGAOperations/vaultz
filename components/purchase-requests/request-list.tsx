@@ -70,7 +70,15 @@ export function RequestList({
                 {formatCurrency(request.amount)}
               </TableCell>
               <TableCell>
-                <RequestStatusBadge status={request.status} />
+                <div className="flex flex-col items-start gap-0.5">
+                  <RequestStatusBadge status={request.status} />
+                  {request.status === 'APPROVED' &&
+                    request.signedOffAt === null && (
+                      <span className="text-muted-foreground text-xs">
+                        Awaiting sign-off
+                      </span>
+                    )}
+                </div>
               </TableCell>
               <TableCell className="text-muted-foreground text-sm">
                 <DateTime date={request.createdAt} />

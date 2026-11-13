@@ -2,22 +2,25 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
+import { hasAnyPosition } from '@nusgaops/sgauth';
 import {
   ArrowLeft,
+  Ban,
   Clock,
   CornerUpLeft,
   Paperclip,
+  ShieldCheck,
   TriangleAlert,
 } from 'lucide-react';
 
-import { getAllProcessTemplates } from '@/prisma/services/process-templates';
 import {
+  getApprovalOptions,
   getPurchaseRequest,
   getRequestFormOptions,
 } from '@/prisma/services/purchase-request';
 import { getRequestAccess } from '@/prisma/services/request-access';
 
-import { isRequestApprover } from '@/lib/permissions';
+import { VPOA } from '@/lib/permissions';
 import {
   OPEN_REQUEST_STATUSES,
   REQUEST_EVENT_LABELS,
@@ -63,14 +66,17 @@ export default async function PurchaseRequestPage({
 
   const isOpen = OPEN_REQUEST_STATUSES.includes(request.status);
   const sentBack = request.events.findLast((e) => e.type === 'SENT_BACK');
-  const [formOptions, templates] = await Promise.all([
+  const revoked = request.events.findLast((e) => e.type === 'REVOKED');
+  const isVpoa = hasAnyPosition(access.session, [VPOA]);
+  const awaitingSignOff =
+    request.status === 'APPROVED' && request.signedOffAt === null;
+  const [formOptions, approvalOptions] = await Promise.all([
     request.allowedActions.includes('edit') && access.canRequest
       ? getRequestFormOptions()
       : null,
-    request.allowedActions.includes('approve') &&
-    isRequestApprover(access.session)
-      ? getAllProcessTemplates(true)
-      : [],
+    request.allowedActions.includes('approve')
+      ? getApprovalOptions().then((o) => ('error' in o ? null : o))
+      : null,
   ]);
 
   return (
@@ -98,9 +104,35 @@ export default async function PurchaseRequestPage({
         <RequestActions
           request={request}
           formOptions={formOptions}
-          processTemplates={templates.map((t) => ({ id: t.id, name: t.name }))}
+          approvalOptions={approvalOptions}
+          isVpoa={isVpoa}
         />
       </div>
+
+      {awaitingSignOff && (
+        <div className="border-primary/30 bg-primary/10 text-primary flex items-start gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium">
+          <ShieldCheck className="mt-0.5 size-4 shrink-0" />
+          <span>
+            {`Approved${request.decidedBy ? ` by ${request.decidedBy.first} ${request.decidedBy.last}` : ''}; the purchaser can go ahead. Awaiting the VPOA's sign-off.`}
+          </span>
+        </div>
+      )}
+
+      {request.status === 'REVOKED' && (
+        <div className="border-destructive/40 bg-destructive/10 text-destructive flex items-start gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium">
+          <Ban className="mt-0.5 size-4 shrink-0" />
+          <div className="flex flex-col gap-1">
+            <span>
+              {`Approval revoked${revoked?.actor ? ` by ${revoked.actor.first} ${revoked.actor.last}` : ''}. Its purchase was voided; do not make this purchase.`}
+            </span>
+            {revoked?.note && (
+              <span className="font-normal whitespace-pre-wrap">
+                {revoked.note}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
       {request.status === 'PURCHASER_REVIEW' && (
         <div className="border-primary/30 bg-primary/10 text-primary flex items-start gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium">
@@ -180,21 +212,43 @@ export default async function PurchaseRequestPage({
                     <DateTime date={request.decidedAt} />
                   </Field>
                 )}
-                {request.purchaseId && access.canView && (
-                  <Field label="Purchase">
-                    <Link
-                      href={`/purchases?allocation=${request.allocation.id}`}
-                      className="text-primary hover:underline"
-                    >
-                      View in purchases
-                    </Link>
+                {(request.status === 'APPROVED' ||
+                  request.status === 'REVOKED') && (
+                  <Field label="VPOA sign-off">
+                    {request.signedOffBy && request.signedOffAt ? (
+                      <>
+                        {request.signedOffBy.first} {request.signedOffBy.last} ·{' '}
+                        <DateTime date={request.signedOffAt} />
+                      </>
+                    ) : request.signedOffAt ? (
+                      'Approved before sign-off was required'
+                    ) : request.status === 'REVOKED' ? (
+                      'Revoked'
+                    ) : (
+                      'Awaiting sign-off'
+                    )}
                   </Field>
                 )}
+                {request.purchaseId &&
+                  access.canView &&
+                  request.status !== 'REVOKED' && (
+                    <Field label="Purchase">
+                      <Link
+                        href={`/purchases?allocation=${request.allocation.id}`}
+                        className="text-primary hover:underline"
+                      >
+                        View in purchases
+                      </Link>
+                    </Field>
+                  )}
               </dl>
               {request.decisionNote && (
                 <div className="bg-muted/50 mt-4 rounded-lg p-3 text-sm">
                   <p className="text-muted-foreground mb-1 text-xs font-medium uppercase">
-                    Decision note
+                    {request.status === 'APPROVED' ||
+                    request.status === 'REVOKED'
+                      ? 'Conditions'
+                      : 'Decision note'}
                   </p>
                   <p className="whitespace-pre-wrap">{request.decisionNote}</p>
                 </div>

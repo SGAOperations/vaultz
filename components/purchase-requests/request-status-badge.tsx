@@ -11,6 +11,7 @@ const STATUS_CLASSES: Record<PurchaseRequestStatus, string> = {
   APPROVED: 'bg-success/10 text-success border-success/30',
   REJECTED: 'bg-destructive/10 text-destructive border-destructive/30',
   CANCELLED: 'bg-muted text-muted-foreground border-border',
+  REVOKED: 'bg-destructive/10 text-destructive border-destructive/30',
 };
 
 export function RequestStatusBadge({
