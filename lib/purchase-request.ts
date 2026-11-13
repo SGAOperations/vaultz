@@ -29,11 +29,15 @@ export const purchaseRequestInputSchema = z.object({
 export type PurchaseRequestInput = z.infer<typeof purchaseRequestInputSchema>;
 
 export const OPEN_REQUEST_STATUSES: PurchaseRequestStatus[] = [
+  'PURCHASER_REVIEW',
+  'NEEDS_REVISION',
   'PENDING',
   'ESCALATED',
 ];
 
 export const REQUEST_STATUS_LABELS: Record<PurchaseRequestStatus, string> = {
+  PURCHASER_REVIEW: 'Awaiting purchaser',
+  NEEDS_REVISION: 'Needs revision',
   PENDING: 'Pending',
   ESCALATED: 'Escalated',
   APPROVED: 'Approved',
@@ -44,6 +48,8 @@ export const REQUEST_STATUS_LABELS: Record<PurchaseRequestStatus, string> = {
 export const REQUEST_EVENT_LABELS: Record<PurchaseRequestEventType, string> = {
   SUBMITTED: 'Submitted',
   EDITED: 'Edited',
+  PURCHASER_APPROVED: 'Approved by the E-Board purchaser',
+  SENT_BACK: 'Sent back for revision',
   CANCELLED: 'Cancelled',
   APPROVED: 'Approved',
   REJECTED: 'Rejected',

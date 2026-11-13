@@ -161,7 +161,7 @@ export function RequestDialog({ options, request }: RequestDialogProps) {
           </DialogTitle>
           <DialogDescription>
             {options.year
-              ? `Requests are charged to an allocation in ${options.year.name}. The Comptroller reviews every request.`
+              ? `Requests are charged to an allocation in ${options.year.name}. Your E-Board purchaser approves it first, then the Comptroller reviews it.`
               : 'There is no active fiscal year, so requests cannot be submitted right now.'}
           </DialogDescription>
         </DialogHeader>

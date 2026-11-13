@@ -4,6 +4,8 @@ import { REQUEST_STATUS_LABELS } from '@/lib/purchase-request';
 import { cn } from '@/lib/utils';
 
 const STATUS_CLASSES: Record<PurchaseRequestStatus, string> = {
+  PURCHASER_REVIEW: 'bg-primary/10 text-primary border-primary/30',
+  NEEDS_REVISION: 'bg-warning/10 text-warning border-warning/30',
   PENDING: 'bg-info/10 text-info border-info/30',
   ESCALATED: 'bg-warning/10 text-warning border-warning/30',
   APPROVED: 'bg-success/10 text-success border-success/30',

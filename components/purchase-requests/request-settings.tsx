@@ -86,7 +86,7 @@ export function RequesterPositionsEditor({
 export function EBoardPurchaserList({
   users,
 }: {
-  users: (PersonName & { isEBoardPurchaser: boolean })[];
+  users: (PersonName & { isEBoardPurchaser: boolean; signedIn: boolean })[];
 }) {
   const router = useRouter();
 
@@ -114,7 +114,17 @@ export function EBoardPurchaserList({
               checked={user.isEBoardPurchaser}
               onCheckedChange={(checked) => toggle(user.id, checked === true)}
             />
-            {user.first} {user.last}
+            <span className="flex flex-col">
+              <span>
+                {user.first} {user.last}
+              </span>
+              {user.isEBoardPurchaser && !user.signedIn && (
+                <span className="text-warning text-xs">
+                  Hasn&apos;t signed in yet, so can&apos;t approve or get Slack
+                  messages
+                </span>
+              )}
+            </span>
           </label>
         </li>
       ))}

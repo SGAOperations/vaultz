@@ -48,7 +48,13 @@ Process templates define multi-step approval or workflow sequences (e.g., reimbu
 
 ### Purchase Requests
 
-Requester positions submit purchase requests against their divisions' allocations. Every request must name an E-Board purchaser: a user marked as one under Requests → Settings. The Comptroller approves, rejects or escalates each request. Escalating sends the VPOA a Slack DM from the SGAssist bot and hides the Comptroller's approve and reject until they return the request. The VPOA can decide any open request. Approving creates a purchase for the purchaser, dated that day, for the requested amount. The request keeps the original amount if the purchase is edited later. Open requests count as committed against their allocation, so requesters and approvers see a warning when a request exceeds the available balance. Every change is recorded in the request's history.
+Requester positions submit purchase requests against their divisions' allocations. Every request must name an E-Board purchaser: a user marked as one under Requests → Settings. A request moves through these stages:
+
+1. **Awaiting purchaser.** The E-Board purchaser approves it, or sends it back for revision. A requester who names themselves as purchaser skips this stage.
+2. **Pending.** The Comptroller approves it, sends it back, or escalates it. Escalating sends the VPOA a Slack DM and hides the Comptroller's decisions until they return the request.
+3. **Needs revision.** A sent-back request shows the reviewer's note. When the requester edits it, it goes back through the purchaser, then the Comptroller.
+
+Sending back is every reviewer's default way to decline; rejecting outright ends the request and is a separate, less prominent action. The VPOA can approve, send back or reject at any open stage. The requester can edit or cancel only until the purchaser approves. Approving creates a purchase for the purchaser, dated that day, for the requested amount. The request keeps the original amount if the purchase is edited later. Open requests count as committed against their allocation, so requesters and reviewers see a warning when a request exceeds the available balance. Every change is recorded in the request's history.
 
 ### Users
 
@@ -83,10 +89,20 @@ UPLOADTHING_TOKEN=<your_uploadthing_token>
 SGAUTH_URL=http://auth.sga.localhost:3000
 SGAUTH_COOKIE_NAME=sgauth-local.session_token
 SLACK_BOT_TOKEN=<sgassist_bot_token>
-SLACK_VPOA_USER_ID=<vpoa_slack_member_id>
 ```
 
-`SLACK_BOT_TOKEN` is the SGAssist bot token (it needs the `chat:write` scope) and `SLACK_VPOA_USER_ID` is the VPOA's Slack member id. Without them, escalation still works, but the Slack message fails and can be resent from the request page.
+`SLACK_BOT_TOKEN` is the SGAssist bot token. It needs the `chat:write` and `users:read.email` scopes: the bot finds every recipient in Slack by their SGAuth email. For the Comptroller and VPOA, VaultZ uses whoever most recently signed in holding that position, since SGAuth can't yet say who holds a position; a new officer takes over once they sign in to VaultZ. If Slack isn't configured or a recipient can't be found, requests still work and the failure is recorded in the request's history; an escalation message can be resent from the request page.
+
+The bot sends these DMs, never about the recipient's own action:
+
+| Event                                                | Recipient   |
+| ---------------------------------------------------- | ----------- |
+| A request awaits the purchaser (submitted or edited) | Purchaser   |
+| A request awaiting the purchaser is cancelled        | Purchaser   |
+| A request reaches Pending                            | Comptroller |
+| A request is escalated                               | VPOA        |
+| The VPOA approves or rejects a request               | Comptroller |
+| A request is sent back, approved or rejected         | Requester   |
 
 | Environment      | `SGAUTH_URL`                           | `SGAUTH_COOKIE_NAME`                |
 | ---------------- | -------------------------------------- | ----------------------------------- |

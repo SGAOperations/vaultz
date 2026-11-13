@@ -4,6 +4,7 @@ import { cache } from 'react';
 import type { SgaSession } from '@nusgaops/sgauth';
 
 import { User } from '@/prisma/client';
+import { syncUserPositions } from '@/prisma/services/office-holders';
 import { ensurePurchaserForSession } from '@/prisma/services/purchaser';
 
 import { ForbiddenError, hasCapability } from '@/lib/permissions';
@@ -16,7 +17,8 @@ export interface RequestAccess {
   canEdit: boolean;
   // Can submit requests: holds a position listed in RequesterPosition.
   canRequest: boolean;
-  // Can open the request page: a viewer (reads every request) or a requester.
+  // Can open the request page: a viewer (reads every request), a requester,
+  // or an E-Board purchaser (who reviews the requests naming them).
   canUseRequests: boolean;
   // Allocation group (division) ids the user may request against.
   divisionIds: 'all' | string[];
@@ -32,7 +34,9 @@ export const getRequestAccess = cache(async (): Promise<RequestAccess> => {
   const positionKeys = session.positions.map((p) => p.key);
 
   const [user, requesterPositions, divisionRows] = await Promise.all([
-    ensurePurchaserForSession(session),
+    ensurePurchaserForSession(session).then((u) =>
+      syncUserPositions(u, session),
+    ),
     prisma.requesterPosition.count({
       where: { positionKey: { in: positionKeys } },
     }),
@@ -50,7 +54,7 @@ export const getRequestAccess = cache(async (): Promise<RequestAccess> => {
     canView,
     canEdit,
     canRequest: requesterPositions > 0,
-    canUseRequests: canView || requesterPositions > 0,
+    canUseRequests: canView || requesterPositions > 0 || user.isEBoardPurchaser,
     divisionIds: canEdit
       ? 'all'
       : [...new Set(divisionRows.map((r) => r.allocationGroupId))],

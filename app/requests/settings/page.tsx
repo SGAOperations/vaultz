@@ -67,18 +67,22 @@ export default async function RequestSettingsPage() {
           <CardHeader>
             <CardTitle>E-Board purchasers</CardTitle>
             <CardDescription>
-              Every request must name one of these users as the purchaser. The
-              approved purchase is recorded under them.
+              Every request must name one of these users as the purchaser, who
+              approves it before the Comptroller. The approved purchase is
+              recorded under them.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <EBoardPurchaserList
-              users={users.map(({ id, first, last, isEBoardPurchaser }) => ({
-                id,
-                first,
-                last,
-                isEBoardPurchaser,
-              }))}
+              users={users.map(
+                ({ id, first, last, isEBoardPurchaser, sgauthUserId }) => ({
+                  id,
+                  first,
+                  last,
+                  isEBoardPurchaser,
+                  signedIn: sgauthUserId !== null,
+                }),
+              )}
             />
           </CardContent>
         </Card>

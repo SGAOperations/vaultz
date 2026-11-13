@@ -5,7 +5,9 @@ import { ReactNode, useState } from 'react';
 
 import {
   ArrowUpRight,
+  BadgeCheck,
   Check,
+  CornerUpLeft,
   Loader2,
   RotateCcw,
   Send,
@@ -18,14 +20,16 @@ import {
   approvePurchaseRequest,
   cancelPurchaseRequest,
   escalatePurchaseRequest,
+  purchaserApprovePurchaseRequest,
   rejectPurchaseRequest,
   resendEscalationNotice,
   returnPurchaseRequest,
+  sendBackPurchaseRequest,
 } from '@/prisma/services/purchase-request';
 
 import { RequestAction } from '@/lib/permissions';
 import { PurchaseRequestDetail, RequestFormOptions } from '@/lib/types';
-import { ErrorType, handleError, isError } from '@/lib/utils';
+import { ErrorType, cn, handleError, isError } from '@/lib/utils';
 
 import { Button } from '@/components/ui/button';
 import { Combobox } from '@/components/ui/combobox';
@@ -54,6 +58,7 @@ interface ConfirmConfig {
   description: string;
   confirmLabel: string;
   noteLabel?: string;
+  noteRequired?: boolean;
   destructive?: boolean;
   withTemplate?: boolean;
   run: (input: {
@@ -138,7 +143,7 @@ function ConfirmDialog({
           <Button
             variant={config.destructive ? 'destructive' : 'default'}
             onClick={confirm}
-            disabled={busy}
+            disabled={busy || (config.noteRequired && !note.trim())}
           >
             {busy && <Loader2 className="animate-spin" />}
             {config.confirmLabel}
@@ -158,6 +163,10 @@ export function RequestActions({
   const can = (action: RequestAction) =>
     request.allowedActions.includes(action);
 
+  const beforePurchaser =
+    request.status === 'PURCHASER_REVIEW' ||
+    request.status === 'NEEDS_REVISION';
+
   const configs: Partial<
     Record<
       RequestAction,
@@ -169,8 +178,7 @@ export function RequestActions({
       label: 'Approve',
       config: {
         title: 'Approve request',
-        description:
-          'Approving creates a purchase for the E-Board purchaser, dated today, for the requested amount. Edit the purchase later if the actual amount or date differs.',
+        description: `${beforePurchaser ? "This skips the E-Board purchaser's approval. " : ''}Approving creates a purchase for the E-Board purchaser, dated today, for the requested amount. Edit the purchase later if the actual amount or date differs.`,
         confirmLabel: 'Approve',
         noteLabel: 'Note (optional)',
         withTemplate: true,
@@ -183,12 +191,40 @@ export function RequestActions({
         success: 'Request approved and purchase created',
       },
     },
+    purchaserApprove: {
+      icon: <BadgeCheck />,
+      label: 'Approve as purchaser',
+      config: {
+        title: 'Approve as E-Board purchaser',
+        description:
+          'Confirms you will make this purchase. The request then goes to the Comptroller, and the requester can no longer edit it.',
+        confirmLabel: 'Approve',
+        noteLabel: 'Note (optional)',
+        run: ({ note }) => purchaserApprovePurchaseRequest({ id, note }),
+        success: 'Approved as purchaser',
+      },
+    },
+    sendBack: {
+      icon: <CornerUpLeft />,
+      label: 'Send back for revision',
+      config: {
+        title: 'Send back for revision',
+        description:
+          'The requester can edit the request and resubmit it. It goes back through the E-Board purchaser, then the Comptroller.',
+        confirmLabel: 'Send back',
+        noteLabel: 'What should they change?',
+        noteRequired: true,
+        run: ({ note }) => sendBackPurchaseRequest({ id, note }),
+        success: 'Request sent back for revision',
+      },
+    },
     reject: {
       icon: <X />,
-      label: 'Reject',
+      label: 'Reject outright',
       config: {
-        title: 'Reject request',
-        description: 'The requester will see your reason on the request.',
+        title: 'Reject outright',
+        description:
+          'Ends the request for good; the requester would have to submit a new one. To ask for changes instead, send it back for revision.',
         confirmLabel: 'Reject',
         noteLabel: 'Reason',
         destructive: true,
@@ -249,12 +285,14 @@ export function RequestActions({
   };
 
   const order: RequestAction[] = [
+    'purchaserApprove',
     'approve',
-    'reject',
+    'sendBack',
     'escalate',
     'return',
     'resend',
     'cancel',
+    'reject',
   ];
   const visible = order.filter((a) => can(a));
   if (visible.length === 0 && !can('edit')) return null;
@@ -275,12 +313,18 @@ export function RequestActions({
           >
             <Button
               variant={
-                action === 'approve'
+                action === 'approve' || action === 'purchaserApprove'
                   ? 'default'
-                  : entry.config.destructive
-                    ? 'destructive'
-                    : 'outline'
+                  : action === 'reject'
+                    ? 'ghost'
+                    : entry.config.destructive
+                      ? 'destructive'
+                      : 'outline'
               }
+              className={cn(
+                action === 'reject' &&
+                  'text-destructive hover:text-destructive',
+              )}
             >
               {entry.icon}
               {entry.label}

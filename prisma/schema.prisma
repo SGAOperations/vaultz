@@ -57,14 +57,18 @@ model CategoryYear {
 }
 
 model User {
-  id                String    @id @default(uuid())
-  first             String
-  last              String
-  email             String?
-  sgauthUserId      String?   @unique
-  isEBoardPurchaser Boolean   @default(false)
-  createdAt         DateTime  @default(now())
-  deletedAt         DateTime?
+  id                 String    @id @default(uuid())
+  first              String
+  last               String
+  email              String?
+  sgauthUserId       String?   @unique
+  isEBoardPurchaser  Boolean   @default(false)
+  // SGAuth position keys as of the user's latest sign-in, used to find who
+  // currently holds an office such as Comptroller.
+  positionKeys       String[]  @default([])
+  positionsChangedAt DateTime?
+  createdAt          DateTime  @default(now())
+  deletedAt          DateTime?
 
   purchases          Purchase[]
   requestsMade       PurchaseRequest[]      @relation("RequestRequester")
@@ -242,6 +246,8 @@ model Transfer {
 }
 
 enum PurchaseRequestStatus {
+  PURCHASER_REVIEW
+  NEEDS_REVISION
   PENDING
   ESCALATED
   APPROVED
@@ -252,6 +258,8 @@ enum PurchaseRequestStatus {
 enum PurchaseRequestEventType {
   SUBMITTED
   EDITED
+  PURCHASER_APPROVED
+  SENT_BACK
   CANCELLED
   APPROVED
   REJECTED

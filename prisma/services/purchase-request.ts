@@ -2,6 +2,9 @@
 
 import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
+import { after } from 'next/server';
+
+import { hasAnyPosition } from '@nusgaops/sgauth';
 
 import {
   Prisma,
@@ -9,6 +12,7 @@ import {
   PurchaseRequestStatus,
 } from '@/prisma/client';
 import { Decimal } from '@/prisma/client/runtime/client';
+import { findOfficeHolderEmail } from '@/prisma/services/office-holders';
 import {
   RequestAccess,
   canUseDivision,
@@ -16,7 +20,12 @@ import {
   requireSubmitAccess,
 } from '@/prisma/services/request-access';
 
-import { RequestAction, allowedRequestActions } from '@/lib/permissions';
+import {
+  COMPTROLLER,
+  RequestAction,
+  VPOA,
+  allowedRequestActions,
+} from '@/lib/permissions';
 import prisma from '@/lib/prisma';
 import {
   AllocationBudget,
@@ -26,7 +35,11 @@ import {
   purchaseRequestInputSchema,
 } from '@/lib/purchase-request';
 import { appOrigin } from '@/lib/sgauth';
-import { escapeSlackText, sendVpoaSlackMessage } from '@/lib/slack';
+import {
+  SlackResult,
+  escapeSlackText,
+  sendSlackMessageToEmail,
+} from '@/lib/slack';
 import {
   PurchaseRequestDetail,
   PurchaseRequestSummary,
@@ -69,8 +82,26 @@ function toSummary(request: RequestWithSummary): PurchaseRequestSummary {
   };
 }
 
-function canSee(access: RequestAccess, requesterId: string): boolean {
-  return access.canView || requesterId === access.user.id;
+type Parties = { requesterId: string; purchaserId: string };
+
+function canSee(access: RequestAccess, request: Parties): boolean {
+  return (
+    access.canView ||
+    request.requesterId === access.user.id ||
+    request.purchaserId === access.user.id
+  );
+}
+
+function actionsFor(
+  access: RequestAccess,
+  request: Parties & { status: PurchaseRequestStatus },
+): RequestAction[] {
+  return allowedRequestActions({
+    session: access.session,
+    status: request.status,
+    isOwner: request.requesterId === access.user.id,
+    isPurchaser: request.purchaserId === access.user.id,
+  });
 }
 
 function revalidateRequest(id?: string) {
@@ -162,15 +193,10 @@ async function loadForAction(
     where: { id, deletedAt: null },
     include: summaryInclude,
   });
-  if (!request || !canSee(access, request.requesterId))
+  if (!request || !canSee(access, request))
     return { error: 'Purchase request not found.' };
 
-  const allowed = allowedRequestActions({
-    session: access.session,
-    status: request.status,
-    isOwner: request.requesterId === access.user.id,
-  });
-  if (!allowed.includes(action))
+  if (!actionsFor(access, request).includes(action))
     return {
       error:
         'You cannot do that to this request. It may have changed — refresh and try again.',
@@ -224,7 +250,9 @@ export async function listPurchaseRequests({
   const requests = await prisma.purchaseRequest.findMany({
     where: {
       deletedAt: null,
-      ...(onlyMine && { requesterId: access.user.id }),
+      ...(onlyMine && {
+        OR: [{ requesterId: access.user.id }, { purchaserId: access.user.id }],
+      }),
     },
     include: summaryInclude,
     orderBy: { createdAt: 'desc' },
@@ -249,7 +277,7 @@ export async function getPurchaseRequest(
       },
     },
   });
-  if (!request || !canSee(access, request.requesterId)) return null;
+  if (!request || !canSee(access, request)) return null;
 
   // An open request is already part of `committed`; leave it out so the panel
   // shows the balance before this request.
@@ -272,11 +300,7 @@ export async function getPurchaseRequest(
       createdAt: e.createdAt,
       actor: e.actor,
     })),
-    allowedActions: allowedRequestActions({
-      session: access.session,
-      status: request.status,
-      isOwner: request.requesterId === access.user.id,
-    }),
+    allowedActions: actionsFor(access, request),
     budget,
   };
 }
@@ -392,13 +416,29 @@ export async function createPurchaseRequest(
       categoryId: data.categoryId,
       allocationId: data.allocationId,
       yearId,
-      events: { create: { type: 'SUBMITTED', actorId: access.user.id } },
+      ...stageAfterSubmit(access, data.purchaserId),
+      events: {
+        create: [
+          { type: 'SUBMITTED', actorId: access.user.id },
+          ...selfApprovalEvents(access, data.purchaserId),
+        ],
+      },
     },
-    select: { id: true },
+    select: { id: true, status: true },
   });
 
+  await queueNotices(
+    access,
+    request.id,
+    submittedNotices(
+      access,
+      request.status,
+      data.purchaserId,
+      'New purchase request',
+    ),
+  );
   revalidateRequest();
-  return request;
+  return { id: request.id };
 }
 
 export async function updatePurchaseRequest(
@@ -407,19 +447,23 @@ export async function updatePurchaseRequest(
 ): Promise<ResponseType<{ id: string }>> {
   const loaded = await loadForAction(id, 'edit');
   if ('error' in loaded) return loaded;
-  const { access } = loaded;
+  const { access, request } = loaded;
 
   const validated = await validateInput(access, input);
   if ('error' in validated) return validated;
   const { data, yearId } = validated;
+  const stage = stageAfterSubmit(access, data.purchaserId);
 
-  const ok = await prisma.$transaction((tx) =>
-    transition(tx, {
+  // An edit always goes back through the purchaser, unless the requester is
+  // the purchaser.
+  const ok = await prisma.$transaction(async (tx) => {
+    const moved = await transition(tx, {
       id,
-      from: 'PENDING',
+      from: request.status,
       event: 'EDITED',
       actorId: access.user.id,
       data: {
+        ...stage,
         description: data.description,
         amount: new Decimal(data.amount),
         notes: data.notes || null,
@@ -429,10 +473,28 @@ export async function updatePurchaseRequest(
         allocationId: data.allocationId,
         yearId,
       },
-    }),
-  );
+    });
+    if (moved)
+      await tx.purchaseRequestEvent.createMany({
+        data: selfApprovalEvents(access, data.purchaserId).map((e) => ({
+          ...e,
+          requestId: id,
+        })),
+      });
+    return moved;
+  });
   if (!ok) return STALE_ERROR;
 
+  await queueNotices(
+    access,
+    id,
+    submittedNotices(
+      access,
+      stage.status,
+      data.purchaserId,
+      'Purchase request edited',
+    ),
+  );
   revalidateRequest(id);
   return { id };
 }
@@ -442,11 +504,12 @@ export async function cancelPurchaseRequest(
 ): Promise<ResponseType<{ id: string }>> {
   const loaded = await loadForAction(id, 'cancel');
   if ('error' in loaded) return loaded;
+  const { request } = loaded;
 
   const ok = await prisma.$transaction((tx) =>
     transition(tx, {
       id,
-      from: 'PENDING',
+      from: request.status,
       event: 'CANCELLED',
       actorId: loaded.access.user.id,
       data: { status: 'CANCELLED' },
@@ -454,6 +517,96 @@ export async function cancelPurchaseRequest(
   );
   if (!ok) return STALE_ERROR;
 
+  await queueNotices(
+    loaded.access,
+    id,
+    request.status === 'PURCHASER_REVIEW'
+      ? purchaserNotice(loaded.access, request, 'Purchase request cancelled')
+      : [],
+  );
+  revalidateRequest(id);
+  return { id };
+}
+
+export async function purchaserApprovePurchaseRequest({
+  id,
+  note,
+}: {
+  id: string;
+  note?: string;
+}): Promise<ResponseType<{ id: string }>> {
+  const loaded = await loadForAction(id, 'purchaserApprove');
+  if ('error' in loaded) return loaded;
+  const { access } = loaded;
+
+  const ok = await prisma.$transaction((tx) =>
+    transition(tx, {
+      id,
+      from: 'PURCHASER_REVIEW',
+      event: 'PURCHASER_APPROVED',
+      actorId: access.user.id,
+      note,
+      data: { status: 'PENDING' },
+    }),
+  );
+  if (!ok) return STALE_ERROR;
+
+  await queueNotices(
+    access,
+    id,
+    comptrollerNotice(
+      access,
+      'Purchase request ready for review',
+      'approved as purchaser',
+    ),
+  );
+  revalidateRequest(id);
+  return { id };
+}
+
+// The default decline: the requester revises it and it goes back through the
+// purchaser.
+export async function sendBackPurchaseRequest({
+  id,
+  note,
+}: {
+  id: string;
+  note: string;
+}): Promise<ResponseType<{ id: string }>> {
+  if (!note.trim())
+    return { error: 'Add a note telling the requester what to change.' };
+
+  const loaded = await loadForAction(id, 'sendBack');
+  if ('error' in loaded) return loaded;
+  const { access, request } = loaded;
+
+  const ok = await prisma.$transaction((tx) =>
+    transition(tx, {
+      id,
+      from: request.status,
+      event: 'SENT_BACK',
+      actorId: access.user.id,
+      note: note.trim(),
+      data: {
+        status: 'NEEDS_REVISION',
+        escalatedAt: null,
+        escalationNotifiedAt: null,
+        escalationNotifyError: null,
+      },
+    }),
+  );
+  if (!ok) return STALE_ERROR;
+
+  await queueNotices(
+    access,
+    id,
+    requesterNotice(
+      access,
+      request,
+      'Your purchase request was sent back for revision',
+      note.trim(),
+    ),
+  );
   revalidateRequest(id);
   return { id };
 }
@@ -525,6 +678,11 @@ export async function approvePurchaseRequest({
   });
   if (!purchaseId) return STALE_ERROR;
 
+  await queueNotices(
+    access,
+    id,
+    decisionNotices(access, request, 'approved', note),
+  );
   revalidateRequest(id);
   revalidatePath('/');
   revalidatePath('/purchases');
@@ -559,6 +717,11 @@ export async function rejectPurchaseRequest({
   );
   if (!ok) return STALE_ERROR;
 
+  await queueNotices(
+    access,
+    id,
+    decisionNotices(access, request, 'rejected', note),
+  );
   revalidateRequest(id);
   return { id };
 }
@@ -638,6 +801,235 @@ export async function resendEscalationNotice(
   return { id, notified };
 }
 
+type RequestForMessage = Pick<
+  RequestWithSummary,
+  'id' | 'description' | 'amount' | 'allocation' | 'requester' | 'purchaser'
+>;
+
+function personName(p: { first: string; last: string }): string {
+  return escapeSlackText(`${p.first} ${p.last}`.trim());
+}
+
+async function requestUrl(id: string): Promise<string> {
+  const host = (await headers()).get('host') ?? '';
+  return `${appOrigin(host)}/requests/${id}`;
+}
+
+function requestMessage(
+  headline: string,
+  request: RequestForMessage,
+  url: string,
+  note?: string | null,
+): string {
+  const division = request.allocation.allocationGroup?.name ?? 'No division';
+  return [
+    headline,
+    `*${escapeSlackText(request.description)}*: ${formatCurrency(request.amount.toNumber())}`,
+    `Division: ${escapeSlackText(division)} · ${escapeSlackText(request.allocation.name)}`,
+    `Requested by ${personName(request.requester)} · Purchaser ${personName(request.purchaser)}`,
+    ...(note ? [`Note: ${escapeSlackText(note)}`] : []),
+    `<${url}|View in VaultZ>`,
+  ].join('\n');
+}
+
+interface Notice {
+  to: 'comptroller' | 'requester' | 'purchaser';
+  headline: string;
+  note?: string | null;
+}
+
+// A request skips the purchaser step when its requester is the purchaser.
+function isSelfPurchased(access: RequestAccess, purchaserId: string): boolean {
+  return purchaserId === access.user.id;
+}
+
+function stageAfterSubmit(
+  access: RequestAccess,
+  purchaserId: string,
+): { status: PurchaseRequestStatus } {
+  return {
+    status: isSelfPurchased(access, purchaserId)
+      ? 'PENDING'
+      : 'PURCHASER_REVIEW',
+  };
+}
+
+function selfApprovalEvents(access: RequestAccess, purchaserId: string) {
+  if (!isSelfPurchased(access, purchaserId)) return [];
+  return [
+    {
+      type: 'PURCHASER_APPROVED' as const,
+      actorId: access.user.id,
+      note: 'The requester is the purchaser.',
+    },
+  ];
+}
+
+// Nobody is told about their own action.
+function comptrollerNotice(
+  access: RequestAccess,
+  title: string,
+  byline = '',
+): Notice[] {
+  if (hasAnyPosition(access.session, [COMPTROLLER])) return [];
+  const by = byline ? `${byline} by` : 'by';
+  return [
+    {
+      to: 'comptroller',
+      headline: `*${title}*, ${by} ${personName(access.user)}`,
+    },
+  ];
+}
+
+function purchaserNotice(
+  access: RequestAccess,
+  request: { purchaserId: string },
+  title: string,
+): Notice[] {
+  if (request.purchaserId === access.user.id) return [];
+  return [
+    { to: 'purchaser', headline: `*${title}* by ${personName(access.user)}` },
+  ];
+}
+
+function requesterNotice(
+  access: RequestAccess,
+  request: { requesterId: string },
+  title: string,
+  note?: string | null,
+): Notice[] {
+  if (request.requesterId === access.user.id) return [];
+  return [
+    {
+      to: 'requester',
+      headline: `*${title}* by ${personName(access.user)}`,
+      note,
+    },
+  ];
+}
+
+// A new or edited request goes to the purchaser, or straight to the
+// Comptroller when the requester is the purchaser.
+function submittedNotices(
+  access: RequestAccess,
+  status: PurchaseRequestStatus,
+  purchaserId: string,
+  title: string,
+): Notice[] {
+  return status === 'PENDING'
+    ? comptrollerNotice(access, `${title}, ready for review`)
+    : purchaserNotice(
+        access,
+        { purchaserId },
+        `${title}, needs your approval as purchaser`,
+      );
+}
+
+// The Comptroller hears about the VPOA's decisions, and the requester hears
+// about any decision they didn't make themselves.
+function decisionNotices(
+  access: RequestAccess,
+  request: RequestWithSummary,
+  verb: 'approved' | 'rejected',
+  note?: string,
+): Notice[] {
+  const notices: Notice[] = [];
+  const isComptroller = hasAnyPosition(access.session, [COMPTROLLER]);
+  if (!isComptroller && hasAnyPosition(access.session, [VPOA]))
+    notices.push({
+      to: 'comptroller',
+      headline: `*The VPOA ${verb} a purchase request*`,
+      note,
+    });
+  notices.push(
+    ...requesterNotice(
+      access,
+      request,
+      `Your purchase request was ${verb}`,
+      note,
+    ),
+  );
+  return notices;
+}
+
+async function sendToEmail(
+  email: string | null,
+  label: string,
+  text: string,
+): Promise<SlackResult> {
+  if (!email)
+    return { ok: false, error: `The ${label.toLowerCase()} has no email.` };
+  return sendSlackMessageToEmail(email, text);
+}
+
+async function sendToOfficeHolder(
+  positionKey: string,
+  label: string,
+  text: string,
+): Promise<SlackResult> {
+  const email = await findOfficeHolderEmail(positionKey);
+  if (!email)
+    return {
+      ok: false,
+      error: `No one holding the ${label} position has signed in to VaultZ yet.`,
+    };
+  return sendSlackMessageToEmail(email, text);
+}
+
+const NOTICE_LABELS: Record<Notice['to'], string> = {
+  comptroller: 'Comptroller',
+  requester: 'Requester',
+  purchaser: 'Purchaser',
+};
+
+// Best-effort DMs, sent after the response so Slack never slows or fails the
+// action. A failure is written to the request's history.
+async function queueNotices(
+  access: RequestAccess,
+  requestId: string,
+  notices: Notice[],
+): Promise<void> {
+  if (notices.length === 0) return;
+  const url = await requestUrl(requestId);
+  const actorId = access.user.id;
+
+  after(async () => {
+    const request = await prisma.purchaseRequest.findUnique({
+      where: { id: requestId },
+      include: {
+        ...summaryInclude,
+        requester: { select: { ...personSelect, email: true } },
+        purchaser: { select: { ...personSelect, email: true } },
+      },
+    });
+    if (!request) return;
+
+    for (const notice of notices) {
+      const text = requestMessage(notice.headline, request, url, notice.note);
+      const label = NOTICE_LABELS[notice.to];
+      const result =
+        notice.to === 'comptroller'
+          ? await sendToOfficeHolder(COMPTROLLER, 'Comptroller', text)
+          : await sendToEmail(
+              notice.to === 'requester'
+                ? request.requester.email
+                : request.purchaser.email,
+              label,
+              text,
+            );
+      if (!result.ok)
+        await prisma.purchaseRequestEvent.create({
+          data: {
+            requestId,
+            type: 'NOTIFY_FAILED',
+            note: `${label}: ${result.error}`,
+            actorId,
+          },
+        });
+    }
+  });
+}
+
 // The escalation stands whether or not Slack accepts the message; a failure is
 // recorded on the request so the Comptroller can resend it.
 async function notifyVpoa(
@@ -645,22 +1037,13 @@ async function notifyVpoa(
   request: RequestWithSummary,
   note?: string,
 ): Promise<boolean> {
-  const host = (await headers()).get('host') ?? '';
-  const url = `${appOrigin(host)}/requests/${request.id}`;
-  const name = (p: { first: string; last: string }) =>
-    escapeSlackText(`${p.first} ${p.last}`.trim());
-  const division = request.allocation.allocationGroup?.name ?? 'No division';
-
-  const lines = [
-    `*Purchase request escalated to you* by ${name(access.user)}`,
-    `*${escapeSlackText(request.description)}*: ${formatCurrency(request.amount.toNumber())}`,
-    `Division: ${escapeSlackText(division)} · ${escapeSlackText(request.allocation.name)}`,
-    `Requested by ${name(request.requester)} · Purchaser ${name(request.purchaser)}`,
-    ...(note ? [`Note: ${escapeSlackText(note)}`] : []),
-    `<${url}|Review in VaultZ>`,
-  ];
-
-  const result = await sendVpoaSlackMessage(lines.join('\n'));
+  const text = requestMessage(
+    `*Purchase request escalated to you* by ${personName(access.user)}`,
+    request,
+    await requestUrl(request.id),
+    note,
+  );
+  const result = await sendToOfficeHolder(VPOA, 'VPOA', text);
 
   await prisma.$transaction([
     prisma.purchaseRequest.update({
