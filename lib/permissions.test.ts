@@ -1,16 +1,22 @@
 import type { SgaSession } from '@nusgaops/sgauth';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   ForbiddenError,
   allowedRequestActions,
+  getVisibleDivisionIds,
   hasCapability,
   isRequestApprover,
   requireCapability,
+  resolveVisibleDivisionIds,
 } from '@/lib/permissions';
 
-const { requireSession } = vi.hoisted(() => ({ requireSession: vi.fn() }));
+const { prisma, requireSession } = vi.hoisted(() => ({
+  prisma: { positionDivisionAccess: { findMany: vi.fn() } },
+  requireSession: vi.fn(),
+}));
 
+vi.mock('@/lib/prisma', () => ({ default: prisma }));
 vi.mock('@nusgaops/sgauth/next', () => ({ requireSession }));
 
 const EDITOR_POSITIONS = [
@@ -214,6 +220,114 @@ describe('isRequestApprover', () => {
     ).toBe(true);
     expect(isRequestApprover(sessionWith('executive-vice-president'))).toBe(
       false,
+    );
+  });
+});
+
+function mappingsFor(...ids: string[]) {
+  return ids.map((allocationGroupId) => ({ allocationGroupId }));
+}
+
+describe('resolveVisibleDivisionIds', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it.each(EDITOR_POSITIONS)('returns all divisions to %s', async (position) => {
+    await expect(
+      resolveVisibleDivisionIds(sessionWith(position)),
+    ).resolves.toBe('all');
+    expect(prisma.positionDivisionAccess.findMany).not.toHaveBeenCalled();
+  });
+
+  it('returns only the divisions mapped to a viewer position', async () => {
+    prisma.positionDivisionAccess.findMany.mockResolvedValue(
+      mappingsFor('group-1', 'group-2'),
+    );
+
+    await expect(
+      resolveVisibleDivisionIds(
+        sessionWith('vice-president-of-campus-affairs'),
+      ),
+    ).resolves.toEqual(['group-1', 'group-2']);
+    expect(prisma.positionDivisionAccess.findMany).toHaveBeenCalledWith({
+      where: { positionKey: { in: ['vice-president-of-campus-affairs'] } },
+      select: { allocationGroupId: true },
+    });
+  });
+
+  it('unions and dedupes divisions across viewer positions', async () => {
+    prisma.positionDivisionAccess.findMany.mockResolvedValue(
+      mappingsFor('group-1', 'group-2', 'group-2', 'group-3'),
+    );
+
+    await expect(
+      resolveVisibleDivisionIds(
+        sessionWith('speaker-of-the-senate', 'parliamentarian'),
+      ),
+    ).resolves.toEqual(['group-1', 'group-2', 'group-3']);
+    expect(prisma.positionDivisionAccess.findMany).toHaveBeenCalledWith({
+      where: {
+        positionKey: { in: ['speaker-of-the-senate', 'parliamentarian'] },
+      },
+      select: { allocationGroupId: true },
+    });
+  });
+
+  it('returns no divisions when a viewer has no mappings', async () => {
+    prisma.positionDivisionAccess.findMany.mockResolvedValue([]);
+
+    await expect(
+      resolveVisibleDivisionIds(sessionWith('speaker-of-the-senate')),
+    ).resolves.toEqual([]);
+  });
+
+  it('ignores positions that cannot view', async () => {
+    prisma.positionDivisionAccess.findMany.mockResolvedValue(
+      mappingsFor('group-1'),
+    );
+
+    await resolveVisibleDivisionIds(
+      sessionWith('director-of-campus-services', 'speaker-of-the-senate'),
+    );
+
+    expect(prisma.positionDivisionAccess.findMany).toHaveBeenCalledWith({
+      where: { positionKey: { in: ['speaker-of-the-senate'] } },
+      select: { allocationGroupId: true },
+    });
+  });
+
+  it('rejects a session without a view position', async () => {
+    await expect(
+      resolveVisibleDivisionIds(sessionWith('director-of-campus-services')),
+    ).rejects.toBeInstanceOf(ForbiddenError);
+    await expect(resolveVisibleDivisionIds(null)).rejects.toBeInstanceOf(
+      ForbiddenError,
+    );
+    expect(prisma.positionDivisionAccess.findMany).not.toHaveBeenCalled();
+  });
+});
+
+describe('getVisibleDivisionIds', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('resolves divisions for the current session', async () => {
+    requireSession.mockResolvedValue(sessionWith('speaker-of-the-senate'));
+    prisma.positionDivisionAccess.findMany.mockResolvedValue(
+      mappingsFor('group-1'),
+    );
+
+    await expect(getVisibleDivisionIds()).resolves.toEqual(['group-1']);
+    expect(requireSession).toHaveBeenCalled();
+  });
+
+  it('rejects the current session without a view position', async () => {
+    requireSession.mockResolvedValue(sessionWith());
+
+    await expect(getVisibleDivisionIds()).rejects.toBeInstanceOf(
+      ForbiddenError,
     );
   });
 });
