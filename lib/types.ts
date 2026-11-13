@@ -124,6 +124,19 @@ export type PurchaseProcessData = {
   steps: PurchaseProcessStep[];
 };
 
+export type DivisionFigures = {
+  allocationGroupId: string;
+  name: string;
+  designationId: string;
+  designationCode: string;
+  designationName: string;
+  allocatedTotal: number;
+  spentTotal: number;
+  remaining: number;
+  notReimbursedCount: number;
+  noExpenseReportCount: number;
+};
+
 export type PersonName = { id: string; first: string; last: string };
 
 export type PurchaseRequestSummary = {
