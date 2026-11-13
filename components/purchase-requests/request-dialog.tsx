@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { FormProvider, useForm, useWatch } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, Pencil, Plus, X } from 'lucide-react';
+import { Loader2, Pencil, Plus, ShieldAlert, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { twMerge } from 'tailwind-merge';
 
@@ -17,6 +17,7 @@ import {
 
 import {
   AllocationBudget,
+  PURCHASER_RULE,
   PurchaseRequestInput,
   purchaseRequestInputSchema,
 } from '@/lib/purchase-request';
@@ -30,6 +31,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -77,6 +79,8 @@ export function RequestDialog({ options, request }: RequestDialogProps) {
       )?.id ?? (options.divisions.length === 1 ? options.divisions[0].id : ''),
   );
   const [budget, setBudget] = useState<AllocationBudget | null>(null);
+  const [pending, setPending] = useState<PurchaseRequestInput | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const form = useForm({
     resolver: zodResolver(purchaseRequestInputSchema),
@@ -113,11 +117,19 @@ export function RequestDialog({ options, request }: RequestDialogProps) {
     setBudget(null);
   }
 
-  async function onSubmit(data: PurchaseRequestInput) {
+  // A valid form first asks the requester to acknowledge the purchaser rule.
+  function onSubmit(data: PurchaseRequestInput) {
+    setPending(data);
+  }
+
+  async function submitAcknowledged() {
+    if (!pending) return;
+    setSubmitting(true);
+    const data = pending;
     const result = await handleError(
       request
-        ? updatePurchaseRequest(request.id, data)
-        : createPurchaseRequest(data),
+        ? updatePurchaseRequest(request.id, data, true)
+        : createPurchaseRequest(data, true),
       {
         toast: {
           loading: request ? 'Saving request...' : 'Submitting request...',
@@ -126,6 +138,8 @@ export function RequestDialog({ options, request }: RequestDialogProps) {
         },
       },
     );
+    setSubmitting(false);
+    setPending(null);
     if (isError(result)) return;
 
     setOpen(false);
@@ -426,6 +440,37 @@ export function RequestDialog({ options, request }: RequestDialogProps) {
           </FormProvider>
         )}
       </DialogContent>
+      <Dialog
+        open={pending !== null}
+        onOpenChange={(next) => {
+          if (!next && !submitting) setPending(null);
+        }}
+      >
+        <DialogContent showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShieldAlert className="text-warning size-5" />
+              E-Board purchaser requirement
+            </DialogTitle>
+            <DialogDescription className="text-foreground text-sm">
+              {PURCHASER_RULE}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setPending(null)}
+              disabled={submitting}
+            >
+              Go back
+            </Button>
+            <Button onClick={submitAcknowledged} disabled={submitting}>
+              {submitting && <Loader2 className="animate-spin" />}I understand,
+              submit
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }

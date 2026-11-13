@@ -30,6 +30,7 @@ import {
 } from '@/prisma/services/purchase-request';
 
 import { RequestAction } from '@/lib/permissions';
+import { PURCHASER_RULE } from '@/lib/purchase-request';
 import { PurchaseRequestDetail, RequestFormOptions } from '@/lib/types';
 import { ErrorType, cn, handleError, isError } from '@/lib/utils';
 
@@ -179,8 +180,7 @@ export function RequestActions({
       label: 'Approve as purchaser',
       config: {
         title: 'Approve as E-Board purchaser',
-        description:
-          'Confirms you will make this purchase. The request then goes to the Comptroller, and the requester can no longer edit it.',
+        description: `Confirms you will make this purchase yourself. ${PURCHASER_RULE} The request then goes to the Comptroller, and the requester can no longer edit it.`,
         confirmLabel: 'Approve',
         noteLabel: 'Note (optional)',
         run: ({ note }) => purchaserApprovePurchaseRequest({ id, note }),

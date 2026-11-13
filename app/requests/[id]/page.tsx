@@ -9,6 +9,7 @@ import {
   Clock,
   CornerUpLeft,
   Paperclip,
+  ShieldAlert,
   ShieldCheck,
   TriangleAlert,
 } from 'lucide-react';
@@ -23,6 +24,7 @@ import { getRequestAccess } from '@/prisma/services/request-access';
 import { VPOA } from '@/lib/permissions';
 import {
   OPEN_REQUEST_STATUSES,
+  PURCHASER_RULE,
   REQUEST_EVENT_LABELS,
 } from '@/lib/purchase-request';
 import { formatCurrency, getFileUrl } from '@/lib/utils';
@@ -253,6 +255,10 @@ export default async function PurchaseRequestPage({
                   <p className="whitespace-pre-wrap">{request.decisionNote}</p>
                 </div>
               )}
+              <div className="border-warning/40 bg-warning/5 mt-4 flex items-start gap-2 rounded-lg border p-3 text-sm">
+                <ShieldAlert className="text-warning mt-0.5 size-4 shrink-0" />
+                <span>{PURCHASER_RULE}</span>
+              </div>
               {request.notes && (
                 <div className="mt-4 text-sm">
                   <p className="text-muted-foreground mb-1 text-xs font-medium uppercase">
