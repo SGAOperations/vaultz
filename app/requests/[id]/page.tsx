@@ -203,9 +203,9 @@ export default async function PurchaseRequestPage({
                 {request.decidedBy && request.decidedAt && (
                   <Field
                     label={
-                      request.status === 'APPROVED'
-                        ? 'Approved by'
-                        : 'Rejected by'
+                      request.status === 'REJECTED'
+                        ? 'Rejected by'
+                        : 'Approved by'
                     }
                   >
                     {request.decidedBy.first} {request.decidedBy.last} ·{' '}
