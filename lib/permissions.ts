@@ -65,51 +65,63 @@ export async function getCapabilities(): Promise<Record<Capability, boolean>> {
 export type RequestAction =
   | 'edit'
   | 'cancel'
+  | 'purchaserApprove'
+  | 'sendBack'
   | 'approve'
   | 'reject'
   | 'escalate'
   | 'return'
   | 'resend';
 
-// The Comptroller decides pending requests and can escalate them to the VPOA,
-// which hides their approve/reject until they return the request. The VPOA can
-// decide any open request at any time. The EVP has no request powers.
+// A request first waits on its E-Board purchaser, then on the Comptroller,
+// who can escalate it to the VPOA (hiding their own decisions until they
+// return it). The VPOA can decide any open request at any stage. Every
+// reviewer's default decline is sending it back for revision; rejecting ends
+// it. The requester can edit or cancel until the purchaser approves. The EVP
+// has no request powers.
 export function allowedRequestActions({
   session,
   status,
   isOwner,
+  isPurchaser,
 }: {
   session: MaybeSession;
   status: PurchaseRequestStatus;
   isOwner: boolean;
+  isPurchaser: boolean;
 }): RequestAction[] {
   const isComptroller = hasAnyPosition(session, [COMPTROLLER]);
   const isVpoa = hasAnyPosition(session, [VPOA]);
   const actions = new Set<RequestAction>();
+  const add = (...list: RequestAction[]) => list.forEach((a) => actions.add(a));
 
-  if (status === 'PENDING') {
-    if (isOwner) {
-      actions.add('edit');
-      actions.add('cancel');
-    }
-    if (isComptroller) {
-      actions.add('approve');
-      actions.add('reject');
-      actions.add('escalate');
-    }
-  }
+  const beforePurchaserApproval =
+    status === 'PURCHASER_REVIEW' || status === 'NEEDS_REVISION';
 
-  if (status === 'ESCALATED' && isComptroller) {
-    actions.add('return');
-    actions.add('resend');
-  }
+  if (beforePurchaserApproval && isOwner) add('edit', 'cancel');
 
-  if ((status === 'PENDING' || status === 'ESCALATED') && isVpoa) {
-    actions.add('approve');
-    actions.add('reject');
-  }
+  if (status === 'PURCHASER_REVIEW' && isPurchaser)
+    add('purchaserApprove', 'sendBack', 'reject');
+
+  if (status === 'PENDING' && isComptroller)
+    add('approve', 'sendBack', 'escalate', 'reject');
+
+  if (status === 'ESCALATED' && isComptroller) add('return', 'resend');
+
+  if (isVpoa && status !== 'NEEDS_REVISION' && isOpenStatus(status))
+    add('approve', 'sendBack', 'reject');
+  if (isVpoa && status === 'NEEDS_REVISION') add('approve', 'reject');
 
   return [...actions];
+}
+
+function isOpenStatus(status: PurchaseRequestStatus): boolean {
+  return (
+    status === 'PURCHASER_REVIEW' ||
+    status === 'NEEDS_REVISION' ||
+    status === 'PENDING' ||
+    status === 'ESCALATED'
+  );
 }
 
 export function isRequestApprover(session: MaybeSession): boolean {

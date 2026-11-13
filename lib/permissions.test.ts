@@ -1,6 +1,8 @@
 import type { SgaSession } from '@nusgaops/sgauth';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { PurchaseRequestStatus } from '@/prisma/client';
+
 import {
   ForbiddenError,
   allowedRequestActions,
@@ -125,90 +127,126 @@ describe('allowedRequestActions', () => {
   const comptroller = sessionWith('comptroller');
   const vpoa = sessionWith('vice-president-of-operational-affairs');
   const evp = sessionWith('executive-vice-president');
-  const requester = sessionWith('vice-president-of-campus-affairs');
+  const vp = sessionWith('vice-president-of-campus-affairs');
 
-  it('lets the Comptroller approve, reject or escalate a pending request', () => {
-    expect(
-      allowedRequestActions({
-        session: comptroller,
-        status: 'PENDING',
-        isOwner: false,
-      }).sort(),
-    ).toEqual(['approve', 'escalate', 'reject']);
+  const actions = (
+    session: SgaSession,
+    status: PurchaseRequestStatus,
+    { isOwner = false, isPurchaser = false } = {},
+  ) => allowedRequestActions({ session, status, isOwner, isPurchaser }).sort();
+
+  describe('awaiting the purchaser', () => {
+    it('lets the purchaser approve, send back or reject', () => {
+      expect(actions(vp, 'PURCHASER_REVIEW', { isPurchaser: true })).toEqual([
+        'purchaserApprove',
+        'reject',
+        'sendBack',
+      ]);
+    });
+
+    it('lets the requester edit or cancel', () => {
+      expect(actions(vp, 'PURCHASER_REVIEW', { isOwner: true })).toEqual([
+        'cancel',
+        'edit',
+      ]);
+    });
+
+    it('gives the Comptroller nothing yet', () => {
+      expect(actions(comptroller, 'PURCHASER_REVIEW')).toEqual([]);
+    });
+
+    it('lets the VPOA override', () => {
+      expect(actions(vpoa, 'PURCHASER_REVIEW')).toEqual([
+        'approve',
+        'reject',
+        'sendBack',
+      ]);
+    });
   });
 
-  it('hides approve and reject from the Comptroller once escalated', () => {
-    expect(
-      allowedRequestActions({
-        session: comptroller,
-        status: 'ESCALATED',
-        isOwner: false,
-      }).sort(),
-    ).toEqual(['resend', 'return']);
+  describe('needing revision', () => {
+    it('lets the requester edit or cancel', () => {
+      expect(actions(vp, 'NEEDS_REVISION', { isOwner: true })).toEqual([
+        'cancel',
+        'edit',
+      ]);
+    });
+
+    it('gives the purchaser and the Comptroller nothing', () => {
+      expect(actions(vp, 'NEEDS_REVISION', { isPurchaser: true })).toEqual([]);
+      expect(actions(comptroller, 'NEEDS_REVISION')).toEqual([]);
+    });
+
+    it('lets the VPOA approve or reject, but not send back again', () => {
+      expect(actions(vpoa, 'NEEDS_REVISION')).toEqual(['approve', 'reject']);
+    });
   });
 
-  it.each(['PENDING', 'ESCALATED'] as const)(
-    'lets the VPOA approve or reject a %s request',
-    (status) => {
-      expect(
-        allowedRequestActions({ session: vpoa, status, isOwner: false }).sort(),
-      ).toEqual(['approve', 'reject']);
-    },
-  );
+  describe('pending', () => {
+    it('lets the Comptroller approve, send back, escalate or reject', () => {
+      expect(actions(comptroller, 'PENDING')).toEqual([
+        'approve',
+        'escalate',
+        'reject',
+        'sendBack',
+      ]);
+    });
 
-  it.each(['PENDING', 'ESCALATED', 'APPROVED'] as const)(
-    'gives the EVP nothing on a %s request',
-    (status) => {
+    it('locks the request for the requester and the purchaser', () => {
       expect(
-        allowedRequestActions({ session: evp, status, isOwner: false }),
+        actions(vp, 'PENDING', { isOwner: true, isPurchaser: true }),
       ).toEqual([]);
-    },
-  );
+    });
 
-  it('lets the owner edit or cancel only while pending', () => {
-    expect(
-      allowedRequestActions({
-        session: requester,
-        status: 'PENDING',
-        isOwner: true,
-      }).sort(),
-    ).toEqual(['cancel', 'edit']);
-    expect(
-      allowedRequestActions({
-        session: requester,
-        status: 'ESCALATED',
-        isOwner: true,
-      }),
-    ).toEqual([]);
+    it('lets the VPOA approve, send back or reject', () => {
+      expect(actions(vpoa, 'PENDING')).toEqual([
+        'approve',
+        'reject',
+        'sendBack',
+      ]);
+    });
   });
 
-  it('gives a non-owner requester nothing', () => {
-    expect(
-      allowedRequestActions({
-        session: requester,
-        status: 'PENDING',
-        isOwner: false,
-      }),
-    ).toEqual([]);
+  describe('escalated', () => {
+    it('leaves the Comptroller only return and resend', () => {
+      expect(actions(comptroller, 'ESCALATED')).toEqual(['resend', 'return']);
+    });
+
+    it('lets the VPOA approve, send back or reject', () => {
+      expect(actions(vpoa, 'ESCALATED')).toEqual([
+        'approve',
+        'reject',
+        'sendBack',
+      ]);
+    });
+  });
+
+  it.each([
+    'PURCHASER_REVIEW',
+    'NEEDS_REVISION',
+    'PENDING',
+    'ESCALATED',
+    'APPROVED',
+  ] as const)('gives the EVP nothing on a %s request', (status) => {
+    expect(actions(evp, status)).toEqual([]);
   });
 
   it.each(['APPROVED', 'REJECTED', 'CANCELLED'] as const)(
     'allows nothing on a %s request, even for the VPOA',
     (status) => {
       expect(
-        allowedRequestActions({ session: vpoa, status, isOwner: true }),
+        actions(vpoa, status, { isOwner: true, isPurchaser: true }),
       ).toEqual([]);
     },
   );
 
-  it('lets a Comptroller who owns the request act as both', () => {
-    expect(
-      allowedRequestActions({
-        session: comptroller,
-        status: 'PENDING',
-        isOwner: true,
-      }).sort(),
-    ).toEqual(['approve', 'cancel', 'edit', 'escalate', 'reject']);
+  it('lets a Comptroller who owns a pending request only decide it', () => {
+    expect(actions(comptroller, 'PENDING', { isOwner: true })).toEqual([
+      'approve',
+      'escalate',
+      'reject',
+      'sendBack',
+    ]);
   });
 });
 
