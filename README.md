@@ -48,13 +48,13 @@ Process templates define multi-step approval or workflow sequences (e.g., reimbu
 
 ### Purchase Requests
 
-Requester positions submit purchase requests against their divisions' allocations. Every request must name an E-Board purchaser: a user marked as one under Requests → Settings. A request moves through these stages:
+Requester positions submit purchase requests against their divisions' allocations. Every request must name an E-Board purchaser (a user marked as one under Requests → Settings) and a purchasing method: one of the process templates offered as a method, also chosen under Requests → Settings. A request moves through these stages:
 
 1. **Awaiting purchaser.** The E-Board purchaser approves it, or sends it back for revision. A requester who names themselves as purchaser skips this stage.
 2. **Pending.** The Comptroller approves it, sends it back, or escalates it. Escalating sends the VPOA a Slack DM and hides the Comptroller's decisions until they return the request.
 3. **Needs revision.** A sent-back request shows the reviewer's note. When the requester edits it, it goes back through the purchaser, then the Comptroller.
 
-Sending back is every reviewer's default way to decline; rejecting outright ends the request and is a separate, less prominent action. The VPOA can approve, send back or reject at any open stage. The requester can edit or cancel only until the purchaser approves. Approving creates a purchase for the purchaser, dated that day, for the requested amount. The request keeps the original amount if the purchase is edited later. Open requests count as committed against their allocation, so requesters and reviewers see a warning when a request exceeds the available balance. Every change is recorded in the request's history.
+Sending back is every reviewer's default way to decline; rejecting outright ends the request and is a separate, less prominent action. The VPOA can approve, send back or reject at any open stage. The requester can edit or cancel only until the purchaser approves. Approving creates a purchase for the purchaser, dated that day, for the requested amount, and starts the request's purchasing method as its process; the approver can switch the method first. The request keeps the original amount if the purchase is edited later. Open requests count as committed against their allocation, so requesters and reviewers see a warning when a request exceeds the available balance. Every change is recorded in the request's history.
 
 ### Users
 
