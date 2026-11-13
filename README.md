@@ -48,7 +48,7 @@ Process templates define multi-step approval or workflow sequences (e.g., reimbu
 
 ### Purchase Requests
 
-Requester positions submit purchase requests against their divisions' allocations. Every request must name an E-Board purchaser (a user marked as one under Requests → Settings) and a purchasing method: one of the process templates offered as a method, also chosen under Requests → Settings. A request moves through these stages:
+Requester positions submit purchase requests against their divisions' allocations. Every request must name an E-Board purchaser (a user marked as one under Requests → Settings) and a purchasing method: one of the process templates offered as a method, also chosen under Requests → Settings. Before a request is submitted or resubmitted, the requester must acknowledge that the named E-Board purchaser has to make the purchase, and that the approval is automatically void if a non-E-Board member is found to have made it. The acknowledgment is recorded in the request's history. A request moves through these stages:
 
 1. **Awaiting purchaser.** The E-Board purchaser approves it, or sends it back for revision. A requester who names themselves as purchaser skips this stage.
 2. **Pending.** The Comptroller approves it, sends it back, or escalates it. Escalating sends the VPOA a Slack DM and hides the Comptroller's decisions until they return the request. Approving is also the Comptroller's financial review: they can correct the allocation, category and purchasing method, and attach conditions for the purchaser.
