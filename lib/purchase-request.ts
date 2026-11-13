@@ -44,6 +44,7 @@ export const REQUEST_STATUS_LABELS: Record<PurchaseRequestStatus, string> = {
   APPROVED: 'Approved',
   REJECTED: 'Rejected',
   CANCELLED: 'Cancelled',
+  REVOKED: 'Revoked',
 };
 
 export const REQUEST_EVENT_LABELS: Record<PurchaseRequestEventType, string> = {
@@ -58,6 +59,9 @@ export const REQUEST_EVENT_LABELS: Record<PurchaseRequestEventType, string> = {
   RETURNED: 'Returned to the Comptroller',
   NOTIFIED: 'VPOA notified on Slack',
   NOTIFY_FAILED: 'Slack notification failed',
+  RECODED: 'Coding corrected',
+  SIGNED_OFF: 'Signed off by the VPOA',
+  REVOKED: 'Approval revoked by the VPOA',
 };
 
 export interface AllocationBudget {

@@ -132,8 +132,15 @@ describe('allowedRequestActions', () => {
   const actions = (
     session: SgaSession,
     status: PurchaseRequestStatus,
-    { isOwner = false, isPurchaser = false } = {},
-  ) => allowedRequestActions({ session, status, isOwner, isPurchaser }).sort();
+    { isOwner = false, isPurchaser = false, isSignedOff = false } = {},
+  ) =>
+    allowedRequestActions({
+      session,
+      status,
+      isOwner,
+      isPurchaser,
+      isSignedOff,
+    }).sort();
 
   describe('awaiting the purchaser', () => {
     it('lets the purchaser approve, send back or reject', () => {
@@ -231,7 +238,21 @@ describe('allowedRequestActions', () => {
     expect(actions(evp, status)).toEqual([]);
   });
 
-  it.each(['APPROVED', 'REJECTED', 'CANCELLED'] as const)(
+  describe('approved', () => {
+    it('lets the VPOA sign off or revoke until signed off', () => {
+      expect(actions(vpoa, 'APPROVED')).toEqual(['revoke', 'signOff']);
+      expect(actions(vpoa, 'APPROVED', { isSignedOff: true })).toEqual([]);
+    });
+
+    it('gives the Comptroller, requester and purchaser nothing', () => {
+      expect(actions(comptroller, 'APPROVED')).toEqual([]);
+      expect(
+        actions(vp, 'APPROVED', { isOwner: true, isPurchaser: true }),
+      ).toEqual([]);
+    });
+  });
+
+  it.each(['REJECTED', 'CANCELLED', 'REVOKED'] as const)(
     'allows nothing on a %s request, even for the VPOA',
     (status) => {
       expect(
