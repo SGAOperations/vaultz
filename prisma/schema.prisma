@@ -132,15 +132,18 @@ model Purchase {
 }
 
 model ProcessTemplate {
-  id          String    @id @default(uuid())
-  name        String
-  description String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
+  id                 String    @id @default(uuid())
+  name               String
+  description        String?
+  // Offered to requesters as a way to make a purchase.
+  isPurchasingMethod Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  deletedAt          DateTime?
 
-  steps     ProcessStep[]
-  processes PurchaseProcess[]
+  steps            ProcessStep[]
+  processes        PurchaseProcess[]
+  purchaseRequests PurchaseRequest[]
 }
 
 model ProcessStep {
@@ -286,20 +289,23 @@ model PurchaseRequest {
   escalationNotifiedAt  DateTime?
   escalationNotifyError String?
 
-  requesterId  String
-  requester    User       @relation("RequestRequester", fields: [requesterId], references: [id])
-  purchaserId  String
-  purchaser    User       @relation("RequestPurchaser", fields: [purchaserId], references: [id])
-  decidedById  String?
-  decidedBy    User?      @relation("RequestDecider", fields: [decidedById], references: [id])
-  categoryId   String
-  category     Category   @relation(fields: [categoryId], references: [id])
-  allocationId String
-  allocation   Allocation @relation(fields: [allocationId], references: [id])
-  yearId       String
-  year         Year       @relation(fields: [yearId], references: [id])
-  purchaseId   String?    @unique
-  purchase     Purchase?  @relation(fields: [purchaseId], references: [id])
+  requesterId       String
+  requester         User             @relation("RequestRequester", fields: [requesterId], references: [id])
+  purchaserId       String
+  purchaser         User             @relation("RequestPurchaser", fields: [purchaserId], references: [id])
+  decidedById       String?
+  decidedBy         User?            @relation("RequestDecider", fields: [decidedById], references: [id])
+  categoryId        String
+  category          Category         @relation(fields: [categoryId], references: [id])
+  allocationId      String
+  allocation        Allocation       @relation(fields: [allocationId], references: [id])
+  yearId            String
+  year              Year             @relation(fields: [yearId], references: [id])
+  // The purchasing method; nullable only for requests made before it existed.
+  processTemplateId String?
+  processTemplate   ProcessTemplate? @relation(fields: [processTemplateId], references: [id])
+  purchaseId        String?          @unique
+  purchase          Purchase?        @relation(fields: [purchaseId], references: [id])
 
   events PurchaseRequestEvent[]
 
