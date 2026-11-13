@@ -29,6 +29,10 @@ export const purchaseRequestInputSchema = z.object({
 
 export type PurchaseRequestInput = z.infer<typeof purchaseRequestInputSchema>;
 
+// Every request is submitted, approved and paid on this condition.
+export const PURCHASER_RULE =
+  'The E-Board purchaser named on this request must make the purchase. If it is found that a non-E-Board member made the purchase, the approval is automatically void.';
+
 export const OPEN_REQUEST_STATUSES: PurchaseRequestStatus[] = [
   'PURCHASER_REVIEW',
   'NEEDS_REVISION',

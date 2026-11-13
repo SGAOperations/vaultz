@@ -31,6 +31,7 @@ import prisma from '@/lib/prisma';
 import {
   AllocationBudget,
   OPEN_REQUEST_STATUSES,
+  PURCHASER_RULE,
   PurchaseRequestInput,
   computeAllocationBudget,
   purchaseRequestInputSchema,
@@ -252,6 +253,12 @@ async function transition(
   return true;
 }
 
+const PURCHASER_RULE_ERROR = {
+  error: 'Acknowledge the E-Board purchaser requirement to submit.',
+} satisfies ErrorType;
+
+const PURCHASER_RULE_ACKNOWLEDGED = `Acknowledged: ${PURCHASER_RULE}`;
+
 const STALE_ERROR = {
   error: 'This request changed while you were viewing it. Refresh and retry.',
 } satisfies ErrorType;
@@ -450,8 +457,10 @@ export async function getRequestBudget({
 
 export async function createPurchaseRequest(
   input: PurchaseRequestInput,
+  acknowledgedPurchaserRule: boolean,
 ): Promise<ResponseType<{ id: string }>> {
   const access = await requireSubmitAccess();
+  if (acknowledgedPurchaserRule !== true) return PURCHASER_RULE_ERROR;
   const validated = await validateInput(access, input);
   if ('error' in validated) return validated;
   const { data, yearId } = validated;
@@ -471,7 +480,11 @@ export async function createPurchaseRequest(
       ...stageAfterSubmit(access, data.purchaserId),
       events: {
         create: [
-          { type: 'SUBMITTED', actorId: access.user.id },
+          {
+            type: 'SUBMITTED',
+            actorId: access.user.id,
+            note: PURCHASER_RULE_ACKNOWLEDGED,
+          },
           ...selfApprovalEvents(access, data.purchaserId),
         ],
       },
@@ -496,7 +509,9 @@ export async function createPurchaseRequest(
 export async function updatePurchaseRequest(
   id: string,
   input: PurchaseRequestInput,
+  acknowledgedPurchaserRule: boolean,
 ): Promise<ResponseType<{ id: string }>> {
+  if (acknowledgedPurchaserRule !== true) return PURCHASER_RULE_ERROR;
   const loaded = await loadForAction(id, 'edit');
   if ('error' in loaded) return loaded;
   const { access, request } = loaded;
@@ -514,6 +529,7 @@ export async function updatePurchaseRequest(
       from: request.status,
       event: 'EDITED',
       actorId: access.user.id,
+      note: PURCHASER_RULE_ACKNOWLEDGED,
       data: {
         ...stage,
         description: data.description,
@@ -773,7 +789,11 @@ export async function approvePurchaseRequest({
   await queueNotices(
     access,
     id,
-    approvalNotices.map((n) => ({ ...n, noteLabel: 'Conditions' })),
+    approvalNotices.map((n) => ({
+      ...n,
+      noteLabel: 'Conditions',
+      ...(n.to === 'purchaser' && { footer: PURCHASER_RULE }),
+    })),
   );
   revalidateRequest(id);
   revalidatePath('/');
@@ -1078,6 +1098,7 @@ function requestMessage(
   url: string,
   note?: string | null,
   noteLabel = 'Note',
+  footer?: string,
 ): string {
   const division = request.allocation.allocationGroup?.name ?? 'No division';
   return [
@@ -1087,6 +1108,7 @@ function requestMessage(
     `Requested by ${personName(request.requester)} · Purchaser ${personName(request.purchaser)}`,
     `Purchasing method: ${escapeSlackText(request.processTemplate?.name ?? 'Not set')}`,
     ...(note ? [`${noteLabel}: ${escapeSlackText(note)}`] : []),
+    ...(footer ? [`_${escapeSlackText(footer)}_`] : []),
     `<${url}|View in VaultZ>`,
   ].join('\n');
 }
@@ -1096,6 +1118,7 @@ interface Notice {
   headline: string;
   note?: string | null;
   noteLabel?: string;
+  footer?: string;
 }
 
 // A request skips the purchaser step when its requester is the purchaser.
@@ -1289,6 +1312,7 @@ async function queueNotices(
         url,
         notice.note,
         notice.noteLabel,
+        notice.footer,
       );
       const label = NOTICE_LABELS[notice.to];
       const result =
