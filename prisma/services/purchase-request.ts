@@ -2,6 +2,9 @@
 
 import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
+import { after } from 'next/server';
+
+import { hasAnyPosition } from '@nusgaops/sgauth';
 
 import {
   Prisma,
@@ -16,7 +19,12 @@ import {
   requireSubmitAccess,
 } from '@/prisma/services/request-access';
 
-import { RequestAction, allowedRequestActions } from '@/lib/permissions';
+import {
+  COMPTROLLER,
+  RequestAction,
+  VPOA,
+  allowedRequestActions,
+} from '@/lib/permissions';
 import prisma from '@/lib/prisma';
 import {
   AllocationBudget,
@@ -26,7 +34,11 @@ import {
   purchaseRequestInputSchema,
 } from '@/lib/purchase-request';
 import { appOrigin } from '@/lib/sgauth';
-import { escapeSlackText, sendVpoaSlackMessage } from '@/lib/slack';
+import {
+  escapeSlackText,
+  sendSlackMessageTo,
+  sendSlackMessageToEmail,
+} from '@/lib/slack';
 import {
   PurchaseRequestDetail,
   PurchaseRequestSummary,
@@ -397,6 +409,11 @@ export async function createPurchaseRequest(
     select: { id: true },
   });
 
+  await queueNotices(
+    access,
+    request.id,
+    comptrollerNotice(access, 'New purchase request'),
+  );
   revalidateRequest();
   return request;
 }
@@ -433,6 +450,11 @@ export async function updatePurchaseRequest(
   );
   if (!ok) return STALE_ERROR;
 
+  await queueNotices(
+    access,
+    id,
+    comptrollerNotice(access, 'Purchase request edited'),
+  );
   revalidateRequest(id);
   return { id };
 }
@@ -454,6 +476,11 @@ export async function cancelPurchaseRequest(
   );
   if (!ok) return STALE_ERROR;
 
+  await queueNotices(
+    loaded.access,
+    id,
+    comptrollerNotice(loaded.access, 'Purchase request cancelled'),
+  );
   revalidateRequest(id);
   return { id };
 }
@@ -525,6 +552,11 @@ export async function approvePurchaseRequest({
   });
   if (!purchaseId) return STALE_ERROR;
 
+  await queueNotices(
+    access,
+    id,
+    decisionNotices(access, request, 'approved', note),
+  );
   revalidateRequest(id);
   revalidatePath('/');
   revalidatePath('/purchases');
@@ -559,6 +591,11 @@ export async function rejectPurchaseRequest({
   );
   if (!ok) return STALE_ERROR;
 
+  await queueNotices(
+    access,
+    id,
+    decisionNotices(access, request, 'rejected', note),
+  );
   revalidateRequest(id);
   return { id };
 }
@@ -638,6 +675,119 @@ export async function resendEscalationNotice(
   return { id, notified };
 }
 
+type RequestForMessage = Pick<
+  RequestWithSummary,
+  'id' | 'description' | 'amount' | 'allocation' | 'requester' | 'purchaser'
+>;
+
+function personName(p: { first: string; last: string }): string {
+  return escapeSlackText(`${p.first} ${p.last}`.trim());
+}
+
+async function requestUrl(id: string): Promise<string> {
+  const host = (await headers()).get('host') ?? '';
+  return `${appOrigin(host)}/requests/${id}`;
+}
+
+function requestMessage(
+  headline: string,
+  request: RequestForMessage,
+  url: string,
+  note?: string | null,
+): string {
+  const division = request.allocation.allocationGroup?.name ?? 'No division';
+  return [
+    headline,
+    `*${escapeSlackText(request.description)}*: ${formatCurrency(request.amount.toNumber())}`,
+    `Division: ${escapeSlackText(division)} · ${escapeSlackText(request.allocation.name)}`,
+    `Requested by ${personName(request.requester)} · Purchaser ${personName(request.purchaser)}`,
+    ...(note ? [`Note: ${escapeSlackText(note)}`] : []),
+    `<${url}|View in VaultZ>`,
+  ].join('\n');
+}
+
+interface Notice {
+  to: 'comptroller' | 'requester';
+  headline: string;
+  note?: string | null;
+}
+
+// The Comptroller hears about requester activity, except their own.
+function comptrollerNotice(access: RequestAccess, title: string): Notice[] {
+  if (hasAnyPosition(access.session, [COMPTROLLER])) return [];
+  return [
+    { to: 'comptroller', headline: `*${title}* by ${personName(access.user)}` },
+  ];
+}
+
+// The Comptroller hears about the VPOA's decisions, and the requester hears
+// about any decision they didn't make themselves.
+function decisionNotices(
+  access: RequestAccess,
+  request: RequestWithSummary,
+  verb: 'approved' | 'rejected',
+  note?: string,
+): Notice[] {
+  const notices: Notice[] = [];
+  const isComptroller = hasAnyPosition(access.session, [COMPTROLLER]);
+  if (!isComptroller && hasAnyPosition(access.session, [VPOA]))
+    notices.push({
+      to: 'comptroller',
+      headline: `*The VPOA ${verb} a purchase request*`,
+      note,
+    });
+  if (request.requesterId !== access.user.id)
+    notices.push({
+      to: 'requester',
+      headline: `*Your purchase request was ${verb}* by ${personName(access.user)}`,
+      note,
+    });
+  return notices;
+}
+
+// Best-effort DMs, sent after the response so Slack never slows or fails the
+// action. A failure is written to the request's history.
+async function queueNotices(
+  access: RequestAccess,
+  requestId: string,
+  notices: Notice[],
+): Promise<void> {
+  if (notices.length === 0) return;
+  const url = await requestUrl(requestId);
+  const actorId = access.user.id;
+
+  after(async () => {
+    const request = await prisma.purchaseRequest.findUnique({
+      where: { id: requestId },
+      include: {
+        ...summaryInclude,
+        requester: { select: { ...personSelect, email: true } },
+      },
+    });
+    if (!request) return;
+
+    for (const notice of notices) {
+      const text = requestMessage(notice.headline, request, url, notice.note);
+      const email = request.requester.email;
+      const result =
+        notice.to === 'comptroller'
+          ? await sendSlackMessageTo('comptroller', text)
+          : email
+            ? await sendSlackMessageToEmail(email, text)
+            : { ok: false as const, error: 'The requester has no email.' };
+      if (!result.ok)
+        await prisma.purchaseRequestEvent.create({
+          data: {
+            requestId,
+            type: 'NOTIFY_FAILED',
+            note: `${notice.to === 'comptroller' ? 'Comptroller' : 'Requester'}: ${result.error}`,
+            actorId,
+          },
+        });
+    }
+  });
+}
+
 // The escalation stands whether or not Slack accepts the message; a failure is
 // recorded on the request so the Comptroller can resend it.
 async function notifyVpoa(
@@ -645,22 +795,13 @@ async function notifyVpoa(
   request: RequestWithSummary,
   note?: string,
 ): Promise<boolean> {
-  const host = (await headers()).get('host') ?? '';
-  const url = `${appOrigin(host)}/requests/${request.id}`;
-  const name = (p: { first: string; last: string }) =>
-    escapeSlackText(`${p.first} ${p.last}`.trim());
-  const division = request.allocation.allocationGroup?.name ?? 'No division';
-
-  const lines = [
-    `*Purchase request escalated to you* by ${name(access.user)}`,
-    `*${escapeSlackText(request.description)}*: ${formatCurrency(request.amount.toNumber())}`,
-    `Division: ${escapeSlackText(division)} · ${escapeSlackText(request.allocation.name)}`,
-    `Requested by ${name(request.requester)} · Purchaser ${name(request.purchaser)}`,
-    ...(note ? [`Note: ${escapeSlackText(note)}`] : []),
-    `<${url}|Review in VaultZ>`,
-  ];
-
-  const result = await sendVpoaSlackMessage(lines.join('\n'));
+  const text = requestMessage(
+    `*Purchase request escalated to you* by ${personName(access.user)}`,
+    request,
+    await requestUrl(request.id),
+    note,
+  );
+  const result = await sendSlackMessageTo('vpoa', text);
 
   await prisma.$transaction([
     prisma.purchaseRequest.update({
