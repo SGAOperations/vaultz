@@ -2,7 +2,13 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import { ArrowLeft, Paperclip, TriangleAlert } from 'lucide-react';
+import {
+  ArrowLeft,
+  Clock,
+  CornerUpLeft,
+  Paperclip,
+  TriangleAlert,
+} from 'lucide-react';
 
 import { getAllProcessTemplates } from '@/prisma/services/process-templates';
 import {
@@ -12,7 +18,10 @@ import {
 import { getRequestAccess } from '@/prisma/services/request-access';
 
 import { isRequestApprover } from '@/lib/permissions';
-import { REQUEST_EVENT_LABELS } from '@/lib/purchase-request';
+import {
+  OPEN_REQUEST_STATUSES,
+  REQUEST_EVENT_LABELS,
+} from '@/lib/purchase-request';
 import { formatCurrency, getFileUrl } from '@/lib/utils';
 
 import { DateTime } from '@/components/date-time';
@@ -52,7 +61,8 @@ export default async function PurchaseRequestPage({
   const request = await getPurchaseRequest(id);
   if (!request) notFound();
 
-  const isOpen = request.status === 'PENDING' || request.status === 'ESCALATED';
+  const isOpen = OPEN_REQUEST_STATUSES.includes(request.status);
+  const sentBack = request.events.findLast((e) => e.type === 'SENT_BACK');
   const [formOptions, templates] = await Promise.all([
     request.allowedActions.includes('edit') && access.canRequest
       ? getRequestFormOptions()
@@ -91,6 +101,31 @@ export default async function PurchaseRequestPage({
           processTemplates={templates.map((t) => ({ id: t.id, name: t.name }))}
         />
       </div>
+
+      {request.status === 'PURCHASER_REVIEW' && (
+        <div className="border-primary/30 bg-primary/10 text-primary flex items-start gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium">
+          <Clock className="mt-0.5 size-4 shrink-0" />
+          <span>
+            {`Waiting on ${request.purchaser.first} ${request.purchaser.last} to approve as the E-Board purchaser. The Comptroller reviews it after that.`}
+          </span>
+        </div>
+      )}
+
+      {request.status === 'NEEDS_REVISION' && (
+        <div className="border-warning/40 bg-warning/10 text-warning flex items-start gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium">
+          <CornerUpLeft className="mt-0.5 size-4 shrink-0" />
+          <div className="flex flex-col gap-1">
+            <span>
+              {`Sent back for revision${sentBack?.actor ? ` by ${sentBack.actor.first} ${sentBack.actor.last}` : ''}. Edit the request to resubmit it.`}
+            </span>
+            {sentBack?.note && (
+              <span className="font-normal whitespace-pre-wrap">
+                {sentBack.note}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
       {request.status === 'ESCALATED' && (
         <div className="border-warning/40 bg-warning/10 text-warning flex items-start gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium">
