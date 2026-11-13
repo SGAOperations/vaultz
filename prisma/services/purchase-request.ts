@@ -12,6 +12,7 @@ import {
   PurchaseRequestStatus,
 } from '@/prisma/client';
 import { Decimal } from '@/prisma/client/runtime/client';
+import { findOfficeHolderEmail } from '@/prisma/services/office-holders';
 import {
   RequestAccess,
   canUseDivision,
@@ -35,8 +36,8 @@ import {
 } from '@/lib/purchase-request';
 import { appOrigin } from '@/lib/sgauth';
 import {
+  SlackResult,
   escapeSlackText,
-  sendSlackMessageTo,
   sendSlackMessageToEmail,
 } from '@/lib/slack';
 import {
@@ -951,6 +952,30 @@ function decisionNotices(
   return notices;
 }
 
+async function sendToEmail(
+  email: string | null,
+  label: string,
+  text: string,
+): Promise<SlackResult> {
+  if (!email)
+    return { ok: false, error: `The ${label.toLowerCase()} has no email.` };
+  return sendSlackMessageToEmail(email, text);
+}
+
+async function sendToOfficeHolder(
+  positionKey: string,
+  label: string,
+  text: string,
+): Promise<SlackResult> {
+  const email = await findOfficeHolderEmail(positionKey);
+  if (!email)
+    return {
+      ok: false,
+      error: `No one holding the ${label} position has signed in to VaultZ yet.`,
+    };
+  return sendSlackMessageToEmail(email, text);
+}
+
 const NOTICE_LABELS: Record<Notice['to'], string> = {
   comptroller: 'Comptroller',
   requester: 'Requester',
@@ -982,21 +1007,16 @@ async function queueNotices(
     for (const notice of notices) {
       const text = requestMessage(notice.headline, request, url, notice.note);
       const label = NOTICE_LABELS[notice.to];
-      const email =
-        notice.to === 'requester'
-          ? request.requester.email
-          : notice.to === 'purchaser'
-            ? request.purchaser.email
-            : null;
       const result =
         notice.to === 'comptroller'
-          ? await sendSlackMessageTo('comptroller', text)
-          : email
-            ? await sendSlackMessageToEmail(email, text)
-            : {
-                ok: false as const,
-                error: `The ${label.toLowerCase()} has no email.`,
-              };
+          ? await sendToOfficeHolder(COMPTROLLER, 'Comptroller', text)
+          : await sendToEmail(
+              notice.to === 'requester'
+                ? request.requester.email
+                : request.purchaser.email,
+              label,
+              text,
+            );
       if (!result.ok)
         await prisma.purchaseRequestEvent.create({
           data: {
@@ -1023,7 +1043,7 @@ async function notifyVpoa(
     await requestUrl(request.id),
     note,
   );
-  const result = await sendSlackMessageTo('vpoa', text);
+  const result = await sendToOfficeHolder(VPOA, 'VPOA', text);
 
   await prisma.$transaction([
     prisma.purchaseRequest.update({

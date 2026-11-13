@@ -1,10 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  escapeSlackText,
-  sendSlackMessageTo,
-  sendSlackMessageToEmail,
-} from '@/lib/slack';
+import { escapeSlackText, sendSlackMessageToEmail } from '@/lib/slack';
 
 const fetchMock = vi.fn();
 
@@ -24,58 +20,12 @@ function callAt(index: number) {
 beforeEach(() => {
   vi.stubGlobal('fetch', fetchMock);
   vi.stubEnv('SLACK_BOT_TOKEN', 'xoxb-test');
-  vi.stubEnv('SLACK_VPOA_USER_ID', 'U_VPOA');
-  vi.stubEnv('SLACK_COMPTROLLER_USER_ID', 'U_COMP');
 });
 
 afterEach(() => {
   fetchMock.mockReset();
   vi.unstubAllGlobals();
   vi.unstubAllEnvs();
-});
-
-describe('sendSlackMessageTo', () => {
-  it('posts to the configured Comptroller member id', async () => {
-    fetchMock.mockReturnValueOnce(slackReply({ ok: true }));
-
-    await expect(sendSlackMessageTo('comptroller', 'hi')).resolves.toEqual({
-      ok: true,
-    });
-    const call = callAt(0);
-    expect(call.url).toBe('https://slack.com/api/chat.postMessage');
-    expect(call.auth).toBe('Bearer xoxb-test');
-    expect(call.params).toMatchObject({ channel: 'U_COMP', text: 'hi' });
-  });
-
-  it('fails without calling Slack when the member id is missing', async () => {
-    vi.stubEnv('SLACK_COMPTROLLER_USER_ID', '');
-
-    await expect(sendSlackMessageTo('comptroller', 'hi')).resolves.toEqual({
-      ok: false,
-      error: 'SLACK_COMPTROLLER_USER_ID is not configured.',
-    });
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
-
-  it('surfaces a Slack API error', async () => {
-    fetchMock.mockReturnValueOnce(
-      slackReply({ ok: false, error: 'channel_not_found' }),
-    );
-
-    await expect(sendSlackMessageTo('vpoa', 'hi')).resolves.toEqual({
-      ok: false,
-      error: 'Slack error: channel_not_found',
-    });
-  });
-
-  it('reports a network failure', async () => {
-    fetchMock.mockRejectedValueOnce(new Error('boom'));
-
-    await expect(sendSlackMessageTo('vpoa', 'hi')).resolves.toEqual({
-      ok: false,
-      error: 'Could not reach Slack: boom',
-    });
-  });
 });
 
 describe('sendSlackMessageToEmail', () => {
@@ -104,6 +54,38 @@ describe('sendSlackMessageToEmail', () => {
       sendSlackMessageToEmail('nobody@northeastern.edu', 'decided'),
     ).resolves.toEqual({ ok: false, error: 'Slack error: users_not_found' });
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('Slack errors', () => {
+  it('fails without calling Slack when the token is missing', async () => {
+    vi.stubEnv('SLACK_BOT_TOKEN', '');
+
+    await expect(sendSlackMessageToEmail('a@b.edu', 'hi')).resolves.toEqual({
+      ok: false,
+      error: 'SLACK_BOT_TOKEN is not configured.',
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('surfaces a failed post after a successful lookup', async () => {
+    fetchMock
+      .mockReturnValueOnce(slackReply({ ok: true, user: { id: 'U1' } }))
+      .mockReturnValueOnce(slackReply({ ok: false, error: 'not_in_channel' }));
+
+    await expect(sendSlackMessageToEmail('a@b.edu', 'hi')).resolves.toEqual({
+      ok: false,
+      error: 'Slack error: not_in_channel',
+    });
+  });
+
+  it('reports a network failure', async () => {
+    fetchMock.mockRejectedValueOnce(new Error('boom'));
+
+    await expect(sendSlackMessageToEmail('a@b.edu', 'hi')).resolves.toEqual({
+      ok: false,
+      error: 'Could not reach Slack: boom',
+    });
   });
 });
 

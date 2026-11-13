@@ -1,12 +1,5 @@
 export type SlackResult = { ok: true } | { ok: false; error: string };
 
-type SlackRecipient = 'vpoa' | 'comptroller';
-
-const RECIPIENT_ENV: Record<SlackRecipient, string> = {
-  vpoa: 'SLACK_VPOA_USER_ID',
-  comptroller: 'SLACK_COMPTROLLER_USER_ID',
-};
-
 async function callSlack<T extends object>(
   method: string,
   params: Record<string, string>,
@@ -44,17 +37,6 @@ async function sendDm(channel: string, text: string): Promise<SlackResult> {
     unfurl_links: 'false',
   });
   return result.ok ? { ok: true } : result;
-}
-
-// DMs the VPOA or the Comptroller, whose Slack member ids are configured.
-export async function sendSlackMessageTo(
-  recipient: SlackRecipient,
-  text: string,
-): Promise<SlackResult> {
-  const envName = RECIPIENT_ENV[recipient];
-  const channel = process.env[envName];
-  if (!channel) return { ok: false, error: `${envName} is not configured.` };
-  return sendDm(channel, text);
 }
 
 // DMs whoever owns this email in Slack. Needs the users:read.email scope.
