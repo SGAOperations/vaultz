@@ -242,6 +242,8 @@ model Transfer {
 }
 
 enum PurchaseRequestStatus {
+  PURCHASER_REVIEW
+  NEEDS_REVISION
   PENDING
   ESCALATED
   APPROVED
@@ -252,6 +254,8 @@ enum PurchaseRequestStatus {
 enum PurchaseRequestEventType {
   SUBMITTED
   EDITED
+  PURCHASER_APPROVED
+  SENT_BACK
   CANCELLED
   APPROVED
   REJECTED
