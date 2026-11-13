@@ -155,6 +155,7 @@ export type PurchaseRequestSummary = {
     name: string;
     allocationGroup: { id: string; name: string } | null;
   };
+  purchasingMethod: { id: string; name: string } | null;
 };
 
 export type PurchaseRequestEventRecord = {
@@ -192,4 +193,5 @@ export type RequestFormOptions = {
   year: { id: string; name: string } | null;
   divisions: RequestFormDivision[];
   purchasers: PersonName[];
+  purchasingMethods: { id: string; name: string; description: string | null }[];
 };

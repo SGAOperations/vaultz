@@ -60,6 +60,7 @@ const summaryInclude = {
       allocationGroup: { select: { id: true, name: true } },
     },
   },
+  processTemplate: { select: { id: true, name: true } },
 } satisfies Prisma.PurchaseRequestInclude;
 
 type RequestWithSummary = Prisma.PurchaseRequestGetPayload<{
@@ -79,6 +80,7 @@ function toSummary(request: RequestWithSummary): PurchaseRequestSummary {
     purchaser: request.purchaser,
     category: request.category,
     allocation: request.allocation,
+    purchasingMethod: request.processTemplate,
   };
 }
 
@@ -153,7 +155,7 @@ async function validateInput(
     } satisfies ErrorType;
   const data = parsed.data;
 
-  const [allocation, category, purchaser] = await Promise.all([
+  const [allocation, category, purchaser, method] = await Promise.all([
     prisma.allocation.findFirst({
       where: { id: data.allocationId, deletedAt: null },
       select: {
@@ -170,6 +172,14 @@ async function validateInput(
       where: { id: data.purchaserId, deletedAt: null, isEBoardPurchaser: true },
       select: { id: true },
     }),
+    prisma.processTemplate.findFirst({
+      where: {
+        id: data.processTemplateId,
+        deletedAt: null,
+        isPurchasingMethod: true,
+      },
+      select: { id: true },
+    }),
   ]);
 
   if (!allocation || !canUseDivision(access, allocation.allocationGroupId))
@@ -178,6 +188,7 @@ async function validateInput(
     return { error: "That category does not belong to the allocation's fund." };
   if (!purchaser)
     return { error: 'The purchaser must be an Executive Board member.' };
+  if (!method) return { error: 'Choose one of the listed purchasing methods.' };
 
   return { data, yearId: allocation.period.yearId };
 }
@@ -319,7 +330,7 @@ export async function getRequestFormOptions(): Promise<RequestFormOptions> {
     select: { id: true, name: true },
   });
 
-  const [groups, purchasers] = await Promise.all([
+  const [groups, purchasers, purchasingMethods] = await Promise.all([
     year
       ? prisma.allocationGroup.findMany({
           where:
@@ -357,11 +368,17 @@ export async function getRequestFormOptions(): Promise<RequestFormOptions> {
       select: personSelect,
       orderBy: [{ last: 'asc' }, { first: 'asc' }],
     }),
+    prisma.processTemplate.findMany({
+      where: { deletedAt: null, isPurchasingMethod: true },
+      select: { id: true, name: true, description: true },
+      orderBy: { name: 'asc' },
+    }),
   ]);
 
   return {
     year,
     purchasers,
+    purchasingMethods,
     divisions: groups
       .filter((g) => g.allocations.length > 0)
       .map((g) => ({
@@ -413,6 +430,7 @@ export async function createPurchaseRequest(
       attachments: data.attachments,
       requesterId: access.user.id,
       purchaserId: data.purchaserId,
+      processTemplateId: data.processTemplateId,
       categoryId: data.categoryId,
       allocationId: data.allocationId,
       yearId,
@@ -469,6 +487,7 @@ export async function updatePurchaseRequest(
         notes: data.notes || null,
         attachments: data.attachments,
         purchaserId: data.purchaserId,
+        processTemplateId: data.processTemplateId,
         categoryId: data.categoryId,
         allocationId: data.allocationId,
         yearId,
@@ -624,12 +643,18 @@ export async function approvePurchaseRequest({
   if ('error' in loaded) return loaded;
   const { access, request } = loaded;
 
-  if (processTemplateId) {
+  // The approver can switch the request's purchasing method before approving.
+  const templateId = processTemplateId || request.processTemplateId;
+  if (templateId) {
     const template = await prisma.processTemplate.findFirst({
-      where: { id: processTemplateId, deletedAt: null },
+      where: { id: templateId, deletedAt: null },
       select: { id: true },
     });
-    if (!template) return { error: 'That process template no longer exists.' };
+    if (!template)
+      return {
+        error:
+          'That purchasing method no longer exists. Choose another before approving.',
+      };
   }
 
   const now = new Date();
@@ -662,10 +687,8 @@ export async function approvePurchaseRequest({
         notes: request.notes,
         purchasedAt: now,
         receipts: [],
-        ...(processTemplateId && {
-          process: {
-            create: { templateId: processTemplateId, startedAt: now },
-          },
+        ...(templateId && {
+          process: { create: { templateId, startedAt: now } },
         }),
       },
       select: { id: true },
@@ -803,7 +826,13 @@ export async function resendEscalationNotice(
 
 type RequestForMessage = Pick<
   RequestWithSummary,
-  'id' | 'description' | 'amount' | 'allocation' | 'requester' | 'purchaser'
+  | 'id'
+  | 'description'
+  | 'amount'
+  | 'allocation'
+  | 'requester'
+  | 'purchaser'
+  | 'processTemplate'
 >;
 
 function personName(p: { first: string; last: string }): string {
@@ -827,6 +856,7 @@ function requestMessage(
     `*${escapeSlackText(request.description)}*: ${formatCurrency(request.amount.toNumber())}`,
     `Division: ${escapeSlackText(division)} · ${escapeSlackText(request.allocation.name)}`,
     `Requested by ${personName(request.requester)} · Purchaser ${personName(request.purchaser)}`,
+    `Purchasing method: ${escapeSlackText(request.processTemplate?.name ?? 'Not set')}`,
     ...(note ? [`Note: ${escapeSlackText(note)}`] : []),
     `<${url}|View in VaultZ>`,
   ].join('\n');

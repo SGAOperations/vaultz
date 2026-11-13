@@ -22,6 +22,7 @@ export const purchaseRequestInputSchema = z.object({
   allocationId: z.string().min(1, 'Select an allocation'),
   categoryId: z.string().min(1, 'Select a category'),
   purchaserId: z.string().min(1, 'Select an E-Board purchaser'),
+  processTemplateId: z.string().min(1, 'Select a purchasing method'),
   notes: z.string().trim().max(2000, 'Cannot be longer than 2000 characters'),
   attachments: z.array(z.string()).max(5, 'Attach at most 5 files'),
 });
