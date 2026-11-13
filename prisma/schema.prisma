@@ -74,6 +74,7 @@ model User {
   requestsMade       PurchaseRequest[]      @relation("RequestRequester")
   requestsPurchasing PurchaseRequest[]      @relation("RequestPurchaser")
   requestsDecided    PurchaseRequest[]      @relation("RequestDecider")
+  requestsSignedOff  PurchaseRequest[]      @relation("RequestSignOff")
   requestEvents      PurchaseRequestEvent[]
 }
 
@@ -256,6 +257,7 @@ enum PurchaseRequestStatus {
   APPROVED
   REJECTED
   CANCELLED
+  REVOKED
 }
 
 enum PurchaseRequestEventType {
@@ -270,6 +272,9 @@ enum PurchaseRequestEventType {
   RETURNED
   NOTIFIED
   NOTIFY_FAILED
+  RECODED
+  SIGNED_OFF
+  REVOKED
 }
 
 model PurchaseRequest {
@@ -288,6 +293,12 @@ model PurchaseRequest {
   escalatedAt           DateTime?
   escalationNotifiedAt  DateTime?
   escalationNotifyError String?
+
+  // The VPOA's sign-off, which follows the Comptroller's approval. Requests
+  // approved before sign-off existed have a time but no signer.
+  signedOffAt   DateTime?
+  signedOffById String?
+  signedOffBy   User?     @relation("RequestSignOff", fields: [signedOffById], references: [id])
 
   requesterId       String
   requester         User             @relation("RequestRequester", fields: [requesterId], references: [id])
