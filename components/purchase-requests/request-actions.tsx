@@ -61,6 +61,7 @@ interface ConfirmConfig {
   noteRequired?: boolean;
   destructive?: boolean;
   withTemplate?: boolean;
+  defaultTemplateId?: string;
   run: (input: {
     note: string;
     processTemplateId: string;
@@ -80,7 +81,9 @@ function ConfirmDialog({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [note, setNote] = useState('');
-  const [processTemplateId, setProcessTemplateId] = useState('');
+  const [processTemplateId, setProcessTemplateId] = useState(
+    config.defaultTemplateId ?? '',
+  );
   const [busy, setBusy] = useState(false);
 
   async function confirm() {
@@ -110,9 +113,9 @@ function ConfirmDialog({
         </DialogHeader>
         {config.withTemplate && processTemplates.length > 0 && (
           <div className="flex flex-col gap-2">
-            <Label>Process template (optional)</Label>
+            <Label>Purchasing method</Label>
             <Combobox
-              name="process template"
+              name="purchasing method"
               value={processTemplateId}
               onChange={setProcessTemplateId}
               data={[
@@ -182,6 +185,7 @@ export function RequestActions({
         confirmLabel: 'Approve',
         noteLabel: 'Note (optional)',
         withTemplate: true,
+        defaultTemplateId: request.purchasingMethod?.id,
         run: ({ note, processTemplateId }) =>
           approvePurchaseRequest({
             id,

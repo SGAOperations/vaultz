@@ -59,6 +59,7 @@ function defaultsFor(request?: PurchaseRequestDetail): PurchaseRequestInput {
     allocationId: request?.allocation.id ?? '',
     categoryId: request?.category.id ?? '',
     purchaserId: request?.purchaser.id ?? '',
+    processTemplateId: request?.purchasingMethod?.id ?? '',
     notes: request?.notes ?? '',
     attachments: request?.attachments ?? [],
   };
@@ -137,6 +138,7 @@ export function RequestDialog({ options, request }: RequestDialogProps) {
 
   const noDivisions = options.divisions.length === 0;
   const noPurchasers = options.purchasers.length === 0;
+  const noMethods = options.purchasingMethods.length === 0;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -278,6 +280,47 @@ export function RequestDialog({ options, request }: RequestDialogProps) {
                     </FormItem>
                   )}
                 />
+                <FormField
+                  control={form.control}
+                  name="processTemplateId"
+                  render={({ field }) => (
+                    <FormItem className="sm:col-span-2">
+                      <FormLabel>Purchasing method</FormLabel>
+                      <FormControl>
+                        <Combobox
+                          name="purchasing method"
+                          value={field.value}
+                          onChange={field.onChange}
+                          disabled={noMethods}
+                          data={[
+                            {
+                              items: options.purchasingMethods.map((m) => ({
+                                label: m.name,
+                                value: m.id,
+                              })),
+                            },
+                          ]}
+                        />
+                      </FormControl>
+                      {noMethods ? (
+                        <p className="text-muted-foreground text-xs">
+                          No purchasing methods are set up yet.
+                        </p>
+                      ) : (
+                        field.value && (
+                          <p className="text-muted-foreground text-xs">
+                            {
+                              options.purchasingMethods.find(
+                                (m) => m.id === field.value,
+                              )?.description
+                            }
+                          </p>
+                        )
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
 
               <div className="grid gap-4 sm:grid-cols-[2fr_1fr]">
@@ -371,7 +414,9 @@ export function RequestDialog({ options, request }: RequestDialogProps) {
 
               <Button
                 type="submit"
-                disabled={isSubmitting || !options.year || noPurchasers}
+                disabled={
+                  isSubmitting || !options.year || noPurchasers || noMethods
+                }
                 className="self-start"
               >
                 {isSubmitting && <Loader2 className="animate-spin" />}

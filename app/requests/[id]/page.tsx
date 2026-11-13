@@ -159,6 +159,9 @@ export default async function PurchaseRequestPage({
                 <Field label="E-Board purchaser">
                   {request.purchaser.first} {request.purchaser.last}
                 </Field>
+                <Field label="Purchasing method">
+                  {request.purchasingMethod?.name ?? 'Not set'}
+                </Field>
                 <Field label="Requested by">
                   {request.requester.first} {request.requester.last}
                 </Field>
