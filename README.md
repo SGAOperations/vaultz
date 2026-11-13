@@ -84,9 +84,19 @@ SGAUTH_URL=http://auth.sga.localhost:3000
 SGAUTH_COOKIE_NAME=sgauth-local.session_token
 SLACK_BOT_TOKEN=<sgassist_bot_token>
 SLACK_VPOA_USER_ID=<vpoa_slack_member_id>
+SLACK_COMPTROLLER_USER_ID=<comptroller_slack_member_id>
 ```
 
-`SLACK_BOT_TOKEN` is the SGAssist bot token (it needs the `chat:write` scope) and `SLACK_VPOA_USER_ID` is the VPOA's Slack member id. Without them, escalation still works, but the Slack message fails and can be resent from the request page.
+`SLACK_BOT_TOKEN` is the SGAssist bot token. It needs the `chat:write` scope, and `users:read.email` to find requesters by their SGAuth email. `SLACK_VPOA_USER_ID` and `SLACK_COMPTROLLER_USER_ID` are those officers' Slack member ids. Without them, requests still work, but the Slack messages fail and the failure is recorded in the request's history; an escalation message can be resent from the request page.
+
+The bot sends these DMs, never about the recipient's own action:
+
+| Event                                          | Recipient   |
+| ---------------------------------------------- | ----------- |
+| A request is escalated                         | VPOA        |
+| A request is submitted, or edited or cancelled | Comptroller |
+| The VPOA approves or rejects a request         | Comptroller |
+| A request is approved or rejected              | Requester   |
 
 | Environment      | `SGAUTH_URL`                           | `SGAUTH_COOKIE_NAME`                |
 | ---------------- | -------------------------------------- | ----------------------------------- |
