@@ -16,7 +16,8 @@ export interface RequestAccess {
   canEdit: boolean;
   // Can submit requests: holds a position listed in RequesterPosition.
   canRequest: boolean;
-  // Can open the request page: a viewer (reads every request) or a requester.
+  // Can open the request page: a viewer (reads every request), a requester,
+  // or an E-Board purchaser (who reviews the requests naming them).
   canUseRequests: boolean;
   // Allocation group (division) ids the user may request against.
   divisionIds: 'all' | string[];
@@ -50,7 +51,7 @@ export const getRequestAccess = cache(async (): Promise<RequestAccess> => {
     canView,
     canEdit,
     canRequest: requesterPositions > 0,
-    canUseRequests: canView || requesterPositions > 0,
+    canUseRequests: canView || requesterPositions > 0 || user.isEBoardPurchaser,
     divisionIds: canEdit
       ? 'all'
       : [...new Set(divisionRows.map((r) => r.allocationGroupId))],
