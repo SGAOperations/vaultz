@@ -7,7 +7,10 @@ import { getDivisionFigures } from '@/prisma/services/division-figures';
 import { ForbiddenError } from '@/lib/permissions';
 
 const { prisma, requireSession } = vi.hoisted(() => ({
-  prisma: { allocationGroup: { findMany: vi.fn() } },
+  prisma: {
+    allocationGroup: { findMany: vi.fn() },
+    positionDivisionAccess: { findMany: vi.fn() },
+  },
   requireSession: vi.fn(),
 }));
 
@@ -93,10 +96,11 @@ describe('getDivisionFigures', () => {
       ForbiddenError,
     );
     expect(prisma.allocationGroup.findMany).not.toHaveBeenCalled();
+    expect(prisma.positionDivisionAccess.findMany).not.toHaveBeenCalled();
   });
 
   it('filters by year and excludes deleted and excluded-from-total rows', async () => {
-    requireSession.mockResolvedValue(sessionWith('parliamentarian'));
+    requireSession.mockResolvedValue(sessionWith('comptroller'));
     prisma.allocationGroup.findMany.mockResolvedValue([]);
 
     await getDivisionFigures('year-1');
@@ -117,19 +121,46 @@ describe('getDivisionFigures', () => {
     ]);
   });
 
-  it('restricts to the given allocation group ids', async () => {
-    requireSession.mockResolvedValue(sessionWith('parliamentarian'));
+  it('returns every division to an editor without reading mappings', async () => {
+    requireSession.mockResolvedValue(sessionWith('comptroller'));
     prisma.allocationGroup.findMany.mockResolvedValue([]);
 
-    await getDivisionFigures('year-1', ['group-events']);
+    await getDivisionFigures('year-1');
 
+    expect(prisma.positionDivisionAccess.findMany).not.toHaveBeenCalled();
+    expect(
+      prisma.allocationGroup.findMany.mock.calls[0][0].where,
+    ).toBeUndefined();
+  });
+
+  it("restricts a viewer to its position's mapped divisions", async () => {
+    requireSession.mockResolvedValue(sessionWith('parliamentarian'));
+    prisma.positionDivisionAccess.findMany.mockResolvedValue([
+      { allocationGroupId: 'group-events' },
+    ]);
+    prisma.allocationGroup.findMany.mockResolvedValue([]);
+
+    await getDivisionFigures('year-1');
+
+    expect(prisma.positionDivisionAccess.findMany).toHaveBeenCalledWith({
+      where: { positionKey: { in: ['parliamentarian'] } },
+      select: { allocationGroupId: true },
+    });
     expect(prisma.allocationGroup.findMany.mock.calls[0][0].where).toEqual({
       id: { in: ['group-events'] },
     });
   });
 
-  it('totals allocations and purchases per division', async () => {
+  it('returns nothing to a viewer with no mapped divisions', async () => {
     requireSession.mockResolvedValue(sessionWith('parliamentarian'));
+    prisma.positionDivisionAccess.findMany.mockResolvedValue([]);
+
+    await expect(getDivisionFigures('year-1')).resolves.toEqual([]);
+    expect(prisma.allocationGroup.findMany).not.toHaveBeenCalled();
+  });
+
+  it('totals allocations and purchases per division', async () => {
+    requireSession.mockResolvedValue(sessionWith('comptroller'));
     prisma.allocationGroup.findMany.mockResolvedValue(sampleGroups);
 
     const figures = await getDivisionFigures('year-1');

@@ -2,18 +2,20 @@
 
 import { Decimal } from '@/prisma/client/runtime/client';
 
-import { requireCapability } from '@/lib/permissions';
+import { getVisibleDivisionIds } from '@/lib/permissions';
 import prisma from '@/lib/prisma';
 import { DivisionFigures } from '@/lib/types';
 
+// Resolves visibility from the session, never from arguments, since server
+// actions can be called from the browser with anything.
 export async function getDivisionFigures(
   yearId: string,
-  allocationGroupIds?: string[],
 ): Promise<DivisionFigures[]> {
-  await requireCapability('view');
+  const visible = await getVisibleDivisionIds();
+  if (visible !== 'all' && visible.length === 0) return [];
 
   const groups = await prisma.allocationGroup.findMany({
-    where: allocationGroupIds ? { id: { in: allocationGroupIds } } : undefined,
+    where: visible === 'all' ? undefined : { id: { in: visible } },
     select: {
       id: true,
       name: true,
