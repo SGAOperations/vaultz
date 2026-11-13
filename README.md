@@ -89,11 +89,9 @@ UPLOADTHING_TOKEN=<your_uploadthing_token>
 SGAUTH_URL=http://auth.sga.localhost:3000
 SGAUTH_COOKIE_NAME=sgauth-local.session_token
 SLACK_BOT_TOKEN=<sgassist_bot_token>
-SLACK_VPOA_USER_ID=<vpoa_slack_member_id>
-SLACK_COMPTROLLER_USER_ID=<comptroller_slack_member_id>
 ```
 
-`SLACK_BOT_TOKEN` is the SGAssist bot token. It needs the `chat:write` scope, and `users:read.email` to find requesters and purchasers by their SGAuth email. `SLACK_VPOA_USER_ID` and `SLACK_COMPTROLLER_USER_ID` are those officers' Slack member ids. Without them, requests still work, but the Slack messages fail and the failure is recorded in the request's history; an escalation message can be resent from the request page.
+`SLACK_BOT_TOKEN` is the SGAssist bot token. It needs the `chat:write` and `users:read.email` scopes: the bot finds every recipient in Slack by their SGAuth email. For the Comptroller and VPOA, VaultZ uses whoever most recently signed in holding that position, since SGAuth can't yet say who holds a position; a new officer takes over once they sign in to VaultZ. If Slack isn't configured or a recipient can't be found, requests still work and the failure is recorded in the request's history; an escalation message can be resent from the request page.
 
 The bot sends these DMs, never about the recipient's own action:
 
