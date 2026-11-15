@@ -1,0 +1,88 @@
+[
+  {
+    "key": "riley",
+    "sgauthUserId": "00000000-0000-4000-8000-000000000001",
+    "name": "Riley Campus",
+    "email": "riley.demo@northeastern.edu",
+    "positions": [
+      {
+        "key": "vice-president-of-campus-affairs",
+        "name": "Vice President of Campus Affairs"
+      }
+    ],
+    "role": "Requester",
+    "summary": "Submits purchase requests for the Events and Marketing divisions."
+  },
+  {
+    "key": "pat",
+    "sgauthUserId": "00000000-0000-4000-8000-000000000002",
+    "name": "Pat Purchaser",
+    "email": "pat.demo@northeastern.edu",
+    "positions": [
+      {
+        "key": "vice-president-of-student-involvement",
+        "name": "Vice President of Student Involvement"
+      }
+    ],
+    "role": "E-Board purchaser",
+    "summary": "Approves the requests that name them as purchaser, and can request too.",
+    "eBoardPurchaser": true
+  },
+  {
+    "key": "casey",
+    "sgauthUserId": "00000000-0000-4000-8000-000000000003",
+    "name": "Casey Comptroller",
+    "email": "casey.demo@northeastern.edu",
+    "positions": [{ "key": "comptroller", "name": "Comptroller" }],
+    "role": "Comptroller",
+    "summary": "Approves, sends back, escalates or rejects pending requests."
+  },
+  {
+    "key": "val",
+    "sgauthUserId": "00000000-0000-4000-8000-000000000004",
+    "name": "Val Operations",
+    "email": "val.demo@northeastern.edu",
+    "positions": [
+      {
+        "key": "vice-president-of-operational-affairs",
+        "name": "Vice President of Operational Affairs"
+      }
+    ],
+    "role": "VPOA",
+    "summary": "Signs off on or revokes every approval, and can decide any open request."
+  },
+  {
+    "key": "evan",
+    "sgauthUserId": "00000000-0000-4000-8000-000000000005",
+    "name": "Evan Executive",
+    "email": "evan.demo@northeastern.edu",
+    "positions": [
+      { "key": "executive-vice-president", "name": "Executive Vice President" }
+    ],
+    "role": "EVP",
+    "summary": "Full VaultZ editor, but no purchase request powers."
+  },
+  {
+    "key": "dana",
+    "sgauthUserId": "00000000-0000-4000-8000-000000000006",
+    "name": "Dana Director",
+    "email": "dana.demo@northeastern.edu",
+    "positions": [
+      {
+        "key": "director-of-campus-services",
+        "name": "Director of Campus Services"
+      }
+    ],
+    "role": "Request-only",
+    "summary": "A listed requester position without view access: sees only the request page."
+  },
+  {
+    "key": "sam",
+    "sgauthUserId": "00000000-0000-4000-8000-000000000007",
+    "name": "Sam Member",
+    "email": "sam.demo@northeastern.edu",
+    "positions": [{ "key": "club-member", "name": "Club Member" }],
+    "role": "No access",
+    "summary": "Holds no VaultZ position, so gets the No access page."
+  }
+]
