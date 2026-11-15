@@ -8,6 +8,7 @@ import {
   ArrowRight,
   BarChart2,
   BookOpen,
+  Building2,
   CalendarDays,
   ChevronDown,
   ClipboardList,
@@ -53,6 +54,7 @@ const navDropdowns = [
       { href: '/categories', label: 'Categories', icon: Tag },
       { href: '/transfers', label: 'Transfers', icon: ArrowRight },
       { href: '/reports/year-comparison', label: 'Reports', icon: BarChart2 },
+      { href: '/divisions', label: 'Divisions', icon: Building2 },
     ],
   },
   {
