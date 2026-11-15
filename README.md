@@ -157,6 +157,41 @@ npm run dev
 
 Open [http://vaultz.sga.localhost:3001](http://vaultz.sga.localhost:3001) in your browser. With SGAuth enabled, never use bare `localhost`: the local session cookie is scoped to `sga.localhost`. Chrome and Edge resolve `*.localhost` on their own; Firefox needs `vaultz.sga.localhost` and `auth.sga.localhost` in `network.dns.localDomains`, and Safari may need a hosts-file entry.
 
+### Purchase Request Demo
+
+Walk through the whole purchase request flow locally, signing in as each role, with Docker and no real SGAuth:
+
+```bash
+npm run demo
+```
+
+Then open [http://vaultz.sga.localhost:3001](http://vaultz.sga.localhost:3001). The first start installs dependencies and seeds data, so it takes a few minutes.
+
+- **Sign-in:** you're sent to a mock SGAuth role picker. Use _Sign out_ in VaultZ to come back to it and switch roles.
+- **Roles** (defined in `dev/demo/personas.json`):
+
+  | Role              | Name              | What to try                                       |
+  | ----------------- | ----------------- | ------------------------------------------------- |
+  | Requester         | Riley Campus      | Submit a request for Events or Marketing          |
+  | E-Board purchaser | Pat Purchaser     | Approve or send back requests naming them         |
+  | Comptroller       | Casey Comptroller | Approve, correct coding, add conditions, escalate |
+  | VPOA              | Val Operations    | Sign off on or revoke approvals; decide anything  |
+  | EVP               | Evan Executive    | Full editor, no request powers                    |
+  | Request-only      | Dana Director     | Only the request page                             |
+  | No access         | Sam Member        | The No access page                                |
+
+- **Seed data:** the regular seed data, plus:
+  - an active fiscal year;
+  - divisions mapped to the requesters;
+  - Pat marked as an E-Board purchaser;
+  - three purchasing methods flagged;
+  - one sample request at each stage: awaiting the purchaser, pending, and approved awaiting sign-off.
+- **Throwaway database:** the demo runs on its own Postgres, separate from your dev database, and starts fresh every time. `npm run demo:stop` stops it.
+- **Optional real tokens:** set `UPLOADTHING_TOKEN` or `SLACK_BOT_TOKEN` in your shell to make attachments or Slack messages work. Without them, those fail and the failures appear in each request's history.
+- **Browsers:** Chrome and Edge resolve `*.sga.localhost` on their own. Firefox needs `vaultz.sga.localhost` and `auth.sga.localhost` in `network.dns.localDomains`, and Safari may need hosts-file entries.
+
+The mock SGAuth (`dev/demo/mock-sgauth.mjs`) lets anyone sign in as anyone, so it refuses to start unless `DEMO_MOCK_SGAUTH=1` is set outside production, and the demo only listens on localhost.
+
 ### Dev and Preview Environments
 
 | Host                             | Branch      | SGAuth                                                                |
