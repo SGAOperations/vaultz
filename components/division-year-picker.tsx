@@ -29,7 +29,10 @@ export function DivisionYearPicker({
         name="year"
         data={[{ items: years.map((y) => ({ label: y.name, value: y.id })) }]}
         value={selectedYearId}
-        onChange={(yearId) => setYear(yearId)}
+        onChange={(yearId) => {
+          // Combobox sends '' when the selected item is clicked again.
+          if (yearId) setYear(yearId);
+        }}
         disabled={isPending}
       />
       {isPending && (

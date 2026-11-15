@@ -3,7 +3,6 @@ import { Metadata } from 'next';
 import { getDivisionFigures } from '@/prisma/services/division-figures';
 import { getActiveYear, getAllYears } from '@/prisma/services/period';
 
-import { getCapabilities } from '@/lib/permissions';
 import { DivisionFigures } from '@/lib/types';
 
 import { DivisionCard } from '@/components/division-card';
@@ -21,15 +20,6 @@ interface DivisionsPageProps {
 export default async function DivisionsPage({
   searchParams,
 }: DivisionsPageProps) {
-  const { view } = await getCapabilities();
-  if (!view)
-    return (
-      <EmptyState
-        message="No access"
-        description="Division budgets are only available to positions with view access."
-      />
-    );
-
   const [{ year }, years, activeYear] = await Promise.all([
     searchParams,
     getAllYears(),
