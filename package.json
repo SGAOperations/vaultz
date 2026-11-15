@@ -20,6 +20,8 @@
     "db:start": "docker compose up -d",
     "db:stop": "docker compose down",
     "db:reset": "prisma migrate reset",
+    "demo": "docker compose --profile demo up vaultz-demo",
+    "demo:stop": "docker compose --profile demo rm --stop --force vaultz-demo mock-sgauth demo-postgres",
     "test": "vitest run"
   },
   "prisma": {

@@ -10,5 +10,72 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  # Local purchase request demo: npm run demo. Opt-in profile; never deployed.
+  demo-postgres:
+    profiles: [demo]
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: vaultz_demo
+    # Throwaway: the demo database starts fresh every time.
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U admin -d vaultz_demo']
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  mock-sgauth:
+    profiles: [demo]
+    image: node:24-alpine
+    working_dir: /demo
+    volumes:
+      - ./dev/demo:/demo:ro
+    command: node mock-sgauth.mjs
+    environment:
+      DEMO_MOCK_SGAUTH: '1'
+      NODE_ENV: development
+      PORT: '3000'
+    ports:
+      - '127.0.0.1:3000:3000'
+
+  vaultz-demo:
+    profiles: [demo]
+    image: node:24-bookworm-slim
+    working_dir: /app
+    command: sh dev/demo/start.sh
+    volumes:
+      - .:/app
+      # Keep the container's dependencies and build output separate from
+      # the host's.
+      - demo_node_modules:/app/node_modules
+      - demo_next:/app/.next
+      - demo_prisma_client:/app/prisma/client
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://admin:admin@demo-postgres:5432/vaultz_demo
+      # The app checks sessions with the mock inside Docker; browsers are sent
+      # to it on localhost.
+      SGAUTH_URL: http://mock-sgauth:3000
+      NEXT_PUBLIC_SGAUTH_URL: http://auth.sga.localhost:3000
+      SGAUTH_COOKIE_NAME: sgauth-local.session_token
+      # Optional: real values make attachments and Slack messages work.
+      UPLOADTHING_TOKEN: ${UPLOADTHING_TOKEN:-eyJhcGlLZXkiOiJza19kZW1vIiwiYXBwSWQiOiJkZW1vIiwicmVnaW9ucyI6WyJzZWExIl19}
+      SLACK_BOT_TOKEN: ${SLACK_BOT_TOKEN:-}
+      NEXT_TELEMETRY_DISABLED: '1'
+      WATCHPACK_POLLING: 'true'
+    ports:
+      - '127.0.0.1:3001:3001'
+    depends_on:
+      demo-postgres:
+        condition: service_healthy
+      mock-sgauth:
+        condition: service_started
+
 volumes:
   postgres_data:
+  demo_node_modules:
+  demo_next:
+  demo_prisma_client:
