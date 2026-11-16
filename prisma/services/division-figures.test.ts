@@ -92,24 +92,25 @@ describe('getDivisionFigures', () => {
   it('rejects a user without view capability and queries nothing', async () => {
     requireSession.mockResolvedValue(sessionWith('some-other-position'));
 
-    await expect(getDivisionFigures('year-1')).rejects.toBeInstanceOf(
+    await expect(getDivisionFigures('period-1')).rejects.toBeInstanceOf(
       ForbiddenError,
     );
     expect(prisma.allocationGroup.findMany).not.toHaveBeenCalled();
     expect(prisma.positionDivisionAccess.findMany).not.toHaveBeenCalled();
   });
 
-  it('filters by year and excludes deleted and excluded-from-total rows', async () => {
+  it('filters to the period and excludes deleted and excluded-from-total rows', async () => {
     requireSession.mockResolvedValue(sessionWith('comptroller'));
     prisma.allocationGroup.findMany.mockResolvedValue([]);
 
-    await getDivisionFigures('year-1');
+    await getDivisionFigures('period-1');
 
     const args = prisma.allocationGroup.findMany.mock.calls[0][0];
     expect(args.where).toBeUndefined();
     expect(args.select.allocations.where).toEqual({
       deletedAt: null,
-      period: { yearId: 'year-1', deletedAt: null },
+      periodId: 'period-1',
+      period: { deletedAt: null },
     });
     expect(args.select.allocations.select.purchases.where).toEqual({
       deletedAt: null,
@@ -125,7 +126,7 @@ describe('getDivisionFigures', () => {
     requireSession.mockResolvedValue(sessionWith('comptroller'));
     prisma.allocationGroup.findMany.mockResolvedValue([]);
 
-    await getDivisionFigures('year-1');
+    await getDivisionFigures('period-1');
 
     expect(prisma.positionDivisionAccess.findMany).not.toHaveBeenCalled();
     expect(
@@ -140,7 +141,7 @@ describe('getDivisionFigures', () => {
     ]);
     prisma.allocationGroup.findMany.mockResolvedValue([]);
 
-    await getDivisionFigures('year-1');
+    await getDivisionFigures('period-1');
 
     expect(prisma.positionDivisionAccess.findMany).toHaveBeenCalledWith({
       where: { positionKey: { in: ['parliamentarian'] } },
@@ -155,7 +156,7 @@ describe('getDivisionFigures', () => {
     requireSession.mockResolvedValue(sessionWith('parliamentarian'));
     prisma.positionDivisionAccess.findMany.mockResolvedValue([]);
 
-    await expect(getDivisionFigures('year-1')).resolves.toEqual([]);
+    await expect(getDivisionFigures('period-1')).resolves.toEqual([]);
     expect(prisma.allocationGroup.findMany).not.toHaveBeenCalled();
   });
 
@@ -163,7 +164,7 @@ describe('getDivisionFigures', () => {
     requireSession.mockResolvedValue(sessionWith('comptroller'));
     prisma.allocationGroup.findMany.mockResolvedValue(sampleGroups);
 
-    const figures = await getDivisionFigures('year-1');
+    const figures = await getDivisionFigures('period-1');
 
     expect(figures).toEqual([
       {
