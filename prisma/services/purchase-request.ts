@@ -162,12 +162,13 @@ async function validateInput(
     } satisfies ErrorType;
   const data = parsed.data;
 
-  const [allocation, category, purchaser, method] = await Promise.all([
+  const [allocation, category, purchaser, method, period] = await Promise.all([
     prisma.allocation.findFirst({
       where: { id: data.allocationId, deletedAt: null },
       select: {
         allocationGroupId: true,
         designationId: true,
+        periodId: true,
         period: { select: { yearId: true } },
       },
     }),
@@ -187,6 +188,7 @@ async function validateInput(
       },
       select: { id: true },
     }),
+    getCurrentPeriod(),
   ]);
 
   if (!allocation || !canUseDivision(access, allocation.allocationGroupId))
@@ -196,6 +198,12 @@ async function validateInput(
   if (!purchaser)
     return { error: 'The purchaser must be an Executive Board member.' };
   if (!method) return { error: 'Choose one of the listed purchasing methods.' };
+  if (!period || allocation.periodId !== period.id)
+    return {
+      error: period
+        ? `Choose an allocation from the current period (${period.name}).`
+        : 'There is no current period, so requests cannot be submitted right now.',
+    };
 
   return { data, yearId: allocation.period.yearId };
 }
@@ -359,22 +367,33 @@ export async function getApprovalOptions(): Promise<
   return { divisions: options.divisions, methods };
 }
 
-async function buildFormOptions(
-  divisionIds: RequestAccess['divisionIds'],
-): Promise<RequestFormOptions> {
+// Requests are charged to allocations in the period covering today.
+async function getCurrentPeriod() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const year = await prisma.year.findFirst({
+  return prisma.period.findFirst({
     where: {
       deletedAt: null,
       startDate: { lte: today },
       endDate: { gte: today },
+      year: { deletedAt: null },
     },
-    select: { id: true, name: true },
+    select: {
+      id: true,
+      name: true,
+      year: { select: { id: true, name: true } },
+    },
+    orderBy: { startDate: 'desc' },
   });
+}
+
+async function buildFormOptions(
+  divisionIds: RequestAccess['divisionIds'],
+): Promise<RequestFormOptions> {
+  const period = await getCurrentPeriod();
 
   const [groups, purchasers, purchasingMethods] = await Promise.all([
-    year
+    period
       ? prisma.allocationGroup.findMany({
           where:
             divisionIds === 'all' ? undefined : { id: { in: divisionIds } },
@@ -390,10 +409,7 @@ async function buildFormOptions(
               },
             },
             allocations: {
-              where: {
-                deletedAt: null,
-                period: { yearId: year.id, deletedAt: null },
-              },
+              where: { deletedAt: null, periodId: period.id },
               select: {
                 id: true,
                 name: true,
@@ -417,7 +433,8 @@ async function buildFormOptions(
   ]);
 
   return {
-    year,
+    year: period?.year ?? null,
+    period: period ? { id: period.id, name: period.name } : null,
     purchasers,
     purchasingMethods,
     divisions: groups
@@ -828,6 +845,7 @@ async function resolveCoding(
       select: {
         name: true,
         designationId: true,
+        periodId: true,
         period: { select: { yearId: true } },
       },
     }),
@@ -843,6 +861,13 @@ async function resolveCoding(
       : null,
   ]);
   if (!allocation) return { error: 'That allocation no longer exists.' };
+  // A request keeps its own allocation, but recoding moves it to the current
+  // period's allocations only.
+  if (allocationId !== request.allocationId) {
+    const period = await getCurrentPeriod();
+    if (!period || allocation.periodId !== period.id)
+      return { error: 'Recode to an allocation from the current period.' };
+  }
   if (!category || category.designationId !== allocation.designationId)
     return { error: "That category does not belong to the allocation's fund." };
   if (templateId && !template)

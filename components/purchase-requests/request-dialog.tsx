@@ -199,9 +199,9 @@ export function RequestDialog({ options, request }: RequestDialogProps) {
             {request ? 'Edit Purchase Request' : 'New Purchase Request'}
           </DialogTitle>
           <DialogDescription>
-            {options.year
-              ? `Requests are charged to an allocation in ${options.year.name}. Your E-Board purchaser approves it first, then the Comptroller reviews it.`
-              : 'There is no active fiscal year, so requests cannot be submitted right now.'}
+            {options.period
+              ? `Requests are charged to an allocation in the current period, ${options.period.name}${options.year ? ` (${options.year.name})` : ''}. Your E-Board purchaser approves it first, then the Comptroller reviews it.`
+              : 'There is no current period, so requests cannot be submitted right now.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -469,7 +469,7 @@ export function RequestDialog({ options, request }: RequestDialogProps) {
               <Button
                 type="submit"
                 disabled={
-                  isSubmitting || !options.year || noPurchasers || noMethods
+                  isSubmitting || !options.period || noPurchasers || noMethods
                 }
                 className="self-start"
               >
