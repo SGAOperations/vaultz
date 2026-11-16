@@ -190,7 +190,7 @@ export default async function PurchaseRequestPage({
                 <Field label="Category">
                   {request.category
                     ? `${request.category.code} · ${request.category.name}`
-                    : 'Set by the Comptroller on approval'}
+                    : 'Set by Operational Affairs on approval'}
                 </Field>
                 <Field label="E-Board purchaser">
                   {request.purchaser.first} {request.purchaser.last}

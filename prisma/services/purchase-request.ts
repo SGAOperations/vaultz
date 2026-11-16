@@ -54,7 +54,10 @@ const personSelect = { id: true, first: true, last: true } as const;
 const summaryInclude = {
   requester: { select: personSelect },
   purchaser: { select: personSelect },
-  category: { select: { id: true, name: true, code: true } },
+  // A request has no category; the approver sets it on the purchase.
+  purchase: {
+    select: { category: { select: { id: true, name: true, code: true } } },
+  },
   allocation: {
     select: {
       id: true,
@@ -80,7 +83,7 @@ function toSummary(request: RequestWithSummary): PurchaseRequestSummary {
     escalationNotifyError: request.escalationNotifyError,
     requester: request.requester,
     purchaser: request.purchaser,
-    category: request.category,
+    category: request.purchase?.category ?? null,
     allocation: request.allocation,
     purchasingMethod: request.processTemplate,
     signedOffAt: request.signedOffAt,
@@ -738,7 +741,6 @@ export async function approvePurchaseRequest({
         decidedById: access.user.id,
         decidedAt: now,
         decisionNote: note || null,
-        categoryId: coding.categoryId,
         allocationId: coding.allocationId,
         yearId: coding.yearId,
         processTemplateId: coding.templateId,
@@ -828,7 +830,7 @@ async function resolveCoding(
   }>
 > {
   const allocationId = input.allocationId || request.allocationId;
-  const categoryId = input.categoryId || request.categoryId;
+  const categoryId = input.categoryId;
   const templateId = input.processTemplateId || request.processTemplateId;
 
   const [allocation, category, template] = await Promise.all([
@@ -876,11 +878,6 @@ async function resolveCoding(
   const changes: string[] = [];
   if (allocationId !== request.allocationId)
     changes.push(`Allocation: ${request.allocation.name} → ${allocation.name}`);
-  // Setting the first category is part of approving, not a correction.
-  if (request.category && categoryId !== request.categoryId)
-    changes.push(
-      `Category: ${request.category.code} ${request.category.name} → ${category.code} ${category.name}`,
-    );
   if (templateId !== request.processTemplateId)
     changes.push(
       `Purchasing method: ${request.processTemplate?.name ?? 'Not set'} → ${template?.name ?? 'Not set'}`,
