@@ -17,6 +17,7 @@ import {
   Home,
   Menu,
   Settings2,
+  ShieldCheck,
   ShoppingCart,
   Tag,
   TriangleAlert,
@@ -65,6 +66,11 @@ const navDropdowns = [
       { href: '/designation', label: 'Designations', icon: CreditCard },
       { href: '/processes', label: 'Processes', icon: Workflow },
       { href: '/periods', label: 'Periods', icon: CalendarDays },
+      {
+        href: '/divisions/access',
+        label: 'Division Access',
+        icon: ShieldCheck,
+      },
     ],
   },
 ];

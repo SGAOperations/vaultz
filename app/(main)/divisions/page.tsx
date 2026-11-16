@@ -1,15 +1,20 @@
 import { Metadata } from 'next';
+import Link from 'next/link';
+
+import { ShieldCheck } from 'lucide-react';
 
 import { getDivisionFigures } from '@/prisma/services/division-figures';
 import { getActiveYear, getAllYears } from '@/prisma/services/period';
 
-import { DivisionFigures } from '@/lib/types';
+import { groupByDesignation } from '@/lib/utils';
 
 import { DivisionCard } from '@/components/division-card';
 import { DivisionYearPicker } from '@/components/division-year-picker';
 import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/page-header';
+import { EditOnly } from '@/components/providers/capabilities-provider';
 import { SectionHeader } from '@/components/section-header';
+import { Button } from '@/components/ui/button';
 
 export const metadata: Metadata = { title: 'Division Budgets' };
 
@@ -51,10 +56,20 @@ export default async function DivisionsPage({
         title="Division Budgets"
         description={`Budget position for each division · ${selectedYear.name}`}
         actions={
-          <DivisionYearPicker
-            years={years.map((y) => ({ id: y.id, name: y.name }))}
-            selectedYearId={selectedYear.id}
-          />
+          <>
+            <DivisionYearPicker
+              years={years.map((y) => ({ id: y.id, name: y.name }))}
+              selectedYearId={selectedYear.id}
+            />
+            <EditOnly>
+              <Button variant="outline" className="gap-2" asChild>
+                <Link href="/divisions/access" aria-label="Manage access">
+                  <ShieldCheck className="size-4" />
+                  <span className="hidden sm:inline">Manage access</span>
+                </Link>
+              </Button>
+            </EditOnly>
+          </>
         }
       />
 
@@ -64,8 +79,8 @@ export default async function DivisionsPage({
           description="Ask an editor to assign your position to a division."
         />
       ) : (
-        groupByDesignation(divisions).map(({ key, title, items }) => (
-          <section key={key} className="flex flex-col">
+        groupByDesignation(divisions).map(({ designationId, title, items }) => (
+          <section key={designationId} className="flex flex-col">
             <SectionHeader title={title} />
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {items.map((division) => (
@@ -80,20 +95,4 @@ export default async function DivisionsPage({
       )}
     </div>
   );
-}
-
-// Rows arrive ordered by designation code, so consecutive rows share a group.
-function groupByDesignation(divisions: DivisionFigures[]) {
-  const groups: { key: string; title: string; items: DivisionFigures[] }[] = [];
-  for (const division of divisions) {
-    const last = groups.at(-1);
-    if (last?.key === division.designationId) last.items.push(division);
-    else
-      groups.push({
-        key: division.designationId,
-        title: `DN${division.designationCode} · ${division.designationName}`,
-        items: [division],
-      });
-  }
-  return groups;
 }

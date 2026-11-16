@@ -140,3 +140,31 @@ export async function handleError<T>(
     if (options.onFinish) await options.onFinish();
   }
 }
+
+export interface DesignationGroup<T> {
+  designationId: string;
+  title: string;
+  items: T[];
+}
+
+// Expects rows already ordered by designation, so consecutive rows share a group.
+export function groupByDesignation<
+  T extends {
+    designationId: string;
+    designationCode: string;
+    designationName: string;
+  },
+>(rows: T[]): DesignationGroup<T>[] {
+  const groups: DesignationGroup<T>[] = [];
+  for (const row of rows) {
+    const last = groups.at(-1);
+    if (last?.designationId === row.designationId) last.items.push(row);
+    else
+      groups.push({
+        designationId: row.designationId,
+        title: `DN${row.designationCode} · ${row.designationName}`,
+        items: [row],
+      });
+  }
+  return groups;
+}
