@@ -306,8 +306,9 @@ model PurchaseRequest {
   purchaser         User             @relation("RequestPurchaser", fields: [purchaserId], references: [id])
   decidedById       String?
   decidedBy         User?            @relation("RequestDecider", fields: [decidedById], references: [id])
-  categoryId        String
-  category          Category         @relation(fields: [categoryId], references: [id])
+  // Set by the approver; requesters don't choose a category.
+  categoryId        String?
+  category          Category?        @relation(fields: [categoryId], references: [id])
   allocationId      String
   allocation        Allocation       @relation(fields: [allocationId], references: [id])
   yearId            String
