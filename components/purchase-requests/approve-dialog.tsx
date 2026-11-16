@@ -7,6 +7,7 @@ import { Check, Loader2 } from 'lucide-react';
 
 import { approvePurchaseRequest } from '@/prisma/services/purchase-request';
 
+import { indexesOf } from '@/lib/purchase-request';
 import { PurchaseRequestDetail, RequestFormDivision } from '@/lib/types';
 import { handleError, isError } from '@/lib/utils';
 
@@ -45,12 +46,15 @@ export function ApproveDialog({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [divisionId, setDivisionId] = useState(
-    () =>
-      options.divisions.find((d) =>
-        d.allocations.some((a) => a.id === request.allocation.id),
-      )?.id ?? '',
+  const indexes = useMemo(
+    () => indexesOf(options.divisions),
+    [options.divisions],
   );
+  const initialDivision = options.divisions.find((d) =>
+    d.allocations.some((a) => a.id === request.allocation.id),
+  );
+  const [indexId, setIndexId] = useState(initialDivision?.designationId ?? '');
+  const [divisionId, setDivisionId] = useState(initialDivision?.id ?? '');
   const [allocationId, setAllocationId] = useState(request.allocation.id);
   const [categoryId, setCategoryId] = useState(request.category.id);
   const [templateId, setTemplateId] = useState(
@@ -70,6 +74,12 @@ export function ApproveDialog({
     setDivisionId(id);
     setAllocationId('');
     setCategoryId('');
+  }
+
+  function changeIndex(id: string) {
+    setIndexId(id);
+    const only = options.divisions.filter((d) => d.designationId === id);
+    changeDivision(only.length === 1 ? only[0].id : '');
   }
 
   async function approve() {
@@ -122,19 +132,35 @@ export function ApproveDialog({
           <p className="text-muted-foreground text-xs font-medium uppercase">
             Coding: correct it here instead of sending it back
           </p>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2 [&>*]:min-w-0">
+            <div className="flex flex-col gap-2">
+              <Label>Index</Label>
+              <Combobox
+                name="index"
+                value={indexId}
+                onChange={changeIndex}
+                data={[
+                  {
+                    items: indexes.map((i) => ({
+                      label: i.label,
+                      value: i.id,
+                    })),
+                  },
+                ]}
+              />
+            </div>
             <div className="flex flex-col gap-2">
               <Label>Division</Label>
               <Combobox
                 name="division"
                 value={divisionId}
                 onChange={changeDivision}
+                disabled={!indexId}
                 data={[
                   {
-                    items: options.divisions.map((d) => ({
-                      label: `${d.name} (${d.designationLabel})`,
-                      value: d.id,
-                    })),
+                    items: options.divisions
+                      .filter((d) => d.designationId === indexId)
+                      .map((d) => ({ label: d.name, value: d.id })),
                   },
                 ]}
               />

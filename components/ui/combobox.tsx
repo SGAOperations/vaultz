@@ -36,6 +36,9 @@ export function Combobox({
   disabled?: boolean;
 }) {
   const [open, setOpen] = React.useState(false);
+  const selectedLabel = value
+    ? data.flatMap((v) => v.items).find((v) => v.value === value)?.label
+    : undefined;
 
   return (
     <Popover modal open={open} onOpenChange={setOpen}>
@@ -44,12 +47,13 @@ export function Combobox({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-full justify-between"
+          className="w-full min-w-0 justify-between"
           disabled={disabled}
+          title={selectedLabel}
         >
-          {value
-            ? data.flatMap((v) => v.items).find((v) => v.value === value)?.label
-            : `Select ${name}...`}
+          <span className="min-w-0 truncate text-left">
+            {selectedLabel ?? `Select ${name}...`}
+          </span>
           <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>

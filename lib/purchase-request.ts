@@ -29,6 +29,18 @@ export const purchaseRequestInputSchema = z.object({
 
 export type PurchaseRequestInput = z.infer<typeof purchaseRequestInputSchema>;
 
+// The distinct indexes (budget or cash designations) among these divisions, in
+// the order they first appear.
+export function indexesOf(
+  divisions: { designationId: string; designationLabel: string }[],
+): { id: string; label: string }[] {
+  const seen = new Map<string, string>();
+  for (const d of divisions)
+    if (!seen.has(d.designationId))
+      seen.set(d.designationId, d.designationLabel);
+  return [...seen].map(([id, label]) => ({ id, label }));
+}
+
 // Every request is submitted, approved and paid on this condition.
 export const PURCHASER_RULE =
   'The E-Board purchaser named on this request must make the purchase. If it is found that a non-E-Board member made the purchase, the approval is automatically void.';

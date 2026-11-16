@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   computeAllocationBudget,
+  indexesOf,
   overBudgetBy,
   purchaseRequestInputSchema,
 } from '@/lib/purchase-request';
@@ -72,5 +73,20 @@ describe('purchaseRequestInputSchema', () => {
       purchaseRequestInputSchema.safeParse({ ...valid, purchaserId: '' })
         .success,
     ).toBe(false);
+  });
+});
+
+describe('indexesOf', () => {
+  it('lists each index once, in first-seen order', () => {
+    expect(
+      indexesOf([
+        { designationId: 'b', designationLabel: 'Budget · DN1' },
+        { designationId: 'c', designationLabel: 'Cash · DN2' },
+        { designationId: 'b', designationLabel: 'Budget · DN1' },
+      ]),
+    ).toEqual([
+      { id: 'b', label: 'Budget · DN1' },
+      { id: 'c', label: 'Cash · DN2' },
+    ]);
   });
 });

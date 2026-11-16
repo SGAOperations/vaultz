@@ -19,6 +19,7 @@ import {
   AllocationBudget,
   PURCHASER_RULE,
   PurchaseRequestInput,
+  indexesOf,
   purchaseRequestInputSchema,
 } from '@/lib/purchase-request';
 import { PurchaseRequestDetail, RequestFormOptions } from '@/lib/types';
@@ -72,11 +73,27 @@ function defaultsFor(request?: PurchaseRequestDetail): PurchaseRequestInput {
 export function RequestDialog({ options, request }: RequestDialogProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [divisionId, setDivisionId] = useState(
+  const indexes = useMemo(
+    () => indexesOf(options.divisions),
+    [options.divisions],
+  );
+  const initialDivision = options.divisions.find((d) =>
+    d.allocations.some((a) => a.id === request?.allocation.id),
+  );
+  const [indexId, setIndexId] = useState(
     () =>
-      options.divisions.find((d) =>
-        d.allocations.some((a) => a.id === request?.allocation.id),
-      )?.id ?? (options.divisions.length === 1 ? options.divisions[0].id : ''),
+      initialDivision?.designationId ??
+      (indexes.length === 1 ? indexes[0].id : ''),
+  );
+  const [divisionId, setDivisionId] = useState(() => {
+    if (initialDivision) return initialDivision.id;
+    const only = options.divisions.filter(
+      (d) => d.designationId === (indexes.length === 1 ? indexes[0].id : ''),
+    );
+    return only.length === 1 ? only[0].id : '';
+  });
+  const indexDivisions = options.divisions.filter(
+    (d) => d.designationId === indexId,
   );
   const [budget, setBudget] = useState<AllocationBudget | null>(null);
   const [pending, setPending] = useState<PurchaseRequestInput | null>(null);
@@ -115,6 +132,12 @@ export function RequestDialog({ options, request }: RequestDialogProps) {
     form.setValue('allocationId', '');
     form.setValue('categoryId', '');
     setBudget(null);
+  }
+
+  function changeIndex(id: string) {
+    setIndexId(id);
+    const only = options.divisions.filter((d) => d.designationId === id);
+    changeDivision(only.length === 1 ? only[0].id : '');
   }
 
   // A valid form first asks the requester to acknowledge the purchaser rule.
@@ -194,17 +217,34 @@ export function RequestDialog({ options, request }: RequestDialogProps) {
               onSubmit={form.handleSubmit(onSubmit)}
               className="flex flex-col gap-5"
             >
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-2 [&>*]:min-w-0">
+                <div className="flex flex-col gap-2">
+                  <Label>Index</Label>
+                  <Combobox
+                    name="index"
+                    value={indexId}
+                    onChange={changeIndex}
+                    data={[
+                      {
+                        items: indexes.map((i) => ({
+                          label: i.label,
+                          value: i.id,
+                        })),
+                      },
+                    ]}
+                  />
+                </div>
                 <div className="flex flex-col gap-2">
                   <Label>Division</Label>
                   <Combobox
                     name="division"
                     value={divisionId}
                     onChange={changeDivision}
+                    disabled={!indexId}
                     data={[
                       {
-                        items: options.divisions.map((d) => ({
-                          label: `${d.name} (${d.designationLabel})`,
+                        items: indexDivisions.map((d) => ({
+                          label: d.name,
                           value: d.id,
                         })),
                       },
@@ -298,7 +338,7 @@ export function RequestDialog({ options, request }: RequestDialogProps) {
                   control={form.control}
                   name="processTemplateId"
                   render={({ field }) => (
-                    <FormItem className="sm:col-span-2">
+                    <FormItem>
                       <FormLabel>Purchasing method</FormLabel>
                       <FormControl>
                         <Combobox
