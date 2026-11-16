@@ -99,11 +99,10 @@ model Category {
   designationId String
   designation   Designation @relation(fields: [designationId], references: [id])
 
-  categoryYears    CategoryYear[]
-  purchases        Purchase[]
-  purchaseRequests PurchaseRequest[]
-  transfersFrom    Transfer[]        @relation("TransfersFrom")
-  transfersTo      Transfer[]        @relation("TransfersTo")
+  categoryYears CategoryYear[]
+  purchases     Purchase[]
+  transfersFrom Transfer[]     @relation("TransfersFrom")
+  transfersTo   Transfer[]     @relation("TransfersTo")
 }
 
 model Purchase {
@@ -306,9 +305,6 @@ model PurchaseRequest {
   purchaser         User             @relation("RequestPurchaser", fields: [purchaserId], references: [id])
   decidedById       String?
   decidedBy         User?            @relation("RequestDecider", fields: [decidedById], references: [id])
-  // Set by the approver; requesters don't choose a category.
-  categoryId        String?
-  category          Category?        @relation(fields: [categoryId], references: [id])
   allocationId      String
   allocation        Allocation       @relation(fields: [allocationId], references: [id])
   yearId            String
