@@ -60,7 +60,6 @@ function defaultsFor(request?: PurchaseRequestDetail): PurchaseRequestInput {
     description: request?.description ?? '',
     amount: request?.amount ?? 0,
     allocationId: request?.allocation.id ?? '',
-    categoryId: request?.category.id ?? '',
     purchaserId: request?.purchaser.id ?? '',
     processTemplateId: request?.purchasingMethod?.id ?? '',
     notes: request?.notes ?? '',
@@ -130,7 +129,6 @@ export function RequestDialog({ options, request }: RequestDialogProps) {
   function changeDivision(id: string) {
     setDivisionId(id);
     form.setValue('allocationId', '');
-    form.setValue('categoryId', '');
     setBudget(null);
   }
 
@@ -268,32 +266,6 @@ export function RequestDialog({ options, request }: RequestDialogProps) {
                               items: (division?.allocations ?? []).map((a) => ({
                                 label: `${a.name} · ${a.periodName}`,
                                 value: a.id,
-                              })),
-                            },
-                          ]}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="categoryId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Category</FormLabel>
-                      <FormControl>
-                        <Combobox
-                          name="category"
-                          value={field.value}
-                          onChange={field.onChange}
-                          disabled={!division}
-                          data={[
-                            {
-                              items: (division?.categories ?? []).map((c) => ({
-                                label: `${c.code} · ${c.name}`,
-                                value: c.id,
                               })),
                             },
                           ]}

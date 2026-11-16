@@ -56,7 +56,7 @@ export function ApproveDialog({
   const [indexId, setIndexId] = useState(initialDivision?.designationId ?? '');
   const [divisionId, setDivisionId] = useState(initialDivision?.id ?? '');
   const [allocationId, setAllocationId] = useState(request.allocation.id);
-  const [categoryId, setCategoryId] = useState(request.category.id);
+  const [categoryId, setCategoryId] = useState(request.category?.id ?? '');
   const [templateId, setTemplateId] = useState(
     request.purchasingMethod?.id ?? '',
   );

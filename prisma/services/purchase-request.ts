@@ -54,7 +54,10 @@ const personSelect = { id: true, first: true, last: true } as const;
 const summaryInclude = {
   requester: { select: personSelect },
   purchaser: { select: personSelect },
-  category: { select: { id: true, name: true, code: true } },
+  // A request has no category; the approver sets it on the purchase.
+  purchase: {
+    select: { category: { select: { id: true, name: true, code: true } } },
+  },
   allocation: {
     select: {
       id: true,
@@ -80,7 +83,7 @@ function toSummary(request: RequestWithSummary): PurchaseRequestSummary {
     escalationNotifyError: request.escalationNotifyError,
     requester: request.requester,
     purchaser: request.purchaser,
-    category: request.category,
+    category: request.purchase?.category ?? null,
     allocation: request.allocation,
     purchasingMethod: request.processTemplate,
     signedOffAt: request.signedOffAt,
@@ -162,7 +165,7 @@ async function validateInput(
     } satisfies ErrorType;
   const data = parsed.data;
 
-  const [allocation, category, purchaser, method, period] = await Promise.all([
+  const [allocation, purchaser, method, period] = await Promise.all([
     prisma.allocation.findFirst({
       where: { id: data.allocationId, deletedAt: null },
       select: {
@@ -171,10 +174,6 @@ async function validateInput(
         periodId: true,
         period: { select: { yearId: true } },
       },
-    }),
-    prisma.category.findFirst({
-      where: { id: data.categoryId, deletedAt: null },
-      select: { designationId: true },
     }),
     prisma.user.findFirst({
       where: { id: data.purchaserId, deletedAt: null, isEBoardPurchaser: true },
@@ -193,8 +192,6 @@ async function validateInput(
 
   if (!allocation || !canUseDivision(access, allocation.allocationGroupId))
     return { error: 'You cannot request against that allocation.' };
-  if (!category || category.designationId !== allocation.designationId)
-    return { error: "That category does not belong to the allocation's fund." };
   if (!purchaser)
     return { error: 'The purchaser must be an Executive Board member.' };
   if (!method) return { error: 'Choose one of the listed purchasing methods.' };
@@ -491,7 +488,6 @@ export async function createPurchaseRequest(
       requesterId: access.user.id,
       purchaserId: data.purchaserId,
       processTemplateId: data.processTemplateId,
-      categoryId: data.categoryId,
       allocationId: data.allocationId,
       yearId,
       ...stageAfterSubmit(access, data.purchaserId),
@@ -555,7 +551,6 @@ export async function updatePurchaseRequest(
         attachments: data.attachments,
         purchaserId: data.purchaserId,
         processTemplateId: data.processTemplateId,
-        categoryId: data.categoryId,
         allocationId: data.allocationId,
         yearId,
       },
@@ -746,7 +741,6 @@ export async function approvePurchaseRequest({
         decidedById: access.user.id,
         decidedAt: now,
         decisionNote: note || null,
-        categoryId: coding.categoryId,
         allocationId: coding.allocationId,
         yearId: coding.yearId,
         processTemplateId: coding.templateId,
@@ -836,7 +830,7 @@ async function resolveCoding(
   }>
 > {
   const allocationId = input.allocationId || request.allocationId;
-  const categoryId = input.categoryId || request.categoryId;
+  const categoryId = input.categoryId;
   const templateId = input.processTemplateId || request.processTemplateId;
 
   const [allocation, category, template] = await Promise.all([
@@ -849,10 +843,12 @@ async function resolveCoding(
         period: { select: { yearId: true } },
       },
     }),
-    prisma.category.findFirst({
-      where: { id: categoryId, deletedAt: null },
-      select: { code: true, name: true, designationId: true },
-    }),
+    categoryId
+      ? prisma.category.findFirst({
+          where: { id: categoryId, deletedAt: null },
+          select: { code: true, name: true, designationId: true },
+        })
+      : null,
     templateId
       ? prisma.processTemplate.findFirst({
           where: { id: templateId, deletedAt: null },
@@ -868,7 +864,10 @@ async function resolveCoding(
     if (!period || allocation.periodId !== period.id)
       return { error: 'Recode to an allocation from the current period.' };
   }
-  if (!category || category.designationId !== allocation.designationId)
+  // The approver categorizes the purchase; requesters don't.
+  if (!categoryId || !category)
+    return { error: 'Choose a category for the purchase.' };
+  if (category.designationId !== allocation.designationId)
     return { error: "That category does not belong to the allocation's fund." };
   if (templateId && !template)
     return {
@@ -879,10 +878,6 @@ async function resolveCoding(
   const changes: string[] = [];
   if (allocationId !== request.allocationId)
     changes.push(`Allocation: ${request.allocation.name} → ${allocation.name}`);
-  if (categoryId !== request.categoryId)
-    changes.push(
-      `Category: ${request.category.code} ${request.category.name} → ${category.code} ${category.name}`,
-    );
   if (templateId !== request.processTemplateId)
     changes.push(
       `Purchasing method: ${request.processTemplate?.name ?? 'Not set'} → ${template?.name ?? 'Not set'}`,

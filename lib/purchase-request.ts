@@ -20,7 +20,6 @@ export const purchaseRequestInputSchema = z.object({
       'Must contain at most 2 decimal places',
     ),
   allocationId: z.string().min(1, 'Select an allocation'),
-  categoryId: z.string().min(1, 'Select a category'),
   purchaserId: z.string().min(1, 'Select an E-Board purchaser'),
   processTemplateId: z.string().min(1, 'Select a purchasing method'),
   notes: z.string().trim().max(2000, 'Cannot be longer than 2000 characters'),

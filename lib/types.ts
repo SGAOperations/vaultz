@@ -149,7 +149,8 @@ export type PurchaseRequestSummary = {
   escalationNotifyError: string | null;
   requester: PersonName;
   purchaser: PersonName;
-  category: { id: string; name: string; code: string };
+  // The approved purchase's category, set by the approver; null until then.
+  category: { id: string; name: string; code: string } | null;
   allocation: {
     id: string;
     name: string;
