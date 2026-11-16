@@ -1,8 +1,10 @@
 import type { SgaSession } from '@nusgaops/sgauth';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { Prisma } from '@/prisma/client';
 import {
   addDivisionAccess,
+  getAssignablePositions,
   getDivisionAccess,
   removeDivisionAccess,
 } from '@/prisma/services/division-access';
@@ -12,11 +14,8 @@ import { ForbiddenError } from '@/lib/permissions';
 const { prisma, requireSession, revalidatePath } = vi.hoisted(() => ({
   prisma: {
     allocationGroup: { findMany: vi.fn(), findUnique: vi.fn() },
-    positionDivisionAccess: {
-      findUnique: vi.fn(),
-      create: vi.fn(),
-      deleteMany: vi.fn(),
-    },
+    requesterPosition: { findMany: vi.fn(), findUnique: vi.fn() },
+    positionDivisionAccess: { create: vi.fn(), deleteMany: vi.fn() },
   },
   requireSession: vi.fn(),
   revalidatePath: vi.fn(),
@@ -113,6 +112,31 @@ describe('division access actions', () => {
     });
   });
 
+  describe('getAssignablePositions', () => {
+    it('lists view positions and requester positions without overlap', async () => {
+      requireSession.mockResolvedValue(editor());
+      prisma.requesterPosition.findMany.mockResolvedValue([
+        { positionKey: 'director-of-campus-services' },
+        { positionKey: 'parliamentarian' },
+      ]);
+
+      const { viewPositions, requesterPositions } =
+        await getAssignablePositions();
+
+      expect(viewPositions).toContain('parliamentarian');
+      expect(viewPositions).not.toContain('comptroller');
+      expect(requesterPositions).toEqual(['director-of-campus-services']);
+    });
+
+    it('is editor-only', async () => {
+      requireSession.mockResolvedValue(viewer());
+
+      await expect(getAssignablePositions()).rejects.toBeInstanceOf(
+        ForbiddenError,
+      );
+    });
+  });
+
   describe('addDivisionAccess', () => {
     beforeEach(() => {
       requireSession.mockResolvedValue(editor());
@@ -140,9 +164,48 @@ describe('division access actions', () => {
       expect(result).toEqual({ error: 'Pick a division.' });
     });
 
+    it('rejects a key that is neither a view nor a requester position', async () => {
+      prisma.allocationGroup.findUnique.mockResolvedValue({ name: 'Events' });
+      prisma.requesterPosition.findUnique.mockResolvedValue(null);
+
+      const result = await addDivisionAccess({
+        allocationGroupId: GROUP_ID,
+        positionKey: 'senator',
+      });
+
+      expect(result).toEqual({
+        error:
+          "senator has no view access and isn't a requester position. Add it under Request Settings first.",
+      });
+      expect(prisma.positionDivisionAccess.create).not.toHaveBeenCalled();
+    });
+
+    it('accepts a requester position without view access', async () => {
+      prisma.allocationGroup.findUnique.mockResolvedValue({ name: 'Events' });
+      prisma.requesterPosition.findUnique.mockResolvedValue({ id: 'req-1' });
+      prisma.positionDivisionAccess.create.mockResolvedValue({
+        id: ASSIGNMENT_ID,
+      });
+
+      await addDivisionAccess({
+        allocationGroupId: GROUP_ID,
+        positionKey: 'director-of-campus-services',
+      });
+
+      expect(prisma.requesterPosition.findUnique).toHaveBeenCalledWith({
+        where: { positionKey: 'director-of-campus-services' },
+        select: { id: true },
+      });
+      expect(prisma.positionDivisionAccess.create).toHaveBeenCalledWith({
+        data: {
+          positionKey: 'director-of-campus-services',
+          allocationGroupId: GROUP_ID,
+        },
+      });
+    });
+
     it('rejects a division that no longer exists', async () => {
       prisma.allocationGroup.findUnique.mockResolvedValue(null);
-      prisma.positionDivisionAccess.findUnique.mockResolvedValue(null);
 
       const result = await addDivisionAccess({
         allocationGroupId: GROUP_ID,
@@ -155,9 +218,12 @@ describe('division access actions', () => {
 
     it('rejects a duplicate assignment with an actionable message', async () => {
       prisma.allocationGroup.findUnique.mockResolvedValue({ name: 'Events' });
-      prisma.positionDivisionAccess.findUnique.mockResolvedValue({
-        id: ASSIGNMENT_ID,
-      });
+      prisma.positionDivisionAccess.create.mockRejectedValue(
+        new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+          code: 'P2002',
+          clientVersion: 'test',
+        }),
+      );
 
       const result = await addDivisionAccess({
         allocationGroupId: GROUP_ID,
@@ -167,13 +233,27 @@ describe('division access actions', () => {
       expect(result).toEqual({
         error: 'parliamentarian is already assigned to Events.',
       });
-      expect(prisma.positionDivisionAccess.create).not.toHaveBeenCalled();
       expect(revalidatePath).not.toHaveBeenCalled();
+    });
+
+    it('rethrows database errors other than a duplicate', async () => {
+      prisma.allocationGroup.findUnique.mockResolvedValue({ name: 'Events' });
+      const failure = new Prisma.PrismaClientKnownRequestError('Timed out', {
+        code: 'P1008',
+        clientVersion: 'test',
+      });
+      prisma.positionDivisionAccess.create.mockRejectedValue(failure);
+
+      await expect(
+        addDivisionAccess({
+          allocationGroupId: GROUP_ID,
+          positionKey: 'parliamentarian',
+        }),
+      ).rejects.toBe(failure);
     });
 
     it('trims the key, creates the assignment and revalidates', async () => {
       prisma.allocationGroup.findUnique.mockResolvedValue({ name: 'Events' });
-      prisma.positionDivisionAccess.findUnique.mockResolvedValue(null);
       prisma.positionDivisionAccess.create.mockResolvedValue({
         id: ASSIGNMENT_ID,
       });

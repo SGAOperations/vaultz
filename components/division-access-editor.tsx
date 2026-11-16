@@ -7,6 +7,7 @@ import { Loader2, Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 import {
+  AssignablePositions,
   DivisionAccessRow,
   addDivisionAccess,
   removeDivisionAccess,
@@ -18,34 +19,29 @@ import { groupByDesignation, handleError, isError } from '@/lib/utils';
 import { SectionHeader } from '@/components/section-header';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-
-const SUGGESTIONS_ID = 'division-access-position-keys';
+import { Combobox } from '@/components/ui/combobox';
 
 interface DivisionAccessEditorProps {
   divisions: DivisionAccessRow[];
+  positions: AssignablePositions;
 }
 
-export function DivisionAccessEditor({ divisions }: DivisionAccessEditorProps) {
-  const knownKeys = [
-    ...new Set(
-      divisions.flatMap((d) => d.assignments.map((a) => a.positionKey)),
-    ),
-  ].sort();
-
+export function DivisionAccessEditor({
+  divisions,
+  positions,
+}: DivisionAccessEditorProps) {
   return (
     <>
-      <datalist id={SUGGESTIONS_ID}>
-        {knownKeys.map((key) => (
-          <option key={key} value={key} />
-        ))}
-      </datalist>
       {groupByDesignation(divisions).map(({ designationId, title, items }) => (
         <section key={designationId} className="flex flex-col">
           <SectionHeader title={title} />
           <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
             {items.map((division) => (
-              <DivisionAccessCard key={division.id} division={division} />
+              <DivisionAccessCard
+                key={division.id}
+                division={division}
+                positions={positions}
+              />
             ))}
           </div>
         </section>
@@ -54,8 +50,26 @@ export function DivisionAccessEditor({ divisions }: DivisionAccessEditorProps) {
   );
 }
 
-function DivisionAccessCard({ division }: { division: DivisionAccessRow }) {
+function DivisionAccessCard({
+  division,
+  positions,
+}: {
+  division: DivisionAccessRow;
+  positions: AssignablePositions;
+}) {
   const router = useRouter();
+  const assigned = new Set(division.assignments.map((a) => a.positionKey));
+  const options = [
+    { heading: 'View positions', keys: positions.viewPositions },
+    { heading: 'Requester positions', keys: positions.requesterPositions },
+  ]
+    .map(({ heading, keys }) => ({
+      heading,
+      items: keys
+        .filter((key) => !assigned.has(key))
+        .map((key) => ({ label: key, value: key })),
+    }))
+    .filter((group) => group.items.length > 0);
   const [positionKey, setPositionKey] = useState('');
   const [busy, setBusy] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
@@ -133,17 +147,18 @@ function DivisionAccessCard({ division }: { division: DivisionAccessRow }) {
       )}
 
       <form onSubmit={add} className="flex gap-2">
-        <Input
-          value={positionKey}
-          onChange={(e) => setPositionKey(e.target.value)}
-          placeholder="vice-president-of-campus-affairs"
-          aria-label={`Position key to assign to ${division.name}`}
-          list={SUGGESTIONS_ID}
-          className="min-w-0"
-        />
+        <div className="min-w-0 flex-1">
+          <Combobox
+            name="position"
+            data={options}
+            value={positionKey}
+            onChange={setPositionKey}
+            disabled={busy || options.length === 0}
+          />
+        </div>
         <Button
           type="submit"
-          disabled={busy || !positionKey.trim()}
+          disabled={busy || !positionKey}
           className="shrink-0 gap-2"
         >
           {busy ? <Loader2 className="animate-spin" /> : <Plus />}

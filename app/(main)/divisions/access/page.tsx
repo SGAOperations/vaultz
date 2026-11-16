@@ -4,7 +4,10 @@ import { redirect } from 'next/navigation';
 
 import { ArrowLeft } from 'lucide-react';
 
-import { getDivisionAccess } from '@/prisma/services/division-access';
+import {
+  getAssignablePositions,
+  getDivisionAccess,
+} from '@/prisma/services/division-access';
 import { getRequestAccess } from '@/prisma/services/request-access';
 
 import { DivisionAccessEditor } from '@/components/division-access-editor';
@@ -16,7 +19,10 @@ export const metadata: Metadata = { title: 'Division Access' };
 export default async function DivisionAccessPage() {
   if (!(await getRequestAccess()).canEdit) redirect('/divisions');
 
-  const divisions = await getDivisionAccess();
+  const [divisions, positions] = await Promise.all([
+    getDivisionAccess(),
+    getAssignablePositions(),
+  ]);
 
   return (
     <div className="flex w-full flex-col">
@@ -29,7 +35,7 @@ export default async function DivisionAccessPage() {
       </Link>
       <PageHeader
         title="Division Access"
-        description="Choose which SGAuth positions can see each division. Editors always see every division."
+        description="Choose which positions can see each division and request against it. Editors always see every division. Add requester positions under Request Settings."
       />
 
       {divisions.length === 0 ? (
@@ -38,7 +44,7 @@ export default async function DivisionAccessPage() {
           description="Create an allocation group to assign positions to it."
         />
       ) : (
-        <DivisionAccessEditor divisions={divisions} />
+        <DivisionAccessEditor divisions={divisions} positions={positions} />
       )}
     </div>
   );

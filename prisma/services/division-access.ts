@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 
-import { PositionDivisionAccess } from '@/prisma/client';
+import { PositionDivisionAccess, Prisma } from '@/prisma/client';
 
 import {
   AddDivisionAccessInput,
@@ -10,7 +10,7 @@ import {
   addDivisionAccessSchema,
   removeDivisionAccessSchema,
 } from '@/lib/division-access';
-import { requireCapability } from '@/lib/permissions';
+import { VIEW_ONLY_POSITIONS, requireCapability } from '@/lib/permissions';
 import prisma from '@/lib/prisma';
 import { ResponseType } from '@/lib/utils';
 
@@ -21,6 +21,11 @@ export interface DivisionAccessRow {
   designationCode: string;
   designationName: string;
   assignments: { id: string; positionKey: string }[];
+}
+
+export interface AssignablePositions {
+  viewPositions: string[];
+  requesterPositions: string[];
 }
 
 function revalidateDivisionPages() {
@@ -53,6 +58,33 @@ export async function getDivisionAccess(): Promise<DivisionAccessRow[]> {
   }));
 }
 
+// View positions see mapped divisions on the dashboard; requester positions
+// can submit purchase requests against them. Any other key would grant nothing.
+export async function getAssignablePositions(): Promise<AssignablePositions> {
+  await requireCapability('edit');
+
+  const requesters = await prisma.requesterPosition.findMany({
+    select: { positionKey: true },
+    orderBy: { positionKey: 'asc' },
+  });
+
+  return {
+    viewPositions: [...VIEW_ONLY_POSITIONS].sort(),
+    requesterPositions: requesters
+      .map((r) => r.positionKey)
+      .filter((key) => !VIEW_ONLY_POSITIONS.includes(key)),
+  };
+}
+
+async function isAssignablePosition(positionKey: string): Promise<boolean> {
+  if (VIEW_ONLY_POSITIONS.includes(positionKey)) return true;
+  const requester = await prisma.requesterPosition.findUnique({
+    where: { positionKey },
+    select: { id: true },
+  });
+  return requester !== null;
+}
+
 export async function addDivisionAccess(
   input: AddDivisionAccessInput,
 ): Promise<ResponseType<PositionDivisionAccess>> {
@@ -63,27 +95,34 @@ export async function addDivisionAccess(
     return { error: parsed.error.issues[0]?.message ?? 'Invalid assignment.' };
   const { allocationGroupId, positionKey } = parsed.data;
 
-  const [group, existing] = await Promise.all([
+  const [group, assignable] = await Promise.all([
     prisma.allocationGroup.findUnique({
       where: { id: allocationGroupId },
       select: { name: true },
     }),
-    prisma.positionDivisionAccess.findUnique({
-      where: {
-        positionKey_allocationGroupId: { positionKey, allocationGroupId },
-      },
-    }),
+    isAssignablePosition(positionKey),
   ]);
   if (!group) return { error: 'That division no longer exists.' };
-  if (existing)
-    return { error: `${positionKey} is already assigned to ${group.name}.` };
+  if (!assignable)
+    return {
+      error: `${positionKey} has no view access and isn't a requester position. Add it under Request Settings first.`,
+    };
 
-  const assignment = await prisma.positionDivisionAccess.create({
-    data: { positionKey, allocationGroupId },
-  });
-
-  revalidateDivisionPages();
-  return assignment;
+  try {
+    const assignment = await prisma.positionDivisionAccess.create({
+      data: { positionKey, allocationGroupId },
+    });
+    revalidateDivisionPages();
+    return assignment;
+  } catch (error) {
+    // The unique index on (positionKey, allocationGroupId) is the duplicate check.
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2002'
+    )
+      return { error: `${positionKey} is already assigned to ${group.name}.` };
+    throw error;
+  }
 }
 
 export async function removeDivisionAccess(
