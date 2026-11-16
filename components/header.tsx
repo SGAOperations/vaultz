@@ -8,6 +8,7 @@ import {
   ArrowRight,
   BarChart2,
   BookOpen,
+  Building2,
   CalendarDays,
   ChevronDown,
   ClipboardList,
@@ -40,6 +41,7 @@ import {
 
 const directNavItems = [
   { href: '/', label: 'Home', icon: Home },
+  { href: '/divisions', label: 'Divisions', icon: Building2 },
   { href: '/purchases', label: 'Purchases', icon: ShoppingCart },
   { href: '/requests', label: 'Requests', icon: ClipboardList },
   { href: '/allocation-groups', label: 'Allocations', icon: FolderKanban },
