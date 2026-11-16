@@ -127,3 +127,23 @@ export async function getUserById({
     })),
   };
 }
+
+export async function setEBoardPurchaser({
+  id,
+  isEBoardPurchaser,
+}: {
+  id: string;
+  isEBoardPurchaser: boolean;
+}): Promise<ResponseType<User>> {
+  await requireCapability('edit');
+
+  const data = await prisma.user.update({
+    where: { id, deletedAt: null },
+    data: { isEBoardPurchaser },
+  });
+
+  revalidatePath('/users');
+  revalidatePath('/requests');
+
+  return data;
+}

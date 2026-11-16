@@ -205,3 +205,22 @@ export async function moveProcessStep(
   revalidatePath(`/processes/${templateId}`);
   return template;
 }
+
+export async function setPurchasingMethod({
+  id,
+  isPurchasingMethod,
+}: {
+  id: string;
+  isPurchasingMethod: boolean;
+}): Promise<ResponseType<ProcessTemplate>> {
+  await requireCapability('edit');
+
+  const template = await prisma.processTemplate.update({
+    where: { id, deletedAt: null },
+    data: { isPurchasingMethod },
+  });
+
+  revalidatePath('/requests/settings');
+  revalidatePath('/requests');
+  return template;
+}

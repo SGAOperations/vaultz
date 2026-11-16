@@ -6,6 +6,7 @@ import { AllocationGroup } from '@/prisma/client';
 
 import { requireCapability } from '@/lib/permissions';
 import prisma from '@/lib/prisma';
+import { OPEN_REQUEST_STATUSES } from '@/lib/purchase-request';
 import {
   AllocationGroupWithAllocations,
   AllocationGroupWithStats,
@@ -145,6 +146,16 @@ export async function getAllocationGroupWithStats({
     },
   );
 
+  const committed = await prisma.purchaseRequest.aggregate({
+    where: {
+      allocationId: { in: allocations.map((a) => a.id) },
+      deletedAt: null,
+      status: { in: OPEN_REQUEST_STATUSES },
+    },
+    _sum: { amount: true },
+    _count: true,
+  });
+
   const allPurchases = allocations
     .flatMap((a) => a.purchases)
     .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
@@ -153,6 +164,8 @@ export async function getAllocationGroupWithStats({
     ...allocationGroup,
     allocations,
     totalAmount: allocations.reduce((acc, a) => acc + a.amount, 0),
+    totalCommitted: committed._sum.amount?.toNumber() ?? 0,
+    openRequestCount: committed._count,
     totalSpent: allPurchases
       .filter((p) => !p.excludeFromTotal)
       .reduce((acc, p) => acc + p.amount, 0),
