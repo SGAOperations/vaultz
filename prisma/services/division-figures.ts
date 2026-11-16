@@ -6,10 +6,12 @@ import { getVisibleDivisionIds } from '@/lib/permissions';
 import prisma from '@/lib/prisma';
 import { DivisionFigures } from '@/lib/types';
 
+// Figures for one period: each period's allocation is the division's budget
+// for that period, so adding a year's periods together would overstate it.
 // Resolves visibility from the session, never from arguments, since server
 // actions can be called from the browser with anything.
 export async function getDivisionFigures(
-  yearId: string,
+  periodId: string,
 ): Promise<DivisionFigures[]> {
   const visible = await getVisibleDivisionIds();
   if (visible !== 'all' && visible.length === 0) return [];
@@ -22,7 +24,7 @@ export async function getDivisionFigures(
       designationId: true,
       designation: { select: { code: true, name: true } },
       allocations: {
-        where: { deletedAt: null, period: { yearId, deletedAt: null } },
+        where: { deletedAt: null, periodId, period: { deletedAt: null } },
         select: {
           amount: true,
           purchases: {
