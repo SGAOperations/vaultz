@@ -44,7 +44,6 @@ describe('purchaseRequestInputSchema', () => {
     description: 'Banner printing',
     amount: '42.10',
     allocationId: 'a',
-    categoryId: 'c',
     purchaserId: 'p',
     processTemplateId: 't',
     notes: '',

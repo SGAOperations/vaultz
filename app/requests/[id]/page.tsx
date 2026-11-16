@@ -188,7 +188,9 @@ export default async function PurchaseRequestPage({
                 </Field>
                 <Field label="Allocation">{request.allocation.name}</Field>
                 <Field label="Category">
-                  {request.category.code} · {request.category.name}
+                  {request.category
+                    ? `${request.category.code} · ${request.category.name}`
+                    : 'Set by Operational Affairs on approval'}
                 </Field>
                 <Field label="E-Board purchaser">
                   {request.purchaser.first} {request.purchaser.last}
