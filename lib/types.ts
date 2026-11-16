@@ -195,6 +195,8 @@ export type RequestFormDivision = {
 
 export type RequestFormOptions = {
   year: { id: string; name: string } | null;
+  // The period whose allocations requests can be charged to.
+  period: { id: string; name: string } | null;
   divisions: RequestFormDivision[];
   purchasers: PersonName[];
   purchasingMethods: { id: string; name: string; description: string | null }[];
