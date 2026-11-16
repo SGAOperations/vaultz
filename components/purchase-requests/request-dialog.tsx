@@ -217,7 +217,7 @@ export function RequestDialog({ options, request }: RequestDialogProps) {
               onSubmit={form.handleSubmit(onSubmit)}
               className="flex flex-col gap-5"
             >
-              <div className="grid gap-4 sm:grid-cols-2 [&>*]:min-w-0">
+              <div className="grid items-start gap-4 sm:grid-cols-2 [&>*]:min-w-0">
                 <div className="flex flex-col gap-2">
                   <Label>Index</Label>
                   <Combobox

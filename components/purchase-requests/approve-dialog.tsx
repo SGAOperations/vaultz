@@ -132,7 +132,7 @@ export function ApproveDialog({
           <p className="text-muted-foreground text-xs font-medium uppercase">
             Coding: correct it here instead of sending it back
           </p>
-          <div className="grid gap-4 sm:grid-cols-2 [&>*]:min-w-0">
+          <div className="grid items-start gap-4 sm:grid-cols-2 [&>*]:min-w-0">
             <div className="flex flex-col gap-2">
               <Label>Index</Label>
               <Combobox
