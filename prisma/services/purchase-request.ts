@@ -660,6 +660,8 @@ export async function sendBackPurchaseRequest({
   const loaded = await loadForAction(id, 'sendBack');
   if ('error' in loaded) return loaded;
   const { access, request } = loaded;
+  const pastPurchaser =
+    request.status === 'PENDING' || request.status === 'ESCALATED';
 
   const ok = await prisma.$transaction((tx) =>
     transition(tx, {
@@ -678,16 +680,32 @@ export async function sendBackPurchaseRequest({
   );
   if (!ok) return STALE_ERROR;
 
-  await queueNotices(
-    access,
-    id,
-    requesterNotice(
+  await queueNotices(access, id, [
+    ...requesterNotice(
       access,
       request,
       'Your purchase request was sent back for revision',
       note.trim(),
     ),
-  );
+    // Past the purchaser stage, the purchaser and the Comptroller had
+    // already moved it along, so they hear it went back too.
+    ...(pastPurchaser
+      ? [
+          ...purchaserNotice(
+            access,
+            request,
+            'Purchase request sent back for revision; you will be asked to approve it again',
+            note.trim(),
+          ),
+          ...comptrollerNotice(
+            access,
+            'Purchase request sent back for revision',
+            '',
+            note.trim(),
+          ),
+        ]
+      : []),
+  ]);
   revalidateRequest(id);
   return { id };
 }
@@ -897,7 +915,7 @@ export async function signOffPurchaseRequest(
 ): Promise<ResponseType<{ id: string }>> {
   const loaded = await loadForAction(id, 'signOff');
   if ('error' in loaded) return loaded;
-  const { access } = loaded;
+  const { access, request } = loaded;
 
   const ok = await prisma.$transaction(async (tx) => {
     const { count } = await tx.purchaseRequest.updateMany({
@@ -912,6 +930,15 @@ export async function signOffPurchaseRequest(
   });
   if (!ok) return STALE_ERROR;
 
+  await queueNotices(access, id, [
+    ...comptrollerNotice(access, 'Purchase signed off by the VPOA'),
+    ...purchaserNotice(access, request, 'Purchase signed off by the VPOA'),
+    ...requesterNotice(
+      access,
+      request,
+      'Your purchase request was signed off by the VPOA',
+    ),
+  ]);
   revalidateRequest(id);
   return { id };
 }
@@ -1008,11 +1035,15 @@ export async function rejectPurchaseRequest({
   );
   if (!ok) return STALE_ERROR;
 
-  await queueNotices(
-    access,
-    id,
-    decisionNotices(access, request, 'rejected', note),
-  );
+  await queueNotices(access, id, [
+    ...decisionNotices(access, request, 'rejected', note),
+    ...purchaserNotice(
+      access,
+      request,
+      'Purchase request rejected, do not make this purchase',
+      note,
+    ),
+  ]);
   revalidateRequest(id);
   return { id };
 }
