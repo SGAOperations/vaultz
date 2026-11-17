@@ -90,9 +90,11 @@ UPLOADTHING_TOKEN=<your_uploadthing_token>
 SGAUTH_URL=http://auth.sga.localhost:3000
 SGAUTH_COOKIE_NAME=sgauth-local.session_token
 SLACK_BOT_TOKEN=<sgassist_bot_token>
+SGAUTH_PRODUCT_API_KEY=<vaultz_product_api_key>
+SLACK_TEAM_ID=<sga_slack_workspace_id>
 ```
 
-`SLACK_BOT_TOKEN` is the SGAssist bot token. It needs the `chat:write` and `users:read.email` scopes: the bot finds every recipient in Slack by their SGAuth email. For the Comptroller and VPOA, VaultZ uses whoever most recently signed in holding that position, since SGAuth can't yet say who holds a position; a new officer takes over once they sign in to VaultZ. If Slack isn't configured or a recipient can't be found, requests still work and the failure is recorded in the request's history; an escalation message can be resent from the request page.
+`SLACK_BOT_TOKEN` is the SGAssist bot token, which needs the `chat:write` scope. VaultZ finds each recipient's Slack account through SGAuth, which stores the Slack account each person linked with **Connect Slack** on their SGAuth account page: it calls SGAuth's `POST /api/products/slack/lookup` with the recipient's SGAuth user id, authenticated with `SGAUTH_PRODUCT_API_KEY`. An SGAuth admin creates that key under **Admin → Products → VaultZ → API keys**, one per environment. `SLACK_TEAM_ID` is the SGA workspace id. For the Comptroller and VPOA, VaultZ uses whoever most recently signed in holding that position, until SGAuth can say who holds a position (SGAOperations/auth#384). Someone who hasn't linked Slack in SGAuth, or hasn't signed in to VaultZ yet, can't be messaged. If Slack or SGAuth isn't configured or a recipient can't be found, requests still work and the failure is recorded in the request's history; an escalation message can be resent from the request page.
 
 The bot sends these DMs, never about the recipient's own action:
 
