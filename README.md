@@ -96,17 +96,19 @@ SLACK_BOT_TOKEN=<sgassist_bot_token>
 
 The bot sends these DMs, never about the recipient's own action:
 
-| Event                                                | Recipient                            |
-| ---------------------------------------------------- | ------------------------------------ |
-| A request awaits the purchaser (submitted or edited) | Purchaser                            |
-| A request awaiting the purchaser is cancelled        | Purchaser                            |
-| A request reaches Pending                            | Comptroller                          |
-| A request is escalated                               | VPOA                                 |
-| The Comptroller approves a request (sign-off needed) | VPOA                                 |
-| The VPOA approves or rejects a request               | Comptroller                          |
-| A request is sent back, approved or rejected         | Requester                            |
-| A request is approved (with any conditions)          | Purchaser                            |
-| An approval is revoked                               | Comptroller, purchaser and requester |
+| Event                                                | Recipient                                                                         |
+| ---------------------------------------------------- | --------------------------------------------------------------------------------- |
+| A request awaits the purchaser (submitted or edited) | Purchaser                                                                         |
+| A request awaiting the purchaser is cancelled        | Purchaser                                                                         |
+| A request reaches Pending                            | Comptroller                                                                       |
+| A request is escalated                               | VPOA                                                                              |
+| The Comptroller approves a request (sign-off needed) | VPOA                                                                              |
+| The VPOA approves or rejects a request               | Comptroller                                                                       |
+| A request is approved (with any conditions)          | Purchaser and requester                                                           |
+| A request is rejected                                | Requester and purchaser                                                           |
+| A request is sent back for revision                  | Requester; also the purchaser and Comptroller once it had reached the Comptroller |
+| The VPOA signs off                                   | Comptroller, purchaser and requester                                              |
+| An approval is revoked                               | Comptroller, purchaser and requester                                              |
 
 | Environment      | `SGAUTH_URL`                           | `SGAUTH_COOKIE_NAME`                |
 | ---------------- | -------------------------------------- | ----------------------------------- |
