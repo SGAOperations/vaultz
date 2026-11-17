@@ -12,7 +12,6 @@ import {
   PurchaseRequestStatus,
 } from '@/prisma/client';
 import { Decimal } from '@/prisma/client/runtime/client';
-import { findOfficeHolderEmail } from '@/prisma/services/office-holders';
 import {
   RequestAccess,
   canUseDivision,
@@ -40,7 +39,8 @@ import { appOrigin } from '@/lib/sgauth';
 import {
   SlackResult,
   escapeSlackText,
-  sendSlackMessageToEmail,
+  sendSlackMessageToPositionHolders,
+  sendSlackMessageToSgauthUser,
 } from '@/lib/slack';
 import {
   PurchaseRequestDetail,
@@ -660,6 +660,8 @@ export async function sendBackPurchaseRequest({
   const loaded = await loadForAction(id, 'sendBack');
   if ('error' in loaded) return loaded;
   const { access, request } = loaded;
+  const pastPurchaser =
+    request.status === 'PENDING' || request.status === 'ESCALATED';
 
   const ok = await prisma.$transaction((tx) =>
     transition(tx, {
@@ -678,16 +680,32 @@ export async function sendBackPurchaseRequest({
   );
   if (!ok) return STALE_ERROR;
 
-  await queueNotices(
-    access,
-    id,
-    requesterNotice(
+  await queueNotices(access, id, [
+    ...requesterNotice(
       access,
       request,
       'Your purchase request was sent back for revision',
       note.trim(),
     ),
-  );
+    // Past the purchaser stage, the purchaser and the Comptroller had
+    // already moved it along, so they hear it went back too.
+    ...(pastPurchaser
+      ? [
+          ...purchaserNotice(
+            access,
+            request,
+            'Purchase request sent back for revision; you will be asked to approve it again',
+            note.trim(),
+          ),
+          ...comptrollerNotice(
+            access,
+            'Purchase request sent back for revision',
+            '',
+            note.trim(),
+          ),
+        ]
+      : []),
+  ]);
   revalidateRequest(id);
   return { id };
 }
@@ -897,7 +915,7 @@ export async function signOffPurchaseRequest(
 ): Promise<ResponseType<{ id: string }>> {
   const loaded = await loadForAction(id, 'signOff');
   if ('error' in loaded) return loaded;
-  const { access } = loaded;
+  const { access, request } = loaded;
 
   const ok = await prisma.$transaction(async (tx) => {
     const { count } = await tx.purchaseRequest.updateMany({
@@ -912,6 +930,15 @@ export async function signOffPurchaseRequest(
   });
   if (!ok) return STALE_ERROR;
 
+  await queueNotices(access, id, [
+    ...comptrollerNotice(access, 'Purchase signed off by the VPOA'),
+    ...purchaserNotice(access, request, 'Purchase signed off by the VPOA'),
+    ...requesterNotice(
+      access,
+      request,
+      'Your purchase request was signed off by the VPOA',
+    ),
+  ]);
   revalidateRequest(id);
   return { id };
 }
@@ -1008,11 +1035,15 @@ export async function rejectPurchaseRequest({
   );
   if (!ok) return STALE_ERROR;
 
-  await queueNotices(
-    access,
-    id,
-    decisionNotices(access, request, 'rejected', note),
-  );
+  await queueNotices(access, id, [
+    ...decisionNotices(access, request, 'rejected', note),
+    ...purchaserNotice(
+      access,
+      request,
+      'Purchase request rejected, do not make this purchase',
+      note,
+    ),
+  ]);
   revalidateRequest(id);
   return { id };
 }
@@ -1272,28 +1303,13 @@ function decisionNotices(
   return notices;
 }
 
-async function sendToEmail(
-  email: string | null,
-  label: string,
+async function sendToSgauthUser(
+  sgauthUserId: string | null,
   text: string,
 ): Promise<SlackResult> {
-  if (!email)
-    return { ok: false, error: `The ${label.toLowerCase()} has no email.` };
-  return sendSlackMessageToEmail(email, text);
-}
-
-async function sendToOfficeHolder(
-  positionKey: string,
-  label: string,
-  text: string,
-): Promise<SlackResult> {
-  const email = await findOfficeHolderEmail(positionKey);
-  if (!email)
-    return {
-      ok: false,
-      error: `No one holding the ${label} position has signed in to VaultZ yet.`,
-    };
-  return sendSlackMessageToEmail(email, text);
+  if (!sgauthUserId)
+    return { ok: false, error: "hasn't signed in to VaultZ yet." };
+  return sendSlackMessageToSgauthUser(sgauthUserId, text);
 }
 
 const NOTICE_LABELS: Record<Notice['to'], string> = {
@@ -1319,8 +1335,8 @@ async function queueNotices(
       where: { id: requestId },
       include: {
         ...summaryInclude,
-        requester: { select: { ...personSelect, email: true } },
-        purchaser: { select: { ...personSelect, email: true } },
+        requester: { select: { ...personSelect, sgauthUserId: true } },
+        purchaser: { select: { ...personSelect, sgauthUserId: true } },
       },
     });
     if (!request) return;
@@ -1335,24 +1351,31 @@ async function queueNotices(
         notice.footer,
       );
       const label = NOTICE_LABELS[notice.to];
-      const result =
-        notice.to === 'comptroller'
-          ? await sendToOfficeHolder(COMPTROLLER, 'Comptroller', text)
-          : notice.to === 'vpoa'
-            ? await sendToOfficeHolder(VPOA, 'VPOA', text)
-            : await sendToEmail(
-                notice.to === 'requester'
-                  ? request.requester.email
-                  : request.purchaser.email,
-                label,
-                text,
-              );
-      if (!result.ok)
+      // Officers are whoever SGAuth says holds the position now; every
+      // current holder is messaged.
+      let errors: string[];
+      if (notice.to === 'comptroller' || notice.to === 'vpoa') {
+        const key = notice.to === 'comptroller' ? COMPTROLLER : VPOA;
+        ({ errors } = await sendSlackMessageToPositionHolders(
+          key,
+          label,
+          text,
+        ));
+      } else {
+        const result = await sendToSgauthUser(
+          notice.to === 'requester'
+            ? request.requester.sgauthUserId
+            : request.purchaser.sgauthUserId,
+          text,
+        );
+        errors = result.ok ? [] : [result.error];
+      }
+      for (const error of errors)
         await prisma.purchaseRequestEvent.create({
           data: {
             requestId,
             type: 'NOTIFY_FAILED',
-            note: `${label}: ${result.error}`,
+            note: `${label}: ${error}`,
             actorId,
           },
         });
@@ -1373,24 +1396,44 @@ async function notifyVpoa(
     await requestUrl(request.id),
     note,
   );
-  const result = await sendToOfficeHolder(VPOA, 'VPOA', text);
+  const { sent, errors } = await sendSlackMessageToPositionHolders(
+    VPOA,
+    'VPOA',
+    text,
+  );
+  // Notified once any current VPOA holder has it; anyone missed is still
+  // recorded.
+  const notified = sent > 0;
 
   await prisma.$transaction([
     prisma.purchaseRequest.update({
       where: { id: request.id },
-      data: result.ok
+      data: notified
         ? { escalationNotifiedAt: new Date(), escalationNotifyError: null }
-        : { escalationNotifyError: result.error },
+        : { escalationNotifyError: errors.join(' ') },
     }),
-    prisma.purchaseRequestEvent.create({
-      data: {
-        requestId: request.id,
-        type: result.ok ? 'NOTIFIED' : 'NOTIFY_FAILED',
-        note: result.ok ? null : result.error,
-        actorId: access.user.id,
-      },
-    }),
+    ...(notified
+      ? [
+          prisma.purchaseRequestEvent.create({
+            data: {
+              requestId: request.id,
+              type: 'NOTIFIED',
+              actorId: access.user.id,
+            },
+          }),
+        ]
+      : []),
+    ...errors.map((error) =>
+      prisma.purchaseRequestEvent.create({
+        data: {
+          requestId: request.id,
+          type: 'NOTIFY_FAILED',
+          note: `VPOA: ${error}`,
+          actorId: access.user.id,
+        },
+      }),
+    ),
   ]);
 
-  return result.ok;
+  return notified;
 }

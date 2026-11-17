@@ -90,23 +90,27 @@ UPLOADTHING_TOKEN=<your_uploadthing_token>
 SGAUTH_URL=http://auth.sga.localhost:3000
 SGAUTH_COOKIE_NAME=sgauth-local.session_token
 SLACK_BOT_TOKEN=<sgassist_bot_token>
+SGAUTH_PRODUCT_API_KEY=<vaultz_product_api_key>
+SLACK_TEAM_ID=<sga_slack_workspace_id>
 ```
 
-`SLACK_BOT_TOKEN` is the SGAssist bot token. It needs the `chat:write` and `users:read.email` scopes: the bot finds every recipient in Slack by their SGAuth email. For the Comptroller and VPOA, VaultZ uses whoever most recently signed in holding that position, since SGAuth can't yet say who holds a position; a new officer takes over once they sign in to VaultZ. If Slack isn't configured or a recipient can't be found, requests still work and the failure is recorded in the request's history; an escalation message can be resent from the request page.
+`SLACK_BOT_TOKEN` is the SGAssist bot token, which needs the `chat:write` scope. VaultZ finds each recipient's Slack account through SGAuth, which stores the Slack account each person linked with **Connect Slack** on their SGAuth account page: it calls SGAuth's `POST /api/products/slack/lookup` with the recipient's SGAuth user id, authenticated with `SGAUTH_PRODUCT_API_KEY`. An SGAuth admin creates that key under **Admin → Products → VaultZ → API keys**, one per environment. `SLACK_TEAM_ID` is the SGA workspace id. For the Comptroller and VPOA, VaultZ asks SGAuth's `POST /api/products/positions/holders` (same key) who holds each position right now and messages every current holder, so a deprovisioned officer drops out immediately. Someone who hasn't linked Slack in SGAuth can't be messaged, and neither can a requester or purchaser who hasn't signed in to VaultZ yet. A vacant officer position is recorded as such. If Slack or SGAuth isn't configured or a recipient can't be found, requests still work and the failure is recorded in the request's history; an escalation message can be resent from the request page.
 
 The bot sends these DMs, never about the recipient's own action:
 
-| Event                                                | Recipient                            |
-| ---------------------------------------------------- | ------------------------------------ |
-| A request awaits the purchaser (submitted or edited) | Purchaser                            |
-| A request awaiting the purchaser is cancelled        | Purchaser                            |
-| A request reaches Pending                            | Comptroller                          |
-| A request is escalated                               | VPOA                                 |
-| The Comptroller approves a request (sign-off needed) | VPOA                                 |
-| The VPOA approves or rejects a request               | Comptroller                          |
-| A request is sent back, approved or rejected         | Requester                            |
-| A request is approved (with any conditions)          | Purchaser                            |
-| An approval is revoked                               | Comptroller, purchaser and requester |
+| Event                                                | Recipient                                                                         |
+| ---------------------------------------------------- | --------------------------------------------------------------------------------- |
+| A request awaits the purchaser (submitted or edited) | Purchaser                                                                         |
+| A request awaiting the purchaser is cancelled        | Purchaser                                                                         |
+| A request reaches Pending                            | Comptroller                                                                       |
+| A request is escalated                               | VPOA                                                                              |
+| The Comptroller approves a request (sign-off needed) | VPOA                                                                              |
+| The VPOA approves or rejects a request               | Comptroller                                                                       |
+| A request is approved (with any conditions)          | Purchaser and requester                                                           |
+| A request is rejected                                | Requester and purchaser                                                           |
+| A request is sent back for revision                  | Requester; also the purchaser and Comptroller once it had reached the Comptroller |
+| The VPOA signs off                                   | Comptroller, purchaser and requester                                              |
+| An approval is revoked                               | Comptroller, purchaser and requester                                              |
 
 | Environment      | `SGAUTH_URL`                           | `SGAUTH_COOKIE_NAME`                |
 | ---------------- | -------------------------------------- | ----------------------------------- |

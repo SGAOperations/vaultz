@@ -4,7 +4,6 @@ import { cache } from 'react';
 import type { SgaSession } from '@nusgaops/sgauth';
 
 import { User } from '@/prisma/client';
-import { syncUserPositions } from '@/prisma/services/office-holders';
 import { ensurePurchaserForSession } from '@/prisma/services/purchaser';
 
 import { ForbiddenError, hasCapability } from '@/lib/permissions';
@@ -34,9 +33,7 @@ export const getRequestAccess = cache(async (): Promise<RequestAccess> => {
   const positionKeys = session.positions.map((p) => p.key);
 
   const [user, requesterPositions, divisionRows] = await Promise.all([
-    ensurePurchaserForSession(session).then((u) =>
-      syncUserPositions(u, session),
-    ),
+    ensurePurchaserForSession(session),
     prisma.requesterPosition.count({
       where: { positionKey: { in: positionKeys } },
     }),
