@@ -12,7 +12,7 @@ import {
   PurchaseRequestStatus,
 } from '@/prisma/client';
 import { Decimal } from '@/prisma/client/runtime/client';
-import { findOfficeHolderEmail } from '@/prisma/services/office-holders';
+import { findOfficeHolderSgauthId } from '@/prisma/services/office-holders';
 import {
   RequestAccess,
   canUseDivision,
@@ -40,7 +40,7 @@ import { appOrigin } from '@/lib/sgauth';
 import {
   SlackResult,
   escapeSlackText,
-  sendSlackMessageToEmail,
+  sendSlackMessageToSgauthUser,
 } from '@/lib/slack';
 import {
   PurchaseRequestDetail,
@@ -1303,14 +1303,13 @@ function decisionNotices(
   return notices;
 }
 
-async function sendToEmail(
-  email: string | null,
-  label: string,
+async function sendToSgauthUser(
+  sgauthUserId: string | null,
   text: string,
 ): Promise<SlackResult> {
-  if (!email)
-    return { ok: false, error: `The ${label.toLowerCase()} has no email.` };
-  return sendSlackMessageToEmail(email, text);
+  if (!sgauthUserId)
+    return { ok: false, error: "hasn't signed in to VaultZ yet." };
+  return sendSlackMessageToSgauthUser(sgauthUserId, text);
 }
 
 async function sendToOfficeHolder(
@@ -1318,13 +1317,13 @@ async function sendToOfficeHolder(
   label: string,
   text: string,
 ): Promise<SlackResult> {
-  const email = await findOfficeHolderEmail(positionKey);
-  if (!email)
+  const sgauthUserId = await findOfficeHolderSgauthId(positionKey);
+  if (!sgauthUserId)
     return {
       ok: false,
       error: `No one holding the ${label} position has signed in to VaultZ yet.`,
     };
-  return sendSlackMessageToEmail(email, text);
+  return sendSlackMessageToSgauthUser(sgauthUserId, text);
 }
 
 const NOTICE_LABELS: Record<Notice['to'], string> = {
@@ -1350,8 +1349,8 @@ async function queueNotices(
       where: { id: requestId },
       include: {
         ...summaryInclude,
-        requester: { select: { ...personSelect, email: true } },
-        purchaser: { select: { ...personSelect, email: true } },
+        requester: { select: { ...personSelect, sgauthUserId: true } },
+        purchaser: { select: { ...personSelect, sgauthUserId: true } },
       },
     });
     if (!request) return;
@@ -1371,11 +1370,10 @@ async function queueNotices(
           ? await sendToOfficeHolder(COMPTROLLER, 'Comptroller', text)
           : notice.to === 'vpoa'
             ? await sendToOfficeHolder(VPOA, 'VPOA', text)
-            : await sendToEmail(
+            : await sendToSgauthUser(
                 notice.to === 'requester'
-                  ? request.requester.email
-                  : request.purchaser.email,
-                label,
+                  ? request.requester.sgauthUserId
+                  : request.purchaser.sgauthUserId,
                 text,
               );
       if (!result.ok)
