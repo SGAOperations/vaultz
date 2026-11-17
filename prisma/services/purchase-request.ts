@@ -12,7 +12,6 @@ import {
   PurchaseRequestStatus,
 } from '@/prisma/client';
 import { Decimal } from '@/prisma/client/runtime/client';
-import { findOfficeHolderSgauthId } from '@/prisma/services/office-holders';
 import {
   RequestAccess,
   canUseDivision,
@@ -40,6 +39,7 @@ import { appOrigin } from '@/lib/sgauth';
 import {
   SlackResult,
   escapeSlackText,
+  sendSlackMessageToPositionHolders,
   sendSlackMessageToSgauthUser,
 } from '@/lib/slack';
 import {
@@ -1312,20 +1312,6 @@ async function sendToSgauthUser(
   return sendSlackMessageToSgauthUser(sgauthUserId, text);
 }
 
-async function sendToOfficeHolder(
-  positionKey: string,
-  label: string,
-  text: string,
-): Promise<SlackResult> {
-  const sgauthUserId = await findOfficeHolderSgauthId(positionKey);
-  if (!sgauthUserId)
-    return {
-      ok: false,
-      error: `No one holding the ${label} position has signed in to VaultZ yet.`,
-    };
-  return sendSlackMessageToSgauthUser(sgauthUserId, text);
-}
-
 const NOTICE_LABELS: Record<Notice['to'], string> = {
   comptroller: 'Comptroller',
   vpoa: 'VPOA',
@@ -1365,23 +1351,31 @@ async function queueNotices(
         notice.footer,
       );
       const label = NOTICE_LABELS[notice.to];
-      const result =
-        notice.to === 'comptroller'
-          ? await sendToOfficeHolder(COMPTROLLER, 'Comptroller', text)
-          : notice.to === 'vpoa'
-            ? await sendToOfficeHolder(VPOA, 'VPOA', text)
-            : await sendToSgauthUser(
-                notice.to === 'requester'
-                  ? request.requester.sgauthUserId
-                  : request.purchaser.sgauthUserId,
-                text,
-              );
-      if (!result.ok)
+      // Officers are whoever SGAuth says holds the position now; every
+      // current holder is messaged.
+      let errors: string[];
+      if (notice.to === 'comptroller' || notice.to === 'vpoa') {
+        const key = notice.to === 'comptroller' ? COMPTROLLER : VPOA;
+        ({ errors } = await sendSlackMessageToPositionHolders(
+          key,
+          label,
+          text,
+        ));
+      } else {
+        const result = await sendToSgauthUser(
+          notice.to === 'requester'
+            ? request.requester.sgauthUserId
+            : request.purchaser.sgauthUserId,
+          text,
+        );
+        errors = result.ok ? [] : [result.error];
+      }
+      for (const error of errors)
         await prisma.purchaseRequestEvent.create({
           data: {
             requestId,
             type: 'NOTIFY_FAILED',
-            note: `${label}: ${result.error}`,
+            note: `${label}: ${error}`,
             actorId,
           },
         });
@@ -1402,24 +1396,44 @@ async function notifyVpoa(
     await requestUrl(request.id),
     note,
   );
-  const result = await sendToOfficeHolder(VPOA, 'VPOA', text);
+  const { sent, errors } = await sendSlackMessageToPositionHolders(
+    VPOA,
+    'VPOA',
+    text,
+  );
+  // Notified once any current VPOA holder has it; anyone missed is still
+  // recorded.
+  const notified = sent > 0;
 
   await prisma.$transaction([
     prisma.purchaseRequest.update({
       where: { id: request.id },
-      data: result.ok
+      data: notified
         ? { escalationNotifiedAt: new Date(), escalationNotifyError: null }
-        : { escalationNotifyError: result.error },
+        : { escalationNotifyError: errors.join(' ') },
     }),
-    prisma.purchaseRequestEvent.create({
-      data: {
-        requestId: request.id,
-        type: result.ok ? 'NOTIFIED' : 'NOTIFY_FAILED',
-        note: result.ok ? null : result.error,
-        actorId: access.user.id,
-      },
-    }),
+    ...(notified
+      ? [
+          prisma.purchaseRequestEvent.create({
+            data: {
+              requestId: request.id,
+              type: 'NOTIFIED',
+              actorId: access.user.id,
+            },
+          }),
+        ]
+      : []),
+    ...errors.map((error) =>
+      prisma.purchaseRequestEvent.create({
+        data: {
+          requestId: request.id,
+          type: 'NOTIFY_FAILED',
+          note: `VPOA: ${error}`,
+          actorId: access.user.id,
+        },
+      }),
+    ),
   ]);
 
-  return result.ok;
+  return notified;
 }
