@@ -19,19 +19,20 @@ export async function syncUserPositions(
   });
 }
 
-// SGAuth can't say who holds a position, so this uses the most recent person
-// seen signing in with it: a new officer takes over once they sign in.
-export async function findOfficeHolderEmail(
+// SGAuth doesn't yet tell products who holds a position
+// (SGAOperations/auth#384), so this uses the most recent person seen signing
+// in with it: a new officer takes over once they sign in.
+export async function findOfficeHolderSgauthId(
   positionKey: string,
 ): Promise<string | null> {
   const holder = await prisma.user.findFirst({
     where: {
       positionKeys: { has: positionKey },
       deletedAt: null,
-      email: { not: null },
+      sgauthUserId: { not: null },
     },
     orderBy: { positionsChangedAt: 'desc' },
-    select: { email: true },
+    select: { sgauthUserId: true },
   });
-  return holder?.email ?? null;
+  return holder?.sgauthUserId ?? null;
 }
