@@ -187,9 +187,6 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
   const [isEditing, setIsEditing] = useState(isCreateMode);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [filesUploaded, setFilesUploaded] = useState<string[]>([]);
-  const [receiptsToDisplay, setReceiptsToDisplay] = useState<string[]>(
-    purchase?.receipts || [],
-  );
   const [pendingYearId, setPendingYearId] = useState<string | null>(null);
   const [yearWarningOpen, setYearWarningOpen] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(
@@ -273,6 +270,10 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
   });
   const isSubmitting = form.formState.isSubmitting;
   const watchedYearId = useWatch({ control: form.control, name: 'yearId' });
+  // The receipts that will be saved; derived from the form so the list can't
+  // drift from this purchase's own receipts.
+  const receiptsToDisplay =
+    useWatch({ control: form.control, name: 'receipts' }) ?? [];
 
   function handleYearChange(yearId: string) {
     if (!yearId || yearId === activeYearId) {
@@ -333,7 +334,6 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
             });
             form.reset();
             setFilesUploaded([]);
-            setReceiptsToDisplay([]);
             setOpen(false);
           },
         },
@@ -392,7 +392,6 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
       'receipts',
       currentReceipts.filter((r) => r !== receiptKey),
     );
-    setReceiptsToDisplay((prev) => prev.filter((r) => r !== receiptKey));
   }
 
   function handleCancel() {
@@ -400,7 +399,6 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
       setOpen(false);
       form.reset();
       setFilesUploaded([]);
-      setReceiptsToDisplay([]);
       setShowAdvanced(false);
       return;
     }
@@ -422,7 +420,6 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
       excludeFromTotal: purchase!.excludeFromTotal,
       notes: purchase!.notes ?? '',
     });
-    setReceiptsToDisplay(purchase!.receipts);
     setFilesUploaded([]);
   }
 
@@ -456,7 +453,6 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
       setIsEditing(isCreateMode);
       setConfirmDelete(false);
       form.reset();
-      setReceiptsToDisplay(purchase?.receipts || []);
       setFilesUploaded([]);
       setShowAdvanced(!!(purchase && purchase.yearId !== activeYearId));
     }
@@ -844,10 +840,6 @@ export function PurchaseDialog(props: PurchaseDialogProps) {
                                 const currentReceipts = field.value || [];
                                 field.onChange([
                                   ...currentReceipts,
-                                  ...newReceipts,
-                                ]);
-                                setReceiptsToDisplay((prev) => [
-                                  ...prev,
                                   ...newReceipts,
                                 ]);
                                 setFilesUploaded((prev) => [
