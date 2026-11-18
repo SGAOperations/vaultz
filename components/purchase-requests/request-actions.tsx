@@ -20,6 +20,7 @@ import { toast } from 'sonner';
 import {
   cancelPurchaseRequest,
   escalatePurchaseRequest,
+  headApprovePurchaseRequest,
   purchaserApprovePurchaseRequest,
   rejectPurchaseRequest,
   resendEscalationNotice,
@@ -180,11 +181,24 @@ export function RequestActions({
       label: 'Approve as purchaser',
       config: {
         title: 'Approve as E-Board purchaser',
-        description: `Confirms you will make this purchase yourself. ${PURCHASER_RULE} The request then goes to the Comptroller, and the requester can no longer edit it.`,
+        description: `Confirms you will make this purchase yourself. ${PURCHASER_RULE} The request then goes to the divisional head (unless you hold that position) and the Comptroller, and the requester can no longer edit it.`,
         confirmLabel: 'Approve',
         noteLabel: 'Note (optional)',
         run: ({ note }) => purchaserApprovePurchaseRequest({ id, note }),
         success: 'Approved as purchaser',
+      },
+    },
+    headApprove: {
+      icon: <BadgeCheck />,
+      label: 'Approve as divisional head',
+      config: {
+        title: 'Approve as divisional head',
+        description:
+          'Approves this spending for your division. The request then goes to the Comptroller, and the requester can no longer edit it.',
+        confirmLabel: 'Approve',
+        noteLabel: 'Note (optional)',
+        run: ({ note }) => headApprovePurchaseRequest({ id, note }),
+        success: 'Approved as divisional head',
       },
     },
     sendBack: {
@@ -193,7 +207,7 @@ export function RequestActions({
       config: {
         title: 'Send back for revision',
         description:
-          'The requester can edit the request and resubmit it. It goes back through the E-Board purchaser, then the Comptroller.',
+          'The requester can edit the request and resubmit it. It goes back through every approval again: the E-Board purchaser for a reimbursement, the divisional head, then the Comptroller.',
         confirmLabel: 'Send back',
         noteLabel: 'What should they change?',
         noteRequired: true,
@@ -269,6 +283,7 @@ export function RequestActions({
 
   const order: RequestAction[] = [
     'purchaserApprove',
+    'headApprove',
     'signOff',
     'sendBack',
     'escalate',
@@ -300,7 +315,9 @@ export function RequestActions({
           <ConfirmDialog key={action} config={entry.config}>
             <Button
               variant={
-                action === 'purchaserApprove' || action === 'signOff'
+                action === 'purchaserApprove' ||
+                action === 'headApprove' ||
+                action === 'signOff'
                   ? 'default'
                   : action === 'reject' || action === 'revoke'
                     ? 'ghost'
