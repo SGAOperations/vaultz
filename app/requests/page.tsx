@@ -12,6 +12,7 @@ import { getRequestAccess } from '@/prisma/services/request-access';
 
 import { VPOA } from '@/lib/permissions';
 import { OPEN_REQUEST_STATUSES } from '@/lib/purchase-request';
+import { PurchaseRequestSummary } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
 import { PageHeader } from '@/components/page-header';
@@ -23,6 +24,7 @@ export const metadata: Metadata = { title: 'Purchase Requests' };
 
 const TABS = [
   { key: 'open', label: 'Open' },
+  { key: 'approval', label: 'Awaiting my approval' },
   { key: 'signoff', label: 'Awaiting my sign-off' },
   { key: 'all', label: 'All' },
   { key: 'mine', label: 'Mine' },
@@ -51,14 +53,22 @@ export default async function PurchaseRequestsPage({
     listPurchaseRequests({ scope: tab === 'mine' ? 'mine' : 'all' }),
     access.canRequest ? getRequestFormOptions() : null,
   ]);
+  // Waiting on the viewer as the E-Board purchaser or the divisional head.
+  const awaitsMe = (r: PurchaseRequestSummary) =>
+    (r.status === 'PURCHASER_REVIEW' && r.purchaser?.id === access.user.id) ||
+    (r.status === 'HEAD_REVIEW' &&
+      r.headPositionKey !== null &&
+      hasAnyPosition(access.session, [r.headPositionKey]));
   const shown =
     tab === 'open'
       ? requests.filter((r) => OPEN_REQUEST_STATUSES.includes(r.status))
-      : tab === 'signoff'
-        ? requests.filter(
-            (r) => r.status === 'APPROVED' && r.signedOffAt === null,
-          )
-        : requests;
+      : tab === 'approval'
+        ? requests.filter(awaitsMe)
+        : tab === 'signoff'
+          ? requests.filter(
+              (r) => r.status === 'APPROVED' && r.signedOffAt === null,
+            )
+          : requests;
 
   return (
     <div className="flex w-full flex-col gap-4">
@@ -109,9 +119,11 @@ export default async function PurchaseRequestsPage({
         emptyMessage={
           tab === 'open'
             ? 'No requests waiting on a decision'
-            : tab === 'signoff'
-              ? 'Nothing awaiting your sign-off'
-              : 'No purchase requests yet'
+            : tab === 'approval'
+              ? 'Nothing awaiting your approval'
+              : tab === 'signoff'
+                ? 'Nothing awaiting your sign-off'
+                : 'No purchase requests yet'
         }
       />
     </div>

@@ -19,7 +19,8 @@ import {
   AllocationBudget,
   PURCHASER_RULE,
   PurchaseRequestInput,
-  indexesOf,
+  WHOLE_INDEX,
+  chargeableIndexes,
   purchaseRequestInputSchema,
 } from '@/lib/purchase-request';
 import { PurchaseRequestDetail, RequestFormOptions } from '@/lib/types';
@@ -59,8 +60,9 @@ function defaultsFor(request?: PurchaseRequestDetail): PurchaseRequestInput {
   return {
     description: request?.description ?? '',
     amount: request?.amount ?? 0,
-    allocationId: request?.allocation.id ?? '',
-    purchaserId: request?.purchaser.id ?? '',
+    allocationId: request?.allocation?.id ?? '',
+    designationId: request?.designation.id ?? '',
+    purchaserId: request?.purchaser?.id ?? '',
     processTemplateId: request?.purchasingMethod?.id ?? '',
     notes: request?.notes ?? '',
     attachments: request?.attachments ?? [],
@@ -73,40 +75,53 @@ export function RequestDialog({ options, request }: RequestDialogProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const indexes = useMemo(
-    () => indexesOf(options.divisions),
-    [options.divisions],
+    () => chargeableIndexes(options.divisions, options.wholeIndexes),
+    [options.divisions, options.wholeIndexes],
   );
   const initialDivision = options.divisions.find((d) =>
-    d.allocations.some((a) => a.id === request?.allocation.id),
+    d.allocations.some((a) => a.id === request?.allocation?.id),
   );
   const [indexId, setIndexId] = useState(
     () =>
-      initialDivision?.designationId ??
-      (indexes.length === 1 ? indexes[0].id : ''),
+      request?.designation.id ?? (indexes.length === 1 ? indexes[0].id : ''),
   );
+  // The divisions of an index, then "Whole index" when it can be charged
+  // as a whole.
+  const divisionChoices = (id: string) => [
+    ...options.divisions
+      .filter((d) => d.designationId === id)
+      .map((d) => ({ label: d.name, value: d.id })),
+    ...(options.wholeIndexes.some((w) => w.id === id)
+      ? [{ label: 'Whole index (no division)', value: WHOLE_INDEX }]
+      : []),
+  ];
   const [divisionId, setDivisionId] = useState(() => {
     if (initialDivision) return initialDivision.id;
-    const only = options.divisions.filter(
-      (d) => d.designationId === (indexes.length === 1 ? indexes[0].id : ''),
-    );
-    return only.length === 1 ? only[0].id : '';
+    if (request && !request.allocation) return WHOLE_INDEX;
+    const only = divisionChoices(indexes.length === 1 ? indexes[0].id : '');
+    return only.length === 1 ? only[0].value : '';
   });
-  const indexDivisions = options.divisions.filter(
-    (d) => d.designationId === indexId,
-  );
+  const isWholeIndex = divisionId === WHOLE_INDEX;
   const [budget, setBudget] = useState<AllocationBudget | null>(null);
   const [pending, setPending] = useState<PurchaseRequestInput | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const form = useForm({
     resolver: zodResolver(purchaseRequestInputSchema),
-    defaultValues: defaultsFor(request),
+    defaultValues: {
+      ...defaultsFor(request),
+      designationId: request?.designation.id ?? indexId,
+    },
   });
   const isSubmitting = form.formState.isSubmitting;
-  const [allocationId, amount] = useWatch({
+  const [allocationId, amount, processTemplateId] = useWatch({
     control: form.control,
-    name: ['allocationId', 'amount'],
+    name: ['allocationId', 'amount', 'processTemplateId'],
   });
+  // Only reimbursements name an E-Board purchaser.
+  const needsPurchaser =
+    options.purchasingMethods.find((m) => m.id === processTemplateId)
+      ?.requiresPurchaser ?? false;
 
   const division = useMemo(
     () => options.divisions.find((d) => d.id === divisionId),
@@ -114,17 +129,19 @@ export function RequestDialog({ options, request }: RequestDialogProps) {
   );
 
   useEffect(() => {
-    if (!open || !allocationId) return;
+    if (!open || !(allocationId || (isWholeIndex && indexId))) return;
     let cancelled = false;
-    getRequestBudget({ allocationId, excludeRequestId: request?.id }).then(
-      (result) => {
-        if (!cancelled) setBudget(isError(result) ? null : result);
-      },
-    );
+    getRequestBudget({
+      allocationId,
+      designationId: indexId,
+      excludeRequestId: request?.id,
+    }).then((result) => {
+      if (!cancelled) setBudget(isError(result) ? null : result);
+    });
     return () => {
       cancelled = true;
     };
-  }, [open, allocationId, request?.id]);
+  }, [open, allocationId, isWholeIndex, indexId, request?.id]);
 
   function changeDivision(id: string) {
     setDivisionId(id);
@@ -134,23 +151,36 @@ export function RequestDialog({ options, request }: RequestDialogProps) {
 
   function changeIndex(id: string) {
     setIndexId(id);
-    const only = options.divisions.filter((d) => d.designationId === id);
-    changeDivision(only.length === 1 ? only[0].id : '');
+    form.setValue('designationId', id);
+    const only = divisionChoices(id);
+    changeDivision(only.length === 1 ? only[0].value : '');
   }
 
-  // A valid form first asks the requester to acknowledge the purchaser rule.
+  // A valid reimbursement first asks the requester to acknowledge the
+  // purchaser rule.
   function onSubmit(data: PurchaseRequestInput) {
+    if (!isWholeIndex && !data.allocationId) {
+      form.setError('allocationId', { message: 'Select an allocation' });
+      return;
+    }
+    if (!needsPurchaser) return submit({ ...data, purchaserId: '' }, false);
+    if (!data.purchaserId) {
+      form.setError('purchaserId', { message: 'Select an E-Board purchaser' });
+      return;
+    }
     setPending(data);
   }
 
   async function submitAcknowledged() {
-    if (!pending) return;
+    if (pending) await submit(pending, true);
+  }
+
+  async function submit(data: PurchaseRequestInput, acknowledged: boolean) {
     setSubmitting(true);
-    const data = pending;
     const result = await handleError(
       request
-        ? updatePurchaseRequest(request.id, data, true)
-        : createPurchaseRequest(data, true),
+        ? updatePurchaseRequest(request.id, data, acknowledged)
+        : createPurchaseRequest(data, acknowledged),
       {
         toast: {
           loading: request ? 'Saving request...' : 'Submitting request...',
@@ -171,7 +201,8 @@ export function RequestDialog({ options, request }: RequestDialogProps) {
     }
   }
 
-  const noDivisions = options.divisions.length === 0;
+  const noDivisions =
+    options.divisions.length === 0 && options.wholeIndexes.length === 0;
   const noPurchasers = options.purchasers.length === 0;
   const noMethods = options.purchasingMethods.length === 0;
 
@@ -198,7 +229,7 @@ export function RequestDialog({ options, request }: RequestDialogProps) {
           </DialogTitle>
           <DialogDescription>
             {options.period
-              ? `Requests are charged to an allocation in the current period, ${options.period.name}${options.year ? ` (${options.year.name})` : ''}. Your E-Board purchaser approves it first, then the Comptroller reviews it.`
+              ? `Requests are charged to an allocation in the current period, ${options.period.name}${options.year ? ` (${options.year.name})` : ''}. Your division's head approves it, then the Comptroller reviews it. Reimbursements need your E-Board purchaser's approval first.`
               : 'There is no current period, so requests cannot be submitted right now.'}
           </DialogDescription>
         </DialogHeader>
@@ -239,73 +270,39 @@ export function RequestDialog({ options, request }: RequestDialogProps) {
                     value={divisionId}
                     onChange={changeDivision}
                     disabled={!indexId}
-                    data={[
-                      {
-                        items: indexDivisions.map((d) => ({
-                          label: d.name,
-                          value: d.id,
-                        })),
-                      },
-                    ]}
+                    data={[{ items: divisionChoices(indexId) }]}
                   />
                 </div>
-                <FormField
-                  control={form.control}
-                  name="allocationId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Allocation</FormLabel>
-                      <FormControl>
-                        <Combobox
-                          name="allocation"
-                          value={field.value}
-                          onChange={field.onChange}
-                          disabled={!division}
-                          data={[
-                            {
-                              items: (division?.allocations ?? []).map((a) => ({
-                                label: `${a.name} · ${a.periodName}`,
-                                value: a.id,
-                              })),
-                            },
-                          ]}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="purchaserId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>E-Board purchaser</FormLabel>
-                      <FormControl>
-                        <Combobox
-                          name="purchaser"
-                          value={field.value}
-                          onChange={field.onChange}
-                          disabled={noPurchasers}
-                          data={[
-                            {
-                              items: options.purchasers.map((p) => ({
-                                label: `${p.first} ${p.last}`,
-                                value: p.id,
-                              })),
-                            },
-                          ]}
-                        />
-                      </FormControl>
-                      {noPurchasers && (
-                        <p className="text-muted-foreground text-xs">
-                          No E-Board purchasers are set up yet.
-                        </p>
-                      )}
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {!isWholeIndex && (
+                  <FormField
+                    control={form.control}
+                    name="allocationId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Allocation</FormLabel>
+                        <FormControl>
+                          <Combobox
+                            name="allocation"
+                            value={field.value}
+                            onChange={field.onChange}
+                            disabled={!division}
+                            data={[
+                              {
+                                items: (division?.allocations ?? []).map(
+                                  (a) => ({
+                                    label: `${a.name} · ${a.periodName}`,
+                                    value: a.id,
+                                  }),
+                                ),
+                              },
+                            ]}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
                 <FormField
                   control={form.control}
                   name="processTemplateId"
@@ -347,6 +344,39 @@ export function RequestDialog({ options, request }: RequestDialogProps) {
                     </FormItem>
                   )}
                 />
+                {needsPurchaser && (
+                  <FormField
+                    control={form.control}
+                    name="purchaserId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>E-Board purchaser</FormLabel>
+                        <FormControl>
+                          <Combobox
+                            name="purchaser"
+                            value={field.value}
+                            onChange={field.onChange}
+                            disabled={noPurchasers}
+                            data={[
+                              {
+                                items: options.purchasers.map((p) => ({
+                                  label: `${p.first} ${p.last}`,
+                                  value: p.id,
+                                })),
+                              },
+                            ]}
+                          />
+                        </FormControl>
+                        {noPurchasers && (
+                          <p className="text-muted-foreground text-xs">
+                            No E-Board purchasers are set up yet.
+                          </p>
+                        )}
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
               </div>
 
               <div className="grid gap-4 sm:grid-cols-[2fr_1fr]">
@@ -441,11 +471,17 @@ export function RequestDialog({ options, request }: RequestDialogProps) {
               <Button
                 type="submit"
                 disabled={
-                  isSubmitting || !options.period || noPurchasers || noMethods
+                  isSubmitting ||
+                  submitting ||
+                  !options.period ||
+                  (needsPurchaser && noPurchasers) ||
+                  noMethods
                 }
                 className="self-start"
               >
-                {isSubmitting && <Loader2 className="animate-spin" />}
+                {(isSubmitting || submitting) && (
+                  <Loader2 className="animate-spin" />
+                )}
                 {request ? 'Save changes' : 'Submit request'}
               </Button>
             </form>

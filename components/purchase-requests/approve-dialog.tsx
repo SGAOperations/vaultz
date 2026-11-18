@@ -7,8 +7,13 @@ import { Check, Loader2 } from 'lucide-react';
 
 import { approvePurchaseRequest } from '@/prisma/services/purchase-request';
 
-import { indexesOf } from '@/lib/purchase-request';
-import { PurchaseRequestDetail, RequestFormDivision } from '@/lib/types';
+import { WHOLE_INDEX, chargeableIndexes } from '@/lib/purchase-request';
+import {
+  PersonName,
+  PurchaseRequestDetail,
+  RequestFormDivision,
+  RequestFormOptions,
+} from '@/lib/types';
 import { handleError, isError } from '@/lib/utils';
 
 import { Button } from '@/components/ui/button';
@@ -27,7 +32,9 @@ import { Textarea } from '@/components/ui/textarea';
 
 export interface ApprovalOptions {
   divisions: RequestFormDivision[];
-  methods: { id: string; name: string }[];
+  wholeIndexes: RequestFormOptions['wholeIndexes'];
+  methods: { id: string; name: string; requiresPurchaser: boolean }[];
+  users: PersonName[];
 }
 
 interface ApproveDialogProps {
@@ -47,28 +54,50 @@ export function ApproveDialog({
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const indexes = useMemo(
-    () => indexesOf(options.divisions),
-    [options.divisions],
+    () => chargeableIndexes(options.divisions, options.wholeIndexes),
+    [options.divisions, options.wholeIndexes],
   );
   const initialDivision = options.divisions.find((d) =>
-    d.allocations.some((a) => a.id === request.allocation.id),
+    d.allocations.some((a) => a.id === request.allocation?.id),
   );
-  const [indexId, setIndexId] = useState(initialDivision?.designationId ?? '');
-  const [divisionId, setDivisionId] = useState(initialDivision?.id ?? '');
-  const [allocationId, setAllocationId] = useState(request.allocation.id);
+  const [indexId, setIndexId] = useState(request.designation.id);
+  const [divisionId, setDivisionId] = useState(
+    initialDivision?.id ?? (request.allocation ? '' : WHOLE_INDEX),
+  );
+  const [allocationId, setAllocationId] = useState(
+    request.allocation?.id ?? '',
+  );
+  const isWholeIndex = divisionId === WHOLE_INDEX;
   const [categoryId, setCategoryId] = useState(request.category?.id ?? '');
   const [templateId, setTemplateId] = useState(
     request.purchasingMethod?.id ?? '',
   );
   const [conditions, setConditions] = useState('');
+  const [recordedUserId, setRecordedUserId] = useState(
+    request.purchaser?.id ?? '',
+  );
+  // A reimbursement's purchase is recorded under its E-Board purchaser; any
+  // other purchase under someone the approver picks.
+  const isReimbursement =
+    options.methods.find((m) => m.id === templateId)?.requiresPurchaser ??
+    false;
+  const picksRecordedUser = !(isReimbursement && request.purchaser);
 
   const division = useMemo(
     () => options.divisions.find((d) => d.id === divisionId),
     [options.divisions, divisionId],
   );
-  const beforePurchaser =
-    request.status === 'PURCHASER_REVIEW' ||
-    request.status === 'NEEDS_REVISION';
+  const categories = isWholeIndex
+    ? (options.wholeIndexes.find((w) => w.id === indexId)?.categories ?? [])
+    : (division?.categories ?? []);
+  const skipping =
+    request.status === 'PURCHASER_REVIEW'
+      ? "This skips the E-Board purchaser's and divisional head's approval."
+      : request.status === 'HEAD_REVIEW'
+        ? "This skips the divisional head's approval."
+        : request.status === 'NEEDS_REVISION'
+          ? 'This approves it without the revision.'
+          : null;
 
   function changeDivision(id: string) {
     setDivisionId(id);
@@ -88,9 +117,11 @@ export function ApproveDialog({
       approvePurchaseRequest({
         id: request.id,
         note: conditions.trim(),
-        allocationId: allocationId || undefined,
+        allocationId: isWholeIndex ? '' : allocationId,
+        designationId: indexId,
         categoryId: categoryId || undefined,
         processTemplateId: templateId || undefined,
+        recordedUserId: picksRecordedUser ? recordedUserId : undefined,
       }),
       {
         toast: {
@@ -117,8 +148,10 @@ export function ApproveDialog({
           <DialogTitle>Approve request</DialogTitle>
           <DialogDescription>
             {[
-              beforePurchaser && "This skips the E-Board purchaser's approval.",
-              'Approving creates a purchase for the E-Board purchaser, dated today, for the requested amount, so they can go ahead right away.',
+              skipping,
+              picksRecordedUser
+                ? 'Approving creates a purchase, dated today, for the requested amount, recorded under the person you choose.'
+                : 'Approving creates a purchase for the E-Board purchaser, dated today, for the requested amount, so they can go ahead right away.',
               isVpoa
                 ? 'Your approval also counts as your sign-off.'
                 : 'The VPOA signs off on it afterward.',
@@ -158,14 +191,20 @@ export function ApproveDialog({
                 disabled={!indexId}
                 data={[
                   {
-                    items: options.divisions
-                      .filter((d) => d.designationId === indexId)
-                      .map((d) => ({ label: d.name, value: d.id })),
+                    items: [
+                      ...options.divisions
+                        .filter((d) => d.designationId === indexId)
+                        .map((d) => ({ label: d.name, value: d.id })),
+                      {
+                        label: 'Whole index (no division)',
+                        value: WHOLE_INDEX,
+                      },
+                    ],
                   },
                 ]}
               />
             </div>
-            <div className="flex flex-col gap-2">
+            <div className={isWholeIndex ? 'hidden' : 'flex flex-col gap-2'}>
               <Label>Allocation</Label>
               <Combobox
                 name="allocation"
@@ -188,10 +227,10 @@ export function ApproveDialog({
                 name="category"
                 value={categoryId}
                 onChange={setCategoryId}
-                disabled={!division}
+                disabled={!division && !isWholeIndex}
                 data={[
                   {
-                    items: (division?.categories ?? []).map((c) => ({
+                    items: categories.map((c) => ({
                       label: `${c.code} · ${c.name}`,
                       value: c.id,
                     })),
@@ -217,6 +256,25 @@ export function ApproveDialog({
             </div>
           </div>
 
+          {picksRecordedUser && (
+            <div className="flex flex-col gap-2">
+              <Label>Record the purchase under</Label>
+              <Combobox
+                name="person"
+                value={recordedUserId}
+                onChange={setRecordedUserId}
+                data={[
+                  {
+                    items: options.users.map((u) => ({
+                      label: `${u.first} ${u.last}`,
+                      value: u.id,
+                    })),
+                  },
+                ]}
+              />
+            </div>
+          )}
+
           <div className="flex flex-col gap-2">
             <Label htmlFor="approve-conditions">Conditions (optional)</Label>
             <Textarea
@@ -237,7 +295,12 @@ export function ApproveDialog({
         <DialogFooter>
           <Button
             onClick={approve}
-            disabled={busy || !allocationId || !categoryId}
+            disabled={
+              busy ||
+              (!allocationId && !isWholeIndex) ||
+              !categoryId ||
+              (picksRecordedUser && !recordedUserId)
+            }
           >
             {busy && <Loader2 className="animate-spin" />}
             Approve

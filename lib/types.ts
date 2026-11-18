@@ -148,15 +148,25 @@ export type PurchaseRequestSummary = {
   updatedAt: Date;
   escalationNotifyError: string | null;
   requester: PersonName;
-  purchaser: PersonName;
+  // Only reimbursements name an E-Board purchaser.
+  purchaser: PersonName | null;
   // The approved purchase's category, set by the approver; null until then.
   category: { id: string; name: string; code: string } | null;
+  // Null for a request against the whole index.
   allocation: {
     id: string;
     name: string;
     allocationGroup: { id: string; name: string } | null;
-  };
-  purchasingMethod: { id: string; name: string } | null;
+  } | null;
+  designation: { id: string; name: string; code: string };
+  purchasingMethod: {
+    id: string;
+    name: string;
+    requiresPurchaser: boolean;
+  } | null;
+  // The divisional head position that approves it; null when the head step
+  // was skipped or covered by the requester.
+  headPositionKey: string | null;
   // Set once the VPOA signs off; set without a signer for approvals that
   // predate sign-off.
   signedOffAt: Date | null;
@@ -183,6 +193,8 @@ export type PurchaseRequestDetail = PurchaseRequestSummary & {
   events: PurchaseRequestEventRecord[];
   allowedActions: RequestAction[];
   budget: AllocationBudget;
+  // While it waits on the divisional head: the position and its holders.
+  awaitingHead: { position: string; holders: string[] } | null;
 };
 
 export type RequestFormDivision = {
@@ -199,6 +211,17 @@ export type RequestFormOptions = {
   // The period whose allocations requests can be charged to.
   period: { id: string; name: string } | null;
   divisions: RequestFormDivision[];
+  // Indexes that can be requested against as a whole.
+  wholeIndexes: {
+    id: string;
+    label: string;
+    categories: { id: string; name: string; code: string }[];
+  }[];
   purchasers: PersonName[];
-  purchasingMethods: { id: string; name: string; description: string | null }[];
+  purchasingMethods: {
+    id: string;
+    name: string;
+    description: string | null;
+    requiresPurchaser: boolean;
+  }[];
 };

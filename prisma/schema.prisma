@@ -80,9 +80,42 @@ model Designation {
   name                String
   budgetResetBehavior BudgetResetBehavior @default(RESET)
 
-  categories       Category[]
-  allocations      Allocation[]
-  allocationGroups AllocationGroup[]
+  // Who can request against the whole index rather than one of its
+  // allocations.
+  requestAccess   IndexRequestAccess @default(ALLOCATIONS_ONLY)
+  // The budget index: requesting against any of its allocations is what
+  // "open to budget requesters" means.
+  isBudgetIndex   Boolean            @default(false)
+  // SGAuth position whose holders approve whole-index requests as head.
+  headPositionKey String?
+
+  categories         Category[]
+  allocations        Allocation[]
+  allocationGroups   AllocationGroup[]
+  requesterPositions IndexRequesterPosition[]
+  purchaseRequests   PurchaseRequest[]
+}
+
+enum IndexRequestAccess {
+  // Only through its division allocations.
+  ALLOCATIONS_ONLY
+  // Also anyone who can request against a budget index allocation.
+  BUDGET_REQUESTERS
+  // Also holders of the listed positions.
+  LISTED_POSITIONS
+}
+
+// Positions that can request against a whole index set to LISTED_POSITIONS.
+model IndexRequesterPosition {
+  id          String   @id @default(uuid())
+  positionKey String
+  createdAt   DateTime @default(now())
+
+  designationId String
+  designation   Designation @relation(fields: [designationId], references: [id], onDelete: Cascade)
+
+  @@unique([designationId, positionKey])
+  @@index([positionKey])
 }
 
 model Category {
@@ -133,6 +166,8 @@ model ProcessTemplate {
   description        String?
   // Offered to requesters as a way to make a purchase.
   isPurchasingMethod Boolean   @default(false)
+  // A reimbursement: an E-Board purchaser buys it and approves the request.
+  requiresPurchaser  Boolean   @default(false)
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
   deletedAt          DateTime?
@@ -189,8 +224,10 @@ model PurchaseStepCompletion {
 }
 
 model AllocationGroup {
-  id   String @id @default(uuid())
-  name String
+  id              String  @id @default(uuid())
+  name            String
+  // SGAuth position whose holders approve requests as the division's head.
+  headPositionKey String?
 
   designationId String
   designation   Designation @relation(fields: [designationId], references: [id])
@@ -246,6 +283,7 @@ model Transfer {
 
 enum PurchaseRequestStatus {
   PURCHASER_REVIEW
+  HEAD_REVIEW
   NEEDS_REVISION
   PENDING
   ESCALATED
@@ -259,6 +297,8 @@ enum PurchaseRequestEventType {
   SUBMITTED
   EDITED
   PURCHASER_APPROVED
+  HEAD_APPROVED
+  HEAD_SKIPPED
   SENT_BACK
   CANCELLED
   APPROVED
@@ -297,12 +337,20 @@ model PurchaseRequest {
 
   requesterId       String
   requester         User             @relation("RequestRequester", fields: [requesterId], references: [id])
-  purchaserId       String
-  purchaser         User             @relation("RequestPurchaser", fields: [purchaserId], references: [id])
+  // Only reimbursements name an E-Board purchaser.
+  purchaserId       String?
+  purchaser         User?            @relation("RequestPurchaser", fields: [purchaserId], references: [id])
+  // The divisional head position still to approve, set at submission. Null
+  // when no head approval is needed: none is set, or the requester holds it.
+  headPositionKey   String?
   decidedById       String?
   decidedBy         User?            @relation("RequestDecider", fields: [decidedById], references: [id])
-  allocationId      String
-  allocation        Allocation       @relation(fields: [allocationId], references: [id])
+  // Null for a request against the whole index.
+  allocationId      String?
+  allocation        Allocation?      @relation(fields: [allocationId], references: [id])
+  // The index charged: the allocation's, or the whole index's.
+  designationId     String
+  designation       Designation      @relation(fields: [designationId], references: [id])
   yearId            String
   year              Year             @relation(fields: [yearId], references: [id])
   // The purchasing method; nullable only for requests made before it existed.
@@ -316,6 +364,7 @@ model PurchaseRequest {
   @@index([status])
   @@index([requesterId])
   @@index([allocationId])
+  @@index([designationId])
 }
 
 model PurchaseRequestEvent {

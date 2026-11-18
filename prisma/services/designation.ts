@@ -2,9 +2,13 @@
 
 import { revalidatePath } from 'next/cache';
 
-import { BudgetResetBehavior, Designation } from '@/prisma/client';
+import {
+  BudgetResetBehavior,
+  Designation,
+  IndexRequestAccess,
+} from '@/prisma/client';
 
-import { requireCapability } from '@/lib/permissions';
+import { isPositionKey, requireCapability } from '@/lib/permissions';
 import prisma from '@/lib/prisma';
 import { DesignationWithPurchases } from '@/lib/types';
 import { ResponseType } from '@/lib/utils';
@@ -170,4 +174,137 @@ export async function updateDesignation({
   revalidatePath('/designation');
 
   return designation;
+}
+
+export interface IndexRequestSettings {
+  id: string;
+  label: string;
+  requestAccess: IndexRequestAccess;
+  isBudgetIndex: boolean;
+  headPositionKey: string | null;
+  positions: { id: string; positionKey: string }[];
+}
+
+const POSITION_KEY_ERROR = {
+  error: 'Use the SGAuth position key, e.g. vice-president-of-campus-affairs.',
+};
+
+function revalidateRequestSettings() {
+  revalidatePath('/requests/settings');
+  revalidatePath('/requests');
+}
+
+export async function getIndexRequestSettings(): Promise<
+  IndexRequestSettings[]
+> {
+  await requireCapability('edit');
+
+  const designations = await prisma.designation.findMany({
+    select: {
+      id: true,
+      name: true,
+      code: true,
+      requestAccess: true,
+      isBudgetIndex: true,
+      headPositionKey: true,
+      requesterPositions: {
+        select: { id: true, positionKey: true },
+        orderBy: { positionKey: 'asc' },
+      },
+    },
+    orderBy: { code: 'asc' },
+  });
+  return designations.map(({ name, code, requesterPositions, ...d }) => ({
+    ...d,
+    label: `${name} · DN${code}`,
+    positions: requesterPositions,
+  }));
+}
+
+export async function setIndexRequestAccess({
+  id,
+  requestAccess,
+}: {
+  id: string;
+  requestAccess: IndexRequestAccess;
+}): Promise<ResponseType<{ id: string }>> {
+  await requireCapability('edit');
+  if (!Object.values(IndexRequestAccess).includes(requestAccess))
+    return { error: 'Choose one of the request access options.' };
+
+  await prisma.designation.update({ where: { id }, data: { requestAccess } });
+  revalidateRequestSettings();
+  return { id };
+}
+
+// There is one budget index; marking one unmarks the rest.
+export async function setBudgetIndex(
+  id: string,
+): Promise<ResponseType<{ id: string }>> {
+  await requireCapability('edit');
+
+  await prisma.$transaction([
+    prisma.designation.updateMany({
+      where: { isBudgetIndex: true, id: { not: id } },
+      data: { isBudgetIndex: false },
+    }),
+    prisma.designation.update({ where: { id }, data: { isBudgetIndex: true } }),
+  ]);
+  revalidateRequestSettings();
+  return { id };
+}
+
+// The SGAuth position whose holders approve whole-index requests as head. An
+// empty key removes it, so those requests skip the head step.
+export async function setIndexHead({
+  id,
+  positionKey,
+}: {
+  id: string;
+  positionKey: string;
+}): Promise<ResponseType<{ id: string }>> {
+  await requireCapability('edit');
+  const key = positionKey.trim();
+  if (key && !isPositionKey(key)) return POSITION_KEY_ERROR;
+
+  await prisma.designation.update({
+    where: { id },
+    data: { headPositionKey: key || null },
+  });
+  revalidateRequestSettings();
+  return { id };
+}
+
+export async function addIndexRequesterPosition({
+  designationId,
+  positionKey,
+}: {
+  designationId: string;
+  positionKey: string;
+}): Promise<ResponseType<{ id: string }>> {
+  await requireCapability('edit');
+  const key = positionKey.trim();
+  if (!isPositionKey(key)) return POSITION_KEY_ERROR;
+
+  const existing = await prisma.indexRequesterPosition.findUnique({
+    where: { designationId_positionKey: { designationId, positionKey: key } },
+  });
+  if (existing) return { error: 'That position is already listed.' };
+
+  const position = await prisma.indexRequesterPosition.create({
+    data: { designationId, positionKey: key },
+    select: { id: true },
+  });
+  revalidateRequestSettings();
+  return position;
+}
+
+export async function removeIndexRequesterPosition(
+  id: string,
+): Promise<ResponseType<{ id: string }>> {
+  await requireCapability('edit');
+
+  await prisma.indexRequesterPosition.delete({ where: { id } });
+  revalidateRequestSettings();
+  return { id };
 }
