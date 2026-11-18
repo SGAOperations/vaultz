@@ -5,7 +5,14 @@ import { FormEvent, useState } from 'react';
 
 import { Loader2, Plus, Trash2 } from 'lucide-react';
 
-import { setPurchasingMethod } from '@/prisma/services/process-templates';
+import {
+  DivisionHead,
+  setDivisionHead,
+} from '@/prisma/services/allocation-groups';
+import {
+  setPurchasingMethod,
+  setRequiresPurchaser,
+} from '@/prisma/services/process-templates';
 import {
   addRequesterPosition,
   removeRequesterPosition,
@@ -136,7 +143,12 @@ export function EBoardPurchaserList({
 export function PurchasingMethodList({
   templates,
 }: {
-  templates: { id: string; name: string; isPurchasingMethod: boolean }[];
+  templates: {
+    id: string;
+    name: string;
+    isPurchasingMethod: boolean;
+    requiresPurchaser: boolean;
+  }[];
 }) {
   const router = useRouter();
 
@@ -155,6 +167,21 @@ export function PurchasingMethodList({
     if (!isError(result)) router.refresh();
   }
 
+  async function toggleReimbursement(id: string, requiresPurchaser: boolean) {
+    const result = await handleError(
+      setRequiresPurchaser({ id, requiresPurchaser }),
+      {
+        toast: {
+          loading: 'Saving...',
+          success: requiresPurchaser
+            ? 'Requires an E-Board purchaser'
+            : 'No longer requires an E-Board purchaser',
+        },
+      },
+    );
+    if (!isError(result)) router.refresh();
+  }
+
   if (templates.length === 0)
     return (
       <p className="text-muted-foreground text-sm">
@@ -163,10 +190,13 @@ export function PurchasingMethodList({
     );
 
   return (
-    <ul className="grid gap-1 rounded-lg border p-2 sm:grid-cols-2">
+    <ul className="divide-y rounded-lg border">
       {templates.map((template) => (
-        <li key={template.id}>
-          <label className="hover:bg-muted flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm">
+        <li
+          key={template.id}
+          className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-3 py-2"
+        >
+          <label className="flex cursor-pointer items-center gap-2 text-sm">
             <Checkbox
               checked={template.isPurchasingMethod}
               onCheckedChange={(checked) =>
@@ -175,7 +205,84 @@ export function PurchasingMethodList({
             />
             {template.name}
           </label>
+          {template.isPurchasingMethod && (
+            <label className="text-muted-foreground flex cursor-pointer items-center gap-2 text-xs">
+              <Checkbox
+                checked={template.requiresPurchaser}
+                onCheckedChange={(checked) =>
+                  toggleReimbursement(template.id, checked === true)
+                }
+              />
+              Requires E-Board purchaser
+            </label>
+          )}
         </li>
+      ))}
+    </ul>
+  );
+}
+
+function DivisionHeadRow({ division }: { division: DivisionHead }) {
+  const router = useRouter();
+  const saved = division.headPositionKey ?? '';
+  const [key, setKey] = useState(saved);
+  const [busy, setBusy] = useState(false);
+
+  async function save(e: FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    const result = await handleError(
+      setDivisionHead({ id: division.id, positionKey: key }),
+      {
+        toast: {
+          loading: 'Saving...',
+          success: key.trim() ? 'Division head set' : 'Division head removed',
+        },
+      },
+    ).finally(() => setBusy(false));
+    if (!isError(result)) router.refresh();
+  }
+
+  return (
+    <li className="flex flex-col gap-1.5 p-3">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-2">
+        <span className="text-sm font-medium">{division.name}</span>
+        <span className="text-muted-foreground text-xs">
+          {division.designationLabel}
+        </span>
+      </div>
+      <form onSubmit={save} className="flex gap-2">
+        <Input
+          value={key}
+          onChange={(e) => setKey(e.target.value)}
+          placeholder="No head: requests skip this step"
+          aria-label={`Head position for ${division.name}`}
+        />
+        <Button
+          type="submit"
+          variant="outline"
+          disabled={busy || key.trim() === saved}
+        >
+          {busy && <Loader2 className="animate-spin" />}
+          Save
+        </Button>
+      </form>
+    </li>
+  );
+}
+
+export function DivisionHeadsEditor({
+  divisions,
+}: {
+  divisions: DivisionHead[];
+}) {
+  if (divisions.length === 0)
+    return <p className="text-muted-foreground text-sm">No divisions yet.</p>;
+
+  return (
+    <ul className="max-h-[32rem] divide-y overflow-y-auto rounded-lg border">
+      {divisions.map((division) => (
+        <DivisionHeadRow key={division.id} division={division} />
       ))}
     </ul>
   );
