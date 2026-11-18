@@ -62,7 +62,16 @@ function Marker({ state }: { state: TimelineState }) {
   );
 }
 
-function Step({ step, last }: { step: TimelineStep; last: boolean }) {
+function Step({
+  step,
+  last,
+  passed,
+}: {
+  step: TimelineStep;
+  last: boolean;
+  // The chain has moved past this step, so its connector is filled.
+  passed: boolean;
+}) {
   const muted = step.state === 'upcoming' || step.state === 'skipped';
   return (
     <li className="relative flex gap-3 pb-5 last:pb-0">
@@ -71,7 +80,7 @@ function Step({ step, last }: { step: TimelineStep; last: boolean }) {
           aria-hidden
           className={cn(
             'absolute top-6 bottom-0 left-[11px] w-0.5',
-            step.state === 'done' ? 'bg-success/60' : 'bg-border',
+            passed ? 'bg-success/60' : 'bg-border',
           )}
         />
       )}
@@ -131,7 +140,16 @@ export function ApprovalTimeline({
       <CardContent>
         <ol aria-label="Approval flow">
           {steps.map((step, i) => (
-            <Step key={step.key} step={step} last={i === steps.length - 1} />
+            <Step
+              key={step.key}
+              step={step}
+              last={i === steps.length - 1}
+              // Filled up to wherever the request has reached, through any
+              // skipped steps on the way.
+              passed={steps
+                .slice(i + 1)
+                .some((s) => s.state !== 'upcoming' && s.state !== 'skipped')}
+            />
           ))}
         </ol>
       </CardContent>
