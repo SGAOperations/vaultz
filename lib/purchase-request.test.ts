@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  canRequestWholeIndex,
   computeAllocationBudget,
   indexesOf,
   overBudgetBy,
@@ -45,6 +46,7 @@ describe('purchaseRequestInputSchema', () => {
     description: 'Banner printing',
     amount: '42.10',
     allocationId: 'a',
+    designationId: 'd',
     purchaserId: 'p',
     processTemplateId: 't',
     notes: '',
@@ -58,6 +60,20 @@ describe('purchaseRequestInputSchema', () => {
   it.each(['0', '-5', '1.234'])('rejects an amount of %s', (amount) => {
     expect(
       purchaseRequestInputSchema.safeParse({ ...valid, amount }).success,
+    ).toBe(false);
+  });
+
+  it('allows a whole-index request with no allocation', () => {
+    expect(
+      purchaseRequestInputSchema.safeParse({ ...valid, allocationId: '' })
+        .success,
+    ).toBe(true);
+  });
+
+  it('requires an index', () => {
+    expect(
+      purchaseRequestInputSchema.safeParse({ ...valid, designationId: '' })
+        .success,
     ).toBe(false);
   });
 
@@ -157,5 +173,65 @@ describe('resolveHeadStep', () => {
     });
     expect(step.status).toBe('PENDING');
     expect(step.status === 'PENDING' && step.event?.type).toBe('HEAD_SKIPPED');
+  });
+});
+
+describe('canRequestWholeIndex', () => {
+  const base = {
+    isEditor: false,
+    canRequestBudgetIndex: false,
+    positionKeys: ['director-of-sustainability'],
+    listedPositionKeys: [] as string[],
+  };
+
+  it('allows nobody, not even editors, on an allocations-only index', () => {
+    expect(canRequestWholeIndex({ ...base, access: 'ALLOCATIONS_ONLY' })).toBe(
+      false,
+    );
+    expect(
+      canRequestWholeIndex({
+        ...base,
+        access: 'ALLOCATIONS_ONLY',
+        isEditor: true,
+        canRequestBudgetIndex: true,
+      }),
+    ).toBe(false);
+  });
+
+  it('opens a budget-requester index to budget index requesters', () => {
+    expect(canRequestWholeIndex({ ...base, access: 'BUDGET_REQUESTERS' })).toBe(
+      false,
+    );
+    expect(
+      canRequestWholeIndex({
+        ...base,
+        access: 'BUDGET_REQUESTERS',
+        canRequestBudgetIndex: true,
+      }),
+    ).toBe(true);
+  });
+
+  it('opens a listed-positions index to holders of a listed position', () => {
+    expect(
+      canRequestWholeIndex({
+        ...base,
+        access: 'LISTED_POSITIONS',
+        canRequestBudgetIndex: true,
+      }),
+    ).toBe(false);
+    expect(
+      canRequestWholeIndex({
+        ...base,
+        access: 'LISTED_POSITIONS',
+        listedPositionKeys: ['director-of-sustainability'],
+      }),
+    ).toBe(true);
+  });
+
+  it('lets editors request against any open index', () => {
+    for (const access of ['BUDGET_REQUESTERS', 'LISTED_POSITIONS'] as const)
+      expect(canRequestWholeIndex({ ...base, access, isEditor: true })).toBe(
+        true,
+      );
   });
 });
