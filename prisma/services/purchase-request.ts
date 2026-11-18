@@ -118,9 +118,10 @@ function holdsHead(
   );
 }
 
+// Editors see every request; everyone else only the ones they're part of.
 function canSee(access: RequestAccess, request: Parties): boolean {
   return (
-    access.canView ||
+    access.canEdit ||
     request.requesterId === access.user.id ||
     request.purchaserId === access.user.id ||
     holdsHead(access, request)
@@ -413,7 +414,7 @@ export async function listPurchaseRequests({
   scope: 'mine' | 'all';
 }): Promise<PurchaseRequestSummary[]> {
   const access = await requireRequestAccess();
-  const onlyMine = scope === 'mine' || !access.canView;
+  const onlyMine = scope === 'mine' || !access.canEdit;
 
   const requests = await prisma.purchaseRequest.findMany({
     where: {
