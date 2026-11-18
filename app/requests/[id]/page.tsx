@@ -201,10 +201,17 @@ export default async function PurchaseRequestPage({
             </CardHeader>
             <CardContent>
               <dl className="grid gap-4 sm:grid-cols-2">
-                <Field label="Division">
-                  {request.allocation.allocationGroup?.name ?? '—'}
+                <Field label="Index">
+                  {request.designation.name} · DN{request.designation.code}
                 </Field>
-                <Field label="Allocation">{request.allocation.name}</Field>
+                <Field label="Division">
+                  {request.allocation
+                    ? (request.allocation.allocationGroup?.name ?? '—')
+                    : 'Whole index'}
+                </Field>
+                <Field label="Allocation">
+                  {request.allocation?.name ?? 'None (charged to the index)'}
+                </Field>
                 <Field label="Category">
                   {request.category
                     ? `${request.category.code} · ${request.category.name}`
@@ -258,7 +265,11 @@ export default async function PurchaseRequestPage({
                   request.status !== 'REVOKED' && (
                     <Field label="Purchase">
                       <Link
-                        href={`/purchases?allocation=${request.allocation.id}`}
+                        href={
+                          request.allocation
+                            ? `/purchases?allocation=${request.allocation.id}`
+                            : '/purchases'
+                        }
                         className="text-primary hover:underline"
                       >
                         View in purchases
@@ -348,7 +359,11 @@ export default async function PurchaseRequestPage({
         {isOpen && (
           <Card className="h-fit">
             <CardHeader>
-              <CardTitle>Allocation balance</CardTitle>
+              <CardTitle>
+                {request.budget.scope === 'index'
+                  ? 'Index balance'
+                  : 'Allocation balance'}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <BudgetPanel budget={request.budget} amount={request.amount} />

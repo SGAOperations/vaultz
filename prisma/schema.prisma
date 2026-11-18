@@ -80,9 +80,42 @@ model Designation {
   name                String
   budgetResetBehavior BudgetResetBehavior @default(RESET)
 
-  categories       Category[]
-  allocations      Allocation[]
-  allocationGroups AllocationGroup[]
+  // Who can request against the whole index rather than one of its
+  // allocations.
+  requestAccess   IndexRequestAccess @default(ALLOCATIONS_ONLY)
+  // The budget index: requesting against any of its allocations is what
+  // "open to budget requesters" means.
+  isBudgetIndex   Boolean            @default(false)
+  // SGAuth position whose holders approve whole-index requests as head.
+  headPositionKey String?
+
+  categories         Category[]
+  allocations        Allocation[]
+  allocationGroups   AllocationGroup[]
+  requesterPositions IndexRequesterPosition[]
+  purchaseRequests   PurchaseRequest[]
+}
+
+enum IndexRequestAccess {
+  // Only through its division allocations.
+  ALLOCATIONS_ONLY
+  // Also anyone who can request against a budget index allocation.
+  BUDGET_REQUESTERS
+  // Also holders of the listed positions.
+  LISTED_POSITIONS
+}
+
+// Positions that can request against a whole index set to LISTED_POSITIONS.
+model IndexRequesterPosition {
+  id          String   @id @default(uuid())
+  positionKey String
+  createdAt   DateTime @default(now())
+
+  designationId String
+  designation   Designation @relation(fields: [designationId], references: [id], onDelete: Cascade)
+
+  @@unique([designationId, positionKey])
+  @@index([positionKey])
 }
 
 model Category {
@@ -312,8 +345,12 @@ model PurchaseRequest {
   headPositionKey   String?
   decidedById       String?
   decidedBy         User?            @relation("RequestDecider", fields: [decidedById], references: [id])
-  allocationId      String
-  allocation        Allocation       @relation(fields: [allocationId], references: [id])
+  // Null for a request against the whole index.
+  allocationId      String?
+  allocation        Allocation?      @relation(fields: [allocationId], references: [id])
+  // The index charged: the allocation's, or the whole index's.
+  designationId     String
+  designation       Designation      @relation(fields: [designationId], references: [id])
   yearId            String
   year              Year             @relation(fields: [yearId], references: [id])
   // The purchasing method; nullable only for requests made before it existed.
@@ -327,6 +364,7 @@ model PurchaseRequest {
   @@index([status])
   @@index([requesterId])
   @@index([allocationId])
+  @@index([designationId])
 }
 
 model PurchaseRequestEvent {

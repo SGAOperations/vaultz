@@ -55,8 +55,9 @@ export function RequestList({
                 </Link>
               </TableCell>
               <TableCell className="text-muted-foreground">
-                {request.allocation.allocationGroup?.name ?? '—'} ·{' '}
-                {request.allocation.name}
+                {request.allocation
+                  ? `${request.allocation.allocationGroup?.name ?? '—'} · ${request.allocation.name}`
+                  : `${request.designation.name} · Whole index`}
               </TableCell>
               {showRequester && (
                 <TableCell>

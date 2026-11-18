@@ -1,6 +1,7 @@
 import { z } from 'zod/v4';
 
 import type {
+  IndexRequestAccess,
   PurchaseRequestEventType,
   PurchaseRequestStatus,
 } from '@/prisma/client';
@@ -19,7 +20,9 @@ export const purchaseRequestInputSchema = z.object({
       (val: number) => Math.abs(Math.round(val * 100) - val * 100) < 0.001,
       'Must contain at most 2 decimal places',
     ),
-  allocationId: z.string().min(1, 'Select an allocation'),
+  // Empty for a request against the whole index.
+  allocationId: z.string(),
+  designationId: z.string().min(1, 'Select an index'),
   // Required only for methods that need an E-Board purchaser (reimbursements).
   purchaserId: z.string(),
   processTemplateId: z.string().min(1, 'Select a purchasing method'),
@@ -39,6 +42,22 @@ export function indexesOf(
     if (!seen.has(d.designationId))
       seen.set(d.designationId, d.designationLabel);
   return [...seen].map(([id, label]) => ({ id, label }));
+}
+
+// The Division picker's value for charging the whole index.
+export const WHOLE_INDEX = '__whole_index';
+
+// Every index that can be charged: those with divisions, then those that can
+// only be requested against as a whole.
+export function chargeableIndexes(
+  divisions: { designationId: string; designationLabel: string }[],
+  wholeIndexes: { id: string; label: string }[],
+): { id: string; label: string }[] {
+  const indexes = indexesOf(divisions);
+  for (const w of wholeIndexes)
+    if (!indexes.some((i) => i.id === w.id))
+      indexes.push({ id: w.id, label: w.label });
+  return indexes;
 }
 
 // Every reimbursement is submitted, approved and paid on this condition.
@@ -228,6 +247,8 @@ export async function purchaserApprovalStage({
 }
 
 export interface AllocationBudget {
+  // An allocation's balance, or a whole index's unallocated balance.
+  scope: 'allocation' | 'index';
   allocated: number;
   spent: number;
   // Open (pending or escalated) requests against the allocation, excluding the
@@ -237,11 +258,15 @@ export interface AllocationBudget {
 }
 
 export function computeAllocationBudget({
+  scope = 'allocation',
   allocated,
   spent,
   committed,
-}: Omit<AllocationBudget, 'remaining'>): AllocationBudget {
+}: Omit<AllocationBudget, 'remaining' | 'scope'> & {
+  scope?: AllocationBudget['scope'];
+}): AllocationBudget {
   return {
+    scope,
     allocated,
     spent,
     committed,
@@ -258,3 +283,32 @@ export function overBudgetBy(budget: AllocationBudget, amount: number): number {
 function roundCents(value: number): number {
   return Math.round(value * 100) / 100;
 }
+
+// Whether someone can request against a whole index, beyond its division
+// allocations. "Budget requesters" are those who can request against an
+// allocation in the budget index; editors can request against any index
+// that's open to whole-index requests.
+export function canRequestWholeIndex({
+  access,
+  isEditor,
+  canRequestBudgetIndex,
+  positionKeys,
+  listedPositionKeys,
+}: {
+  access: IndexRequestAccess;
+  isEditor: boolean;
+  canRequestBudgetIndex: boolean;
+  positionKeys: string[];
+  listedPositionKeys: string[];
+}): boolean {
+  if (access === 'ALLOCATIONS_ONLY') return false;
+  if (isEditor) return true;
+  if (access === 'BUDGET_REQUESTERS') return canRequestBudgetIndex;
+  return positionKeys.some((key) => listedPositionKeys.includes(key));
+}
+
+export const INDEX_ACCESS_LABELS: Record<IndexRequestAccess, string> = {
+  ALLOCATIONS_ONLY: 'Allocations only',
+  BUDGET_REQUESTERS: 'Open to budget requesters',
+  LISTED_POSITIONS: 'Listed positions',
+};
