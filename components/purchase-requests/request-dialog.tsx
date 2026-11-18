@@ -19,7 +19,8 @@ import {
   AllocationBudget,
   PURCHASER_RULE,
   PurchaseRequestInput,
-  indexesOf,
+  WHOLE_INDEX,
+  chargeableIndexes,
   purchaseRequestInputSchema,
 } from '@/lib/purchase-request';
 import { PurchaseRequestDetail, RequestFormOptions } from '@/lib/types';
@@ -59,7 +60,8 @@ function defaultsFor(request?: PurchaseRequestDetail): PurchaseRequestInput {
   return {
     description: request?.description ?? '',
     amount: request?.amount ?? 0,
-    allocationId: request?.allocation.id ?? '',
+    allocationId: request?.allocation?.id ?? '',
+    designationId: request?.designation.id ?? '',
     purchaserId: request?.purchaser?.id ?? '',
     processTemplateId: request?.purchasingMethod?.id ?? '',
     notes: request?.notes ?? '',
@@ -73,34 +75,43 @@ export function RequestDialog({ options, request }: RequestDialogProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const indexes = useMemo(
-    () => indexesOf(options.divisions),
-    [options.divisions],
+    () => chargeableIndexes(options.divisions, options.wholeIndexes),
+    [options.divisions, options.wholeIndexes],
   );
   const initialDivision = options.divisions.find((d) =>
-    d.allocations.some((a) => a.id === request?.allocation.id),
+    d.allocations.some((a) => a.id === request?.allocation?.id),
   );
   const [indexId, setIndexId] = useState(
     () =>
-      initialDivision?.designationId ??
-      (indexes.length === 1 ? indexes[0].id : ''),
+      request?.designation.id ?? (indexes.length === 1 ? indexes[0].id : ''),
   );
+  // The divisions of an index, then "Whole index" when it can be charged
+  // as a whole.
+  const divisionChoices = (id: string) => [
+    ...options.divisions
+      .filter((d) => d.designationId === id)
+      .map((d) => ({ label: d.name, value: d.id })),
+    ...(options.wholeIndexes.some((w) => w.id === id)
+      ? [{ label: 'Whole index (no division)', value: WHOLE_INDEX }]
+      : []),
+  ];
   const [divisionId, setDivisionId] = useState(() => {
     if (initialDivision) return initialDivision.id;
-    const only = options.divisions.filter(
-      (d) => d.designationId === (indexes.length === 1 ? indexes[0].id : ''),
-    );
-    return only.length === 1 ? only[0].id : '';
+    if (request && !request.allocation) return WHOLE_INDEX;
+    const only = divisionChoices(indexes.length === 1 ? indexes[0].id : '');
+    return only.length === 1 ? only[0].value : '';
   });
-  const indexDivisions = options.divisions.filter(
-    (d) => d.designationId === indexId,
-  );
+  const isWholeIndex = divisionId === WHOLE_INDEX;
   const [budget, setBudget] = useState<AllocationBudget | null>(null);
   const [pending, setPending] = useState<PurchaseRequestInput | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const form = useForm({
     resolver: zodResolver(purchaseRequestInputSchema),
-    defaultValues: defaultsFor(request),
+    defaultValues: {
+      ...defaultsFor(request),
+      designationId: request?.designation.id ?? indexId,
+    },
   });
   const isSubmitting = form.formState.isSubmitting;
   const [allocationId, amount, processTemplateId] = useWatch({
@@ -118,17 +129,19 @@ export function RequestDialog({ options, request }: RequestDialogProps) {
   );
 
   useEffect(() => {
-    if (!open || !allocationId) return;
+    if (!open || !(allocationId || (isWholeIndex && indexId))) return;
     let cancelled = false;
-    getRequestBudget({ allocationId, excludeRequestId: request?.id }).then(
-      (result) => {
-        if (!cancelled) setBudget(isError(result) ? null : result);
-      },
-    );
+    getRequestBudget({
+      allocationId,
+      designationId: indexId,
+      excludeRequestId: request?.id,
+    }).then((result) => {
+      if (!cancelled) setBudget(isError(result) ? null : result);
+    });
     return () => {
       cancelled = true;
     };
-  }, [open, allocationId, request?.id]);
+  }, [open, allocationId, isWholeIndex, indexId, request?.id]);
 
   function changeDivision(id: string) {
     setDivisionId(id);
@@ -138,13 +151,18 @@ export function RequestDialog({ options, request }: RequestDialogProps) {
 
   function changeIndex(id: string) {
     setIndexId(id);
-    const only = options.divisions.filter((d) => d.designationId === id);
-    changeDivision(only.length === 1 ? only[0].id : '');
+    form.setValue('designationId', id);
+    const only = divisionChoices(id);
+    changeDivision(only.length === 1 ? only[0].value : '');
   }
 
   // A valid reimbursement first asks the requester to acknowledge the
   // purchaser rule.
   function onSubmit(data: PurchaseRequestInput) {
+    if (!isWholeIndex && !data.allocationId) {
+      form.setError('allocationId', { message: 'Select an allocation' });
+      return;
+    }
     if (!needsPurchaser) return submit({ ...data, purchaserId: '' }, false);
     if (!data.purchaserId) {
       form.setError('purchaserId', { message: 'Select an E-Board purchaser' });
@@ -251,42 +269,39 @@ export function RequestDialog({ options, request }: RequestDialogProps) {
                     value={divisionId}
                     onChange={changeDivision}
                     disabled={!indexId}
-                    data={[
-                      {
-                        items: indexDivisions.map((d) => ({
-                          label: d.name,
-                          value: d.id,
-                        })),
-                      },
-                    ]}
+                    data={[{ items: divisionChoices(indexId) }]}
                   />
                 </div>
-                <FormField
-                  control={form.control}
-                  name="allocationId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Allocation</FormLabel>
-                      <FormControl>
-                        <Combobox
-                          name="allocation"
-                          value={field.value}
-                          onChange={field.onChange}
-                          disabled={!division}
-                          data={[
-                            {
-                              items: (division?.allocations ?? []).map((a) => ({
-                                label: `${a.name} · ${a.periodName}`,
-                                value: a.id,
-                              })),
-                            },
-                          ]}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {!isWholeIndex && (
+                  <FormField
+                    control={form.control}
+                    name="allocationId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Allocation</FormLabel>
+                        <FormControl>
+                          <Combobox
+                            name="allocation"
+                            value={field.value}
+                            onChange={field.onChange}
+                            disabled={!division}
+                            data={[
+                              {
+                                items: (division?.allocations ?? []).map(
+                                  (a) => ({
+                                    label: `${a.name} · ${a.periodName}`,
+                                    value: a.id,
+                                  }),
+                                ),
+                              },
+                            ]}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
                 <FormField
                   control={form.control}
                   name="processTemplateId"

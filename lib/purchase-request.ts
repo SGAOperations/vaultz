@@ -44,6 +44,22 @@ export function indexesOf(
   return [...seen].map(([id, label]) => ({ id, label }));
 }
 
+// The Division picker's value for charging the whole index.
+export const WHOLE_INDEX = '__whole_index';
+
+// Every index that can be charged: those with divisions, then those that can
+// only be requested against as a whole.
+export function chargeableIndexes(
+  divisions: { designationId: string; designationLabel: string }[],
+  wholeIndexes: { id: string; label: string }[],
+): { id: string; label: string }[] {
+  const indexes = indexesOf(divisions);
+  for (const w of wholeIndexes)
+    if (!indexes.some((i) => i.id === w.id))
+      indexes.push({ id: w.id, label: w.label });
+  return indexes;
+}
+
 // Every reimbursement is submitted, approved and paid on this condition.
 export const PURCHASER_RULE =
   'The E-Board purchaser named on this request must make the purchase. If it is found that a non-E-Board member made the purchase, the approval is automatically void.';
