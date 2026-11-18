@@ -48,7 +48,7 @@ export function buildApprovalTimeline(
     (e) => e.type === 'SUBMITTED' || e.type === 'EDITED',
   );
   const submitted = request.events[start] ?? null;
-  const round = start >= 0 ? request.events.slice(start + 1) : [];
+  const round = request.events.slice(start + 1);
   const find = (...types: Event['type'][]) =>
     round.findLast((e) => types.includes(e.type)) ?? null;
 
@@ -216,18 +216,56 @@ function waitingOn(head: NonNullable<TimelineRequest['awaitingHead']>) {
     : head.position;
 }
 
-// The first step not yet passed is where the request stands: waiting there,
-// sent back from there, or ended there.
+// The step an open or approved request is waiting on.
+const WAITING_STEP: Partial<
+  Record<TimelineRequest['status'], TimelineStep['key']>
+> = {
+  PURCHASER_REVIEW: 'purchaser',
+  HEAD_REVIEW: 'head',
+  PENDING: 'comptroller',
+  ESCALATED: 'comptroller',
+  APPROVED: 'vpoa',
+};
+
+// Where the request stands: the step its status is waiting on, or for a
+// request sent back or ended, the first step not yet passed. Earlier steps
+// with no recorded approval (requests from before a step existed) show as
+// passed.
 function markFrontier(
   request: TimelineRequest,
   steps: TimelineStep[],
   round: Event[],
 ): TimelineStep[] {
-  const at = steps.findIndex((s) => s.state === 'upcoming');
-  if (at < 0) return steps;
-  const step = steps[at];
   const last = (type: Event['type']) =>
     round.findLast((e) => e.type === type) ?? null;
+  const endEvent =
+    request.status === 'NEEDS_REVISION'
+      ? last('SENT_BACK')
+      : request.status === 'CANCELLED' || request.status === 'REJECTED'
+        ? last(request.status)
+        : null;
+  const waiting = WAITING_STEP[request.status];
+  // A send-back or rejection by anyone but the purchaser happened past the
+  // purchaser's step.
+  const at = waiting
+    ? steps.findIndex((s) => s.key === waiting)
+    : steps.findIndex(
+        (s) =>
+          s.state === 'upcoming' &&
+          !(
+            s.key === 'purchaser' &&
+            endEvent?.actor &&
+            request.status !== 'CANCELLED' &&
+            endEvent.actor.id !== request.purchaser?.id
+          ),
+      );
+  if (at < 0) return steps;
+  for (let i = 0; i < at; i++)
+    if (steps[i].state === 'upcoming')
+      steps[i] = { ...steps[i], state: 'done', detail: null };
+  const step = steps[at];
+  // A signed-off approval has nothing left to wait on.
+  if (step.state !== 'upcoming') return steps;
 
   const ending = (
     state: TimelineState,

@@ -338,3 +338,37 @@ describe('buildApprovalTimeline', () => {
     ]);
   });
 });
+
+describe('buildApprovalTimeline with incomplete history', () => {
+  it('places an escalated request on the Comptroller step', () => {
+    const steps = buildApprovalTimeline(
+      request({ status: 'ESCALATED', headPositionKey: null }),
+    );
+    expect(steps.map((s) => `${s.key}: ${s.state}`)).toEqual([
+      'submitted: done',
+      'purchaser: done',
+      'comptroller: current',
+      'vpoa: upcoming',
+    ]);
+    expect(steps[1].detail).toBeNull();
+  });
+});
+
+describe('buildApprovalTimeline sent back past the purchaser', () => {
+  it('puts a Comptroller send-back on the Comptroller step', () => {
+    const steps = buildApprovalTimeline(
+      request({
+        status: 'NEEDS_REVISION',
+        headPositionKey: null,
+        events: [event('SENT_BACK', casey, 'Please add a quote')],
+      }),
+    );
+    expect(steps.map((s) => `${s.key}: ${s.state}`)).toEqual([
+      'submitted: done',
+      'purchaser: done',
+      'comptroller: sentBack',
+      'vpoa: upcoming',
+    ]);
+    expect(steps[2].detail).toBe('Casey Comptroller');
+  });
+});
