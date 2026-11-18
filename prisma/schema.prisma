@@ -133,6 +133,8 @@ model ProcessTemplate {
   description        String?
   // Offered to requesters as a way to make a purchase.
   isPurchasingMethod Boolean   @default(false)
+  // A reimbursement: an E-Board purchaser buys it and approves the request.
+  requiresPurchaser  Boolean   @default(false)
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
   deletedAt          DateTime?
@@ -189,8 +191,10 @@ model PurchaseStepCompletion {
 }
 
 model AllocationGroup {
-  id   String @id @default(uuid())
-  name String
+  id              String  @id @default(uuid())
+  name            String
+  // SGAuth position whose holders approve requests as the division's head.
+  headPositionKey String?
 
   designationId String
   designation   Designation @relation(fields: [designationId], references: [id])
@@ -246,6 +250,7 @@ model Transfer {
 
 enum PurchaseRequestStatus {
   PURCHASER_REVIEW
+  HEAD_REVIEW
   NEEDS_REVISION
   PENDING
   ESCALATED
@@ -259,6 +264,8 @@ enum PurchaseRequestEventType {
   SUBMITTED
   EDITED
   PURCHASER_APPROVED
+  HEAD_APPROVED
+  HEAD_SKIPPED
   SENT_BACK
   CANCELLED
   APPROVED
@@ -297,8 +304,12 @@ model PurchaseRequest {
 
   requesterId       String
   requester         User             @relation("RequestRequester", fields: [requesterId], references: [id])
-  purchaserId       String
-  purchaser         User             @relation("RequestPurchaser", fields: [purchaserId], references: [id])
+  // Only reimbursements name an E-Board purchaser.
+  purchaserId       String?
+  purchaser         User?            @relation("RequestPurchaser", fields: [purchaserId], references: [id])
+  // The divisional head position still to approve, set at submission. Null
+  // when no head approval is needed: none is set, or the requester holds it.
+  headPositionKey   String?
   decidedById       String?
   decidedBy         User?            @relation("RequestDecider", fields: [decidedById], references: [id])
   allocationId      String
