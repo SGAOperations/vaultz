@@ -201,7 +201,8 @@ export function RequestDialog({ options, request }: RequestDialogProps) {
     }
   }
 
-  const noDivisions = options.divisions.length === 0;
+  const noDivisions =
+    options.divisions.length === 0 && options.wholeIndexes.length === 0;
   const noPurchasers = options.purchasers.length === 0;
   const noMethods = options.purchasingMethods.length === 0;
 
