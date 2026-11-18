@@ -223,6 +223,7 @@ export function TransferHistory({
   const table = useReactTable({
     data: filtered,
     columns,
+    getRowId: (transfer) => transfer.id,
     state: { sorting },
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
