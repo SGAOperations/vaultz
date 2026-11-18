@@ -47,6 +47,11 @@ export function hasCapability(
   return hasAnyPosition(session, CAPABILITY_POSITIONS[capability]);
 }
 
+// SGAuth position keys are lowercase words joined by hyphens.
+export function isPositionKey(key: string): boolean {
+  return /^[a-z0-9]+(-[a-z0-9]+)*$/.test(key);
+}
+
 export class ForbiddenError extends Error {
   constructor(capability: string) {
     super(`You do not have permission to ${capability} in VaultZ.`);
