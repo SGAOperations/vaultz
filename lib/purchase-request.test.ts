@@ -5,6 +5,7 @@ import {
   indexesOf,
   overBudgetBy,
   purchaseRequestInputSchema,
+  resolveHeadStep,
 } from '@/lib/purchase-request';
 
 describe('computeAllocationBudget', () => {
@@ -67,11 +68,12 @@ describe('purchaseRequestInputSchema', () => {
     ).toBe(false);
   });
 
-  it('requires a purchaser', () => {
+  // Only reimbursements need one; the server checks against the method.
+  it('allows no purchaser', () => {
     expect(
       purchaseRequestInputSchema.safeParse({ ...valid, purchaserId: '' })
         .success,
-    ).toBe(false);
+    ).toBe(true);
   });
 });
 
@@ -87,5 +89,73 @@ describe('indexesOf', () => {
       { id: 'b', label: 'Budget · DN1' },
       { id: 'c', label: 'Cash · DN2' },
     ]);
+  });
+});
+
+describe('resolveHeadStep', () => {
+  const head = 'vice-president-of-campus-affairs';
+
+  it('waits on a held head position', () => {
+    expect(
+      resolveHeadStep({
+        headPositionKey: head,
+        actorIsHead: false,
+        actorRole: 'requester',
+        holders: 'held',
+      }),
+    ).toEqual({ status: 'HEAD_REVIEW' });
+  });
+
+  it('waits when SGAuth cannot say who holds it', () => {
+    expect(
+      resolveHeadStep({
+        headPositionKey: head,
+        actorIsHead: false,
+        actorRole: 'purchaser',
+        holders: 'unknown',
+      }).status,
+    ).toBe('HEAD_REVIEW');
+  });
+
+  it.each([
+    ['requester', 'The requester is the divisional head.'],
+    ['purchaser', 'Covered by their approval as E-Board purchaser.'],
+  ] as const)('passes when the %s is the head', (actorRole, note) => {
+    expect(
+      resolveHeadStep({
+        headPositionKey: head,
+        actorIsHead: true,
+        actorRole,
+        holders: 'held',
+      }),
+    ).toEqual({ status: 'PENDING', event: { type: 'HEAD_APPROVED', note } });
+  });
+
+  it('skips a division with no head set', () => {
+    expect(
+      resolveHeadStep({
+        headPositionKey: null,
+        actorIsHead: false,
+        actorRole: 'requester',
+        holders: 'unknown',
+      }),
+    ).toEqual({
+      status: 'PENDING',
+      event: {
+        type: 'HEAD_SKIPPED',
+        note: 'No divisional head is set for this division.',
+      },
+    });
+  });
+
+  it('skips a vacant head position', () => {
+    const step = resolveHeadStep({
+      headPositionKey: head,
+      actorIsHead: false,
+      actorRole: 'purchaser',
+      holders: 'vacant',
+    });
+    expect(step.status).toBe('PENDING');
+    expect(step.status === 'PENDING' && step.event?.type).toBe('HEAD_SKIPPED');
   });
 });

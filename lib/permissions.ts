@@ -72,6 +72,7 @@ export type RequestAction =
   | 'edit'
   | 'cancel'
   | 'purchaserApprove'
+  | 'headApprove'
   | 'sendBack'
   | 'approve'
   | 'reject'
@@ -81,11 +82,12 @@ export type RequestAction =
   | 'signOff'
   | 'revoke';
 
-// A request first waits on its E-Board purchaser, then on the Comptroller,
-// who can escalate it to the VPOA (hiding their own decisions until they
-// return it). The VPOA can decide any open request at any stage. Every
+// A reimbursement first waits on its E-Board purchaser. Every request then
+// waits on its divisional head, then on the Comptroller, who can escalate it to
+// the VPOA (hiding their own decisions until they return it). The VPOA can
+// decide any open request at any stage, and their approval is final. Every
 // reviewer's default decline is sending it back for revision; rejecting ends
-// it. The requester can edit or cancel until the purchaser approves. The VPOA
+// it. The requester can edit or cancel until the first approval. The VPOA
 // signs off on every approved request after the fact, or revokes it. The EVP
 // has no request powers.
 export function allowedRequestActions({
@@ -93,12 +95,18 @@ export function allowedRequestActions({
   status,
   isOwner,
   isPurchaser,
+  isHead = false,
+  hasPurchaserStep = true,
   isSignedOff = false,
 }: {
   session: MaybeSession;
   status: PurchaseRequestStatus;
   isOwner: boolean;
   isPurchaser: boolean;
+  // Holds the divisional head position the request is waiting on.
+  isHead?: boolean;
+  // Names an E-Board purchaser other than the requester, who approves first.
+  hasPurchaserStep?: boolean;
   isSignedOff?: boolean;
 }): RequestAction[] {
   const isComptroller = hasAnyPosition(session, [COMPTROLLER]);
@@ -106,13 +114,19 @@ export function allowedRequestActions({
   const actions = new Set<RequestAction>();
   const add = (...list: RequestAction[]) => list.forEach((a) => actions.add(a));
 
-  const beforePurchaserApproval =
-    status === 'PURCHASER_REVIEW' || status === 'NEEDS_REVISION';
+  const beforeFirstApproval =
+    status === 'PURCHASER_REVIEW' ||
+    status === 'NEEDS_REVISION' ||
+    (status === 'HEAD_REVIEW' && !hasPurchaserStep);
 
-  if (beforePurchaserApproval && isOwner) add('edit', 'cancel');
+  if (beforeFirstApproval && isOwner) add('edit', 'cancel');
 
-  if (status === 'PURCHASER_REVIEW' && isPurchaser)
+  // The VPOA's approval covers the purchaser and head steps outright.
+  if (status === 'PURCHASER_REVIEW' && isPurchaser && !isVpoa)
     add('purchaserApprove', 'sendBack', 'reject');
+
+  if (status === 'HEAD_REVIEW' && isHead && !isVpoa)
+    add('headApprove', 'sendBack', 'reject');
 
   if (status === 'PENDING' && isComptroller)
     add('approve', 'sendBack', 'escalate', 'reject');
@@ -131,6 +145,7 @@ export function allowedRequestActions({
 function isOpenStatus(status: PurchaseRequestStatus): boolean {
   return (
     status === 'PURCHASER_REVIEW' ||
+    status === 'HEAD_REVIEW' ||
     status === 'NEEDS_REVISION' ||
     status === 'PENDING' ||
     status === 'ESCALATED'
