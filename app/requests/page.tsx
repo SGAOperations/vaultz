@@ -42,15 +42,21 @@ export default async function PurchaseRequestsPage({
 
   const { view } = await searchParams;
   const isVpoa = hasAnyPosition(access.session, [VPOA]);
-  const tabs = TABS.filter((t) => t.key !== 'signoff' || isVpoa);
-  const tab: Tab = !access.canView
-    ? 'mine'
-    : tabs.some((t) => t.key === view)
-      ? (view as Tab)
-      : 'open';
+  // Only editors see every request; everyone else sees the ones they're part
+  // of, and what's waiting on them.
+  const tabs = access.canEdit
+    ? TABS.filter((t) => t.key !== 'signoff' || isVpoa)
+    : TABS.filter((t) => t.key === 'mine' || t.key === 'approval');
+  const tab: Tab = tabs.some((t) => t.key === view)
+    ? (view as Tab)
+    : access.canEdit
+      ? 'open'
+      : 'mine';
 
   const [requests, formOptions] = await Promise.all([
-    listPurchaseRequests({ scope: tab === 'mine' ? 'mine' : 'all' }),
+    listPurchaseRequests({
+      scope: tab === 'mine' || !access.canEdit ? 'mine' : 'all',
+    }),
     access.canRequest ? getRequestFormOptions() : null,
   ]);
   // Waiting on the viewer as the E-Board purchaser or the divisional head.
@@ -75,7 +81,7 @@ export default async function PurchaseRequestsPage({
       <PageHeader
         title="Purchase Requests"
         description={
-          access.canView
+          access.canEdit
             ? 'Review and track purchase requests from SGA leadership'
             : 'Request purchases for your division and track their status'
         }
@@ -94,7 +100,7 @@ export default async function PurchaseRequestsPage({
         }
       />
 
-      {access.canView && (
+      {tabs.length > 1 && (
         <nav className="bg-muted flex w-fit gap-1 rounded-lg p-1">
           {tabs.map(({ key, label }) => (
             <Link
@@ -115,7 +121,7 @@ export default async function PurchaseRequestsPage({
 
       <RequestList
         requests={shown}
-        showRequester={tab !== 'mine'}
+        showRequester={shown.some((r) => r.requester.id !== access.user.id)}
         emptyMessage={
           tab === 'open'
             ? 'No requests waiting on a decision'
