@@ -588,6 +588,9 @@ export function PurchaseList({
   const table = useReactTable({
     data: filteredPurchases,
     columns,
+    // Rows keep their purchase across refetches and re-sorts; keyed by index,
+    // a row's dialog would carry another purchase's state.
+    getRowId: (purchase) => purchase.id,
     state: { sorting: effectiveSorting, columnFilters, globalFilter },
     onSortingChange: (updater) => {
       const next =
