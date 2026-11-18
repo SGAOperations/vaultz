@@ -15,6 +15,7 @@ import { Decimal } from '@/prisma/client/runtime/client';
 import {
   RequestAccess,
   canUseDivision,
+  canUseIndex,
   requireRequestAccess,
   requireSubmitAccess,
 } from '@/prisma/services/request-access';
@@ -71,6 +72,7 @@ const summaryInclude = {
       allocationGroup: { select: { id: true, name: true } },
     },
   },
+  designation: { select: { id: true, name: true, code: true } },
   processTemplate: {
     select: { id: true, name: true, requiresPurchaser: true },
   },
@@ -93,6 +95,7 @@ function toSummary(request: RequestWithSummary): PurchaseRequestSummary {
     purchaser: request.purchaser,
     category: request.purchase?.category ?? null,
     allocation: request.allocation,
+    designation: request.designation,
     purchasingMethod: request.processTemplate,
     headPositionKey: request.headPositionKey,
     signedOffAt: request.signedOffAt,
@@ -154,34 +157,89 @@ function revalidateRequest(id?: string) {
   if (id) revalidatePath(`/requests/${id}`);
 }
 
-async function getAllocationBudget(
-  allocationId: string,
+// The balance a request is charged against: its allocation's, or for a
+// whole-index request the index's unallocated budget for the year.
+async function getChargeBudget(
+  charge: {
+    allocationId: string | null;
+    designationId: string;
+    yearId: string;
+  },
   excludeRequestId?: string,
 ): Promise<AllocationBudget> {
-  const [allocation, spent, committed] = await Promise.all([
-    prisma.allocation.findUniqueOrThrow({
-      where: { id: allocationId },
-      select: { amount: true },
-    }),
-    prisma.purchase.aggregate({
-      where: { allocationId, deletedAt: null, excludeFromTotal: false },
-      _sum: { amount: true },
-    }),
-    prisma.purchaseRequest.aggregate({
-      where: {
-        allocationId,
-        deletedAt: null,
-        status: { in: OPEN_REQUEST_STATUSES },
-        ...(excludeRequestId && { id: { not: excludeRequestId } }),
-      },
-      _sum: { amount: true },
-    }),
-  ]);
+  const committedWhere = {
+    deletedAt: null,
+    status: { in: OPEN_REQUEST_STATUSES },
+    ...(excludeRequestId && { id: { not: excludeRequestId } }),
+  };
+
+  if (charge.allocationId) {
+    const allocationId = charge.allocationId;
+    const [allocation, spent, committed] = await Promise.all([
+      prisma.allocation.findUniqueOrThrow({
+        where: { id: allocationId },
+        select: { amount: true },
+      }),
+      prisma.purchase.aggregate({
+        where: { allocationId, deletedAt: null, excludeFromTotal: false },
+        _sum: { amount: true },
+      }),
+      prisma.purchaseRequest.aggregate({
+        where: { allocationId, ...committedWhere },
+        _sum: { amount: true },
+      }),
+    ]);
+    return computeAllocationBudget({
+      allocated: allocation.amount.toNumber(),
+      spent: spent._sum.amount?.toNumber() ?? 0,
+      committed: committed._sum.amount?.toNumber() ?? 0,
+    });
+  }
+
+  const { designationId, yearId } = charge;
+  const inIndex = { category: { designationId } };
+  const [budgets, transfersIn, transfersOut, allocated, spent, committed] =
+    await Promise.all([
+      prisma.categoryYear.aggregate({
+        where: { yearId, deletedAt: null, ...inIndex },
+        _sum: { amount: true },
+      }),
+      prisma.transfer.aggregate({
+        where: { yearId, deletedAt: null, toCategory: { designationId } },
+        _sum: { amount: true },
+      }),
+      prisma.transfer.aggregate({
+        where: { yearId, deletedAt: null, fromCategory: { designationId } },
+        _sum: { amount: true },
+      }),
+      prisma.allocation.aggregate({
+        where: { designationId, deletedAt: null, period: { yearId } },
+        _sum: { amount: true },
+      }),
+      prisma.purchase.aggregate({
+        where: {
+          yearId,
+          allocationId: null,
+          deletedAt: null,
+          excludeFromTotal: false,
+          ...inIndex,
+        },
+        _sum: { amount: true },
+      }),
+      prisma.purchaseRequest.aggregate({
+        where: { designationId, allocationId: null, ...committedWhere },
+        _sum: { amount: true },
+      }),
+    ]);
+  const sum = (r: { _sum: { amount: Decimal | null } }) =>
+    r._sum.amount?.toNumber() ?? 0;
 
   return computeAllocationBudget({
-    allocated: allocation.amount.toNumber(),
-    spent: spent._sum.amount?.toNumber() ?? 0,
-    committed: committed._sum.amount?.toNumber() ?? 0,
+    scope: 'index',
+    allocated:
+      sum(budgets) + sum(transfersIn) - sum(transfersOut) - sum(allocated),
+    spent: sum(spent),
+    committed: sum(committed),
   });
 }
 
@@ -198,17 +256,25 @@ async function validateInput(
     } satisfies ErrorType;
   const data = parsed.data;
 
-  const [allocation, purchaser, method, period] = await Promise.all([
-    prisma.allocation.findFirst({
-      where: { id: data.allocationId, deletedAt: null },
-      select: {
-        allocationGroupId: true,
-        allocationGroup: { select: { headPositionKey: true } },
-        designationId: true,
-        periodId: true,
-        period: { select: { yearId: true } },
-      },
-    }),
+  const [allocation, index, purchaser, method, period] = await Promise.all([
+    data.allocationId
+      ? prisma.allocation.findFirst({
+          where: { id: data.allocationId, deletedAt: null },
+          select: {
+            allocationGroupId: true,
+            allocationGroup: { select: { headPositionKey: true } },
+            designationId: true,
+            periodId: true,
+            period: { select: { yearId: true } },
+          },
+        })
+      : null,
+    data.allocationId
+      ? null
+      : prisma.designation.findUnique({
+          where: { id: data.designationId },
+          select: { id: true, headPositionKey: true },
+        }),
     data.purchaserId
       ? prisma.user.findFirst({
           where: {
@@ -230,34 +296,51 @@ async function validateInput(
     getCurrentPeriod(),
   ]);
 
-  if (!allocation || !canUseDivision(access, allocation.allocationGroupId))
-    return { error: 'You cannot request against that allocation.' };
+  if (data.allocationId) {
+    if (
+      !allocation ||
+      !canUseDivision(access, allocation.allocationGroupId) ||
+      allocation.designationId !== data.designationId
+    )
+      return { error: 'You cannot request against that allocation.' };
+  } else if (!index || !canUseIndex(access, index.id))
+    return { error: 'You cannot request against that whole index.' };
   if (!method) return { error: 'Choose one of the listed purchasing methods.' };
   // Only reimbursements name an E-Board purchaser.
   if (method.requiresPurchaser && !data.purchaserId)
     return { error: 'Select an E-Board purchaser.' };
   if (method.requiresPurchaser && !purchaser)
     return { error: 'The purchaser must be an Executive Board member.' };
-  if (!period || allocation.periodId !== period.id)
+  if (!period)
     return {
-      error: period
-        ? `Choose an allocation from the current period (${period.name}).`
-        : 'There is no current period, so requests cannot be submitted right now.',
+      error:
+        'There is no current period, so requests cannot be submitted right now.',
+    };
+  if (allocation && allocation.periodId !== period.id)
+    return {
+      error: `Choose an allocation from the current period (${period.name}).`,
     };
 
   return {
     data,
-    yearId: allocation.period.yearId,
+    allocationId: allocation ? data.allocationId : null,
+    designationId: data.designationId,
+    // A whole-index request is charged to the current year.
+    yearId: allocation ? allocation.period.yearId : period.year.id,
     purchaserId: method.requiresPurchaser ? data.purchaserId : null,
-    headPositionKey: allocation.allocationGroup?.headPositionKey ?? null,
+    headPositionKey: allocation
+      ? (allocation.allocationGroup?.headPositionKey ?? null)
+      : (index?.headPositionKey ?? null),
   };
 }
 
 interface ValidatedInput {
   data: PurchaseRequestInput;
+  allocationId: string | null;
+  designationId: string;
   yearId: string;
   purchaserId: string | null;
-  // The division's head position at submission.
+  // The division's (or whole index's) head position at submission.
   headPositionKey: string | null;
 }
 
@@ -374,7 +457,7 @@ export async function getPurchaseRequest(
   // An open request is already part of `committed`; leave it out so the panel
   // shows the balance before this request.
   const [budget, awaitingHead] = await Promise.all([
-    getAllocationBudget(request.allocationId, request.id),
+    getChargeBudget(request, request.id),
     request.status === 'HEAD_REVIEW' && request.headPositionKey
       ? describeHead(request.headPositionKey)
       : null,
@@ -419,7 +502,7 @@ async function describeHead(
 
 export async function getRequestFormOptions(): Promise<RequestFormOptions> {
   const access = await requireSubmitAccess();
-  return buildFormOptions(access.divisionIds);
+  return buildFormOptions(access.divisionIds, access.indexIds);
 }
 
 // What an approver can recode a request to: every division's allocations and
@@ -427,6 +510,7 @@ export async function getRequestFormOptions(): Promise<RequestFormOptions> {
 export async function getApprovalOptions(): Promise<
   ResponseType<{
     divisions: RequestFormOptions['divisions'];
+    wholeIndexes: RequestFormOptions['wholeIndexes'];
     methods: { id: string; name: string; requiresPurchaser: boolean }[];
     users: PersonName[];
   }>
@@ -436,7 +520,7 @@ export async function getApprovalOptions(): Promise<
     return { error: 'Only the Comptroller and the VPOA approve requests.' };
 
   const [options, methods, users] = await Promise.all([
-    buildFormOptions('all'),
+    buildFormOptions('all', 'all'),
     prisma.processTemplate.findMany({
       where: { deletedAt: null },
       select: { id: true, name: true, requiresPurchaser: true },
@@ -448,7 +532,12 @@ export async function getApprovalOptions(): Promise<
       orderBy: [{ last: 'asc' }, { first: 'asc' }],
     }),
   ]);
-  return { divisions: options.divisions, methods, users };
+  return {
+    divisions: options.divisions,
+    wholeIndexes: options.wholeIndexes,
+    methods,
+    users,
+  };
 }
 
 // Requests are charged to allocations in the period covering today.
@@ -473,25 +562,23 @@ async function getCurrentPeriod() {
 
 async function buildFormOptions(
   divisionIds: RequestAccess['divisionIds'],
+  indexIds: RequestAccess['indexIds'] | 'all',
 ): Promise<RequestFormOptions> {
   const period = await getCurrentPeriod();
+  const categories = {
+    where: { deletedAt: null },
+    select: { id: true, name: true, code: true },
+    orderBy: { code: 'asc' },
+  } as const;
 
-  const [groups, purchasers, purchasingMethods] = await Promise.all([
+  const [groups, indexes, purchasers, purchasingMethods] = await Promise.all([
     period
       ? prisma.allocationGroup.findMany({
           where:
             divisionIds === 'all' ? undefined : { id: { in: divisionIds } },
           orderBy: { name: 'asc' },
           include: {
-            designation: {
-              include: {
-                categories: {
-                  where: { deletedAt: null },
-                  select: { id: true, name: true, code: true },
-                  orderBy: { code: 'asc' },
-                },
-              },
-            },
+            designation: { include: { categories } },
             allocations: {
               where: { deletedAt: null, periodId: period.id },
               select: {
@@ -502,6 +589,13 @@ async function buildFormOptions(
               orderBy: [{ period: { startDate: 'asc' } }, { name: 'asc' }],
             },
           },
+        })
+      : Promise.resolve([]),
+    period
+      ? prisma.designation.findMany({
+          where: indexIds === 'all' ? undefined : { id: { in: indexIds } },
+          select: { id: true, name: true, code: true, categories },
+          orderBy: { code: 'asc' },
         })
       : Promise.resolve([]),
     prisma.user.findMany({
@@ -540,25 +634,54 @@ async function buildFormOptions(
         })),
         categories: g.designation.categories,
       })),
+    wholeIndexes: indexes.map((d) => ({
+      id: d.id,
+      label: `${d.name} · DN${d.code}`,
+      categories: d.categories,
+    })),
   };
 }
 
 export async function getRequestBudget({
   allocationId,
+  designationId,
   excludeRequestId,
 }: {
+  // Empty for the whole index.
   allocationId: string;
+  designationId: string;
   excludeRequestId?: string;
 }): Promise<ResponseType<AllocationBudget>> {
   const access = await requireSubmitAccess();
-  const allocation = await prisma.allocation.findFirst({
-    where: { id: allocationId, deletedAt: null },
-    select: { allocationGroupId: true },
-  });
-  if (!allocation || !canUseDivision(access, allocation.allocationGroupId))
-    return { error: 'Allocation not found.' };
 
-  return getAllocationBudget(allocationId, excludeRequestId);
+  if (allocationId) {
+    const allocation = await prisma.allocation.findFirst({
+      where: { id: allocationId, deletedAt: null },
+      select: {
+        allocationGroupId: true,
+        designationId: true,
+        period: { select: { yearId: true } },
+      },
+    });
+    if (!allocation || !canUseDivision(access, allocation.allocationGroupId))
+      return { error: 'Allocation not found.' };
+    return getChargeBudget(
+      {
+        allocationId,
+        designationId: allocation.designationId,
+        yearId: allocation.period.yearId,
+      },
+      excludeRequestId,
+    );
+  }
+
+  const period = await getCurrentPeriod();
+  if (!canUseIndex(access, designationId) || !period)
+    return { error: 'Index not found.' };
+  return getChargeBudget(
+    { allocationId: null, designationId, yearId: period.year.id },
+    excludeRequestId,
+  );
 }
 
 export async function createPurchaseRequest(
@@ -582,7 +705,8 @@ export async function createPurchaseRequest(
       requesterId: access.user.id,
       purchaserId,
       processTemplateId: data.processTemplateId,
-      allocationId: data.allocationId,
+      allocationId: validated.allocationId,
+      designationId: validated.designationId,
       yearId,
       status: stage.status,
       headPositionKey: stage.headPositionKey,
@@ -642,7 +766,8 @@ export async function updatePurchaseRequest(
         attachments: data.attachments,
         purchaserId,
         processTemplateId: data.processTemplateId,
-        allocationId: data.allocationId,
+        allocationId: validated.allocationId,
+        designationId: validated.designationId,
         yearId,
       },
     });
@@ -863,13 +988,16 @@ export async function approvePurchaseRequest({
   processTemplateId,
   categoryId,
   allocationId,
+  designationId,
   recordedUserId,
 }: {
   id: string;
   note?: string;
   processTemplateId?: string;
   categoryId?: string;
+  // Recoding: an allocation, or empty for the whole index `designationId`.
   allocationId?: string;
+  designationId?: string;
   // Who the purchase is recorded under when there's no E-Board purchaser.
   recordedUserId?: string;
 }): Promise<ResponseType<{ id: string; purchaseId: string }>> {
@@ -881,6 +1009,7 @@ export async function approvePurchaseRequest({
     processTemplateId,
     categoryId,
     allocationId,
+    designationId,
   });
   if ('error' in coding) return coding;
   const userId = await resolveRecordedUser(
@@ -916,6 +1045,7 @@ export async function approvePurchaseRequest({
         decidedAt: now,
         decisionNote: note || null,
         allocationId: coding.allocationId,
+        designationId: coding.designationId,
         yearId: coding.yearId,
         processTemplateId: coding.templateId,
         ...(isVpoa && { signedOffAt: now, signedOffById: access.user.id }),
@@ -1002,38 +1132,54 @@ async function resolveRecordedUser(
   return user?.id ?? null;
 }
 
-// Applies an approver's coding corrections and describes what changed.
+// Applies an approver's coding corrections and describes what changed. An
+// empty allocation charges the whole index.
 async function resolveCoding(
   request: RequestWithSummary,
   input: {
     processTemplateId?: string;
     categoryId?: string;
     allocationId?: string;
+    designationId?: string;
   },
 ): Promise<
   ResponseType<{
     categoryId: string;
-    allocationId: string;
+    allocationId: string | null;
+    designationId: string;
     yearId: string;
     templateId: string | null;
     requiresPurchaser: boolean;
     changes: string[];
   }>
 > {
-  const allocationId = input.allocationId || request.allocationId;
+  const recoding = input.allocationId !== undefined;
+  const allocationId = recoding
+    ? input.allocationId || null
+    : request.allocationId;
   const categoryId = input.categoryId;
   const templateId = input.processTemplateId || request.processTemplateId;
 
-  const [allocation, category, template] = await Promise.all([
-    prisma.allocation.findFirst({
-      where: { id: allocationId, deletedAt: null },
-      select: {
-        name: true,
-        designationId: true,
-        periodId: true,
-        period: { select: { yearId: true } },
-      },
-    }),
+  const [allocation, designation, category, template] = await Promise.all([
+    allocationId
+      ? prisma.allocation.findFirst({
+          where: { id: allocationId, deletedAt: null },
+          select: {
+            name: true,
+            designationId: true,
+            periodId: true,
+            period: { select: { yearId: true } },
+          },
+        })
+      : null,
+    allocationId
+      ? null
+      : prisma.designation.findUnique({
+          where: {
+            id: (recoding && input.designationId) || request.designationId,
+          },
+          select: { id: true, name: true, code: true },
+        }),
     categoryId
       ? prisma.category.findFirst({
           where: { id: categoryId, deletedAt: null },
@@ -1047,19 +1193,31 @@ async function resolveCoding(
         })
       : null,
   ]);
-  if (!allocation) return { error: 'That allocation no longer exists.' };
-  // A request keeps its own allocation, but recoding moves it to the current
-  // period's allocations only.
-  if (allocationId !== request.allocationId) {
+  if (allocationId && !allocation)
+    return { error: 'That allocation no longer exists.' };
+  if (!allocationId && !designation)
+    return { error: 'That index no longer exists.' };
+  const designationId = allocation?.designationId ?? designation!.id;
+
+  // A request keeps its own coding, but recoding moves it to the current
+  // period only.
+  let yearId = request.yearId;
+  const moved =
+    allocationId !== request.allocationId ||
+    designationId !== request.designationId;
+  if (moved) {
     const period = await getCurrentPeriod();
-    if (!period || allocation.periodId !== period.id)
+    if (!period) return { error: 'There is no current period to recode to.' };
+    if (allocation && allocation.periodId !== period.id)
       return { error: 'Recode to an allocation from the current period.' };
-  }
+    yearId = period.year.id;
+  } else if (allocation) yearId = allocation.period.yearId;
+
   // The approver categorizes the purchase; requesters don't.
   if (!categoryId || !category)
     return { error: 'Choose a category for the purchase.' };
-  if (category.designationId !== allocation.designationId)
-    return { error: "That category does not belong to the allocation's fund." };
+  if (category.designationId !== designationId)
+    return { error: "That category does not belong to the request's index." };
   if (templateId && !template)
     return {
       error:
@@ -1067,8 +1225,14 @@ async function resolveCoding(
     };
 
   const changes: string[] = [];
-  if (allocationId !== request.allocationId)
-    changes.push(`Allocation: ${request.allocation.name} → ${allocation.name}`);
+  if (moved)
+    changes.push(
+      `Charged to: ${chargeLabel(request)} → ${
+        allocation
+          ? allocation.name
+          : `the whole index (${designation!.name} · DN${designation!.code})`
+      }`,
+    );
   if (templateId !== request.processTemplateId)
     changes.push(
       `Purchasing method: ${request.processTemplate?.name ?? 'Not set'} → ${template?.name ?? 'Not set'}`,
@@ -1077,11 +1241,20 @@ async function resolveCoding(
   return {
     categoryId,
     allocationId,
-    yearId: allocation.period.yearId,
+    designationId,
+    yearId,
     templateId,
     requiresPurchaser: template?.requiresPurchaser ?? false,
     changes,
   };
+}
+
+function chargeLabel(
+  request: Pick<RequestWithSummary, 'allocation' | 'designation'>,
+): string {
+  return request.allocation
+    ? request.allocation.name
+    : `the whole index (${request.designation.name} · DN${request.designation.code})`;
 }
 
 export async function signOffPurchaseRequest(
@@ -1303,6 +1476,7 @@ type RequestForMessage = Pick<
   | 'description'
   | 'amount'
   | 'allocation'
+  | 'designation'
   | 'requester'
   | 'purchaser'
   | 'processTemplate'
@@ -1325,11 +1499,13 @@ function requestMessage(
   noteLabel = 'Note',
   footer?: string,
 ): string {
-  const division = request.allocation.allocationGroup?.name ?? 'No division';
+  const charged = request.allocation
+    ? `Division: ${escapeSlackText(request.allocation.allocationGroup?.name ?? 'No division')} · ${escapeSlackText(request.allocation.name)}`
+    : `Index: ${escapeSlackText(`${request.designation.name} · DN${request.designation.code}`)} (whole index)`;
   return [
     headline,
     `*${escapeSlackText(request.description)}*: ${formatCurrency(request.amount.toNumber())}`,
-    `Division: ${escapeSlackText(division)} · ${escapeSlackText(request.allocation.name)}`,
+    charged,
     `Requested by ${personName(request.requester)}${request.purchaser ? ` · Purchaser ${personName(request.purchaser)}` : ''}`,
     `Purchasing method: ${escapeSlackText(request.processTemplate?.name ?? 'Not set')}`,
     ...(note ? [`${noteLabel}: ${escapeSlackText(note)}`] : []),

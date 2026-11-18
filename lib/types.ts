@@ -152,11 +152,13 @@ export type PurchaseRequestSummary = {
   purchaser: PersonName | null;
   // The approved purchase's category, set by the approver; null until then.
   category: { id: string; name: string; code: string } | null;
+  // Null for a request against the whole index.
   allocation: {
     id: string;
     name: string;
     allocationGroup: { id: string; name: string } | null;
-  };
+  } | null;
+  designation: { id: string; name: string; code: string };
   purchasingMethod: {
     id: string;
     name: string;
@@ -209,6 +211,12 @@ export type RequestFormOptions = {
   // The period whose allocations requests can be charged to.
   period: { id: string; name: string } | null;
   divisions: RequestFormDivision[];
+  // Indexes that can be requested against as a whole.
+  wholeIndexes: {
+    id: string;
+    label: string;
+    categories: { id: string; name: string; code: string }[];
+  }[];
   purchasers: PersonName[];
   purchasingMethods: {
     id: string;
