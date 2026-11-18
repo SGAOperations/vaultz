@@ -238,27 +238,12 @@ function markFrontier(
 ): TimelineStep[] {
   const last = (type: Event['type']) =>
     round.findLast((e) => e.type === type) ?? null;
-  const endEvent =
-    request.status === 'NEEDS_REVISION'
-      ? last('SENT_BACK')
-      : request.status === 'CANCELLED' || request.status === 'REJECTED'
-        ? last(request.status)
-        : null;
   const waiting = WAITING_STEP[request.status];
-  // A send-back or rejection by anyone but the purchaser happened past the
-  // purchaser's step.
+  // A request sent back or ended stopped at the first step not yet approved;
+  // every approval is in its history.
   const at = waiting
     ? steps.findIndex((s) => s.key === waiting)
-    : steps.findIndex(
-        (s) =>
-          s.state === 'upcoming' &&
-          !(
-            s.key === 'purchaser' &&
-            endEvent?.actor &&
-            request.status !== 'CANCELLED' &&
-            endEvent.actor.id !== request.purchaser?.id
-          ),
-      );
+    : steps.findIndex((s) => s.state === 'upcoming');
   if (at < 0) return steps;
   for (let i = 0; i < at; i++)
     if (steps[i].state === 'upcoming')

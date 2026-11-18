@@ -354,21 +354,40 @@ describe('buildApprovalTimeline with incomplete history', () => {
   });
 });
 
-describe('buildApprovalTimeline sent back past the purchaser', () => {
-  it('puts a Comptroller send-back on the Comptroller step', () => {
+describe('buildApprovalTimeline sent back by the VPOA', () => {
+  it('marks the purchaser step when the VPOA sends back before the purchaser approves', () => {
     const steps = buildApprovalTimeline(
       request({
         status: 'NEEDS_REVISION',
-        headPositionKey: null,
-        events: [event('SENT_BACK', casey, 'Please add a quote')],
+        events: [event('SUBMITTED', dana), event('SENT_BACK', val, 'Too much')],
       }),
     );
     expect(steps.map((s) => `${s.key}: ${s.state}`)).toEqual([
       'submitted: done',
-      'purchaser: done',
-      'comptroller: sentBack',
+      'purchaser: sentBack',
+      'head: upcoming',
+      'comptroller: upcoming',
       'vpoa: upcoming',
     ]);
-    expect(steps[2].detail).toBe('Casey Comptroller');
+    expect(steps[1].detail).toBe('Val Operations');
+  });
+
+  it('marks the Comptroller step when sent back after the head approves', () => {
+    const steps = buildApprovalTimeline(
+      request({
+        status: 'NEEDS_REVISION',
+        events: [
+          event('SUBMITTED', dana),
+          event('PURCHASER_APPROVED', pat),
+          event('HEAD_APPROVED', riley),
+          event('SENT_BACK', casey, 'Add a quote'),
+        ],
+      }),
+    );
+    expect(steps[3]).toMatchObject({
+      key: 'comptroller',
+      state: 'sentBack',
+      detail: 'Casey Comptroller',
+    });
   });
 });
