@@ -14,8 +14,8 @@ export function BudgetPanel({ budget, amount, className }: BudgetPanelProps) {
   const over = overBudgetBy(budget, amount);
   const rows = [
     { label: 'Allocated', value: budget.allocated },
-    { label: 'Spent', value: -budget.spent },
-    { label: 'Committed to other open requests', value: -budget.committed },
+    { label: 'Approved/spent', value: -budget.spent },
+    { label: 'Other requests pending approval', value: -budget.committed },
   ];
 
   return (
