@@ -131,23 +131,39 @@ export interface PositionMessageResult {
   errors: string[];
 }
 
-// DMs everyone who currently holds this SGAuth position, read live from
-// SGAuth's position holders route.
+export interface PositionHolder {
+  id: string;
+  name: string;
+  preferredName: string | null;
+}
+
+// Who currently holds this SGAuth position, read live from SGAuth's position
+// holders route. `holders` is null when SGAuth doesn't know the position.
+export async function getPositionHolders(
+  positionKey: string,
+): Promise<SgauthResult<{ name: string; holders: PositionHolder[] } | null>> {
+  const result = await callSgauth<{
+    positions?: { key: string; name: string; holders: PositionHolder[] }[];
+    unknownKeys?: string[];
+  }>('/api/products/positions/holders', { keys: [positionKey] });
+  if (!result.ok) return result;
+  const position = result.body.positions?.find((p) => p.key === positionKey);
+  return {
+    ok: true,
+    body: position ? { name: position.name, holders: position.holders } : null,
+  };
+}
+
+// DMs everyone who currently holds this SGAuth position.
 export async function sendSlackMessageToPositionHolders(
   positionKey: string,
   label: string,
   text: string,
 ): Promise<PositionMessageResult> {
-  const holders = await callSgauth<{
-    positions?: {
-      key: string;
-      holders: { id: string; name: string; preferredName: string | null }[];
-    }[];
-    unknownKeys?: string[];
-  }>('/api/products/positions/holders', { keys: [positionKey] });
+  const holders = await getPositionHolders(positionKey);
   if (!holders.ok) return { sent: 0, errors: [holders.error] };
 
-  const position = holders.body.positions?.find((p) => p.key === positionKey);
+  const position = holders.body;
   if (!position)
     return {
       sent: 0,

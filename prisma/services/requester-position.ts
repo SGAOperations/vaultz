@@ -4,11 +4,9 @@ import { revalidatePath } from 'next/cache';
 
 import { RequesterPosition } from '@/prisma/client';
 
-import { requireCapability } from '@/lib/permissions';
+import { isPositionKey, requireCapability } from '@/lib/permissions';
 import prisma from '@/lib/prisma';
 import { ResponseType } from '@/lib/utils';
-
-const POSITION_KEY = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
 export async function getRequesterPositions(): Promise<RequesterPosition[]> {
   await requireCapability('view');
@@ -22,7 +20,7 @@ export async function addRequesterPosition(
   await requireCapability('edit');
 
   const key = positionKey.trim();
-  if (!POSITION_KEY.test(key))
+  if (!isPositionKey(key))
     return {
       error:
         'Use the SGAuth position key, e.g. vice-president-of-campus-affairs.',

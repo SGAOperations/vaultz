@@ -8,7 +8,11 @@ import { Check, Loader2 } from 'lucide-react';
 import { approvePurchaseRequest } from '@/prisma/services/purchase-request';
 
 import { indexesOf } from '@/lib/purchase-request';
-import { PurchaseRequestDetail, RequestFormDivision } from '@/lib/types';
+import {
+  PersonName,
+  PurchaseRequestDetail,
+  RequestFormDivision,
+} from '@/lib/types';
 import { handleError, isError } from '@/lib/utils';
 
 import { Button } from '@/components/ui/button';
@@ -27,7 +31,8 @@ import { Textarea } from '@/components/ui/textarea';
 
 export interface ApprovalOptions {
   divisions: RequestFormDivision[];
-  methods: { id: string; name: string }[];
+  methods: { id: string; name: string; requiresPurchaser: boolean }[];
+  users: PersonName[];
 }
 
 interface ApproveDialogProps {
@@ -61,14 +66,28 @@ export function ApproveDialog({
     request.purchasingMethod?.id ?? '',
   );
   const [conditions, setConditions] = useState('');
+  const [recordedUserId, setRecordedUserId] = useState(
+    request.purchaser?.id ?? '',
+  );
+  // A reimbursement's purchase is recorded under its E-Board purchaser; any
+  // other purchase under someone the approver picks.
+  const isReimbursement =
+    options.methods.find((m) => m.id === templateId)?.requiresPurchaser ??
+    false;
+  const picksRecordedUser = !(isReimbursement && request.purchaser);
 
   const division = useMemo(
     () => options.divisions.find((d) => d.id === divisionId),
     [options.divisions, divisionId],
   );
-  const beforePurchaser =
-    request.status === 'PURCHASER_REVIEW' ||
-    request.status === 'NEEDS_REVISION';
+  const skipping =
+    request.status === 'PURCHASER_REVIEW'
+      ? "This skips the E-Board purchaser's and divisional head's approval."
+      : request.status === 'HEAD_REVIEW'
+        ? "This skips the divisional head's approval."
+        : request.status === 'NEEDS_REVISION'
+          ? 'This approves it without the revision.'
+          : null;
 
   function changeDivision(id: string) {
     setDivisionId(id);
@@ -91,6 +110,7 @@ export function ApproveDialog({
         allocationId: allocationId || undefined,
         categoryId: categoryId || undefined,
         processTemplateId: templateId || undefined,
+        recordedUserId: picksRecordedUser ? recordedUserId : undefined,
       }),
       {
         toast: {
@@ -117,8 +137,10 @@ export function ApproveDialog({
           <DialogTitle>Approve request</DialogTitle>
           <DialogDescription>
             {[
-              beforePurchaser && "This skips the E-Board purchaser's approval.",
-              'Approving creates a purchase for the E-Board purchaser, dated today, for the requested amount, so they can go ahead right away.',
+              skipping,
+              picksRecordedUser
+                ? 'Approving creates a purchase, dated today, for the requested amount, recorded under the person you choose.'
+                : 'Approving creates a purchase for the E-Board purchaser, dated today, for the requested amount, so they can go ahead right away.',
               isVpoa
                 ? 'Your approval also counts as your sign-off.'
                 : 'The VPOA signs off on it afterward.',
@@ -217,6 +239,25 @@ export function ApproveDialog({
             </div>
           </div>
 
+          {picksRecordedUser && (
+            <div className="flex flex-col gap-2">
+              <Label>Record the purchase under</Label>
+              <Combobox
+                name="person"
+                value={recordedUserId}
+                onChange={setRecordedUserId}
+                data={[
+                  {
+                    items: options.users.map((u) => ({
+                      label: `${u.first} ${u.last}`,
+                      value: u.id,
+                    })),
+                  },
+                ]}
+              />
+            </div>
+          )}
+
           <div className="flex flex-col gap-2">
             <Label htmlFor="approve-conditions">Conditions (optional)</Label>
             <Textarea
@@ -237,7 +278,12 @@ export function ApproveDialog({
         <DialogFooter>
           <Button
             onClick={approve}
-            disabled={busy || !allocationId || !categoryId}
+            disabled={
+              busy ||
+              !allocationId ||
+              !categoryId ||
+              (picksRecordedUser && !recordedUserId)
+            }
           >
             {busy && <Loader2 className="animate-spin" />}
             Approve

@@ -29,20 +29,26 @@ import {
 import prisma from '@/lib/prisma';
 import {
   AllocationBudget,
+  HeadHolders,
   OPEN_REQUEST_STATUSES,
   PURCHASER_RULE,
   PurchaseRequestInput,
+  Stage,
   computeAllocationBudget,
   purchaseRequestInputSchema,
+  purchaserApprovalStage,
+  submissionStage,
 } from '@/lib/purchase-request';
 import { appOrigin } from '@/lib/sgauth';
 import {
   SlackResult,
   escapeSlackText,
+  getPositionHolders,
   sendSlackMessageToPositionHolders,
   sendSlackMessageToSgauthUser,
 } from '@/lib/slack';
 import {
+  PersonName,
   PurchaseRequestDetail,
   PurchaseRequestSummary,
   RequestFormOptions,
@@ -65,7 +71,9 @@ const summaryInclude = {
       allocationGroup: { select: { id: true, name: true } },
     },
   },
-  processTemplate: { select: { id: true, name: true } },
+  processTemplate: {
+    select: { id: true, name: true, requiresPurchaser: true },
+  },
 } satisfies Prisma.PurchaseRequestInclude;
 
 type RequestWithSummary = Prisma.PurchaseRequestGetPayload<{
@@ -86,17 +94,40 @@ function toSummary(request: RequestWithSummary): PurchaseRequestSummary {
     category: request.purchase?.category ?? null,
     allocation: request.allocation,
     purchasingMethod: request.processTemplate,
+    headPositionKey: request.headPositionKey,
     signedOffAt: request.signedOffAt,
   };
 }
 
-type Parties = { requesterId: string; purchaserId: string };
+type Parties = {
+  requesterId: string;
+  purchaserId: string | null;
+  headPositionKey: string | null;
+};
+
+function holdsHead(
+  access: RequestAccess,
+  request: { headPositionKey: string | null },
+): boolean {
+  return (
+    request.headPositionKey !== null &&
+    hasAnyPosition(access.session, [request.headPositionKey])
+  );
+}
 
 function canSee(access: RequestAccess, request: Parties): boolean {
   return (
     access.canView ||
     request.requesterId === access.user.id ||
-    request.purchaserId === access.user.id
+    request.purchaserId === access.user.id ||
+    holdsHead(access, request)
+  );
+}
+
+// A separate purchaser step: a named purchaser who isn't the requester.
+function hasPurchaserStep(request: Parties): boolean {
+  return (
+    request.purchaserId !== null && request.purchaserId !== request.requesterId
   );
 }
 
@@ -112,6 +143,8 @@ function actionsFor(
     status: request.status,
     isOwner: request.requesterId === access.user.id,
     isPurchaser: request.purchaserId === access.user.id,
+    isHead: holdsHead(access, request),
+    hasPurchaserStep: hasPurchaserStep(request),
     isSignedOff: request.signedOffAt !== null,
   });
 }
@@ -157,7 +190,7 @@ async function getAllocationBudget(
 async function validateInput(
   access: RequestAccess,
   raw: PurchaseRequestInput,
-): Promise<ResponseType<{ data: PurchaseRequestInput; yearId: string }>> {
+): Promise<ResponseType<ValidatedInput>> {
   const parsed = purchaseRequestInputSchema.safeParse(raw);
   if (!parsed.success)
     return {
@@ -170,31 +203,41 @@ async function validateInput(
       where: { id: data.allocationId, deletedAt: null },
       select: {
         allocationGroupId: true,
+        allocationGroup: { select: { headPositionKey: true } },
         designationId: true,
         periodId: true,
         period: { select: { yearId: true } },
       },
     }),
-    prisma.user.findFirst({
-      where: { id: data.purchaserId, deletedAt: null, isEBoardPurchaser: true },
-      select: { id: true },
-    }),
+    data.purchaserId
+      ? prisma.user.findFirst({
+          where: {
+            id: data.purchaserId,
+            deletedAt: null,
+            isEBoardPurchaser: true,
+          },
+          select: { id: true },
+        })
+      : null,
     prisma.processTemplate.findFirst({
       where: {
         id: data.processTemplateId,
         deletedAt: null,
         isPurchasingMethod: true,
       },
-      select: { id: true },
+      select: { id: true, requiresPurchaser: true },
     }),
     getCurrentPeriod(),
   ]);
 
   if (!allocation || !canUseDivision(access, allocation.allocationGroupId))
     return { error: 'You cannot request against that allocation.' };
-  if (!purchaser)
-    return { error: 'The purchaser must be an Executive Board member.' };
   if (!method) return { error: 'Choose one of the listed purchasing methods.' };
+  // Only reimbursements name an E-Board purchaser.
+  if (method.requiresPurchaser && !data.purchaserId)
+    return { error: 'Select an E-Board purchaser.' };
+  if (method.requiresPurchaser && !purchaser)
+    return { error: 'The purchaser must be an Executive Board member.' };
   if (!period || allocation.periodId !== period.id)
     return {
       error: period
@@ -202,7 +245,20 @@ async function validateInput(
         : 'There is no current period, so requests cannot be submitted right now.',
     };
 
-  return { data, yearId: allocation.period.yearId };
+  return {
+    data,
+    yearId: allocation.period.yearId,
+    purchaserId: method.requiresPurchaser ? data.purchaserId : null,
+    headPositionKey: allocation.allocationGroup?.headPositionKey ?? null,
+  };
+}
+
+interface ValidatedInput {
+  data: PurchaseRequestInput;
+  yearId: string;
+  purchaserId: string | null;
+  // The division's head position at submission.
+  headPositionKey: string | null;
 }
 
 async function loadForAction(
@@ -280,7 +336,13 @@ export async function listPurchaseRequests({
     where: {
       deletedAt: null,
       ...(onlyMine && {
-        OR: [{ requesterId: access.user.id }, { purchaserId: access.user.id }],
+        OR: [
+          { requesterId: access.user.id },
+          { purchaserId: access.user.id },
+          {
+            headPositionKey: { in: access.session.positions.map((p) => p.key) },
+          },
+        ],
       }),
     },
     include: summaryInclude,
@@ -311,7 +373,12 @@ export async function getPurchaseRequest(
 
   // An open request is already part of `committed`; leave it out so the panel
   // shows the balance before this request.
-  const budget = await getAllocationBudget(request.allocationId, request.id);
+  const [budget, awaitingHead] = await Promise.all([
+    getAllocationBudget(request.allocationId, request.id),
+    request.status === 'HEAD_REVIEW' && request.headPositionKey
+      ? describeHead(request.headPositionKey)
+      : null,
+  ]);
 
   return {
     ...toSummary(request),
@@ -333,6 +400,20 @@ export async function getPurchaseRequest(
     })),
     allowedActions: actionsFor(access, request),
     budget,
+    awaitingHead,
+  };
+}
+
+// The head position a request waits on and who holds it, for the page. Falls
+// back to the key when SGAuth can't be reached.
+async function describeHead(
+  positionKey: string,
+): Promise<PurchaseRequestDetail['awaitingHead']> {
+  const result = await getPositionHolders(positionKey);
+  if (!result.ok || !result.body) return { position: positionKey, holders: [] };
+  return {
+    position: result.body.name,
+    holders: result.body.holders.map((h) => h.preferredName ?? h.name),
   };
 }
 
@@ -346,22 +427,28 @@ export async function getRequestFormOptions(): Promise<RequestFormOptions> {
 export async function getApprovalOptions(): Promise<
   ResponseType<{
     divisions: RequestFormOptions['divisions'];
-    methods: { id: string; name: string }[];
+    methods: { id: string; name: string; requiresPurchaser: boolean }[];
+    users: PersonName[];
   }>
 > {
   const access = await requireRequestAccess();
   if (!isRequestApprover(access.session))
     return { error: 'Only the Comptroller and the VPOA approve requests.' };
 
-  const [options, methods] = await Promise.all([
+  const [options, methods, users] = await Promise.all([
     buildFormOptions('all'),
     prisma.processTemplate.findMany({
       where: { deletedAt: null },
-      select: { id: true, name: true },
+      select: { id: true, name: true, requiresPurchaser: true },
       orderBy: { name: 'asc' },
     }),
+    prisma.user.findMany({
+      where: { deletedAt: null },
+      select: personSelect,
+      orderBy: [{ last: 'asc' }, { first: 'asc' }],
+    }),
   ]);
-  return { divisions: options.divisions, methods };
+  return { divisions: options.divisions, methods, users };
 }
 
 // Requests are charged to allocations in the period covering today.
@@ -424,7 +511,12 @@ async function buildFormOptions(
     }),
     prisma.processTemplate.findMany({
       where: { deletedAt: null, isPurchasingMethod: true },
-      select: { id: true, name: true, description: true },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        requiresPurchaser: true,
+      },
       orderBy: { name: 'asc' },
     }),
   ]);
@@ -474,10 +566,12 @@ export async function createPurchaseRequest(
   acknowledgedPurchaserRule: boolean,
 ): Promise<ResponseType<{ id: string }>> {
   const access = await requireSubmitAccess();
-  if (acknowledgedPurchaserRule !== true) return PURCHASER_RULE_ERROR;
   const validated = await validateInput(access, input);
   if ('error' in validated) return validated;
-  const { data, yearId } = validated;
+  const { data, yearId, purchaserId } = validated;
+  if (purchaserId && acknowledgedPurchaserRule !== true)
+    return PURCHASER_RULE_ERROR;
+  const stage = await initialStage(access, validated);
 
   const request = await prisma.purchaseRequest.create({
     data: {
@@ -486,34 +580,30 @@ export async function createPurchaseRequest(
       notes: data.notes || null,
       attachments: data.attachments,
       requesterId: access.user.id,
-      purchaserId: data.purchaserId,
+      purchaserId,
       processTemplateId: data.processTemplateId,
       allocationId: data.allocationId,
       yearId,
-      ...stageAfterSubmit(access, data.purchaserId),
+      status: stage.status,
+      headPositionKey: stage.headPositionKey,
       events: {
         create: [
           {
             type: 'SUBMITTED',
             actorId: access.user.id,
-            note: PURCHASER_RULE_ACKNOWLEDGED,
+            note: purchaserId ? PURCHASER_RULE_ACKNOWLEDGED : null,
           },
-          ...selfApprovalEvents(access, data.purchaserId),
+          ...stageEvents(stage, access.user.id),
         ],
       },
     },
-    select: { id: true, status: true },
+    select: { id: true },
   });
 
   await queueNotices(
     access,
     request.id,
-    submittedNotices(
-      access,
-      request.status,
-      data.purchaserId,
-      'New purchase request',
-    ),
+    stageNotices(access, stage, purchaserId, 'New purchase request'),
   );
   revalidateRequest();
   return { id: request.id };
@@ -524,40 +614,41 @@ export async function updatePurchaseRequest(
   input: PurchaseRequestInput,
   acknowledgedPurchaserRule: boolean,
 ): Promise<ResponseType<{ id: string }>> {
-  if (acknowledgedPurchaserRule !== true) return PURCHASER_RULE_ERROR;
   const loaded = await loadForAction(id, 'edit');
   if ('error' in loaded) return loaded;
   const { access, request } = loaded;
 
   const validated = await validateInput(access, input);
   if ('error' in validated) return validated;
-  const { data, yearId } = validated;
-  const stage = stageAfterSubmit(access, data.purchaserId);
+  const { data, yearId, purchaserId } = validated;
+  if (purchaserId && acknowledgedPurchaserRule !== true)
+    return PURCHASER_RULE_ERROR;
+  const stage = await initialStage(access, validated);
 
-  // An edit always goes back through the purchaser, unless the requester is
-  // the purchaser.
+  // An edit restarts the approval chain.
   const ok = await prisma.$transaction(async (tx) => {
     const moved = await transition(tx, {
       id,
       from: request.status,
       event: 'EDITED',
       actorId: access.user.id,
-      note: PURCHASER_RULE_ACKNOWLEDGED,
+      note: purchaserId ? PURCHASER_RULE_ACKNOWLEDGED : null,
       data: {
-        ...stage,
+        status: stage.status,
+        headPositionKey: stage.headPositionKey,
         description: data.description,
         amount: new Decimal(data.amount),
         notes: data.notes || null,
         attachments: data.attachments,
-        purchaserId: data.purchaserId,
+        purchaserId,
         processTemplateId: data.processTemplateId,
         allocationId: data.allocationId,
         yearId,
       },
     });
-    if (moved)
+    if (moved && stage.events.length > 0)
       await tx.purchaseRequestEvent.createMany({
-        data: selfApprovalEvents(access, data.purchaserId).map((e) => ({
+        data: stageEvents(stage, access.user.id).map((e) => ({
           ...e,
           requestId: id,
         })),
@@ -569,12 +660,7 @@ export async function updatePurchaseRequest(
   await queueNotices(
     access,
     id,
-    submittedNotices(
-      access,
-      stage.status,
-      data.purchaserId,
-      'Purchase request edited',
-    ),
+    stageNotices(access, stage, purchaserId, 'Purchase request edited'),
   );
   revalidateRequest(id);
   return { id };
@@ -603,7 +689,9 @@ export async function cancelPurchaseRequest(
     id,
     request.status === 'PURCHASER_REVIEW'
       ? purchaserNotice(loaded.access, request, 'Purchase request cancelled')
-      : [],
+      : request.status === 'HEAD_REVIEW'
+        ? headNotice(loaded.access, request, 'Purchase request cancelled')
+        : [],
   );
   revalidateRequest(id);
   return { id };
@@ -618,13 +706,71 @@ export async function purchaserApprovePurchaseRequest({
 }): Promise<ResponseType<{ id: string }>> {
   const loaded = await loadForAction(id, 'purchaserApprove');
   if ('error' in loaded) return loaded;
+  const { access, request } = loaded;
+
+  // A head step covered or skipped at submission left no head position.
+  const stage = await purchaserApprovalStage({
+    headPositionKey: request.headPositionKey,
+    purchaserIsHead: holdsHead(access, request),
+    lookupHolders: headHolders,
+  });
+
+  const ok = await prisma.$transaction(async (tx) => {
+    const moved = await transition(tx, {
+      id,
+      from: 'PURCHASER_REVIEW',
+      event: 'PURCHASER_APPROVED',
+      actorId: access.user.id,
+      note,
+      data: { status: stage.status, headPositionKey: stage.headPositionKey },
+    });
+    if (moved && stage.events.length > 0)
+      await tx.purchaseRequestEvent.createMany({
+        data: stageEvents(stage, access.user.id).map((e) => ({
+          ...e,
+          requestId: id,
+        })),
+      });
+    return moved;
+  });
+  if (!ok) return STALE_ERROR;
+
+  await queueNotices(
+    access,
+    id,
+    stage.status === 'HEAD_REVIEW'
+      ? headNotice(
+          access,
+          request,
+          'Purchase request needs your approval as divisional head',
+          'approved as purchaser',
+        )
+      : comptrollerNotice(
+          access,
+          'Purchase request ready for review',
+          'approved as purchaser',
+        ),
+  );
+  revalidateRequest(id);
+  return { id };
+}
+
+export async function headApprovePurchaseRequest({
+  id,
+  note,
+}: {
+  id: string;
+  note?: string;
+}): Promise<ResponseType<{ id: string }>> {
+  const loaded = await loadForAction(id, 'headApprove');
+  if ('error' in loaded) return loaded;
   const { access } = loaded;
 
   const ok = await prisma.$transaction((tx) =>
     transition(tx, {
       id,
-      from: 'PURCHASER_REVIEW',
-      event: 'PURCHASER_APPROVED',
+      from: 'HEAD_REVIEW',
+      event: 'HEAD_APPROVED',
       actorId: access.user.id,
       note,
       data: { status: 'PENDING' },
@@ -638,7 +784,7 @@ export async function purchaserApprovePurchaseRequest({
     comptrollerNotice(
       access,
       'Purchase request ready for review',
-      'approved as purchaser',
+      'approved as divisional head',
     ),
   );
   revalidateRequest(id);
@@ -646,7 +792,7 @@ export async function purchaserApprovePurchaseRequest({
 }
 
 // The default decline: the requester revises it and it goes back through the
-// purchaser.
+// whole approval chain.
 export async function sendBackPurchaseRequest({
   id,
   note,
@@ -660,8 +806,10 @@ export async function sendBackPurchaseRequest({
   const loaded = await loadForAction(id, 'sendBack');
   if ('error' in loaded) return loaded;
   const { access, request } = loaded;
-  const pastPurchaser =
+  const pastHead =
     request.status === 'PENDING' || request.status === 'ESCALATED';
+  const pastPurchaser =
+    hasPurchaserStep(request) && (pastHead || request.status === 'HEAD_REVIEW');
 
   const ok = await prisma.$transaction((tx) =>
     transition(tx, {
@@ -687,23 +835,22 @@ export async function sendBackPurchaseRequest({
       'Your purchase request was sent back for revision',
       note.trim(),
     ),
-    // Past the purchaser stage, the purchaser and the Comptroller had
-    // already moved it along, so they hear it went back too.
+    // Everyone who had already moved it along hears it went back too.
     ...(pastPurchaser
-      ? [
-          ...purchaserNotice(
-            access,
-            request,
-            'Purchase request sent back for revision; you will be asked to approve it again',
-            note.trim(),
-          ),
-          ...comptrollerNotice(
-            access,
-            'Purchase request sent back for revision',
-            '',
-            note.trim(),
-          ),
-        ]
+      ? purchaserNotice(
+          access,
+          request,
+          'Purchase request sent back for revision; you will be asked to approve it again',
+          note.trim(),
+        )
+      : []),
+    ...(pastHead
+      ? comptrollerNotice(
+          access,
+          'Purchase request sent back for revision',
+          '',
+          note.trim(),
+        )
       : []),
   ]);
   revalidateRequest(id);
@@ -716,12 +863,15 @@ export async function approvePurchaseRequest({
   processTemplateId,
   categoryId,
   allocationId,
+  recordedUserId,
 }: {
   id: string;
   note?: string;
   processTemplateId?: string;
   categoryId?: string;
   allocationId?: string;
+  // Who the purchase is recorded under when there's no E-Board purchaser.
+  recordedUserId?: string;
 }): Promise<ResponseType<{ id: string; purchaseId: string }>> {
   const loaded = await loadForAction(id, 'approve');
   if ('error' in loaded) return loaded;
@@ -733,6 +883,12 @@ export async function approvePurchaseRequest({
     allocationId,
   });
   if ('error' in coding) return coding;
+  const userId = await resolveRecordedUser(
+    request,
+    coding.requiresPurchaser,
+    recordedUserId,
+  );
+  if (!userId) return { error: 'Choose who the purchase is recorded under.' };
 
   // The VPOA's own approval is their sign-off.
   const isVpoa = hasAnyPosition(access.session, [VPOA]);
@@ -771,7 +927,7 @@ export async function approvePurchaseRequest({
     // the actual amount or date differs.
     const purchase = await tx.purchase.create({
       data: {
-        userId: request.purchaserId,
+        userId,
         categoryId: coding.categoryId,
         allocationId: coding.allocationId,
         yearId: coding.yearId,
@@ -830,6 +986,22 @@ export async function approvePurchaseRequest({
   return { id, purchaseId };
 }
 
+// A reimbursement's purchase is recorded under its E-Board purchaser; any other
+// purchase under the user the approver picks.
+async function resolveRecordedUser(
+  request: RequestWithSummary,
+  requiresPurchaser: boolean,
+  recordedUserId?: string,
+): Promise<string | null> {
+  if (requiresPurchaser && request.purchaserId) return request.purchaserId;
+  if (!recordedUserId) return null;
+  const user = await prisma.user.findFirst({
+    where: { id: recordedUserId, deletedAt: null },
+    select: { id: true },
+  });
+  return user?.id ?? null;
+}
+
 // Applies an approver's coding corrections and describes what changed.
 async function resolveCoding(
   request: RequestWithSummary,
@@ -844,6 +1016,7 @@ async function resolveCoding(
     allocationId: string;
     yearId: string;
     templateId: string | null;
+    requiresPurchaser: boolean;
     changes: string[];
   }>
 > {
@@ -870,7 +1043,7 @@ async function resolveCoding(
     templateId
       ? prisma.processTemplate.findFirst({
           where: { id: templateId, deletedAt: null },
-          select: { name: true },
+          select: { name: true, requiresPurchaser: true },
         })
       : null,
   ]);
@@ -906,6 +1079,7 @@ async function resolveCoding(
     allocationId,
     yearId: allocation.period.yearId,
     templateId,
+    requiresPurchaser: template?.requiresPurchaser ?? false,
     changes,
   };
 }
@@ -1156,7 +1330,7 @@ function requestMessage(
     headline,
     `*${escapeSlackText(request.description)}*: ${formatCurrency(request.amount.toNumber())}`,
     `Division: ${escapeSlackText(division)} · ${escapeSlackText(request.allocation.name)}`,
-    `Requested by ${personName(request.requester)} · Purchaser ${personName(request.purchaser)}`,
+    `Requested by ${personName(request.requester)}${request.purchaser ? ` · Purchaser ${personName(request.purchaser)}` : ''}`,
     `Purchasing method: ${escapeSlackText(request.processTemplate?.name ?? 'Not set')}`,
     ...(note ? [`${noteLabel}: ${escapeSlackText(note)}`] : []),
     ...(footer ? [`_${escapeSlackText(footer)}_`] : []),
@@ -1165,38 +1339,36 @@ function requestMessage(
 }
 
 interface Notice {
-  to: 'comptroller' | 'vpoa' | 'requester' | 'purchaser';
+  to: 'comptroller' | 'vpoa' | 'requester' | 'purchaser' | 'head';
   headline: string;
   note?: string | null;
   noteLabel?: string;
   footer?: string;
 }
 
-// A request skips the purchaser step when its requester is the purchaser.
-function isSelfPurchased(access: RequestAccess, purchaserId: string): boolean {
-  return purchaserId === access.user.id;
+// Whether SGAuth says anyone holds the head position. A position SGAuth
+// doesn't know counts as vacant; a failed lookup leaves the request waiting.
+async function headHolders(positionKey: string): Promise<HeadHolders> {
+  const result = await getPositionHolders(positionKey);
+  if (!result.ok) return 'unknown';
+  return result.body && result.body.holders.length > 0 ? 'held' : 'vacant';
 }
 
-function stageAfterSubmit(
+function initialStage(
   access: RequestAccess,
-  purchaserId: string,
-): { status: PurchaseRequestStatus } {
-  return {
-    status: isSelfPurchased(access, purchaserId)
-      ? 'PENDING'
-      : 'PURCHASER_REVIEW',
-  };
+  { purchaserId, headPositionKey }: ValidatedInput,
+): Promise<Stage> {
+  return submissionStage({
+    requesterId: access.user.id,
+    purchaserId,
+    headPositionKey,
+    requesterIsHead: holdsHead(access, { headPositionKey }),
+    lookupHolders: headHolders,
+  });
 }
 
-function selfApprovalEvents(access: RequestAccess, purchaserId: string) {
-  if (!isSelfPurchased(access, purchaserId)) return [];
-  return [
-    {
-      type: 'PURCHASER_APPROVED' as const,
-      actorId: access.user.id,
-      note: 'The requester is the purchaser.',
-    },
-  ];
+function stageEvents(stage: Stage, actorId: string) {
+  return stage.events.map((e) => ({ ...e, actorId }));
 }
 
 // Nobody is told about their own action.
@@ -1229,11 +1401,11 @@ function vpoaNotice(access: RequestAccess, title: string): Notice[] {
 
 function purchaserNotice(
   access: RequestAccess,
-  request: { purchaserId: string },
+  request: { purchaserId: string | null },
   title: string,
   note?: string | null,
 ): Notice[] {
-  if (request.purchaserId === access.user.id) return [];
+  if (!request.purchaserId || request.purchaserId === access.user.id) return [];
   return [
     {
       to: 'purchaser',
@@ -1259,21 +1431,44 @@ function requesterNotice(
   ];
 }
 
-// A new or edited request goes to the purchaser, or straight to the
-// Comptroller when the requester is the purchaser.
-function submittedNotices(
+function headNotice(
   access: RequestAccess,
-  status: PurchaseRequestStatus,
-  purchaserId: string,
+  request: { headPositionKey: string | null },
+  title: string,
+  byline = '',
+  note?: string | null,
+): Notice[] {
+  if (!request.headPositionKey || holdsHead(access, request)) return [];
+  const by = byline ? `${byline} by` : 'by';
+  return [
+    {
+      to: 'head',
+      headline: `*${title}*, ${by} ${personName(access.user)}`,
+      note,
+    },
+  ];
+}
+
+// A new or edited request goes to whoever approves it first.
+function stageNotices(
+  access: RequestAccess,
+  stage: Stage,
+  purchaserId: string | null,
   title: string,
 ): Notice[] {
-  return status === 'PENDING'
-    ? comptrollerNotice(access, `${title}, ready for review`)
-    : purchaserNotice(
-        access,
-        { purchaserId },
-        `${title}, needs your approval as purchaser`,
-      );
+  if (stage.status === 'PURCHASER_REVIEW')
+    return purchaserNotice(
+      access,
+      { purchaserId },
+      `${title}, needs your approval as purchaser`,
+    );
+  if (stage.status === 'HEAD_REVIEW')
+    return headNotice(
+      access,
+      stage,
+      `${title}, needs your approval as divisional head`,
+    );
+  return comptrollerNotice(access, `${title}, ready for review`);
 }
 
 // The Comptroller hears about the VPOA's decisions, and the requester hears
@@ -1317,6 +1512,7 @@ const NOTICE_LABELS: Record<Notice['to'], string> = {
   vpoa: 'VPOA',
   requester: 'Requester',
   purchaser: 'Purchaser',
+  head: 'Divisional head',
 };
 
 // Best-effort DMs, sent after the response so Slack never slows or fails the
@@ -1354,18 +1550,27 @@ async function queueNotices(
       // Officers are whoever SGAuth says holds the position now; every
       // current holder is messaged.
       let errors: string[];
-      if (notice.to === 'comptroller' || notice.to === 'vpoa') {
-        const key = notice.to === 'comptroller' ? COMPTROLLER : VPOA;
+      const positionKey =
+        notice.to === 'comptroller'
+          ? COMPTROLLER
+          : notice.to === 'vpoa'
+            ? VPOA
+            : notice.to === 'head'
+              ? request.headPositionKey
+              : null;
+      if (positionKey) {
         ({ errors } = await sendSlackMessageToPositionHolders(
-          key,
+          positionKey,
           label,
           text,
         ));
+      } else if (notice.to === 'head') {
+        errors = [];
       } else {
         const result = await sendToSgauthUser(
           notice.to === 'requester'
             ? request.requester.sgauthUserId
-            : request.purchaser.sgauthUserId,
+            : (request.purchaser?.sgauthUserId ?? null),
           text,
         );
         errors = result.ok ? [] : [result.error];

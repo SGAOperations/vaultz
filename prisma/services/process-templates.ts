@@ -224,3 +224,24 @@ export async function setPurchasingMethod({
   revalidatePath('/requests');
   return template;
 }
+
+// Reimbursements: requests with this method name an E-Board purchaser, who
+// approves them first and is recorded on the purchase.
+export async function setRequiresPurchaser({
+  id,
+  requiresPurchaser,
+}: {
+  id: string;
+  requiresPurchaser: boolean;
+}): Promise<ResponseType<ProcessTemplate>> {
+  await requireCapability('edit');
+
+  const template = await prisma.processTemplate.update({
+    where: { id, deletedAt: null },
+    data: { requiresPurchaser },
+  });
+
+  revalidatePath('/requests/settings');
+  revalidatePath('/requests');
+  return template;
+}

@@ -64,7 +64,9 @@ export function RequestList({
                 </TableCell>
               )}
               <TableCell>
-                {request.purchaser.first} {request.purchaser.last}
+                {request.purchaser
+                  ? `${request.purchaser.first} ${request.purchaser.last}`
+                  : '—'}
               </TableCell>
               <TableCell className="text-right tabular-nums">
                 {formatCurrency(request.amount)}

@@ -27,6 +27,7 @@ import {
   PURCHASER_RULE,
   REQUEST_EVENT_LABELS,
 } from '@/lib/purchase-request';
+import { PurchaseRequestDetail } from '@/lib/types';
 import { formatCurrency, getFileUrl } from '@/lib/utils';
 
 import { DateTime } from '@/components/date-time';
@@ -52,6 +53,14 @@ function Field({
       <dd className="text-sm">{children}</dd>
     </div>
   );
+}
+
+// "Jordan Lee (Vice President of Campus Affairs)", or the position alone when
+// nobody's name is known.
+function headWaitingOn(head: PurchaseRequestDetail['awaitingHead']): string {
+  if (!head) return 'the divisional head';
+  if (head.holders.length === 0) return head.position;
+  return `${head.holders.join(' or ')} (${head.position})`;
 }
 
 export default async function PurchaseRequestPage({
@@ -136,11 +145,20 @@ export default async function PurchaseRequestPage({
         </div>
       )}
 
-      {request.status === 'PURCHASER_REVIEW' && (
+      {request.status === 'PURCHASER_REVIEW' && request.purchaser && (
         <div className="border-primary/30 bg-primary/10 text-primary flex items-start gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium">
           <Clock className="mt-0.5 size-4 shrink-0" />
           <span>
-            {`Waiting on ${request.purchaser.first} ${request.purchaser.last} to approve as the E-Board purchaser. The Comptroller reviews it after that.`}
+            {`Waiting on ${request.purchaser.first} ${request.purchaser.last} to approve as the E-Board purchaser. The divisional head and the Comptroller review it after that.`}
+          </span>
+        </div>
+      )}
+
+      {request.status === 'HEAD_REVIEW' && (
+        <div className="border-primary/30 bg-primary/10 text-primary flex items-start gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium">
+          <Clock className="mt-0.5 size-4 shrink-0" />
+          <span>
+            {`Waiting on ${headWaitingOn(request.awaitingHead)} to approve as the divisional head. The Comptroller reviews it after that.`}
           </span>
         </div>
       )}
@@ -193,7 +211,9 @@ export default async function PurchaseRequestPage({
                     : 'Set by Operational Affairs on approval'}
                 </Field>
                 <Field label="E-Board purchaser">
-                  {request.purchaser.first} {request.purchaser.last}
+                  {request.purchaser
+                    ? `${request.purchaser.first} ${request.purchaser.last}`
+                    : 'None (not a reimbursement)'}
                 </Field>
                 <Field label="Purchasing method">
                   {request.purchasingMethod?.name ?? 'Not set'}
@@ -257,10 +277,12 @@ export default async function PurchaseRequestPage({
                   <p className="whitespace-pre-wrap">{request.decisionNote}</p>
                 </div>
               )}
-              <div className="border-warning/40 bg-warning/5 mt-4 flex items-start gap-2 rounded-lg border p-3 text-sm">
-                <ShieldAlert className="text-warning mt-0.5 size-4 shrink-0" />
-                <span>{PURCHASER_RULE}</span>
-              </div>
+              {request.purchaser && (
+                <div className="border-warning/40 bg-warning/5 mt-4 flex items-start gap-2 rounded-lg border p-3 text-sm">
+                  <ShieldAlert className="text-warning mt-0.5 size-4 shrink-0" />
+                  <span>{PURCHASER_RULE}</span>
+                </div>
+              )}
               {request.notes && (
                 <div className="mt-4 text-sm">
                   <p className="text-muted-foreground mb-1 text-xs font-medium uppercase">

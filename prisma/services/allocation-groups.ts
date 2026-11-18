@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 
 import { AllocationGroup } from '@/prisma/client';
 
-import { requireCapability } from '@/lib/permissions';
+import { isPositionKey, requireCapability } from '@/lib/permissions';
 import prisma from '@/lib/prisma';
 import { OPEN_REQUEST_STATUSES } from '@/lib/purchase-request';
 import {
@@ -185,4 +185,56 @@ export async function createAllocationGroup(data: {
   revalidatePath('/allocation-groups');
 
   return allocationGroup;
+}
+
+export interface DivisionHead {
+  id: string;
+  name: string;
+  designationLabel: string;
+  headPositionKey: string | null;
+}
+
+export async function getDivisionHeads(): Promise<DivisionHead[]> {
+  await requireCapability('edit');
+
+  const groups = await prisma.allocationGroup.findMany({
+    select: {
+      id: true,
+      name: true,
+      headPositionKey: true,
+      designation: { select: { name: true, code: true } },
+    },
+    orderBy: [{ designation: { code: 'asc' } }, { name: 'asc' }],
+  });
+  return groups.map(({ designation, ...g }) => ({
+    ...g,
+    designationLabel: `${designation.name} · DN${designation.code}`,
+  }));
+}
+
+// The SGAuth position whose holders approve the division's requests as its
+// head. An empty key removes the head, so its requests skip that step.
+export async function setDivisionHead({
+  id,
+  positionKey,
+}: {
+  id: string;
+  positionKey: string;
+}): Promise<ResponseType<{ id: string }>> {
+  await requireCapability('edit');
+
+  const key = positionKey.trim();
+  if (key && !isPositionKey(key))
+    return {
+      error:
+        'Use the SGAuth position key, e.g. vice-president-of-campus-affairs.',
+    };
+
+  await prisma.allocationGroup.update({
+    where: { id },
+    data: { headPositionKey: key || null },
+  });
+
+  revalidatePath('/requests/settings');
+  return { id };
 }

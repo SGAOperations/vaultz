@@ -17,7 +17,8 @@ export interface RequestAccess {
   // Can submit requests: holds a position listed in RequesterPosition.
   canRequest: boolean;
   // Can open the request page: a viewer (reads every request), a requester,
-  // or an E-Board purchaser (who reviews the requests naming them).
+  // an E-Board purchaser (who reviews the requests naming them), or a
+  // divisional head (who reviews their division's requests).
   canUseRequests: boolean;
   // Allocation group (division) ids the user may request against.
   divisionIds: 'all' | string[];
@@ -32,18 +33,22 @@ export const getRequestAccess = cache(async (): Promise<RequestAccess> => {
   const canEdit = hasCapability(session, 'edit');
   const positionKeys = session.positions.map((p) => p.key);
 
-  const [user, requesterPositions, divisionRows] = await Promise.all([
-    ensurePurchaserForSession(session),
-    prisma.requesterPosition.count({
-      where: { positionKey: { in: positionKeys } },
-    }),
-    canEdit
-      ? Promise.resolve([])
-      : prisma.positionDivisionAccess.findMany({
-          where: { positionKey: { in: positionKeys } },
-          select: { allocationGroupId: true },
-        }),
-  ]);
+  const [user, requesterPositions, divisionRows, headedDivisions] =
+    await Promise.all([
+      ensurePurchaserForSession(session),
+      prisma.requesterPosition.count({
+        where: { positionKey: { in: positionKeys } },
+      }),
+      canEdit
+        ? Promise.resolve([])
+        : prisma.positionDivisionAccess.findMany({
+            where: { positionKey: { in: positionKeys } },
+            select: { allocationGroupId: true },
+          }),
+      prisma.allocationGroup.count({
+        where: { headPositionKey: { in: positionKeys } },
+      }),
+    ]);
 
   return {
     session,
@@ -51,7 +56,11 @@ export const getRequestAccess = cache(async (): Promise<RequestAccess> => {
     canView,
     canEdit,
     canRequest: requesterPositions > 0,
-    canUseRequests: canView || requesterPositions > 0 || user.isEBoardPurchaser,
+    canUseRequests:
+      canView ||
+      requesterPositions > 0 ||
+      user.isEBoardPurchaser ||
+      headedDivisions > 0,
     divisionIds: canEdit
       ? 'all'
       : [...new Set(divisionRows.map((r) => r.allocationGroupId))],

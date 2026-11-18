@@ -132,13 +132,21 @@ describe('allowedRequestActions', () => {
   const actions = (
     session: SgaSession,
     status: PurchaseRequestStatus,
-    { isOwner = false, isPurchaser = false, isSignedOff = false } = {},
+    {
+      isOwner = false,
+      isPurchaser = false,
+      isHead = false,
+      hasPurchaserStep = true,
+      isSignedOff = false,
+    } = {},
   ) =>
     allowedRequestActions({
       session,
       status,
       isOwner,
       isPurchaser,
+      isHead,
+      hasPurchaserStep,
       isSignedOff,
     }).sort();
 
@@ -169,6 +177,44 @@ describe('allowedRequestActions', () => {
         'sendBack',
       ]);
     });
+  });
+
+  describe('awaiting the divisional head', () => {
+    it('lets the head approve, send back or reject', () => {
+      expect(actions(vp, 'HEAD_REVIEW', { isHead: true })).toEqual([
+        'headApprove',
+        'reject',
+        'sendBack',
+      ]);
+    });
+
+    it('lets the requester edit or cancel only before any approval', () => {
+      expect(
+        actions(vp, 'HEAD_REVIEW', { isOwner: true, hasPurchaserStep: false }),
+      ).toEqual(['cancel', 'edit']);
+      expect(actions(vp, 'HEAD_REVIEW', { isOwner: true })).toEqual([]);
+    });
+
+    it('gives the purchaser and the Comptroller nothing', () => {
+      expect(actions(vp, 'HEAD_REVIEW', { isPurchaser: true })).toEqual([]);
+      expect(actions(comptroller, 'HEAD_REVIEW')).toEqual([]);
+    });
+
+    it("gives a VPOA head the VPOA's final approval instead", () => {
+      expect(actions(vpoa, 'HEAD_REVIEW', { isHead: true })).toEqual([
+        'approve',
+        'reject',
+        'sendBack',
+      ]);
+    });
+  });
+
+  it("gives a VPOA purchaser the VPOA's final approval instead", () => {
+    expect(actions(vpoa, 'PURCHASER_REVIEW', { isPurchaser: true })).toEqual([
+      'approve',
+      'reject',
+      'sendBack',
+    ]);
   });
 
   describe('needing revision', () => {
@@ -230,6 +276,7 @@ describe('allowedRequestActions', () => {
 
   it.each([
     'PURCHASER_REVIEW',
+    'HEAD_REVIEW',
     'NEEDS_REVISION',
     'PENDING',
     'ESCALATED',

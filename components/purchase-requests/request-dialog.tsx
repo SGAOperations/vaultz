@@ -60,7 +60,7 @@ function defaultsFor(request?: PurchaseRequestDetail): PurchaseRequestInput {
     description: request?.description ?? '',
     amount: request?.amount ?? 0,
     allocationId: request?.allocation.id ?? '',
-    purchaserId: request?.purchaser.id ?? '',
+    purchaserId: request?.purchaser?.id ?? '',
     processTemplateId: request?.purchasingMethod?.id ?? '',
     notes: request?.notes ?? '',
     attachments: request?.attachments ?? [],
@@ -103,10 +103,14 @@ export function RequestDialog({ options, request }: RequestDialogProps) {
     defaultValues: defaultsFor(request),
   });
   const isSubmitting = form.formState.isSubmitting;
-  const [allocationId, amount] = useWatch({
+  const [allocationId, amount, processTemplateId] = useWatch({
     control: form.control,
-    name: ['allocationId', 'amount'],
+    name: ['allocationId', 'amount', 'processTemplateId'],
   });
+  // Only reimbursements name an E-Board purchaser.
+  const needsPurchaser =
+    options.purchasingMethods.find((m) => m.id === processTemplateId)
+      ?.requiresPurchaser ?? false;
 
   const division = useMemo(
     () => options.divisions.find((d) => d.id === divisionId),
@@ -138,19 +142,27 @@ export function RequestDialog({ options, request }: RequestDialogProps) {
     changeDivision(only.length === 1 ? only[0].id : '');
   }
 
-  // A valid form first asks the requester to acknowledge the purchaser rule.
+  // A valid reimbursement first asks the requester to acknowledge the
+  // purchaser rule.
   function onSubmit(data: PurchaseRequestInput) {
+    if (!needsPurchaser) return submit({ ...data, purchaserId: '' }, false);
+    if (!data.purchaserId) {
+      form.setError('purchaserId', { message: 'Select an E-Board purchaser' });
+      return;
+    }
     setPending(data);
   }
 
   async function submitAcknowledged() {
-    if (!pending) return;
+    if (pending) await submit(pending, true);
+  }
+
+  async function submit(data: PurchaseRequestInput, acknowledged: boolean) {
     setSubmitting(true);
-    const data = pending;
     const result = await handleError(
       request
-        ? updatePurchaseRequest(request.id, data, true)
-        : createPurchaseRequest(data, true),
+        ? updatePurchaseRequest(request.id, data, acknowledged)
+        : createPurchaseRequest(data, acknowledged),
       {
         toast: {
           loading: request ? 'Saving request...' : 'Submitting request...',
@@ -198,7 +210,7 @@ export function RequestDialog({ options, request }: RequestDialogProps) {
           </DialogTitle>
           <DialogDescription>
             {options.period
-              ? `Requests are charged to an allocation in the current period, ${options.period.name}${options.year ? ` (${options.year.name})` : ''}. Your E-Board purchaser approves it first, then the Comptroller reviews it.`
+              ? `Requests are charged to an allocation in the current period, ${options.period.name}${options.year ? ` (${options.year.name})` : ''}. Your division's head approves it, then the Comptroller reviews it. Reimbursements need your E-Board purchaser's approval first.`
               : 'There is no current period, so requests cannot be submitted right now.'}
           </DialogDescription>
         </DialogHeader>
@@ -277,37 +289,6 @@ export function RequestDialog({ options, request }: RequestDialogProps) {
                 />
                 <FormField
                   control={form.control}
-                  name="purchaserId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>E-Board purchaser</FormLabel>
-                      <FormControl>
-                        <Combobox
-                          name="purchaser"
-                          value={field.value}
-                          onChange={field.onChange}
-                          disabled={noPurchasers}
-                          data={[
-                            {
-                              items: options.purchasers.map((p) => ({
-                                label: `${p.first} ${p.last}`,
-                                value: p.id,
-                              })),
-                            },
-                          ]}
-                        />
-                      </FormControl>
-                      {noPurchasers && (
-                        <p className="text-muted-foreground text-xs">
-                          No E-Board purchasers are set up yet.
-                        </p>
-                      )}
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
                   name="processTemplateId"
                   render={({ field }) => (
                     <FormItem>
@@ -347,6 +328,39 @@ export function RequestDialog({ options, request }: RequestDialogProps) {
                     </FormItem>
                   )}
                 />
+                {needsPurchaser && (
+                  <FormField
+                    control={form.control}
+                    name="purchaserId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>E-Board purchaser</FormLabel>
+                        <FormControl>
+                          <Combobox
+                            name="purchaser"
+                            value={field.value}
+                            onChange={field.onChange}
+                            disabled={noPurchasers}
+                            data={[
+                              {
+                                items: options.purchasers.map((p) => ({
+                                  label: `${p.first} ${p.last}`,
+                                  value: p.id,
+                                })),
+                              },
+                            ]}
+                          />
+                        </FormControl>
+                        {noPurchasers && (
+                          <p className="text-muted-foreground text-xs">
+                            No E-Board purchasers are set up yet.
+                          </p>
+                        )}
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
               </div>
 
               <div className="grid gap-4 sm:grid-cols-[2fr_1fr]">
@@ -441,11 +455,17 @@ export function RequestDialog({ options, request }: RequestDialogProps) {
               <Button
                 type="submit"
                 disabled={
-                  isSubmitting || !options.period || noPurchasers || noMethods
+                  isSubmitting ||
+                  submitting ||
+                  !options.period ||
+                  (needsPurchaser && noPurchasers) ||
+                  noMethods
                 }
                 className="self-start"
               >
-                {isSubmitting && <Loader2 className="animate-spin" />}
+                {(isSubmitting || submitting) && (
+                  <Loader2 className="animate-spin" />
+                )}
                 {request ? 'Save changes' : 'Submit request'}
               </Button>
             </form>
