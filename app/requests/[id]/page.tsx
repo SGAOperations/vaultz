@@ -31,6 +31,7 @@ import { PurchaseRequestDetail } from '@/lib/types';
 import { formatCurrency, getFileUrl } from '@/lib/utils';
 
 import { DateTime } from '@/components/date-time';
+import { ApprovalTimeline } from '@/components/purchase-requests/approval-timeline';
 import { BudgetPanel } from '@/components/purchase-requests/budget-panel';
 import { RequestActions } from '@/components/purchase-requests/request-actions';
 import { RequestStatusBadge } from '@/components/purchase-requests/request-status-badge';
@@ -193,183 +194,186 @@ export default async function PurchaseRequestPage({
         </div>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
-        <div className="flex flex-col gap-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Details</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <dl className="grid gap-4 sm:grid-cols-2">
-                <Field label="Index">
-                  {request.designation.name} · DN{request.designation.code}
+      {/* Details, then the side column, then History: on large screens the
+          side column sits beside both and stays in view; on narrow ones it
+          stacks under Details. */}
+      <div className="grid gap-4 lg:grid-cols-[2fr_1fr] lg:grid-rows-[auto_1fr]">
+        <Card className="lg:col-start-1 lg:row-start-1">
+          <CardHeader>
+            <CardTitle>Details</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <dl className="grid gap-4 sm:grid-cols-2">
+              <Field label="Index">
+                {request.designation.name} · DN{request.designation.code}
+              </Field>
+              <Field label="Division">
+                {request.allocation
+                  ? (request.allocation.allocationGroup?.name ?? '—')
+                  : 'Whole index'}
+              </Field>
+              <Field label="Allocation">
+                {request.allocation?.name ?? 'None (charged to the index)'}
+              </Field>
+              <Field label="Category">
+                {request.category
+                  ? `${request.category.code} · ${request.category.name}`
+                  : 'Set by Operational Affairs on approval'}
+              </Field>
+              <Field label="E-Board purchaser">
+                {request.purchaser
+                  ? `${request.purchaser.first} ${request.purchaser.last}`
+                  : 'None (not a reimbursement)'}
+              </Field>
+              <Field label="Purchasing method">
+                {request.purchasingMethod?.name ?? 'Not set'}
+              </Field>
+              <Field label="Requested by">
+                {request.requester.first} {request.requester.last}
+              </Field>
+              <Field label="Submitted">
+                <DateTime date={request.createdAt} />
+              </Field>
+              {request.decidedBy && request.decidedAt && (
+                <Field
+                  label={
+                    request.status === 'REJECTED'
+                      ? 'Rejected by'
+                      : 'Approved by'
+                  }
+                >
+                  {request.decidedBy.first} {request.decidedBy.last} ·{' '}
+                  <DateTime date={request.decidedAt} />
                 </Field>
-                <Field label="Division">
-                  {request.allocation
-                    ? (request.allocation.allocationGroup?.name ?? '—')
-                    : 'Whole index'}
-                </Field>
-                <Field label="Allocation">
-                  {request.allocation?.name ?? 'None (charged to the index)'}
-                </Field>
-                <Field label="Category">
-                  {request.category
-                    ? `${request.category.code} · ${request.category.name}`
-                    : 'Set by Operational Affairs on approval'}
-                </Field>
-                <Field label="E-Board purchaser">
-                  {request.purchaser
-                    ? `${request.purchaser.first} ${request.purchaser.last}`
-                    : 'None (not a reimbursement)'}
-                </Field>
-                <Field label="Purchasing method">
-                  {request.purchasingMethod?.name ?? 'Not set'}
-                </Field>
-                <Field label="Requested by">
-                  {request.requester.first} {request.requester.last}
-                </Field>
-                <Field label="Submitted">
-                  <DateTime date={request.createdAt} />
-                </Field>
-                {request.decidedBy && request.decidedAt && (
-                  <Field
-                    label={
-                      request.status === 'REJECTED'
-                        ? 'Rejected by'
-                        : 'Approved by'
-                    }
-                  >
-                    {request.decidedBy.first} {request.decidedBy.last} ·{' '}
-                    <DateTime date={request.decidedAt} />
-                  </Field>
-                )}
-                {(request.status === 'APPROVED' ||
-                  request.status === 'REVOKED') && (
-                  <Field label="VPOA sign-off">
-                    {request.signedOffBy && request.signedOffAt ? (
-                      <>
-                        {request.signedOffBy.first} {request.signedOffBy.last} ·{' '}
-                        <DateTime date={request.signedOffAt} />
-                      </>
-                    ) : request.signedOffAt ? (
-                      'Approved before sign-off was required'
-                    ) : request.status === 'REVOKED' ? (
-                      'Revoked'
-                    ) : (
-                      'Awaiting sign-off'
-                    )}
-                  </Field>
-                )}
-                {request.purchaseId &&
-                  access.canView &&
-                  request.status !== 'REVOKED' && (
-                    <Field label="Purchase">
-                      <Link
-                        href={
-                          request.allocation
-                            ? `/purchases?allocation=${request.allocation.id}`
-                            : '/purchases'
-                        }
-                        className="text-primary hover:underline"
-                      >
-                        View in purchases
-                      </Link>
-                    </Field>
+              )}
+              {(request.status === 'APPROVED' ||
+                request.status === 'REVOKED') && (
+                <Field label="VPOA sign-off">
+                  {request.signedOffBy && request.signedOffAt ? (
+                    <>
+                      {request.signedOffBy.first} {request.signedOffBy.last} ·{' '}
+                      <DateTime date={request.signedOffAt} />
+                    </>
+                  ) : request.signedOffAt ? (
+                    'Approved before sign-off was required'
+                  ) : request.status === 'REVOKED' ? (
+                    'Revoked'
+                  ) : (
+                    'Awaiting sign-off'
                   )}
-              </dl>
-              {request.decisionNote && (
-                <div className="bg-muted/50 mt-4 rounded-lg p-3 text-sm">
-                  <p className="text-muted-foreground mb-1 text-xs font-medium uppercase">
-                    {request.status === 'APPROVED' ||
-                    request.status === 'REVOKED'
-                      ? 'Conditions'
-                      : 'Decision note'}
-                  </p>
-                  <p className="whitespace-pre-wrap">{request.decisionNote}</p>
-                </div>
+                </Field>
               )}
-              {request.purchaser && (
-                <div className="border-warning/40 bg-warning/5 mt-4 flex items-start gap-2 rounded-lg border p-3 text-sm">
-                  <ShieldAlert className="text-warning mt-0.5 size-4 shrink-0" />
-                  <span>{PURCHASER_RULE}</span>
-                </div>
-              )}
-              {request.notes && (
-                <div className="mt-4 text-sm">
-                  <p className="text-muted-foreground mb-1 text-xs font-medium uppercase">
-                    Justification
-                  </p>
-                  <p className="whitespace-pre-wrap">{request.notes}</p>
-                </div>
-              )}
-              {request.attachments.length > 0 && (
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {request.attachments.map((key, i) => (
-                    <a
-                      key={key}
-                      href={getFileUrl(key)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="bg-muted hover:bg-accent flex items-center gap-1.5 rounded px-2 py-1 text-sm"
+              {request.purchaseId &&
+                access.canView &&
+                request.status !== 'REVOKED' && (
+                  <Field label="Purchase">
+                    <Link
+                      href={
+                        request.allocation
+                          ? `/purchases?allocation=${request.allocation.id}`
+                          : '/purchases'
+                      }
+                      className="text-primary hover:underline"
                     >
-                      <Paperclip className="size-3.5" />
-                      Attachment {i + 1}
-                    </a>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>History</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ol className="flex flex-col gap-3">
-                {request.events.map((event) => (
-                  <li
-                    key={event.id}
-                    className="flex flex-col gap-0.5 border-l-2 pl-3"
+                      View in purchases
+                    </Link>
+                  </Field>
+                )}
+            </dl>
+            {request.decisionNote && (
+              <div className="bg-muted/50 mt-4 rounded-lg p-3 text-sm">
+                <p className="text-muted-foreground mb-1 text-xs font-medium uppercase">
+                  {request.status === 'APPROVED' || request.status === 'REVOKED'
+                    ? 'Conditions'
+                    : 'Decision note'}
+                </p>
+                <p className="whitespace-pre-wrap">{request.decisionNote}</p>
+              </div>
+            )}
+            {request.purchaser && (
+              <div className="border-warning/40 bg-warning/5 mt-4 flex items-start gap-2 rounded-lg border p-3 text-sm">
+                <ShieldAlert className="text-warning mt-0.5 size-4 shrink-0" />
+                <span>{PURCHASER_RULE}</span>
+              </div>
+            )}
+            {request.notes && (
+              <div className="mt-4 text-sm">
+                <p className="text-muted-foreground mb-1 text-xs font-medium uppercase">
+                  Justification
+                </p>
+                <p className="whitespace-pre-wrap">{request.notes}</p>
+              </div>
+            )}
+            {request.attachments.length > 0 && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {request.attachments.map((key, i) => (
+                  <a
+                    key={key}
+                    href={getFileUrl(key)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-muted hover:bg-accent flex items-center gap-1.5 rounded px-2 py-1 text-sm"
                   >
-                    <span className="text-sm font-medium">
-                      {REQUEST_EVENT_LABELS[event.type]}
-                      {event.actor && (
-                        <span className="text-muted-foreground font-normal">
-                          {' '}
-                          · {event.actor.first} {event.actor.last}
-                        </span>
-                      )}
-                    </span>
-                    <span className="text-muted-foreground text-xs">
-                      <DateTime date={event.createdAt} />
-                    </span>
-                    {event.note && (
-                      <span className="text-sm whitespace-pre-wrap">
-                        {event.note}
-                      </span>
-                    )}
-                  </li>
+                    <Paperclip className="size-3.5" />
+                    Attachment {i + 1}
+                  </a>
                 ))}
-              </ol>
-            </CardContent>
-          </Card>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <div className="flex flex-col gap-4 lg:sticky lg:top-4 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-start">
+          {isOpen && (
+            <Card>
+              <CardHeader>
+                <CardTitle>
+                  {request.budget.scope === 'index'
+                    ? 'Index balance'
+                    : 'Allocation balance'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <BudgetPanel budget={request.budget} amount={request.amount} />
+              </CardContent>
+            </Card>
+          )}
+          <ApprovalTimeline request={request} />
         </div>
 
-        {isOpen && (
-          <Card className="h-fit">
-            <CardHeader>
-              <CardTitle>
-                {request.budget.scope === 'index'
-                  ? 'Index balance'
-                  : 'Allocation balance'}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <BudgetPanel budget={request.budget} amount={request.amount} />
-            </CardContent>
-          </Card>
-        )}
+        <Card className="lg:col-start-1 lg:row-start-2 lg:self-start">
+          <CardHeader>
+            <CardTitle>History</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ol className="flex flex-col gap-3">
+              {request.events.map((event) => (
+                <li
+                  key={event.id}
+                  className="flex flex-col gap-0.5 border-l-2 pl-3"
+                >
+                  <span className="text-sm font-medium">
+                    {REQUEST_EVENT_LABELS[event.type]}
+                    {event.actor && (
+                      <span className="text-muted-foreground font-normal">
+                        {' '}
+                        · {event.actor.first} {event.actor.last}
+                      </span>
+                    )}
+                  </span>
+                  <span className="text-muted-foreground text-xs">
+                    <DateTime date={event.createdAt} />
+                  </span>
+                  {event.note && (
+                    <span className="text-sm whitespace-pre-wrap">
+                      {event.note}
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ol>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
