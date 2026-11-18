@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 
 import { getDivisionHeads } from '@/prisma/services/allocation-groups';
+import { getIndexRequestSettings } from '@/prisma/services/designation';
 import { getAllProcessTemplates } from '@/prisma/services/process-templates';
 import { getRequestAccess } from '@/prisma/services/request-access';
 import { getRequesterPositions } from '@/prisma/services/requester-position';
@@ -14,6 +15,7 @@ import { PageHeader } from '@/components/page-header';
 import {
   DivisionHeadsEditor,
   EBoardPurchaserList,
+  IndexAccessEditor,
   PurchasingMethodList,
   RequesterPositionsEditor,
 } from '@/components/purchase-requests/request-settings';
@@ -30,11 +32,12 @@ export const metadata: Metadata = { title: 'Request Settings' };
 export default async function RequestSettingsPage() {
   if (!(await getRequestAccess()).canEdit) redirect('/requests');
 
-  const [positions, users, templates, divisions] = await Promise.all([
+  const [positions, users, templates, divisions, indexes] = await Promise.all([
     getRequesterPositions(),
     getUsers(),
     getAllProcessTemplates(true),
     getDivisionHeads(),
+    getIndexRequestSettings(),
   ]);
 
   return (
@@ -127,6 +130,22 @@ export default async function RequestSettingsPage() {
           </CardHeader>
           <CardContent>
             <DivisionHeadsEditor divisions={divisions} />
+          </CardContent>
+        </Card>
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Whole-index requests</CardTitle>
+            <CardDescription>
+              Who can request against a whole index instead of one of its
+              division allocations. Open to budget requesters: anyone who can
+              request against an allocation in the budget index. Listed
+              positions: holders of the positions listed. Editors can request
+              against any index open to whole-index requests. Whole-index
+              requests are approved by the index&apos;s head, if one is set.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <IndexAccessEditor indexes={indexes} />
           </CardContent>
         </Card>
       </div>
